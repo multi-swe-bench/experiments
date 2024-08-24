@@ -51,7 +51,7 @@ for (const [k1, v1] of Object.entries(index)) {
   if (!v1.data) continue
   for (const [k2, v2] of Object.entries(v1.data)) {
     const dirents = await fs.readdir(`evaluation/${k1}/${k2}`, { withFileTypes: true })
-    const data = await Promise.all(dirents
+    const result = await Promise.allSettled(dirents
       .filter((dirent) => dirent.isDirectory() && !dirent.name.startsWith('.'))
       .map<Promise<Data>>(async (dirent) => {
         const results = JSON.parse(await fs.readFile(`evaluation/${k1}/${k2}/${dirent.name}/results/results.json`, 'utf8')) as Result
@@ -72,6 +72,14 @@ for (const [k1, v1] of Object.entries(index)) {
           trajs: hasTrajs ? urlTrajs : undefined,
         }
       }))
+    const data = result
+      .filter((v) => {
+        if (v.status === 'rejected') {
+          console.error(v.reason)
+        }
+        return v.status === 'fulfilled'
+      })
+      .map((v) => v.value)
     data.sort((a, b) => b.resolved - a.resolved)
     item.data!.push({
       name: v2.name,
