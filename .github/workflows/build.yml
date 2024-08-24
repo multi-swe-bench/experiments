@@ -1,0 +1,41 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    permissions:
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        cache: pnpm
+
+    - name: Install dependencies
+      run: pnpm install
+
+    - name: Build
+      run: pnpm run build
+
+    - name: Deploy
+      if: ${{ github.repository == 'multi-swe-bench/experiments' && github.ref == 'refs/heads/main' }}
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        publish_branch: dist
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: dist
+        force_orphan: true
+        enable_jekyll: true
+        commit_message: '[skip ci] deploy'
