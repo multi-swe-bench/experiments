@@ -7,7 +7,6 @@ const index = yaml.load(await fs.readFile('index.yaml', 'utf8')) as Record<strin
   name: string
   data?: Record<string, {
     name: string
-    total: number
   }>
 }>
 
@@ -44,10 +43,10 @@ interface Data {
   hasReadme: boolean
 }
 
-const leaderboard: ListItem<ListItem<Data>>[] = []
+const leaderboard: ListItem<ListItem<Data> & { total: number }>[] = []
 
 for (const [k1, v1] of Object.entries(index)) {
-  const item: ListItem<ListItem<Data>> = {
+  const item: ListItem<ListItem<Data> & { total: number }> = {
     name: v1.name,
     data: v1.data && [],
   }
@@ -55,6 +54,8 @@ for (const [k1, v1] of Object.entries(index)) {
   if (!v1.data) continue
   for (const [k2, v2] of Object.entries(v1.data)) {
     const dirents = await fs.readdir(`evaluation/${k1}/${k2}`, { withFileTypes: true })
+    const dataset = JSON.parse(await fs.readFile(`evaluation/${k1}/${k2}/index.json`, 'utf8'))
+    const total = Object.keys(dataset).length
     const result = await Promise.allSettled(dirents
       .filter((dirent) => dirent.isDirectory() && !dirent.name.startsWith('.'))
       .map<Promise<Data>>(async (dirent) => {
@@ -72,7 +73,7 @@ for (const [k1, v1] of Object.entries(index)) {
           site: metadata.site,
           oss: metadata.oss,
           verified: metadata.verified,
-          resolved: results.resolved.length * 100 / v2.total,
+          resolved: results.resolved.length,
           date: `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6)}`,
           logs: hasLogs ? urlLogs : undefined,
           trajs: hasTrajs ? urlTrajs : undefined,
@@ -93,7 +94,8 @@ for (const [k1, v1] of Object.entries(index)) {
     data.sort((a, b) => b.resolved - a.resolved)
     item.data!.push({
       name: v2.name,
-      data: data,
+      data,
+      total,
     })
   }
 }
