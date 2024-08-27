@@ -38,6 +38,10 @@ interface Data {
   logs?: string
   trajs?: string
   site: string
+  path: string
+  hasLogs: boolean
+  hasTrajs: boolean
+  hasReadme: boolean
 }
 
 const leaderboard: ListItem<ListItem<Data>>[] = []
@@ -54,13 +58,15 @@ for (const [k1, v1] of Object.entries(index)) {
     const result = await Promise.allSettled(dirents
       .filter((dirent) => dirent.isDirectory() && !dirent.name.startsWith('.'))
       .map<Promise<Data>>(async (dirent) => {
-        const results = JSON.parse(await fs.readFile(`evaluation/${k1}/${k2}/${dirent.name}/results/results.json`, 'utf8')) as Result
-        const metadata = yaml.load(await fs.readFile(`evaluation/${k1}/${k2}/${dirent.name}/metadata.yaml`, 'utf8')) as Pick<Data, 'oss' | 'verified' | 'name' | 'site'>
+        const path = `${k1}/${k2}/${dirent.name}`
+        const results = JSON.parse(await fs.readFile(`evaluation/${path}/results/results.json`, 'utf8')) as Result
+        const metadata = yaml.load(await fs.readFile(`evaluation/${path}/metadata.yaml`, 'utf8')) as Pick<Data, 'oss' | 'verified' | 'name' | 'site'>
         const date = dirent.name.split('_', 1)[0]
-        const urlLogs = `${GITHUB_URL}/${k1}/${k2}/${dirent.name}/logs`
-        const urlTrajs = `${GITHUB_URL}/${k1}/${k2}/${dirent.name}/trajs`
-        const hasLogs = await fs.access(`evaluation/${k1}/${k2}/${dirent.name}/logs`).then(() => true, () => false)
-        const hasTrajs = await fs.access(`evaluation/${k1}/${k2}/${dirent.name}/trajs`).then(() => true, () => false)
+        const urlLogs = `${GITHUB_URL}/${path}/logs`
+        const urlTrajs = `${GITHUB_URL}/${path}/trajs`
+        const hasLogs = await fs.access(`evaluation/${path}/logs`).then(() => true, () => false)
+        const hasTrajs = await fs.access(`evaluation/${path}/trajs`).then(() => true, () => false)
+        const hasReadme = await fs.access(`evaluation/${path}/README.md`).then(() => true, () => false)
         return {
           name: metadata.name,
           site: metadata.site,
@@ -70,6 +76,10 @@ for (const [k1, v1] of Object.entries(index)) {
           date: `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6)}`,
           logs: hasLogs ? urlLogs : undefined,
           trajs: hasTrajs ? urlTrajs : undefined,
+          path,
+          hasLogs,
+          hasTrajs,
+          hasReadme,
         }
       }))
     const data = result
