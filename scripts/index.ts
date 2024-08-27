@@ -10,12 +10,7 @@ const index = yaml.load(await fs.readFile('index.yaml', 'utf8')) as Record<strin
   }>
 }>
 
-interface ListItem<T> {
-  name: string
-  data?: T[]
-}
-
-interface Result {
+interface RawResult {
   no_generation: string[]
   generated: string[]
   with_logs: string[]
@@ -28,7 +23,7 @@ interface Result {
   resolved: string[]
 }
 
-interface Data {
+interface Result {
   oss: boolean
   verified: boolean
   name: string
@@ -43,10 +38,26 @@ interface Data {
   hasReadme: boolean
 }
 
-const leaderboard: ListItem<ListItem<Data> & { total: number }>[] = []
+interface Item {
+  repository: string
+  time: string
+}
+
+interface Dataset {
+  name: string
+  results: Result[]
+  data: Record<string, Item>
+}
+
+interface Language {
+  name: string
+  data?: Dataset[]
+}
+
+const leaderboard: Language[] = []
 
 for (const [k1, v1] of Object.entries(index)) {
-  const item: ListItem<ListItem<Data> & { total: number }> = {
+  const item: Language = {
     name: v1.name,
     data: v1.data && [],
   }
@@ -54,14 +65,13 @@ for (const [k1, v1] of Object.entries(index)) {
   if (!v1.data) continue
   for (const [k2, v2] of Object.entries(v1.data)) {
     const dirents = await fs.readdir(`evaluation/${k1}/${k2}`, { withFileTypes: true })
-    const dataset = JSON.parse(await fs.readFile(`evaluation/${k1}/${k2}/index.json`, 'utf8'))
-    const total = Object.keys(dataset).length
-    const result = await Promise.allSettled(dirents
+    const data = JSON.parse(await fs.readFile(`evaluation/${k1}/${k2}/index.json`, 'utf8'))
+    const _results = await Promise.allSettled(dirents
       .filter((dirent) => dirent.isDirectory() && !dirent.name.startsWith('.'))
-      .map<Promise<Data>>(async (dirent) => {
+      .map<Promise<Result>>(async (dirent) => {
         const path = `${k1}/${k2}/${dirent.name}`
-        const results = JSON.parse(await fs.readFile(`evaluation/${path}/results/results.json`, 'utf8')) as Result
-        const metadata = yaml.load(await fs.readFile(`evaluation/${path}/metadata.yaml`, 'utf8')) as Pick<Data, 'oss' | 'verified' | 'name' | 'site'>
+        const results = JSON.parse(await fs.readFile(`evaluation/${path}/results/results.json`, 'utf8')) as RawResult
+        const metadata = yaml.load(await fs.readFile(`evaluation/${path}/metadata.yaml`, 'utf8')) as Pick<Result, 'oss' | 'verified' | 'name' | 'site'>
         const date = dirent.name.split('_', 1)[0]
         const urlLogs = `${GITHUB_URL}/${path}/logs`
         const urlTrajs = `${GITHUB_URL}/${path}/trajs`
@@ -83,7 +93,7 @@ for (const [k1, v1] of Object.entries(index)) {
           hasReadme,
         }
       }))
-    const data = result
+    const results = _results
       .filter((v) => {
         if (v.status === 'rejected') {
           console.error(v.reason)
@@ -91,11 +101,11 @@ for (const [k1, v1] of Object.entries(index)) {
         return v.status === 'fulfilled'
       })
       .map((v) => v.value)
-    data.sort((a, b) => b.resolved - a.resolved)
+    results.sort((a, b) => b.resolved - a.resolved)
     item.data!.push({
       name: v2.name,
+      results,
       data,
-      total,
     })
   }
 }
