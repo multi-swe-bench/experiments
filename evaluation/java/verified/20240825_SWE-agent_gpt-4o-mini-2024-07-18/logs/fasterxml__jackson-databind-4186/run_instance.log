@@ -1,0 +1,60 @@
+2024-08-23 01:11:21,566 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4186
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4186:latest for fasterxml__jackson-databind-4186
+2024-08-23 01:11:21,568 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4186:latest already exists, skipping build.
+2024-08-23 01:11:21,568 - INFO - Creating container for fasterxml__jackson-databind-4186...
+2024-08-23 01:11:21,627 - INFO - Container for fasterxml__jackson-databind-4186 created: 17fbd86fc96e4074b9f70c7d0ba2b914afa3912419f70fc1a7e3e9bfa22532b3
+2024-08-23 01:11:21,889 - INFO - Container for fasterxml__jackson-databind-4186 started: 17fbd86fc96e4074b9f70c7d0ba2b914afa3912419f70fc1a7e3e9bfa22532b3
+2024-08-23 01:11:21,889 - INFO - Intermediate patch for fasterxml__jackson-databind-4186 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4186/patch.diff, now applying to container...
+2024-08-23 01:11:22,179 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:11:22,238 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+
+2024-08-23 01:11:22,411 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+index 34ddfa658..1d688560f 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+@@ -361,7 +361,14 @@ public class BeanDeserializer
+         }
+         final Object bean = _valueInstantiator.createUsingDefault(ctxt);
+         // [databind#631]: Assign current value, to be accessible by custom deserializers
+-        p.setCurrentValue(bean);
++        // Check if we are in a nested context
++        if (p.getParsingContext().getParent() != null) {
++            // Set current value to the parent context's value
++            p.setCurrentValue(p.getParsingContext().getParent().getCurrentValue());
++        } else {
++            // Otherwise, set it to the bean
++            p.setCurrentValue(bean);
++        }
+         if (p.canReadObjectId()) {
+             Object id = p.getObjectId();
+             if (id != null) {
+2024-08-23 01:11:22,411 - INFO - Eval script for fasterxml__jackson-databind-4186 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4186/patch.diff, now applying to container...
+2024-08-23 01:11:40,223 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+index 34ddfa658..1d688560f 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+@@ -361,7 +361,14 @@ public class BeanDeserializer
+         }
+         final Object bean = _valueInstantiator.createUsingDefault(ctxt);
+         // [databind#631]: Assign current value, to be accessible by custom deserializers
+-        p.setCurrentValue(bean);
++        // Check if we are in a nested context
++        if (p.getParsingContext().getParent() != null) {
++            // Set current value to the parent context's value
++            p.setCurrentValue(p.getParsingContext().getParent().getCurrentValue());
++        } else {
++            // Otherwise, set it to the bean
++            p.setCurrentValue(bean);
++        }
+         if (p.canReadObjectId()) {
+             Object id = p.getObjectId();
+             if (id != null) {
+2024-08-23 01:11:40,291 - INFO - Grading answer for fasterxml__jackson-databind-4186...
+2024-08-23 01:11:40,291 - INFO - report: {'fasterxml__jackson-databind-4186': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.ser.filter.CurrentValueDeser4184Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4186: resolved: False
+2024-08-23 01:11:40,291 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4186.gpt-4o...
+2024-08-23 01:11:55,494 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4186.gpt-4o...
+2024-08-23 01:11:55,584 - INFO - Container sweb.eval.fasterxml__jackson-databind-4186.gpt-4o removed.

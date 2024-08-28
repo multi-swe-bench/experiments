@@ -1,0 +1,53 @@
+2024-08-22 20:21:20,334 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4050
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4050:latest for fasterxml__jackson-databind-4050
+2024-08-22 20:21:20,335 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4050:latest already exists, skipping build.
+2024-08-22 20:21:20,335 - INFO - Creating container for fasterxml__jackson-databind-4050...
+2024-08-22 20:21:20,438 - INFO - Container for fasterxml__jackson-databind-4050 created: 4aa411cbd7c092d497ea69d722df8b44441404b0e7d4ab9085a46269b5303fb6
+2024-08-22 20:21:20,678 - INFO - Container for fasterxml__jackson-databind-4050 started: 4aa411cbd7c092d497ea69d722df8b44441404b0e7d4ab9085a46269b5303fb6
+2024-08-22 20:21:20,678 - INFO - Intermediate patch for fasterxml__jackson-databind-4050 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4050/patch.diff, now applying to container...
+2024-08-22 20:21:20,950 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:21:21,019 - INFO - >>>>> Applied Patch:
+patching file ReproduceIssue.java
+patching file src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+
+2024-08-22 20:21:21,197 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+index 4610a58e5..95a10d95e 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+@@ -3521,7 +3521,10 @@ public class ObjectMapper
+ 
+         // inlined 'writeValue' with minor changes:
+         // first: disable wrapping when writing
+-        final SerializationConfig config = getSerializationConfig().without(SerializationFeature.WRAP_ROOT_VALUE);
++        final SerializationConfig config = getSerializationConfig();
++        if (config.isEnabled(SerializationFeature.WRAP_ROOT_VALUE)) {
++            config.with(SerializationFeature.WRAP_ROOT_VALUE);
++        }
+         final DefaultSerializerProvider context = _serializerProvider(config);
+ 
+         // Then create TokenBuffer to use as JsonGenerator
+2024-08-22 20:21:21,197 - INFO - Eval script for fasterxml__jackson-databind-4050 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4050/patch.diff, now applying to container...
+2024-08-22 20:21:39,299 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+index 4610a58e5..95a10d95e 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+@@ -3521,7 +3521,10 @@ public class ObjectMapper
+ 
+         // inlined 'writeValue' with minor changes:
+         // first: disable wrapping when writing
+-        final SerializationConfig config = getSerializationConfig().without(SerializationFeature.WRAP_ROOT_VALUE);
++        final SerializationConfig config = getSerializationConfig();
++        if (config.isEnabled(SerializationFeature.WRAP_ROOT_VALUE)) {
++            config.with(SerializationFeature.WRAP_ROOT_VALUE);
++        }
+         final DefaultSerializerProvider context = _serializerProvider(config);
+ 
+         // Then create TokenBuffer to use as JsonGenerator
+2024-08-22 20:21:39,346 - INFO - Grading answer for fasterxml__jackson-databind-4050...
+2024-08-22 20:21:39,346 - INFO - report: {'fasterxml__jackson-databind-4050': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': True, 'tests_status': {'FAIL_TO_PASS': {'success': ['src:com.fasterxml.jackson.databind.node.TestConversions'], 'failure': [], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4050: resolved: True
+2024-08-22 20:21:39,346 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4050.deepseek-chat...
+2024-08-22 20:21:54,559 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4050.deepseek-chat...
+2024-08-22 20:21:54,663 - INFO - Container sweb.eval.fasterxml__jackson-databind-4050.deepseek-chat removed.

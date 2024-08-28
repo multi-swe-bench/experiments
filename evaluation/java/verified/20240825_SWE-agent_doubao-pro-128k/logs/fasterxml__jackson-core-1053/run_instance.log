@@ -1,0 +1,117 @@
+2024-08-21 13:11:27,790 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1053
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1053:latest for fasterxml__jackson-core-1053
+2024-08-21 13:11:27,792 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1053:latest already exists, skipping build.
+2024-08-21 13:11:27,792 - INFO - Creating container for fasterxml__jackson-core-1053...
+2024-08-21 13:11:27,851 - INFO - Container for fasterxml__jackson-core-1053 created: fb5a5b53aca8e347a2acff127b1312f657b79a373569e7872ee81e367f526dbc
+2024-08-21 13:11:28,112 - INFO - Container for fasterxml__jackson-core-1053 started: fb5a5b53aca8e347a2acff127b1312f657b79a373569e7872ee81e367f526dbc
+2024-08-21 13:11:28,112 - INFO - Intermediate patch for fasterxml__jackson-core-1053 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1053/patch.diff, now applying to container...
+2024-08-21 13:11:28,371 - INFO - Failed to apply patch to container, trying again...
+2024-08-21 13:11:28,425 - INFO - >>>>> Applied Patch:
+patching file reproduce_version.py
+patching file src/main/java/com/fasterxml/jackson/core/Version.java
+
+2024-08-21 13:11:28,540 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/Version.java b/src/main/java/com/fasterxml/jackson/core/Version.java
+index ed446afc..962b9ceb 100644
+--- a/src/main/java/com/fasterxml/jackson/core/Version.java
++++ b/src/main/java/com/fasterxml/jackson/core/Version.java
+@@ -132,7 +132,43 @@ public class Version
+     }
+ 
+     @Override
+-    public int compareTo(Version other)
++    public int compareTo(Version other) {
++        int diff = _groupId.compareTo(other._groupId);
++        if (diff!= 0) {
++            return diff;
++        }
++        diff = _artifactId.compareTo(other._artifactId);
++        if (diff!= 0) {
++            return diff;
++        }
++        diff = compareSnapshotInfo(_snapshotInfo, other._snapshotInfo);
++        if (diff!= 0) {
++            return diff;
++        }
++        diff = _majorVersion - other._majorVersion;
++        if (diff!= 0) {
++            return diff;
++        }
++        diff = _minorVersion - other._minorVersion;
++        if (diff!= 0) {
++            return diff;
++        }
++        diff = _patchLevel - other._patchLevel;
++        return diff;
++    }
++
++    private int compareSnapshotInfo(String snapshotInfo1, String snapshotInfo2) {
++        if (snapshotInfo1 == null && snapshotInfo2 == null) {
++            return 0;
++        }
++        if (snapshotInfo1 == null) {
++            return -1;
++        }
++        if (snapshotInfo2 == null) {
++            return 1;
++        }
++        return snapshotInfo1.compareTo(snapshotInfo2);
++    }
+     {
+         if (other == this) return 0;
+2024-08-21 13:11:28,540 - INFO - Eval script for fasterxml__jackson-core-1053 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1053/patch.diff, now applying to container...
+2024-08-21 13:11:42,221 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/Version.java b/src/main/java/com/fasterxml/jackson/core/Version.java
+index ed446afc..962b9ceb 100644
+--- a/src/main/java/com/fasterxml/jackson/core/Version.java
++++ b/src/main/java/com/fasterxml/jackson/core/Version.java
+@@ -132,7 +132,43 @@ public class Version
+     }
+ 
+     @Override
+-    public int compareTo(Version other)
++    public int compareTo(Version other) {
++        int diff = _groupId.compareTo(other._groupId);
++        if (diff!= 0) {
++            return diff;
++        }
++        diff = _artifactId.compareTo(other._artifactId);
++        if (diff!= 0) {
++            return diff;
++        }
++        diff = compareSnapshotInfo(_snapshotInfo, other._snapshotInfo);
++        if (diff!= 0) {
++            return diff;
++        }
++        diff = _majorVersion - other._majorVersion;
++        if (diff!= 0) {
++            return diff;
++        }
++        diff = _minorVersion - other._minorVersion;
++        if (diff!= 0) {
++            return diff;
++        }
++        diff = _patchLevel - other._patchLevel;
++        return diff;
++    }
++
++    private int compareSnapshotInfo(String snapshotInfo1, String snapshotInfo2) {
++        if (snapshotInfo1 == null && snapshotInfo2 == null) {
++            return 0;
++        }
++        if (snapshotInfo1 == null) {
++            return -1;
++        }
++        if (snapshotInfo2 == null) {
++            return 1;
++        }
++        return snapshotInfo1.compareTo(snapshotInfo2);
++    }
+     {
+         if (other == this) return 0;
+2024-08-21 13:11:42,276 - INFO - Grading answer for fasterxml__jackson-core-1053...
+2024-08-21 13:11:42,276 - INFO - report: {'fasterxml__jackson-core-1053': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.VersionTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1053: resolved: False
+2024-08-21 13:11:42,276 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1053.doubao...
+2024-08-21 13:11:57,473 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1053.doubao...
+2024-08-21 13:11:57,484 - INFO - Container sweb.eval.fasterxml__jackson-core-1053.doubao removed.

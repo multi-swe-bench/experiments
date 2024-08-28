@@ -1,0 +1,101 @@
+2024-08-22 20:18:19,198 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-922
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-922:latest for fasterxml__jackson-core-922
+2024-08-22 20:18:19,199 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-922:latest already exists, skipping build.
+2024-08-22 20:18:19,199 - INFO - Creating container for fasterxml__jackson-core-922...
+2024-08-22 20:18:19,249 - INFO - Container for fasterxml__jackson-core-922 created: 2dd923314df025cd2a0ee5363e230b23a5c969895f24f55a7774fa2feb1f3d45
+2024-08-22 20:18:19,541 - INFO - Container for fasterxml__jackson-core-922 started: 2dd923314df025cd2a0ee5363e230b23a5c969895f24f55a7774fa2feb1f3d45
+2024-08-22 20:18:19,541 - INFO - Intermediate patch for fasterxml__jackson-core-922 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-922/patch.diff, now applying to container...
+2024-08-22 20:18:19,785 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:18:19,852 - INFO - >>>>> Applied Patch:
+patching file ReproduceBug.java
+patching file src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+
+2024-08-22 20:18:19,966 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+index 8e5cd486..54eeb3ae 100644
+--- a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+@@ -594,7 +594,7 @@ public class ReaderBasedJsonParser
+                     if (ch == '"') {
+                         decodedData >>= 4;
+                         buffer[outputPtr++] = (byte) decodedData;
+-                        if (b64variant.usesPadding()) {
++                        if (b64variant.requiresPaddingOnRead()) {
+                             --_inputPtr; // to keep parser state bit more consistent
+                             _handleBase64MissingPadding(b64variant);
+                         }
+@@ -634,7 +634,7 @@ public class ReaderBasedJsonParser
+                         decodedData >>= 2;
+                         buffer[outputPtr++] = (byte) (decodedData >> 8);
+                         buffer[outputPtr++] = (byte) decodedData;
+-                        if (b64variant.usesPadding()) {
++                        if (b64variant.requiresPaddingOnRead()) {
+                             --_inputPtr; // to keep parser state bit more consistent
+                             _handleBase64MissingPadding(b64variant);
+                         }
+@@ -2896,7 +2896,7 @@ public class ReaderBasedJsonParser
+                     if (ch == '"') {
+                         decodedData >>= 4;
+                         builder.append(decodedData);
+-                        if (b64variant.usesPadding()) {
++                        if (b64variant.requiresPaddingOnRead()) {
+                             --_inputPtr; // to keep parser state bit more consistent
+                             _handleBase64MissingPadding(b64variant);
+                         }
+@@ -2936,7 +2936,7 @@ public class ReaderBasedJsonParser
+                     if (ch == '"') {
+                         decodedData >>= 2;
+                         builder.appendTwoBytes(decodedData);
+-                        if (b64variant.usesPadding()) {
++                        if (b64variant.requiresPaddingOnRead()) {
+                             --_inputPtr; // to keep parser state bit more consistent
+                             _handleBase64MissingPadding(b64variant);
+                         }
+2024-08-22 20:18:19,966 - INFO - Eval script for fasterxml__jackson-core-922 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-922/patch.diff, now applying to container...
+2024-08-22 20:18:34,336 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+index 8e5cd486..54eeb3ae 100644
+--- a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+@@ -594,7 +594,7 @@ public class ReaderBasedJsonParser
+                     if (ch == '"') {
+                         decodedData >>= 4;
+                         buffer[outputPtr++] = (byte) decodedData;
+-                        if (b64variant.usesPadding()) {
++                        if (b64variant.requiresPaddingOnRead()) {
+                             --_inputPtr; // to keep parser state bit more consistent
+                             _handleBase64MissingPadding(b64variant);
+                         }
+@@ -634,7 +634,7 @@ public class ReaderBasedJsonParser
+                         decodedData >>= 2;
+                         buffer[outputPtr++] = (byte) (decodedData >> 8);
+                         buffer[outputPtr++] = (byte) decodedData;
+-                        if (b64variant.usesPadding()) {
++                        if (b64variant.requiresPaddingOnRead()) {
+                             --_inputPtr; // to keep parser state bit more consistent
+                             _handleBase64MissingPadding(b64variant);
+                         }
+@@ -2896,7 +2896,7 @@ public class ReaderBasedJsonParser
+                     if (ch == '"') {
+                         decodedData >>= 4;
+                         builder.append(decodedData);
+-                        if (b64variant.usesPadding()) {
++                        if (b64variant.requiresPaddingOnRead()) {
+                             --_inputPtr; // to keep parser state bit more consistent
+                             _handleBase64MissingPadding(b64variant);
+                         }
+@@ -2936,7 +2936,7 @@ public class ReaderBasedJsonParser
+                     if (ch == '"') {
+                         decodedData >>= 2;
+                         builder.appendTwoBytes(decodedData);
+-                        if (b64variant.usesPadding()) {
++                        if (b64variant.requiresPaddingOnRead()) {
+                             --_inputPtr; // to keep parser state bit more consistent
+                             _handleBase64MissingPadding(b64variant);
+                         }
+2024-08-22 20:18:34,391 - INFO - Grading answer for fasterxml__jackson-core-922...
+2024-08-22 20:18:34,391 - INFO - report: {'fasterxml__jackson-core-922': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.base64.Base64Padding912Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-922: resolved: False
+2024-08-22 20:18:34,391 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-922.deepseek-chat...
+2024-08-22 20:18:49,545 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-922.deepseek-chat...
+2024-08-22 20:18:49,564 - INFO - Container sweb.eval.fasterxml__jackson-core-922.deepseek-chat removed.

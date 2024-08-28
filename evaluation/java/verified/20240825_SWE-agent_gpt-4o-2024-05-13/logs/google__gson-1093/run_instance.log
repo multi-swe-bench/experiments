@@ -1,0 +1,93 @@
+2024-08-24 20:34:44,686 - INFO - Environment image sweb.env.x86_64.92848c9972c7cb83a2984c:latest found for google__gson-1093
+Building instance image sweb.eval.x86_64.google__gson-1093:latest for google__gson-1093
+2024-08-24 20:34:44,688 - INFO - Image sweb.eval.x86_64.google__gson-1093:latest already exists, skipping build.
+2024-08-24 20:34:44,688 - INFO - Creating container for google__gson-1093...
+2024-08-24 20:34:44,743 - INFO - Container for google__gson-1093 created: 590629175f35982f1587ccdded44a2a9d607eb40efdfc24d2787660049291845
+2024-08-24 20:34:44,976 - INFO - Container for google__gson-1093 started: 590629175f35982f1587ccdded44a2a9d607eb40efdfc24d2787660049291845
+2024-08-24 20:34:44,976 - INFO - Intermediate patch for google__gson-1093 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/google__gson-1093/patch.diff, now applying to container...
+2024-08-24 20:34:45,209 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:34:45,260 - INFO - >>>>> Applied Patch:
+patching file gson/src/main/java/com/google/gson/stream/JsonWriter.java
+patching file gson/src/test/java/com/google/gson/stream/JsonWriterTest.java
+
+2024-08-24 20:34:45,365 - INFO - Git diff before:
+diff --git a/gson/src/main/java/com/google/gson/stream/JsonWriter.java b/gson/src/main/java/com/google/gson/stream/JsonWriter.java
+index e2fc1961..46b21c5d 100644
+--- a/gson/src/main/java/com/google/gson/stream/JsonWriter.java
++++ b/gson/src/main/java/com/google/gson/stream/JsonWriter.java
+@@ -491,9 +491,10 @@ public class JsonWriter implements Closeable, Flushable {
+    * @return this writer.
+    */
+   public JsonWriter value(double value) throws IOException {
+-    if (Double.isNaN(value) || Double.isInfinite(value)) {
++    if (!lenient && (Double.isNaN(value) || Double.isInfinite(value))) {
+       throw new IllegalArgumentException("Numeric values must be finite, but was " + value);
+     }
++    }
+     writeDeferredName();
+     beforeValue();
+     out.append(Double.toString(value));
+diff --git a/gson/src/test/java/com/google/gson/stream/JsonWriterTest.java b/gson/src/test/java/com/google/gson/stream/JsonWriterTest.java
+index 34dc9140..4f088024 100644
+--- a/gson/src/test/java/com/google/gson/stream/JsonWriterTest.java
++++ b/gson/src/test/java/com/google/gson/stream/JsonWriterTest.java
+@@ -620,4 +620,33 @@ public final class JsonWriterTest extends TestCase {
+     writer.close();
+     writer.close();
+   }
+-}
++  public void testLenientDoubleValues() throws IOException {
++    StringWriter stringWriter = new StringWriter();
++    JsonWriter jsonWriter = new JsonWriter(stringWriter);
++
++    // Test with lenient set to false
++    jsonWriter.setLenient(false);
++    try {
++      jsonWriter.value(Double.NaN);
++      fail();
++    } catch (IllegalArgumentException expected) {
++    }
++    try {
++      jsonWriter.value(Double.POSITIVE_INFINITY);
++      fail();
++    } catch (IllegalArgumentException expected) {
++    }
++    try {
++      jsonWriter.value(Double.NEGATIVE_INFINITY);
++      fail();
++    } catch (IllegalArgumentException expected) {
++    }
++
++    // Test with lenient set to true
++    jsonWriter.setLenient(true);
++    jsonWriter.value(Double.NaN);
++    jsonWriter.value(Double.POSITIVE_INFINITY);
++    jsonWriter.value(Double.NEGATIVE_INFINITY);
++    jsonWriter.close();
++    assertEquals("NaNInfinity-Infinity", stringWriter.toString());
++  }
+2024-08-24 20:34:45,366 - INFO - Eval script for google__gson-1093 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/google__gson-1093/patch.diff, now applying to container...
+2024-08-24 20:34:48,566 - INFO - Git diff after:
+diff --git a/gson/src/main/java/com/google/gson/stream/JsonWriter.java b/gson/src/main/java/com/google/gson/stream/JsonWriter.java
+index e2fc1961..46b21c5d 100644
+--- a/gson/src/main/java/com/google/gson/stream/JsonWriter.java
++++ b/gson/src/main/java/com/google/gson/stream/JsonWriter.java
+@@ -491,9 +491,10 @@ public class JsonWriter implements Closeable, Flushable {
+    * @return this writer.
+    */
+   public JsonWriter value(double value) throws IOException {
+-    if (Double.isNaN(value) || Double.isInfinite(value)) {
++    if (!lenient && (Double.isNaN(value) || Double.isInfinite(value))) {
+       throw new IllegalArgumentException("Numeric values must be finite, but was " + value);
+     }
++    }
+     writeDeferredName();
+     beforeValue();
+     out.append(Double.toString(value));
+2024-08-24 20:34:48,566 - INFO - Git diff changed after running eval script
+2024-08-24 20:34:48,635 - INFO - Grading answer for google__gson-1093...
+2024-08-24 20:34:48,635 - INFO - report: {'google__gson-1093': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['gson:com.google.gson.stream.JsonWriterTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for google__gson-1093: resolved: False
+2024-08-24 20:34:48,636 - INFO - Attempting to stop container sweb.eval.google__gson-1093.gpt-4o-standard...
+2024-08-24 20:35:03,814 - INFO - Attempting to remove container sweb.eval.google__gson-1093.gpt-4o-standard...
+2024-08-24 20:35:03,824 - INFO - Container sweb.eval.google__gson-1093.gpt-4o-standard removed.

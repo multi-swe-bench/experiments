@@ -1,0 +1,104 @@
+2024-08-19 14:38:14,993 - INFO - Environment image sweb.env.x86_64.1db5c641f99223455aefcf:latest found for apache__dubbo-7041
+Building instance image sweb.eval.x86_64.apache__dubbo-7041:latest for apache__dubbo-7041
+2024-08-19 14:38:14,995 - INFO - Image sweb.eval.x86_64.apache__dubbo-7041:latest already exists, skipping build.
+2024-08-19 14:38:14,995 - INFO - Creating container for apache__dubbo-7041...
+2024-08-19 14:38:15,075 - INFO - Container for apache__dubbo-7041 created: bc17cfa7ae51b00d5f1cbe7b6dc8622295d7f80811a8a231e4361e2bdb4e2147
+2024-08-19 14:38:15,343 - INFO - Container for apache__dubbo-7041 started: bc17cfa7ae51b00d5f1cbe7b6dc8622295d7f80811a8a231e4361e2bdb4e2147
+2024-08-19 14:38:15,343 - INFO - Intermediate patch for apache__dubbo-7041 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-7041/patch.diff, now applying to container...
+2024-08-19 14:38:15,602 - INFO - Failed to apply patch to container, trying again...
+2024-08-19 14:38:15,660 - INFO - >>>>> Applied Patch:
+patching file dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+patching file dubbo-common/src/test/java/org/apache/dubbo/common/utils/ReflectUtilsTest.java
+
+2024-08-19 14:38:15,971 - INFO - Git diff before:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+index a8b728b8ca..3f21a8f741 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+@@ -1203,7 +1203,13 @@ public final class ReflectUtils {
+                     returnType = (Class<?>) ((ParameterizedType) actualArgType).getRawType();
+                     genericReturnType = actualArgType;
+                 } else {
+-                    returnType = (Class<?>) actualArgType;
++                    if (actualArgType instanceof TypeVariableImpl) {
++                        returnType = null;
++                        genericReturnType = null;
++                    } else {
++                        returnType = (Class<?>) actualArgType;
++                        genericReturnType = returnType;
++                    }
+                     genericReturnType = returnType;
+                 }
+             } else {
+@@ -1328,4 +1334,4 @@ public final class ReflectUtils {
+ 
+         return types;
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ReflectUtilsTest.java b/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ReflectUtilsTest.java
+index 6b6b7f6615..8af9415ad5 100644
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ReflectUtilsTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ReflectUtilsTest.java
+@@ -518,4 +518,23 @@ public class ReflectUtilsTest {
+     }
+ 
+ 
+-}
+\ No newline at end of file
++
++    @Test
++    public void testGetReturnTypesWithCompletableFuture() {
++        class TestClass<T> {
++            public CompletableFuture<T> getGenericFuture() {
++                return CompletableFuture.completedFuture(null);
++            }
++        }
++
++        Method method;
++        try {
++            method = TestClass.class.getMethod("getGenericFuture");
++        } catch (NoSuchMethodException e) {
++            throw new RuntimeException(e);
++        }
++
++        Type[] returnTypes = ReflectUtils.getReturnTypes(method);
++        assertNull(returnTypes[0]);
++        assertNull(returnTypes[1]);
++    }
+2024-08-19 14:38:15,971 - INFO - Eval script for apache__dubbo-7041 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-7041/patch.diff, now applying to container...
+2024-08-19 14:38:36,816 - INFO - Git diff after:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+index a8b728b8ca..3f21a8f741 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+@@ -1203,7 +1203,13 @@ public final class ReflectUtils {
+                     returnType = (Class<?>) ((ParameterizedType) actualArgType).getRawType();
+                     genericReturnType = actualArgType;
+                 } else {
+-                    returnType = (Class<?>) actualArgType;
++                    if (actualArgType instanceof TypeVariableImpl) {
++                        returnType = null;
++                        genericReturnType = null;
++                    } else {
++                        returnType = (Class<?>) actualArgType;
++                        genericReturnType = returnType;
++                    }
+                     genericReturnType = returnType;
+                 }
+             } else {
+@@ -1328,4 +1334,4 @@ public final class ReflectUtils {
+ 
+         return types;
+     }
+-}
+\ No newline at end of file
++}
+2024-08-19 14:38:36,816 - INFO - Git diff changed after running eval script
+2024-08-19 14:38:36,885 - INFO - Grading answer for apache__dubbo-7041...
+2024-08-19 14:38:36,886 - INFO - report: {'apache__dubbo-7041': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['dubbo-common:org.apache.dubbo.common.utils.ReflectUtilsTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for apache__dubbo-7041: resolved: False
+2024-08-19 14:38:36,886 - INFO - Attempting to stop container sweb.eval.apache__dubbo-7041.pred_0819...
+2024-08-19 14:38:53,618 - INFO - Attempting to remove container sweb.eval.apache__dubbo-7041.pred_0819...
+2024-08-19 14:38:53,629 - INFO - Container sweb.eval.apache__dubbo-7041.pred_0819 removed.

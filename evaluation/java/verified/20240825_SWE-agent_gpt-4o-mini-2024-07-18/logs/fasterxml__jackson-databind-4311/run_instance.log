@@ -1,0 +1,105 @@
+2024-08-23 01:12:27,702 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4311
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4311:latest for fasterxml__jackson-databind-4311
+2024-08-23 01:12:27,704 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4311:latest already exists, skipping build.
+2024-08-23 01:12:27,704 - INFO - Creating container for fasterxml__jackson-databind-4311...
+2024-08-23 01:12:27,782 - INFO - Container for fasterxml__jackson-databind-4311 created: b14a8000b91c1897d0d1a99958c3bcf56ddb5fbdf8748a088bbde08a8b7fe36f
+2024-08-23 01:12:27,990 - INFO - Container for fasterxml__jackson-databind-4311 started: b14a8000b91c1897d0d1a99958c3bcf56ddb5fbdf8748a088bbde08a8b7fe36f
+2024-08-23 01:12:27,991 - INFO - Intermediate patch for fasterxml__jackson-databind-4311 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4311/patch.diff, now applying to container...
+2024-08-23 01:12:28,239 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:12:28,294 - INFO - >>>>> Applied Patch:
+patching file EnumDeserializationTest.java
+patching file run_all_tests.sh
+patching file run_test.sh
+patching file src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumNamingDeserializationTest.java
+
+2024-08-23 01:12:28,486 - INFO - Git diff before:
+diff --git a/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumNamingDeserializationTest.java b/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumNamingDeserializationTest.java
+index 86256c158..3975f91be 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumNamingDeserializationTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumNamingDeserializationTest.java
+@@ -1,4 +1,35 @@
+-package com.fasterxml.jackson.databind.deser.enums;
++// TODO: Investigate deserialization issue with enums having fields with the same name as constants.
++import com.fasterxml.jackson.databind.json.JsonMapper;
++import com.fasterxml.jackson.databind.PropertyNamingStrategies;
++import org.junit.jupiter.api.Test;
++
++import java.io.IOException;
++
++import static org.assertj.core.api.Assertions.assertThat;
++
++public class EnumNamingDeserializationTest extends BaseMapTest {
++
++    // Existing tests...
++
++    @Test
++    void testEnumWithFieldSameAsConstant() throws IOException {
++        var objectMapper = JsonMapper.builder()
++                .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
++                .build();
++        assertThat(objectMapper.readValue("\"FOO\"", SomeEnum.class))
++                .isEqualTo(SomeEnum.FOO);
++    }
++
++    enum SomeEnum {
++        FOO(0);
++
++        public final int foo;
++
++        SomeEnum(int foo) {
++            this.foo = foo;
++        }
++    }
++}
+ 
+ import com.fasterxml.jackson.annotation.JsonAlias;
+ import com.fasterxml.jackson.annotation.JsonCreator;
+2024-08-23 01:12:28,487 - INFO - Eval script for fasterxml__jackson-databind-4311 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4311/patch.diff, now applying to container...
+2024-08-23 01:12:37,944 - INFO - Git diff after:
+diff --git a/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumNamingDeserializationTest.java b/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumNamingDeserializationTest.java
+index 86256c158..3975f91be 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumNamingDeserializationTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumNamingDeserializationTest.java
+@@ -1,4 +1,35 @@
+-package com.fasterxml.jackson.databind.deser.enums;
++// TODO: Investigate deserialization issue with enums having fields with the same name as constants.
++import com.fasterxml.jackson.databind.json.JsonMapper;
++import com.fasterxml.jackson.databind.PropertyNamingStrategies;
++import org.junit.jupiter.api.Test;
++
++import java.io.IOException;
++
++import static org.assertj.core.api.Assertions.assertThat;
++
++public class EnumNamingDeserializationTest extends BaseMapTest {
++
++    // Existing tests...
++
++    @Test
++    void testEnumWithFieldSameAsConstant() throws IOException {
++        var objectMapper = JsonMapper.builder()
++                .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
++                .build();
++        assertThat(objectMapper.readValue("\"FOO\"", SomeEnum.class))
++                .isEqualTo(SomeEnum.FOO);
++    }
++
++    enum SomeEnum {
++        FOO(0);
++
++        public final int foo;
++
++        SomeEnum(int foo) {
++            this.foo = foo;
++        }
++    }
++}
+ 
+ import com.fasterxml.jackson.annotation.JsonAlias;
+ import com.fasterxml.jackson.annotation.JsonCreator;
+2024-08-23 01:12:38,000 - INFO - Grading answer for fasterxml__jackson-databind-4311...
+2024-08-23 01:12:38,000 - INFO - report: {'fasterxml__jackson-databind-4311': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.deser.enums.EnumSameName4302Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4311: resolved: False
+2024-08-23 01:12:38,000 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4311.gpt-4o...
+2024-08-23 01:12:53,344 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4311.gpt-4o...
+2024-08-23 01:12:53,367 - INFO - Container sweb.eval.fasterxml__jackson-databind-4311.gpt-4o removed.

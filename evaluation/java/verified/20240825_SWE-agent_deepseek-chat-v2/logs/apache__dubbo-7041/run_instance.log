@@ -1,0 +1,73 @@
+2024-08-22 20:13:54,849 - INFO - Environment image sweb.env.x86_64.1db5c641f99223455aefcf:latest found for apache__dubbo-7041
+Building instance image sweb.eval.x86_64.apache__dubbo-7041:latest for apache__dubbo-7041
+2024-08-22 20:13:54,853 - INFO - Image sweb.eval.x86_64.apache__dubbo-7041:latest already exists, skipping build.
+2024-08-22 20:13:54,853 - INFO - Creating container for apache__dubbo-7041...
+2024-08-22 20:13:54,904 - INFO - Container for apache__dubbo-7041 created: bdc313dd90d6c6159862dcf760f2a7f543f65705353aa1741c258f7badb97be0
+2024-08-22 20:13:55,143 - INFO - Container for apache__dubbo-7041 started: bdc313dd90d6c6159862dcf760f2a7f543f65705353aa1741c258f7badb97be0
+2024-08-22 20:13:55,143 - INFO - Intermediate patch for apache__dubbo-7041 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-7041/patch.diff, now applying to container...
+2024-08-22 20:13:55,412 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:13:55,479 - INFO - >>>>> Applied Patch:
+patching file TypeClass.java
+patching file dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+
+2024-08-22 20:13:55,759 - INFO - Git diff before:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+index a8b728b8ca..01578dccd8 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+@@ -1202,10 +1202,14 @@ public final class ReflectUtils {
+                 if (actualArgType instanceof ParameterizedType) {
+                     returnType = (Class<?>) ((ParameterizedType) actualArgType).getRawType();
+                     genericReturnType = actualArgType;
++                } else if (actualArgType instanceof TypeVariable) {
++                    returnType = null;
++                    genericReturnType = null;
+                 } else {
+                     returnType = (Class<?>) actualArgType;
+                     genericReturnType = returnType;
+                 }
++                }
+             } else {
+                 returnType = null;
+                 genericReturnType = null;
+@@ -1328,4 +1332,4 @@ public final class ReflectUtils {
+ 
+         return types;
+     }
+-}
+\ No newline at end of file
++}
+2024-08-22 20:13:55,760 - INFO - Eval script for apache__dubbo-7041 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-7041/patch.diff, now applying to container...
+2024-08-22 20:14:10,995 - INFO - Git diff after:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+index a8b728b8ca..01578dccd8 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+@@ -1202,10 +1202,14 @@ public final class ReflectUtils {
+                 if (actualArgType instanceof ParameterizedType) {
+                     returnType = (Class<?>) ((ParameterizedType) actualArgType).getRawType();
+                     genericReturnType = actualArgType;
++                } else if (actualArgType instanceof TypeVariable) {
++                    returnType = null;
++                    genericReturnType = null;
+                 } else {
+                     returnType = (Class<?>) actualArgType;
+                     genericReturnType = returnType;
+                 }
++                }
+             } else {
+                 returnType = null;
+                 genericReturnType = null;
+@@ -1328,4 +1332,4 @@ public final class ReflectUtils {
+ 
+         return types;
+     }
+-}
+\ No newline at end of file
++}
+2024-08-22 20:14:11,061 - INFO - Grading answer for apache__dubbo-7041...
+2024-08-22 20:14:11,061 - INFO - report: {'apache__dubbo-7041': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['dubbo-common:org.apache.dubbo.common.utils.ReflectUtilsTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for apache__dubbo-7041: resolved: False
+2024-08-22 20:14:11,061 - INFO - Attempting to stop container sweb.eval.apache__dubbo-7041.deepseek-chat...
+2024-08-22 20:14:27,711 - INFO - Attempting to remove container sweb.eval.apache__dubbo-7041.deepseek-chat...
+2024-08-22 20:14:27,722 - INFO - Container sweb.eval.apache__dubbo-7041.deepseek-chat removed.

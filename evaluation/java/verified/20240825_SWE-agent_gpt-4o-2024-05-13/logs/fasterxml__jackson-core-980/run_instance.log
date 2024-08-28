@@ -1,0 +1,85 @@
+2024-08-24 20:26:57,347 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-980
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-980:latest for fasterxml__jackson-core-980
+2024-08-24 20:26:57,349 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-980:latest already exists, skipping build.
+2024-08-24 20:26:57,349 - INFO - Creating container for fasterxml__jackson-core-980...
+2024-08-24 20:26:57,401 - INFO - Container for fasterxml__jackson-core-980 created: 39efb00076db6c20d96709f5f23e36f8458d62e216dfca54915f9d3d4005a65d
+2024-08-24 20:26:57,650 - INFO - Container for fasterxml__jackson-core-980 started: 39efb00076db6c20d96709f5f23e36f8458d62e216dfca54915f9d3d4005a65d
+2024-08-24 20:26:57,650 - INFO - Intermediate patch for fasterxml__jackson-core-980 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-980/patch.diff, now applying to container...
+2024-08-24 20:26:57,909 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:26:57,971 - INFO - >>>>> Applied Patch:
+patching file reproduce_issue.py
+patching file src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
+
+2024-08-24 20:26:58,105 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java b/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
+index 023661e9..ea0e878e 100644
+--- a/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
++++ b/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
+@@ -16,6 +16,17 @@ import com.fasterxml.jackson.core.util.ByteArrayBuilder;
+ import com.fasterxml.jackson.core.util.JacksonFeatureSet;
+ import com.fasterxml.jackson.core.util.TextBuffer;
+ 
++/**
++ * Intermediate base class used by all Jackson {@link JsonParser}
++ * implementations. Contains most common things that are independent
++ * of actual underlying input source.
++ */
++public abstract class ParserBase extends ParserMinimalBase
++{
++    // JSON capabilities are the same as defaults
++    // @since 2.12
++    protected final static JacksonFeatureSet<StreamReadCapability> JSON_READ_CAPABILITIES
++        = DEFAULT_READ_CAPABILITIES;
+ /**
+  * Intermediate base class used by all Jackson {@link JsonParser}
+  * implementations. Contains most common things that are independent
+@@ -1217,6 +1228,10 @@ public abstract class ParserBase extends ParserMinimalBase
+     // @since 2.15
+     protected BigInteger _convertBigDecimalToBigInteger(BigDecimal bigDec) throws IOException {
+         // 04-Apr-2022, tatu: wrt [core#968] Need to limit max scale magnitude
++        int maxScale = 1000; // Example limit, this should be configurable
++        if (bigDec.scale() > maxScale) {
++            throw new IOException("Scale of BigDecimal exceeds the maximum allowed limit of " + maxScale);
++        }
+         return bigDec.toBigInteger();
+     }
+2024-08-24 20:26:58,105 - INFO - Eval script for fasterxml__jackson-core-980 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-980/patch.diff, now applying to container...
+2024-08-24 20:27:03,847 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java b/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
+index 023661e9..ea0e878e 100644
+--- a/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
++++ b/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
+@@ -16,6 +16,17 @@ import com.fasterxml.jackson.core.util.ByteArrayBuilder;
+ import com.fasterxml.jackson.core.util.JacksonFeatureSet;
+ import com.fasterxml.jackson.core.util.TextBuffer;
+ 
++/**
++ * Intermediate base class used by all Jackson {@link JsonParser}
++ * implementations. Contains most common things that are independent
++ * of actual underlying input source.
++ */
++public abstract class ParserBase extends ParserMinimalBase
++{
++    // JSON capabilities are the same as defaults
++    // @since 2.12
++    protected final static JacksonFeatureSet<StreamReadCapability> JSON_READ_CAPABILITIES
++        = DEFAULT_READ_CAPABILITIES;
+ /**
+  * Intermediate base class used by all Jackson {@link JsonParser}
+  * implementations. Contains most common things that are independent
+@@ -1217,6 +1228,10 @@ public abstract class ParserBase extends ParserMinimalBase
+     // @since 2.15
+     protected BigInteger _convertBigDecimalToBigInteger(BigDecimal bigDec) throws IOException {
+         // 04-Apr-2022, tatu: wrt [core#968] Need to limit max scale magnitude
++        int maxScale = 1000; // Example limit, this should be configurable
++        if (bigDec.scale() > maxScale) {
++            throw new IOException("Scale of BigDecimal exceeds the maximum allowed limit of " + maxScale);
++        }
+         return bigDec.toBigInteger();
+     }
+2024-08-24 20:27:03,904 - INFO - Grading answer for fasterxml__jackson-core-980...
+2024-08-24 20:27:03,904 - INFO - report: {'fasterxml__jackson-core-980': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.failing.PerfBigDecimalToInteger968'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-980: resolved: False
+2024-08-24 20:27:03,904 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-980.gpt-4o-standard...
+2024-08-24 20:27:19,075 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-980.gpt-4o-standard...
+2024-08-24 20:27:19,086 - INFO - Container sweb.eval.fasterxml__jackson-core-980.gpt-4o-standard removed.

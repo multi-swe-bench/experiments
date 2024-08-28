@@ -1,0 +1,87 @@
+2024-08-22 20:25:09,759 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4641
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4641:latest for fasterxml__jackson-databind-4641
+2024-08-22 20:25:09,761 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4641:latest already exists, skipping build.
+2024-08-22 20:25:09,761 - INFO - Creating container for fasterxml__jackson-databind-4641...
+2024-08-22 20:25:09,838 - INFO - Container for fasterxml__jackson-databind-4641 created: de48b38180fa3944f53cec8825ac8f001f52555acb05c0f6883604ac54c75e49
+2024-08-22 20:25:10,215 - INFO - Container for fasterxml__jackson-databind-4641 started: de48b38180fa3944f53cec8825ac8f001f52555acb05c0f6883604ac54c75e49
+2024-08-22 20:25:10,216 - INFO - Intermediate patch for fasterxml__jackson-databind-4641 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4641/patch.diff, now applying to container...
+2024-08-22 20:25:10,487 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:25:10,543 - INFO - >>>>> Applied Patch:
+patching file ReproduceIssue.java
+patching file src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
+
+2024-08-22 20:25:10,740 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
+index 80d9d492c..29e0bab69 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
+@@ -833,6 +833,29 @@ ClassUtil.name(name), ((AnnotatedParameter) m).getIndex());
+         JavaType valueType;
+         final boolean isField = mutator instanceof AnnotatedField;
+         // [databind#562] Allow @JsonAnySetter on Creator constructor
++        // Ensure that if @JsonAnySetter is present on both a field and a constructor parameter,
++        // the deserializer does not overwrite the field with null values.
++        if (isField && isParameter) {
++            // Merge values from constructor parameter into the field
++            // Merge values from constructor parameter into the field
++            if (mutator instanceof AnnotatedParameter) {
++                AnnotatedParameter parameter = (AnnotatedParameter) mutator;
++                JavaType parameterType = parameter.getType();
++                if (parameterType.isMapLikeType()) {
++                    // Get the field and parameter values
++                    AnnotatedField field = (AnnotatedField) beanDesc.findAnySetterField();
++                    JavaType fieldType = field.getType();
++                    if (fieldType.isMapLikeType()) {
++                        // Merge the values
++                        Map<String, Object> fieldValue = (Map<String, Object>) field.getValue();
++                        Map<String, Object> parameterValue = (Map<String, Object>) parameter.getValue();
++                        if (fieldValue != null && parameterValue != null) {
++                            fieldValue.putAll(parameterValue);
++                        }
++                    }
++                }
++            }
++        }
+         final boolean isParameter = mutator instanceof AnnotatedParameter;
+         int parameterIndex = -1;
+2024-08-22 20:25:10,740 - INFO - Eval script for fasterxml__jackson-databind-4641 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4641/patch.diff, now applying to container...
+2024-08-22 20:25:19,456 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
+index 80d9d492c..29e0bab69 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
+@@ -833,6 +833,29 @@ ClassUtil.name(name), ((AnnotatedParameter) m).getIndex());
+         JavaType valueType;
+         final boolean isField = mutator instanceof AnnotatedField;
+         // [databind#562] Allow @JsonAnySetter on Creator constructor
++        // Ensure that if @JsonAnySetter is present on both a field and a constructor parameter,
++        // the deserializer does not overwrite the field with null values.
++        if (isField && isParameter) {
++            // Merge values from constructor parameter into the field
++            // Merge values from constructor parameter into the field
++            if (mutator instanceof AnnotatedParameter) {
++                AnnotatedParameter parameter = (AnnotatedParameter) mutator;
++                JavaType parameterType = parameter.getType();
++                if (parameterType.isMapLikeType()) {
++                    // Get the field and parameter values
++                    AnnotatedField field = (AnnotatedField) beanDesc.findAnySetterField();
++                    JavaType fieldType = field.getType();
++                    if (fieldType.isMapLikeType()) {
++                        // Merge the values
++                        Map<String, Object> fieldValue = (Map<String, Object>) field.getValue();
++                        Map<String, Object> parameterValue = (Map<String, Object>) parameter.getValue();
++                        if (fieldValue != null && parameterValue != null) {
++                            fieldValue.putAll(parameterValue);
++                        }
++                    }
++                }
++            }
++        }
+         final boolean isParameter = mutator instanceof AnnotatedParameter;
+         int parameterIndex = -1;
+2024-08-22 20:25:19,513 - INFO - Grading answer for fasterxml__jackson-databind-4641...
+2024-08-22 20:25:19,513 - INFO - report: {'fasterxml__jackson-databind-4641': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.deser.creators.AnySetterForCreator562Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4641: resolved: False
+2024-08-22 20:25:19,513 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4641.deepseek-chat...
+2024-08-22 20:25:34,759 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4641.deepseek-chat...
+2024-08-22 20:25:34,777 - INFO - Container sweb.eval.fasterxml__jackson-databind-4641.deepseek-chat removed.

@@ -1,0 +1,102 @@
+2024-08-19 14:55:48,519 - INFO - Environment image sweb.env.x86_64.1fc51ca99796cb1af8e0b9:latest found for googlecontainertools__jib-2536
+Building instance image sweb.eval.x86_64.googlecontainertools__jib-2536:latest for googlecontainertools__jib-2536
+2024-08-19 14:55:48,520 - INFO - Image sweb.eval.x86_64.googlecontainertools__jib-2536:latest already exists, skipping build.
+2024-08-19 14:55:48,520 - INFO - Creating container for googlecontainertools__jib-2536...
+2024-08-19 14:55:48,599 - INFO - Container for googlecontainertools__jib-2536 created: 728998e1d500b86411d822b1f533d48657d4366925dcbe48c635d4d7d6ede93b
+2024-08-19 14:55:48,799 - INFO - Container for googlecontainertools__jib-2536 started: 728998e1d500b86411d822b1f533d48657d4366925dcbe48c635d4d7d6ede93b
+2024-08-19 14:55:48,799 - INFO - Intermediate patch for googlecontainertools__jib-2536 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/googlecontainertools__jib-2536/patch.diff, now applying to container...
+2024-08-19 14:55:49,022 - INFO - Failed to apply patch to container, trying again...
+2024-08-19 14:55:49,078 - INFO - >>>>> Applied Patch:
+patching file jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfigCredentialRetriever.java
+
+2024-08-19 14:55:49,208 - INFO - Git diff before:
+diff --git a/gradle/wrapper/gradle-wrapper.properties b/gradle/wrapper/gradle-wrapper.properties
+index 44e7c4d1..7f309452 100644
+--- a/gradle/wrapper/gradle-wrapper.properties
++++ b/gradle/wrapper/gradle-wrapper.properties
+@@ -1,5 +1,5 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-5.2.1-bin.zip
++distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-5.2.1-bin.zip
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+diff --git a/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfigCredentialRetriever.java b/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfigCredentialRetriever.java
+index 89318bef..5a0d7608 100644
+--- a/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfigCredentialRetriever.java
++++ b/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfigCredentialRetriever.java
+@@ -142,7 +142,24 @@ public class DockerConfigCredentialRetriever {
+       AuthTemplate auth = dockerConfig.getAuthFor(registryAlias);
+       if (auth != null) {
+         // 'auth' is a basic authentication token that should be parsed back into credentials
+-        String usernameColonPassword =
++        if (auth.getAuth() != null) {
++            String usernameColonPassword = new String(Base64.decodeBase64(auth.getAuth()), StandardCharsets.UTF_8);
++            String username = usernameColonPassword.substring(0, usernameColonPassword.indexOf(":"));
++            String password = usernameColonPassword.substring(usernameColonPassword.indexOf(":") + 1);
++            logger.accept(LogEvent.info("Docker config auths section defines credentials for " + registryAlias));
++            if (auth.getIdentityToken() != null
++                // These username and password checks may be unnecessary, but doing so to restrict the
++                // scope only to the Azure behavior to maintain maximum backward-compatibilty.
++                && username.equals("00000000-0000-0000-0000-000000000000")
++                && password.isEmpty()) {
++                logger.accept(LogEvent.info("Using 'identityToken' in Docker config auth for " + registryAlias));
++                return Optional.of(Credential.from(Credential.OAUTH2_TOKEN_USER_NAME, auth.getIdentityToken()));
++            }
++            return Optional.of(Credential.from(username, password));
++        } else {
++            logger.accept(LogEvent.warn("No auth data found for " + registryAlias));
++            return Optional.empty();
++        }
+             new String(Base64.decodeBase64(auth.getAuth()), StandardCharsets.UTF_8);
+         String username = usernameColonPassword.substring(0, usernameColonPassword.indexOf(":"));
+         String password = usernameColonPassword.substring(usernameColonPassword.indexOf(":") + 1);
+2024-08-19 14:55:49,208 - INFO - Eval script for googlecontainertools__jib-2536 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/googlecontainertools__jib-2536/patch.diff, now applying to container...
+2024-08-19 14:57:05,839 - INFO - Git diff after:
+diff --git a/gradle/wrapper/gradle-wrapper.properties b/gradle/wrapper/gradle-wrapper.properties
+index 44e7c4d1..7f309452 100644
+--- a/gradle/wrapper/gradle-wrapper.properties
++++ b/gradle/wrapper/gradle-wrapper.properties
+@@ -1,5 +1,5 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-5.2.1-bin.zip
++distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-5.2.1-bin.zip
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+diff --git a/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfigCredentialRetriever.java b/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfigCredentialRetriever.java
+index 89318bef..5a0d7608 100644
+--- a/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfigCredentialRetriever.java
++++ b/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfigCredentialRetriever.java
+@@ -142,7 +142,24 @@ public class DockerConfigCredentialRetriever {
+       AuthTemplate auth = dockerConfig.getAuthFor(registryAlias);
+       if (auth != null) {
+         // 'auth' is a basic authentication token that should be parsed back into credentials
+-        String usernameColonPassword =
++        if (auth.getAuth() != null) {
++            String usernameColonPassword = new String(Base64.decodeBase64(auth.getAuth()), StandardCharsets.UTF_8);
++            String username = usernameColonPassword.substring(0, usernameColonPassword.indexOf(":"));
++            String password = usernameColonPassword.substring(usernameColonPassword.indexOf(":") + 1);
++            logger.accept(LogEvent.info("Docker config auths section defines credentials for " + registryAlias));
++            if (auth.getIdentityToken() != null
++                // These username and password checks may be unnecessary, but doing so to restrict the
++                // scope only to the Azure behavior to maintain maximum backward-compatibilty.
++                && username.equals("00000000-0000-0000-0000-000000000000")
++                && password.isEmpty()) {
++                logger.accept(LogEvent.info("Using 'identityToken' in Docker config auth for " + registryAlias));
++                return Optional.of(Credential.from(Credential.OAUTH2_TOKEN_USER_NAME, auth.getIdentityToken()));
++            }
++            return Optional.of(Credential.from(username, password));
++        } else {
++            logger.accept(LogEvent.warn("No auth data found for " + registryAlias));
++            return Optional.empty();
++        }
+             new String(Base64.decodeBase64(auth.getAuth()), StandardCharsets.UTF_8);
+         String username = usernameColonPassword.substring(0, usernameColonPassword.indexOf(":"));
+         String password = usernameColonPassword.substring(usernameColonPassword.indexOf(":") + 1);
+2024-08-19 14:57:05,897 - INFO - Grading answer for googlecontainertools__jib-2536...
+2024-08-19 14:57:05,897 - INFO - report: {'googlecontainertools__jib-2536': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['jib-core:com.google.cloud.tools.jib.registry.credentials.DockerConfigCredentialRetrieverTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for googlecontainertools__jib-2536: resolved: False
+2024-08-19 14:57:05,897 - INFO - Attempting to stop container sweb.eval.googlecontainertools__jib-2536.pred_0819...
+2024-08-19 14:57:21,170 - INFO - Attempting to remove container sweb.eval.googlecontainertools__jib-2536.pred_0819...
+2024-08-19 14:57:21,192 - INFO - Container sweb.eval.googlecontainertools__jib-2536.pred_0819 removed.

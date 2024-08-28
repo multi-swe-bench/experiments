@@ -1,0 +1,63 @@
+2024-08-24 20:32:41,887 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4487
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4487:latest for fasterxml__jackson-databind-4487
+2024-08-24 20:32:41,889 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4487:latest already exists, skipping build.
+2024-08-24 20:32:41,889 - INFO - Creating container for fasterxml__jackson-databind-4487...
+2024-08-24 20:32:41,948 - INFO - Container for fasterxml__jackson-databind-4487 created: f311b05b224e3cb65437a0759186ab9f8d3b494508e95c5e628e55d9e585a1bc
+2024-08-24 20:32:42,172 - INFO - Container for fasterxml__jackson-databind-4487 started: f311b05b224e3cb65437a0759186ab9f8d3b494508e95c5e628e55d9e585a1bc
+2024-08-24 20:32:42,172 - INFO - Intermediate patch for fasterxml__jackson-databind-4487 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-4487/patch.diff, now applying to container...
+2024-08-24 20:32:42,432 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:32:42,508 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java
+patching file src/test/java/com/fasterxml/jackson/databind/type/TypeFactoryTest.java
+
+2024-08-24 20:32:42,768 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java b/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java
+index ce35d06ff..6b22e727c 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java
+@@ -1637,7 +1637,7 @@ ClassUtil.nameOf(rawClass), pc, (pc == 1) ? "" : "s", bindings));
+         //    detected, related to difficulties in propagating type upwards (Iterable, for
+         //    example, is a weak, tag-on type). They may be detectable in future.
+         // 23-May-2023, tatu: As of 2.16 we do, however, recognized certain `IterationType`s.
+-        if (rawType == Iterator.class || rawType == Stream.class) {
++        if (rawType == Iterator.class || rawType == Stream.class || rawType == Iterable.class) {
+             return _iterationType(rawType, bindings, superClass, superInterfaces);
+         }
+         if (BaseStream.class.isAssignableFrom(rawType)) {
+diff --git a/src/test/java/com/fasterxml/jackson/databind/type/TypeFactoryTest.java b/src/test/java/com/fasterxml/jackson/databind/type/TypeFactoryTest.java
+index 2707090c6..214139be9 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/type/TypeFactoryTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/type/TypeFactoryTest.java
+@@ -817,4 +817,9 @@ public class TypeFactoryTest
+         assertEquals(t2, t1);
+         assertEquals(t1.hashCode(), t2.hashCode());
+     }
+-}
++    @Test
++    public void testIterableRecognition() {
++        TypeFactory tf = TypeFactory.defaultInstance();
++        JavaType iterableType = tf.constructType(Iterable.class);
++        assertTrue(iterableType.isContainerType());
++    }
+2024-08-24 20:32:42,768 - INFO - Eval script for fasterxml__jackson-databind-4487 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-4487/patch.diff, now applying to container...
+2024-08-24 20:33:20,500 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java b/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java
+index ce35d06ff..6b22e727c 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java
+@@ -1637,7 +1637,7 @@ ClassUtil.nameOf(rawClass), pc, (pc == 1) ? "" : "s", bindings));
+         //    detected, related to difficulties in propagating type upwards (Iterable, for
+         //    example, is a weak, tag-on type). They may be detectable in future.
+         // 23-May-2023, tatu: As of 2.16 we do, however, recognized certain `IterationType`s.
+-        if (rawType == Iterator.class || rawType == Stream.class) {
++        if (rawType == Iterator.class || rawType == Stream.class || rawType == Iterable.class) {
+             return _iterationType(rawType, bindings, superClass, superInterfaces);
+         }
+         if (BaseStream.class.isAssignableFrom(rawType)) {
+2024-08-24 20:33:20,500 - INFO - Git diff changed after running eval script
+2024-08-24 20:33:20,633 - INFO - Grading answer for fasterxml__jackson-databind-4487...
+2024-08-24 20:33:20,633 - INFO - report: {'fasterxml__jackson-databind-4487': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': True, 'tests_status': {'FAIL_TO_PASS': {'success': ['src:com.fasterxml.jackson.databind.type.JavaTypeTest', 'src:com.fasterxml.jackson.databind.type.TypeFactoryTest'], 'failure': [], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4487: resolved: True
+2024-08-24 20:33:20,633 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4487.gpt-4o-standard...
+2024-08-24 20:33:35,811 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4487.gpt-4o-standard...
+2024-08-24 20:33:35,919 - INFO - Container sweb.eval.fasterxml__jackson-databind-4487.gpt-4o-standard removed.

@@ -1,0 +1,383 @@
+2024-08-21 13:12:14,268 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1133
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1133:latest for fasterxml__jackson-core-1133
+2024-08-21 13:12:14,270 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1133:latest already exists, skipping build.
+2024-08-21 13:12:14,270 - INFO - Creating container for fasterxml__jackson-core-1133...
+2024-08-21 13:12:14,371 - INFO - Container for fasterxml__jackson-core-1133 created: 353d7b28c5f462c01abe5be48cd2facc681bf1d14dbcaf4bf99ed7c8709b2708
+2024-08-21 13:12:14,641 - INFO - Container for fasterxml__jackson-core-1133 started: 353d7b28c5f462c01abe5be48cd2facc681bf1d14dbcaf4bf99ed7c8709b2708
+2024-08-21 13:12:14,641 - INFO - Intermediate patch for fasterxml__jackson-core-1133 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1133/patch.diff, now applying to container...
+2024-08-21 13:12:14,911 - INFO - Failed to apply patch to container, trying again...
+2024-08-21 13:12:14,966 - INFO - >>>>> Applied Patch:
+patching file src/main/java/tools/jackson/core/JsonGenerator.java
+patching file src/main/java/tools/jackson/core/JsonParser.java
+patching file src/main/java/tools/jackson/core/ObjectWriteContext.java
+patching file src/main/java/tools/jackson/core/PrettyPrinter.java
+patching file src/main/java/tools/jackson/core/TokenStreamFactory.java
+patching file src/main/java/tools/jackson/core/base/ParserBase.java
+patching file src/main/java/tools/jackson/core/base/ParserMinimalBase.java
+patching file src/main/java/tools/jackson/core/json/ByteSourceJsonBootstrapper.java
+patching file src/main/java/tools/jackson/core/json/ReaderBasedJsonParser.java
+patching file src/main/java/tools/jackson/core/json/UTF8DataInputJsonParser.java
+patching file src/main/java/tools/jackson/core/json/UTF8StreamJsonParser.java
+patching file src/test/java/tools/jackson/core/fuzz/Fuzz32208UTF32ParseTest.java
+patching file src/test/java/tools/jackson/core/json/TestDecorators.java
+
+2024-08-21 13:12:15,085 - INFO - Git diff before:
+diff --git a/src/main/java/tools/jackson/core/JsonGenerator.java b/src/main/java/tools/jackson/core/JsonGenerator.java
+index c107a954..25969b7e 100644
+--- a/src/main/java/tools/jackson/core/JsonGenerator.java
++++ b/src/main/java/tools/jackson/core/JsonGenerator.java
+@@ -14,7 +14,7 @@ import java.util.Objects;
+ import tools.jackson.core.JsonParser.NumberType;
+ import tools.jackson.core.exc.StreamReadException;
+ import tools.jackson.core.exc.StreamWriteException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.CharacterEscapes;
+ import tools.jackson.core.type.WritableTypeId;
+ import tools.jackson.core.type.WritableTypeId.Inclusion;
+diff --git a/src/main/java/tools/jackson/core/JsonParser.java b/src/main/java/tools/jackson/core/JsonParser.java
+index 6aa7233f..98095a58 100644
+--- a/src/main/java/tools/jackson/core/JsonParser.java
++++ b/src/main/java/tools/jackson/core/JsonParser.java
+@@ -12,7 +12,7 @@ import java.math.BigInteger;
+ import tools.jackson.core.async.NonBlockingInputFeeder;
+ import tools.jackson.core.exc.InputCoercionException;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.json.JsonFactory;
+ import tools.jackson.core.sym.PropertyNameMatcher;
+ import tools.jackson.core.type.ResolvedType;
+diff --git a/src/main/java/tools/jackson/core/ObjectWriteContext.java b/src/main/java/tools/jackson/core/ObjectWriteContext.java
+index 17fb1e15..5d4d7980 100644
+--- a/src/main/java/tools/jackson/core/ObjectWriteContext.java
++++ b/src/main/java/tools/jackson/core/ObjectWriteContext.java
+@@ -4,7 +4,7 @@ import java.io.OutputStream;
+ import java.io.Writer;
+ 
+ import tools.jackson.core.exc.StreamWriteException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.CharacterEscapes;
+ import tools.jackson.core.tree.ArrayTreeNode;
+ import tools.jackson.core.tree.ObjectTreeNode;
+diff --git a/src/main/java/tools/jackson/core/PrettyPrinter.java b/src/main/java/tools/jackson/core/PrettyPrinter.java
+index cd892285..adb94d85 100644
+--- a/src/main/java/tools/jackson/core/PrettyPrinter.java
++++ b/src/main/java/tools/jackson/core/PrettyPrinter.java
+@@ -6,7 +6,7 @@
+ package tools.jackson.core;
+ 
+ import tools.jackson.core.exc.StreamWriteException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.SerializedString;
+ import tools.jackson.core.util.Separators;
+ 
+diff --git a/src/main/java/tools/jackson/core/TokenStreamFactory.java b/src/main/java/tools/jackson/core/TokenStreamFactory.java
+index 8ab87934..93edf67f 100644
+--- a/src/main/java/tools/jackson/core/TokenStreamFactory.java
++++ b/src/main/java/tools/jackson/core/TokenStreamFactory.java
+@@ -14,7 +14,7 @@ import java.util.Objects;
+ 
+ import tools.jackson.core.async.ByteArrayFeeder;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.*;
+ import tools.jackson.core.json.JsonFactory;
+ import tools.jackson.core.sym.PropertyNameMatcher;
+diff --git a/src/main/java/tools/jackson/core/base/ParserBase.java b/src/main/java/tools/jackson/core/base/ParserBase.java
+index 0b77b6d8..3154c6e9 100644
+--- a/src/main/java/tools/jackson/core/base/ParserBase.java
++++ b/src/main/java/tools/jackson/core/base/ParserBase.java
+@@ -8,7 +8,7 @@ import tools.jackson.core.*;
+ import tools.jackson.core.exc.InputCoercionException;
+ import tools.jackson.core.exc.StreamConstraintsException;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.ContentReference;
+ import tools.jackson.core.io.IOContext;
+ import tools.jackson.core.io.NumberInput;
+diff --git a/src/main/java/tools/jackson/core/base/ParserMinimalBase.java b/src/main/java/tools/jackson/core/base/ParserMinimalBase.java
+index 16fd9ebe..2277c437 100644
+--- a/src/main/java/tools/jackson/core/base/ParserMinimalBase.java
++++ b/src/main/java/tools/jackson/core/base/ParserMinimalBase.java
+@@ -11,7 +11,7 @@ import tools.jackson.core.*;
+ import tools.jackson.core.exc.InputCoercionException;
+ import tools.jackson.core.exc.StreamReadException;
+ import tools.jackson.core.exc.UnexpectedEndOfInputException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.IOContext;
+ import tools.jackson.core.io.NumberInput;
+ import tools.jackson.core.sym.PropertyNameMatcher;
+diff --git a/src/main/java/tools/jackson/core/json/ByteSourceJsonBootstrapper.java b/src/main/java/tools/jackson/core/json/ByteSourceJsonBootstrapper.java
+index d2f7543d..3951ff3f 100644
+--- a/src/main/java/tools/jackson/core/json/ByteSourceJsonBootstrapper.java
++++ b/src/main/java/tools/jackson/core/json/ByteSourceJsonBootstrapper.java
+@@ -9,7 +9,7 @@ import java.io.Reader;
+ import java.io.StringReader;
+ 
+ import tools.jackson.core.*;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.*;
+ import tools.jackson.core.sym.ByteQuadsCanonicalizer;
+ import tools.jackson.core.sym.CharsToNameCanonicalizer;
+diff --git a/src/main/java/tools/jackson/core/json/ReaderBasedJsonParser.java b/src/main/java/tools/jackson/core/json/ReaderBasedJsonParser.java
+index 5e4a3b96..0b328e8e 100644
+--- a/src/main/java/tools/jackson/core/json/ReaderBasedJsonParser.java
++++ b/src/main/java/tools/jackson/core/json/ReaderBasedJsonParser.java
+@@ -6,7 +6,7 @@ import java.io.*;
+ 
+ import tools.jackson.core.*;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.CharTypes;
+ import tools.jackson.core.io.IOContext;
+ import tools.jackson.core.sym.CharsToNameCanonicalizer;
+diff --git a/src/main/java/tools/jackson/core/json/UTF8DataInputJsonParser.java b/src/main/java/tools/jackson/core/json/UTF8DataInputJsonParser.java
+index d0615ce5..0fde232d 100644
+--- a/src/main/java/tools/jackson/core/json/UTF8DataInputJsonParser.java
++++ b/src/main/java/tools/jackson/core/json/UTF8DataInputJsonParser.java
+@@ -4,7 +4,7 @@ import java.io.*;
+ 
+ import tools.jackson.core.*;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.CharTypes;
+ import tools.jackson.core.io.IOContext;
+ import tools.jackson.core.sym.ByteQuadsCanonicalizer;
+diff --git a/src/main/java/tools/jackson/core/json/UTF8StreamJsonParser.java b/src/main/java/tools/jackson/core/json/UTF8StreamJsonParser.java
+index b03eecad..c3e03bf1 100644
+--- a/src/main/java/tools/jackson/core/json/UTF8StreamJsonParser.java
++++ b/src/main/java/tools/jackson/core/json/UTF8StreamJsonParser.java
+@@ -6,7 +6,7 @@ import java.io.*;
+ 
+ import tools.jackson.core.*;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.CharTypes;
+ import tools.jackson.core.io.IOContext;
+ import tools.jackson.core.sym.ByteQuadsCanonicalizer;
+diff --git a/src/test/java/tools/jackson/core/fuzz/Fuzz32208UTF32ParseTest.java b/src/test/java/tools/jackson/core/fuzz/Fuzz32208UTF32ParseTest.java
+index 607cf653..a90d0f14 100644
+--- a/src/test/java/tools/jackson/core/fuzz/Fuzz32208UTF32ParseTest.java
++++ b/src/test/java/tools/jackson/core/fuzz/Fuzz32208UTF32ParseTest.java
+@@ -5,7 +5,7 @@ import java.io.CharConversionException;
+ import java.io.InputStream;
+ 
+ import tools.jackson.core.*;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.UTF32Reader;
+ import tools.jackson.core.json.JsonFactory;
+ import tools.jackson.core.testsupport.ThrottledInputStream;
+diff --git a/src/test/java/tools/jackson/core/json/TestDecorators.java b/src/test/java/tools/jackson/core/json/TestDecorators.java
+index 3f926184..20cbdf50 100644
+--- a/src/test/java/tools/jackson/core/json/TestDecorators.java
++++ b/src/test/java/tools/jackson/core/json/TestDecorators.java
+@@ -3,7 +3,7 @@ package tools.jackson.core.json;
+ import java.io.*;
+ 
+ import tools.jackson.core.*;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.IOContext;
+ import tools.jackson.core.io.InputDecorator;
+ import tools.jackson.core.io.OutputDecorator;
+@@ -32,8 +32,8 @@ public class TestDecorators extends tools.jackson.core.BaseTest
+             try {
+                 return new ByteArrayInputStream("123".getBytes("UTF-8"));
+             } catch (IOException e) {
+-                throw WrappedIOException.construct(e, null);
+-            }
++            throw JacksonIOException.construct(e, null);
++            throw JacksonIOException.construct(e, null);
+         }
+ 
+         @Override
+@@ -43,7 +43,7 @@ public class TestDecorators extends tools.jackson.core.BaseTest
+             try {
+                 return new ByteArrayInputStream("456".getBytes("UTF-8"));
+             } catch (IOException e) {
+-                throw WrappedIOException.construct(e, null);
++            throw JacksonIOException.construct(e, null);
+             }
+         }
+ 
+@@ -62,7 +62,7 @@ public class TestDecorators extends tools.jackson.core.BaseTest
+                 out.write("123".getBytes("UTF-8"));
+                 out.flush();
+             } catch (IOException e) {
+-                throw WrappedIOException.construct(e, null);
++            throw JacksonIOException.construct(e, null);
+             }
+             return new ByteArrayOutputStream();
+         }
+@@ -74,7 +74,7 @@ public class TestDecorators extends tools.jackson.core.BaseTest
+                 w.write("567");
+                 w.flush();
+             } catch (IOException e) {
+-                throw WrappedIOException.construct(e, null);
++            throw JacksonIOException.construct(e, null);
+             }
+             return new StringWriter();
+         }
+2024-08-21 13:12:15,086 - INFO - Eval script for fasterxml__jackson-core-1133 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1133/patch.diff, now applying to container...
+2024-08-21 13:12:26,462 - INFO - Git diff after:
+diff --git a/src/main/java/tools/jackson/core/JsonGenerator.java b/src/main/java/tools/jackson/core/JsonGenerator.java
+index c107a954..25969b7e 100644
+--- a/src/main/java/tools/jackson/core/JsonGenerator.java
++++ b/src/main/java/tools/jackson/core/JsonGenerator.java
+@@ -14,7 +14,7 @@ import java.util.Objects;
+ import tools.jackson.core.JsonParser.NumberType;
+ import tools.jackson.core.exc.StreamReadException;
+ import tools.jackson.core.exc.StreamWriteException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.CharacterEscapes;
+ import tools.jackson.core.type.WritableTypeId;
+ import tools.jackson.core.type.WritableTypeId.Inclusion;
+diff --git a/src/main/java/tools/jackson/core/JsonParser.java b/src/main/java/tools/jackson/core/JsonParser.java
+index 6aa7233f..98095a58 100644
+--- a/src/main/java/tools/jackson/core/JsonParser.java
++++ b/src/main/java/tools/jackson/core/JsonParser.java
+@@ -12,7 +12,7 @@ import java.math.BigInteger;
+ import tools.jackson.core.async.NonBlockingInputFeeder;
+ import tools.jackson.core.exc.InputCoercionException;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.json.JsonFactory;
+ import tools.jackson.core.sym.PropertyNameMatcher;
+ import tools.jackson.core.type.ResolvedType;
+diff --git a/src/main/java/tools/jackson/core/ObjectWriteContext.java b/src/main/java/tools/jackson/core/ObjectWriteContext.java
+index 17fb1e15..5d4d7980 100644
+--- a/src/main/java/tools/jackson/core/ObjectWriteContext.java
++++ b/src/main/java/tools/jackson/core/ObjectWriteContext.java
+@@ -4,7 +4,7 @@ import java.io.OutputStream;
+ import java.io.Writer;
+ 
+ import tools.jackson.core.exc.StreamWriteException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.CharacterEscapes;
+ import tools.jackson.core.tree.ArrayTreeNode;
+ import tools.jackson.core.tree.ObjectTreeNode;
+diff --git a/src/main/java/tools/jackson/core/PrettyPrinter.java b/src/main/java/tools/jackson/core/PrettyPrinter.java
+index cd892285..adb94d85 100644
+--- a/src/main/java/tools/jackson/core/PrettyPrinter.java
++++ b/src/main/java/tools/jackson/core/PrettyPrinter.java
+@@ -6,7 +6,7 @@
+ package tools.jackson.core;
+ 
+ import tools.jackson.core.exc.StreamWriteException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.SerializedString;
+ import tools.jackson.core.util.Separators;
+ 
+diff --git a/src/main/java/tools/jackson/core/TokenStreamFactory.java b/src/main/java/tools/jackson/core/TokenStreamFactory.java
+index 8ab87934..93edf67f 100644
+--- a/src/main/java/tools/jackson/core/TokenStreamFactory.java
++++ b/src/main/java/tools/jackson/core/TokenStreamFactory.java
+@@ -14,7 +14,7 @@ import java.util.Objects;
+ 
+ import tools.jackson.core.async.ByteArrayFeeder;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.*;
+ import tools.jackson.core.json.JsonFactory;
+ import tools.jackson.core.sym.PropertyNameMatcher;
+diff --git a/src/main/java/tools/jackson/core/base/ParserBase.java b/src/main/java/tools/jackson/core/base/ParserBase.java
+index 0b77b6d8..3154c6e9 100644
+--- a/src/main/java/tools/jackson/core/base/ParserBase.java
++++ b/src/main/java/tools/jackson/core/base/ParserBase.java
+@@ -8,7 +8,7 @@ import tools.jackson.core.*;
+ import tools.jackson.core.exc.InputCoercionException;
+ import tools.jackson.core.exc.StreamConstraintsException;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.ContentReference;
+ import tools.jackson.core.io.IOContext;
+ import tools.jackson.core.io.NumberInput;
+diff --git a/src/main/java/tools/jackson/core/base/ParserMinimalBase.java b/src/main/java/tools/jackson/core/base/ParserMinimalBase.java
+index 16fd9ebe..2277c437 100644
+--- a/src/main/java/tools/jackson/core/base/ParserMinimalBase.java
++++ b/src/main/java/tools/jackson/core/base/ParserMinimalBase.java
+@@ -11,7 +11,7 @@ import tools.jackson.core.*;
+ import tools.jackson.core.exc.InputCoercionException;
+ import tools.jackson.core.exc.StreamReadException;
+ import tools.jackson.core.exc.UnexpectedEndOfInputException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.IOContext;
+ import tools.jackson.core.io.NumberInput;
+ import tools.jackson.core.sym.PropertyNameMatcher;
+diff --git a/src/main/java/tools/jackson/core/json/ByteSourceJsonBootstrapper.java b/src/main/java/tools/jackson/core/json/ByteSourceJsonBootstrapper.java
+index d2f7543d..3951ff3f 100644
+--- a/src/main/java/tools/jackson/core/json/ByteSourceJsonBootstrapper.java
++++ b/src/main/java/tools/jackson/core/json/ByteSourceJsonBootstrapper.java
+@@ -9,7 +9,7 @@ import java.io.Reader;
+ import java.io.StringReader;
+ 
+ import tools.jackson.core.*;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.*;
+ import tools.jackson.core.sym.ByteQuadsCanonicalizer;
+ import tools.jackson.core.sym.CharsToNameCanonicalizer;
+diff --git a/src/main/java/tools/jackson/core/json/ReaderBasedJsonParser.java b/src/main/java/tools/jackson/core/json/ReaderBasedJsonParser.java
+index 5e4a3b96..0b328e8e 100644
+--- a/src/main/java/tools/jackson/core/json/ReaderBasedJsonParser.java
++++ b/src/main/java/tools/jackson/core/json/ReaderBasedJsonParser.java
+@@ -6,7 +6,7 @@ import java.io.*;
+ 
+ import tools.jackson.core.*;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.CharTypes;
+ import tools.jackson.core.io.IOContext;
+ import tools.jackson.core.sym.CharsToNameCanonicalizer;
+diff --git a/src/main/java/tools/jackson/core/json/UTF8DataInputJsonParser.java b/src/main/java/tools/jackson/core/json/UTF8DataInputJsonParser.java
+index d0615ce5..0fde232d 100644
+--- a/src/main/java/tools/jackson/core/json/UTF8DataInputJsonParser.java
++++ b/src/main/java/tools/jackson/core/json/UTF8DataInputJsonParser.java
+@@ -4,7 +4,7 @@ import java.io.*;
+ 
+ import tools.jackson.core.*;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.CharTypes;
+ import tools.jackson.core.io.IOContext;
+ import tools.jackson.core.sym.ByteQuadsCanonicalizer;
+diff --git a/src/main/java/tools/jackson/core/json/UTF8StreamJsonParser.java b/src/main/java/tools/jackson/core/json/UTF8StreamJsonParser.java
+index b03eecad..c3e03bf1 100644
+--- a/src/main/java/tools/jackson/core/json/UTF8StreamJsonParser.java
++++ b/src/main/java/tools/jackson/core/json/UTF8StreamJsonParser.java
+@@ -6,7 +6,7 @@ import java.io.*;
+ 
+ import tools.jackson.core.*;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.io.CharTypes;
+ import tools.jackson.core.io.IOContext;
+ import tools.jackson.core.sym.ByteQuadsCanonicalizer;
+2024-08-21 13:12:26,462 - INFO - Git diff changed after running eval script
+2024-08-21 13:12:26,586 - INFO - Grading answer for fasterxml__jackson-core-1133...
+2024-08-21 13:12:26,586 - INFO - report: {'fasterxml__jackson-core-1133': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:tools.jackson.core.fuzz.Fuzz32208UTF32ParseTest', 'src:tools.jackson.core.json.TestDecorators'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1133: resolved: False
+2024-08-21 13:12:26,586 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1133.doubao...
+2024-08-21 13:12:42,279 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1133.doubao...
+2024-08-21 13:12:42,291 - INFO - Container sweb.eval.fasterxml__jackson-core-1133.doubao removed.

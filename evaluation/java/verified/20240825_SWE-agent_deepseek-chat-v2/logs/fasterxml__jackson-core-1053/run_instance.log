@@ -1,0 +1,79 @@
+2024-08-22 20:14:51,220 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1053
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1053:latest for fasterxml__jackson-core-1053
+2024-08-22 20:14:51,222 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1053:latest already exists, skipping build.
+2024-08-22 20:14:51,222 - INFO - Creating container for fasterxml__jackson-core-1053...
+2024-08-22 20:14:51,269 - INFO - Container for fasterxml__jackson-core-1053 created: 18cbd7dde28f8b74a2f0b11bc9850d31bcede6f3f6fc271d67521bd876bbfa08
+2024-08-22 20:14:51,520 - INFO - Container for fasterxml__jackson-core-1053 started: 18cbd7dde28f8b74a2f0b11bc9850d31bcede6f3f6fc271d67521bd876bbfa08
+2024-08-22 20:14:51,521 - INFO - Intermediate patch for fasterxml__jackson-core-1053 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1053/patch.diff, now applying to container...
+2024-08-22 20:14:51,788 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:14:51,849 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/Version.java
+patching file src/test/java/com/fasterxml/jackson/core/VersionTest.java
+
+2024-08-22 20:14:51,966 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/Version.java b/src/main/java/com/fasterxml/jackson/core/Version.java
+index ed446afc..6a187767 100644
+--- a/src/main/java/com/fasterxml/jackson/core/Version.java
++++ b/src/main/java/com/fasterxml/jackson/core/Version.java
+@@ -145,10 +145,16 @@ public class Version
+                     diff = _minorVersion - other._minorVersion;
+                     if (diff == 0) {
+                         diff = _patchLevel - other._patchLevel;
++                        if (diff == 0) {
++                            String thisSnapshot = (_snapshotInfo == null) ? "" : _snapshotInfo;
++                            String otherSnapshot = (other._snapshotInfo == null) ? "" : other._snapshotInfo;
++                            diff = thisSnapshot.compareTo(otherSnapshot);
++                        }
+                     }
+                 }
+             }
+         }
+         return diff;
+     }
++    }
+ }
+diff --git a/src/test/java/com/fasterxml/jackson/core/VersionTest.java b/src/test/java/com/fasterxml/jackson/core/VersionTest.java
+index e7ba0eea..815512aa 100644
+--- a/src/test/java/com/fasterxml/jackson/core/VersionTest.java
++++ b/src/test/java/com/fasterxml/jackson/core/VersionTest.java
+@@ -51,4 +51,10 @@ public class VersionTest{
+ 
+       assertTrue(version.compareTo(versionTwo) < 0);
+   }
++@Test
++public void testCompareToWithSnapshotInfo() {
++    Version versionAlpha = new Version(1, 0, 0, "alpha", "", "");
++    Version versionBeta = new Version(1, 0, 0, "beta", "", "");
++    assertTrue(versionAlpha.compareTo(versionBeta) < 0);
++    assertTrue(versionBeta.compareTo(versionAlpha) > 0);
+ }
+2024-08-22 20:14:51,966 - INFO - Eval script for fasterxml__jackson-core-1053 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1053/patch.diff, now applying to container...
+2024-08-22 20:14:58,370 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/Version.java b/src/main/java/com/fasterxml/jackson/core/Version.java
+index ed446afc..6a187767 100644
+--- a/src/main/java/com/fasterxml/jackson/core/Version.java
++++ b/src/main/java/com/fasterxml/jackson/core/Version.java
+@@ -145,10 +145,16 @@ public class Version
+                     diff = _minorVersion - other._minorVersion;
+                     if (diff == 0) {
+                         diff = _patchLevel - other._patchLevel;
++                        if (diff == 0) {
++                            String thisSnapshot = (_snapshotInfo == null) ? "" : _snapshotInfo;
++                            String otherSnapshot = (other._snapshotInfo == null) ? "" : other._snapshotInfo;
++                            diff = thisSnapshot.compareTo(otherSnapshot);
++                        }
+                     }
+                 }
+             }
+         }
+         return diff;
+     }
++    }
+ }
+2024-08-22 20:14:58,370 - INFO - Git diff changed after running eval script
+2024-08-22 20:14:58,430 - INFO - Grading answer for fasterxml__jackson-core-1053...
+2024-08-22 20:14:58,430 - INFO - report: {'fasterxml__jackson-core-1053': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.VersionTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1053: resolved: False
+2024-08-22 20:14:58,430 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1053.deepseek-chat...
+2024-08-22 20:15:14,219 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1053.deepseek-chat...
+2024-08-22 20:15:14,231 - INFO - Container sweb.eval.fasterxml__jackson-core-1053.deepseek-chat removed.

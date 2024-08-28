@@ -1,0 +1,144 @@
+2024-08-24 20:30:43,371 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4219
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4219:latest for fasterxml__jackson-databind-4219
+2024-08-24 20:30:43,373 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4219:latest already exists, skipping build.
+2024-08-24 20:30:43,374 - INFO - Creating container for fasterxml__jackson-databind-4219...
+2024-08-24 20:30:43,438 - INFO - Container for fasterxml__jackson-databind-4219 created: e4ea4531f58d39afb3936e9ad89fc31bd6b40ee20366e6a737cd6e24d3b26ddd
+2024-08-24 20:30:43,716 - INFO - Container for fasterxml__jackson-databind-4219 started: e4ea4531f58d39afb3936e9ad89fc31bd6b40ee20366e6a737cd6e24d3b26ddd
+2024-08-24 20:30:43,716 - INFO - Intermediate patch for fasterxml__jackson-databind-4219 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-4219/patch.diff, now applying to container...
+2024-08-24 20:30:43,973 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:30:44,047 - INFO - >>>>> Applied Patch:
+patching file Reproduce.java
+patching file src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+patching file src/test/java/com/fasterxml/jackson/databind/deser/jdk/ArrayDeserializationTest.java
+
+2024-08-24 20:30:44,239 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+index 85d106694..a65f1430c 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+@@ -1348,8 +1348,13 @@ paramIndex, candidate);
+             if (contentDeser == null) {
+                 Class<?> raw = elemType.getRawClass();
+                 if (elemType.isPrimitive()) {
+-                    return PrimitiveArrayDeserializers.forType(raw);
+-                }
++                    JsonDeserializer<?> deser = PrimitiveArrayDeserializers.forType(raw);
++                    if (_factoryConfig.hasDeserializerModifiers()) {
++                        for (BeanDeserializerModifier mod : _factoryConfig.deserializerModifiers()) {
++                            deser = mod.modifyArrayDeserializer(config, type, beanDesc, deser);
++                        }
++                    }
++                    return deser;
+                 if (raw == String.class) {
+                     return StringArrayDeserializer.instance;
+                 }
+diff --git a/src/test/java/com/fasterxml/jackson/databind/deser/jdk/ArrayDeserializationTest.java b/src/test/java/com/fasterxml/jackson/databind/deser/jdk/ArrayDeserializationTest.java
+index bfb39e27b..78f7bfc5d 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/deser/jdk/ArrayDeserializationTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/deser/jdk/ArrayDeserializationTest.java
+@@ -585,4 +585,36 @@ public class ArrayDeserializationTest
+         assertEquals(1, result.length);
+         assertEquals("a", result[0].value);
+     }
++    public void testPrimitiveArrayDeserializerModifier() throws Exception {
++        ObjectMapper objectMapper = new ObjectMapper();
++        SimpleModule module = new SimpleModule();
++        module.setDeserializerModifier(new BeanDeserializerModifier() {
++            @Override
++            public JsonDeserializer<?> modifyArrayDeserializer(DeserializationConfig config, ArrayType valueType, BeanDescription beanDesc, JsonDeserializer<?> deserializer) {
++                // It will capture the deserializer for both primitive and non-primitive arrays
++                return new JsonDeserializer<Object>() {
++                    @Override
++                    public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
++                        Object result = deserializer.deserialize(p, ctxt);
++                        if (result instanceof byte[]) {
++                            assertEquals(1, ((byte[]) result).length);
++                            assertEquals((byte) 0x11, ((byte[]) result)[0]);
++                        } else if (result instanceof Byte[]) {
++                            assertEquals(1, ((Byte[]) result).length);
++                            assertEquals((byte) 0x11, ((Byte[]) result)[0]);
++                        }
++                        return result;
++                    }
++                };
++            }
++        });
++        objectMapper.registerModule(module);
++
++        Test test = new Test();
++        test.field1 = new byte[]{(byte)0x11};
++        test.field2 = new Byte[]{(byte)0x11};
++        String sample = objectMapper.writeValueAsString(test);
++
++        objectMapper.readValue(sample, Test.class);
++    }
+ }
+2024-08-24 20:30:44,239 - INFO - Eval script for fasterxml__jackson-databind-4219 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-4219/patch.diff, now applying to container...
+2024-08-24 20:30:50,532 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+index 85d106694..a65f1430c 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+@@ -1348,8 +1348,13 @@ paramIndex, candidate);
+             if (contentDeser == null) {
+                 Class<?> raw = elemType.getRawClass();
+                 if (elemType.isPrimitive()) {
+-                    return PrimitiveArrayDeserializers.forType(raw);
+-                }
++                    JsonDeserializer<?> deser = PrimitiveArrayDeserializers.forType(raw);
++                    if (_factoryConfig.hasDeserializerModifiers()) {
++                        for (BeanDeserializerModifier mod : _factoryConfig.deserializerModifiers()) {
++                            deser = mod.modifyArrayDeserializer(config, type, beanDesc, deser);
++                        }
++                    }
++                    return deser;
+                 if (raw == String.class) {
+                     return StringArrayDeserializer.instance;
+                 }
+diff --git a/src/test/java/com/fasterxml/jackson/databind/deser/jdk/ArrayDeserializationTest.java b/src/test/java/com/fasterxml/jackson/databind/deser/jdk/ArrayDeserializationTest.java
+index bfb39e27b..78f7bfc5d 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/deser/jdk/ArrayDeserializationTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/deser/jdk/ArrayDeserializationTest.java
+@@ -585,4 +585,36 @@ public class ArrayDeserializationTest
+         assertEquals(1, result.length);
+         assertEquals("a", result[0].value);
+     }
++    public void testPrimitiveArrayDeserializerModifier() throws Exception {
++        ObjectMapper objectMapper = new ObjectMapper();
++        SimpleModule module = new SimpleModule();
++        module.setDeserializerModifier(new BeanDeserializerModifier() {
++            @Override
++            public JsonDeserializer<?> modifyArrayDeserializer(DeserializationConfig config, ArrayType valueType, BeanDescription beanDesc, JsonDeserializer<?> deserializer) {
++                // It will capture the deserializer for both primitive and non-primitive arrays
++                return new JsonDeserializer<Object>() {
++                    @Override
++                    public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
++                        Object result = deserializer.deserialize(p, ctxt);
++                        if (result instanceof byte[]) {
++                            assertEquals(1, ((byte[]) result).length);
++                            assertEquals((byte) 0x11, ((byte[]) result)[0]);
++                        } else if (result instanceof Byte[]) {
++                            assertEquals(1, ((Byte[]) result).length);
++                            assertEquals((byte) 0x11, ((Byte[]) result)[0]);
++                        }
++                        return result;
++                    }
++                };
++            }
++        });
++        objectMapper.registerModule(module);
++
++        Test test = new Test();
++        test.field1 = new byte[]{(byte)0x11};
++        test.field2 = new Byte[]{(byte)0x11};
++        String sample = objectMapper.writeValueAsString(test);
++
++        objectMapper.readValue(sample, Test.class);
++    }
+ }
+2024-08-24 20:30:50,587 - INFO - Grading answer for fasterxml__jackson-databind-4219...
+2024-08-24 20:30:50,588 - INFO - report: {'fasterxml__jackson-databind-4219': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.deser.BeanDeserializerModifier4216Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4219: resolved: False
+2024-08-24 20:30:50,588 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4219.gpt-4o-standard...
+2024-08-24 20:31:05,768 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4219.gpt-4o-standard...
+2024-08-24 20:31:05,779 - INFO - Container sweb.eval.fasterxml__jackson-databind-4219.gpt-4o-standard removed.

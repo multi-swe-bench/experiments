@@ -1,0 +1,97 @@
+2024-08-23 01:09:14,592 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-3626
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-3626:latest for fasterxml__jackson-databind-3626
+2024-08-23 01:09:14,594 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-3626:latest already exists, skipping build.
+2024-08-23 01:09:14,594 - INFO - Creating container for fasterxml__jackson-databind-3626...
+2024-08-23 01:09:14,649 - INFO - Container for fasterxml__jackson-databind-3626 created: d373683931ada2a61221279130dff9905a06a942d69d4f8682035f06d9385da7
+2024-08-23 01:09:14,942 - INFO - Container for fasterxml__jackson-databind-3626 started: d373683931ada2a61221279130dff9905a06a942d69d4f8682035f06d9385da7
+2024-08-23 01:09:14,943 - INFO - Intermediate patch for fasterxml__jackson-databind-3626 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3626/patch.diff, now applying to container...
+2024-08-23 01:09:15,197 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:09:15,260 - INFO - >>>>> Applied Patch:
+patching file copy_with_test.java
+patching file src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+patching file src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java
+
+2024-08-23 01:09:18,787 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+index deea44fab..121c9d2c1 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+@@ -710,7 +710,20 @@ public class ObjectMapper
+      * 
+      * @since 2.1
+      */
+-    public ObjectMapper copy() {
++    /**
++     * Method for creating a new {@link ObjectMapper} instance that
++     * has the same initial configuration as this instance, but with a
++     * different {@link JsonFactory}.
++     *
++     * @param factory the new JsonFactory to use
++     * @return a new ObjectMapper instance with the specified JsonFactory
++     * @since 2.13
++     */
++    public ObjectMapper copyWith(JsonFactory factory) {
++        ObjectMapper newMapper = copy();
++        newMapper._jsonFactory = factory;
++        return newMapper;
++    }
+         _checkInvalidCopy(ObjectMapper.class);
+         return new ObjectMapper(this);
+     }
+diff --git a/src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java b/src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java
+index c465cf306..9e0e961c9 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java
+@@ -63,7 +63,16 @@ public class ObjectMapperTest extends BaseMapTest
+     }
+ 
+     private final ObjectMapper MAPPER = newJsonMapper();
+-
++    public void testCopyWith() {
++        ObjectMapper originalMapper = new ObjectMapper();
++        JsonFactory newFactory = new CBORFactory();
++        ObjectMapper newMapper = originalMapper.copyWith(newFactory);
++
++        // Assert that the new mapper is not the same as the original
++        assertNotSame(originalMapper, newMapper);
++        // Assert that the new mapper has the new JsonFactory
++        assertSame(newFactory, newMapper.getFactory());
++    }
+     /*
+     /**********************************************************
+     /* Test methods, config
+2024-08-23 01:09:18,788 - INFO - Eval script for fasterxml__jackson-databind-3626 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3626/patch.diff, now applying to container...
+2024-08-23 01:09:25,337 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+index deea44fab..121c9d2c1 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+@@ -710,7 +710,20 @@ public class ObjectMapper
+      * 
+      * @since 2.1
+      */
+-    public ObjectMapper copy() {
++    /**
++     * Method for creating a new {@link ObjectMapper} instance that
++     * has the same initial configuration as this instance, but with a
++     * different {@link JsonFactory}.
++     *
++     * @param factory the new JsonFactory to use
++     * @return a new ObjectMapper instance with the specified JsonFactory
++     * @since 2.13
++     */
++    public ObjectMapper copyWith(JsonFactory factory) {
++        ObjectMapper newMapper = copy();
++        newMapper._jsonFactory = factory;
++        return newMapper;
++    }
+         _checkInvalidCopy(ObjectMapper.class);
+         return new ObjectMapper(this);
+     }
+2024-08-23 01:09:25,337 - INFO - Git diff changed after running eval script
+2024-08-23 01:09:25,411 - INFO - Grading answer for fasterxml__jackson-databind-3626...
+2024-08-23 01:09:25,411 - INFO - report: {'fasterxml__jackson-databind-3626': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.ObjectMapperTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-3626: resolved: False
+2024-08-23 01:09:25,411 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-3626.gpt-4o...
+2024-08-23 01:09:40,814 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-3626.gpt-4o...
+2024-08-23 01:09:40,829 - INFO - Container sweb.eval.fasterxml__jackson-databind-3626.gpt-4o removed.

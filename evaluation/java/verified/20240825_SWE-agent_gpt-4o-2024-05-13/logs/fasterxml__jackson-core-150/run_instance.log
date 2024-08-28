@@ -1,0 +1,62 @@
+2024-08-24 20:25:50,635 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-150
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-150:latest for fasterxml__jackson-core-150
+2024-08-24 20:25:50,637 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-150:latest already exists, skipping build.
+2024-08-24 20:25:50,637 - INFO - Creating container for fasterxml__jackson-core-150...
+2024-08-24 20:25:50,698 - INFO - Container for fasterxml__jackson-core-150 created: b2638134320ee249d9f89fa78a094e95d3b525848ef778382e48c2e305ec229d
+2024-08-24 20:25:50,950 - INFO - Container for fasterxml__jackson-core-150 started: b2638134320ee249d9f89fa78a094e95d3b525848ef778382e48c2e305ec229d
+2024-08-24 20:25:50,951 - INFO - Intermediate patch for fasterxml__jackson-core-150 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-150/patch.diff, now applying to container...
+2024-08-24 20:25:51,208 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:25:51,280 - INFO - >>>>> Applied Patch:
+patching file run_test.sh
+patching file src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+patching file src/test/java/com/fasterxml/jackson/core/util/TestLongKey.java
+
+2024-08-24 20:25:51,358 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+index 187754cd..ee63682e 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+@@ -597,11 +597,15 @@ public final class TextBuffer
+      * @since 2.4.0
+      */
+     public char[] expandCurrentSegment(int minSize) {
++        if (minSize > MAX_SEGMENT_LEN) {
++            throw new IllegalArgumentException("Key length exceeds maximum allowed length of " + MAX_SEGMENT_LEN + " bytes.");
++        }
+         char[] curr = _currentSegment;
+         if (curr.length >= minSize) return curr;
+         _currentSegment = curr = Arrays.copyOf(curr, minSize);
+         return curr;
+     }
++    }
+ 
+     /*
+     /**********************************************************
+2024-08-24 20:25:51,359 - INFO - Eval script for fasterxml__jackson-core-150 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-150/patch.diff, now applying to container...
+2024-08-24 20:25:55,429 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+index 187754cd..ee63682e 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+@@ -597,11 +597,15 @@ public final class TextBuffer
+      * @since 2.4.0
+      */
+     public char[] expandCurrentSegment(int minSize) {
++        if (minSize > MAX_SEGMENT_LEN) {
++            throw new IllegalArgumentException("Key length exceeds maximum allowed length of " + MAX_SEGMENT_LEN + " bytes.");
++        }
+         char[] curr = _currentSegment;
+         if (curr.length >= minSize) return curr;
+         _currentSegment = curr = Arrays.copyOf(curr, minSize);
+         return curr;
+     }
++    }
+ 
+     /*
+     /**********************************************************
+2024-08-24 20:25:55,541 - INFO - Grading answer for fasterxml__jackson-core-150...
+2024-08-24 20:25:55,542 - INFO - report: {'fasterxml__jackson-core-150': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.json.TestNumericValues', 'src:com.fasterxml.jackson.core.util.TestTextBuffer'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-150: resolved: False
+2024-08-24 20:25:55,543 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-150.gpt-4o-standard...
+2024-08-24 20:26:10,722 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-150.gpt-4o-standard...
+2024-08-24 20:26:10,731 - INFO - Container sweb.eval.fasterxml__jackson-core-150.gpt-4o-standard removed.

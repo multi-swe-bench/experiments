@@ -1,0 +1,55 @@
+2024-08-19 14:42:43,209 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-183
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-183:latest for fasterxml__jackson-core-183
+2024-08-19 14:42:43,210 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-183:latest already exists, skipping build.
+2024-08-19 14:42:43,210 - INFO - Creating container for fasterxml__jackson-core-183...
+2024-08-19 14:42:43,266 - INFO - Container for fasterxml__jackson-core-183 created: 7fbb509eec80b50010914360c394ffd0ee11b740593a367bf229f85050ecd89f
+2024-08-19 14:42:43,470 - INFO - Container for fasterxml__jackson-core-183 started: 7fbb509eec80b50010914360c394ffd0ee11b740593a367bf229f85050ecd89f
+2024-08-19 14:42:43,470 - INFO - Intermediate patch for fasterxml__jackson-core-183 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-183/patch.diff, now applying to container...
+2024-08-19 14:42:43,662 - INFO - Failed to apply patch to container, trying again...
+2024-08-19 14:42:43,709 - INFO - >>>>> Applied Patch:
+patching file TextBufferIssueReproduction.java
+patching file src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+
+2024-08-19 14:42:43,785 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+index e6f1cbc5..b781fecc 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+@@ -303,6 +303,12 @@ public final class TextBuffer
+         if (_resultString != null) {
+             return (_resultArray = _resultString.toCharArray());
+         }
++        // Return an empty array if no buffer is available
++        return NO_CHARS;
++        if (_resultArray != null)  return _resultArray;
++        if (_resultString != null) {
++            return (_resultArray = _resultString.toCharArray());
++        }
+         // Nope; but does it fit in just one segment?
+         if (!_hasSegments)  return _currentSegment;
+         // Nope, need to have/create a non-segmented array and return it
+2024-08-19 14:42:43,785 - INFO - Eval script for fasterxml__jackson-core-183 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-183/patch.diff, now applying to container...
+2024-08-19 14:42:46,470 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+index e6f1cbc5..b781fecc 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+@@ -303,6 +303,12 @@ public final class TextBuffer
+         if (_resultString != null) {
+             return (_resultArray = _resultString.toCharArray());
+         }
++        // Return an empty array if no buffer is available
++        return NO_CHARS;
++        if (_resultArray != null)  return _resultArray;
++        if (_resultString != null) {
++            return (_resultArray = _resultString.toCharArray());
++        }
+         // Nope; but does it fit in just one segment?
+         if (!_hasSegments)  return _currentSegment;
+         // Nope, need to have/create a non-segmented array and return it
+2024-08-19 14:42:46,513 - INFO - Grading answer for fasterxml__jackson-core-183...
+2024-08-19 14:42:46,513 - INFO - report: {'fasterxml__jackson-core-183': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.util.TestTextBuffer'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-183: resolved: False
+2024-08-19 14:42:46,513 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-183.pred_0819...
+2024-08-19 14:43:01,690 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-183.pred_0819...
+2024-08-19 14:43:01,700 - INFO - Container sweb.eval.fasterxml__jackson-core-183.pred_0819 removed.

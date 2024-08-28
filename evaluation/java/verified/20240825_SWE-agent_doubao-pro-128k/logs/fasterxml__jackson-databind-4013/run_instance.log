@@ -1,0 +1,87 @@
+2024-08-21 13:16:36,497 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4013
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4013:latest for fasterxml__jackson-databind-4013
+2024-08-21 13:16:36,498 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4013:latest already exists, skipping build.
+2024-08-21 13:16:36,498 - INFO - Creating container for fasterxml__jackson-databind-4013...
+2024-08-21 13:16:36,605 - INFO - Container for fasterxml__jackson-databind-4013 created: c3e6baeaf2613646fa045f94e1a354379b567eef724e8cf73cbdce8be5a0f680
+2024-08-21 13:16:36,849 - INFO - Container for fasterxml__jackson-databind-4013 started: c3e6baeaf2613646fa045f94e1a354379b567eef724e8cf73cbdce8be5a0f680
+2024-08-21 13:16:36,849 - INFO - Intermediate patch for fasterxml__jackson-databind-4013 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4013/patch.diff, now applying to container...
+2024-08-21 13:16:37,064 - INFO - Failed to apply patch to container, trying again...
+2024-08-21 13:16:37,103 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
+patching file test_type_parser.py
+
+2024-08-21 13:16:37,264 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java b/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
+index 6bb31f11b..6f57fc72a 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
++++ b/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
+@@ -15,6 +15,7 @@ public class TypeParser
+     private static final long serialVersionUID = 1L;
+ 
+     protected final TypeFactory _factory;
++    private int _depth = 0;  // Added to keep track of the depth
+ 
+     public TypeParser(TypeFactory f) {
+         _factory = f;
+@@ -50,7 +51,12 @@ public class TypeParser
+         if (tokens.hasMoreTokens()) {
+             String token = tokens.nextToken();
+             if ("<".equals(token)) {
++                _depth++;  // Increment the depth
++                if (_depth > 3) {  // Check the depth
++                    throw _problem(tokens, "Maximum depth of type parameters exceeded");
++                }
+                 List<JavaType> parameterTypes = parseTypes(tokens);
++                _depth--;  // Decrement the depth
+                 TypeBindings b = TypeBindings.create(base, parameterTypes);
+                 return _factory._fromClass(null, base, b);
+             }
+@@ -59,6 +65,7 @@ public class TypeParser
+         }
+         return _factory._fromClass(null, base, TypeBindings.emptyBindings());
+     }
++    }
+ 
+     protected List<JavaType> parseTypes(MyTokenizer tokens)
+         throws IllegalArgumentException
+2024-08-21 13:16:37,265 - INFO - Eval script for fasterxml__jackson-databind-4013 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4013/patch.diff, now applying to container...
+2024-08-21 13:16:44,809 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java b/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
+index 6bb31f11b..6f57fc72a 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
++++ b/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
+@@ -15,6 +15,7 @@ public class TypeParser
+     private static final long serialVersionUID = 1L;
+ 
+     protected final TypeFactory _factory;
++    private int _depth = 0;  // Added to keep track of the depth
+ 
+     public TypeParser(TypeFactory f) {
+         _factory = f;
+@@ -50,7 +51,12 @@ public class TypeParser
+         if (tokens.hasMoreTokens()) {
+             String token = tokens.nextToken();
+             if ("<".equals(token)) {
++                _depth++;  // Increment the depth
++                if (_depth > 3) {  // Check the depth
++                    throw _problem(tokens, "Maximum depth of type parameters exceeded");
++                }
+                 List<JavaType> parameterTypes = parseTypes(tokens);
++                _depth--;  // Decrement the depth
+                 TypeBindings b = TypeBindings.create(base, parameterTypes);
+                 return _factory._fromClass(null, base, b);
+             }
+@@ -59,6 +65,7 @@ public class TypeParser
+         }
+         return _factory._fromClass(null, base, TypeBindings.emptyBindings());
+     }
++    }
+ 
+     protected List<JavaType> parseTypes(MyTokenizer tokens)
+         throws IllegalArgumentException
+2024-08-21 13:16:44,859 - INFO - Grading answer for fasterxml__jackson-databind-4013...
+2024-08-21 13:16:44,859 - INFO - report: {'fasterxml__jackson-databind-4013': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.type.TestTypeFactory'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4013: resolved: False
+2024-08-21 13:16:44,859 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4013.doubao...
+2024-08-21 13:17:00,309 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4013.doubao...
+2024-08-21 13:17:00,324 - INFO - Container sweb.eval.fasterxml__jackson-databind-4013.doubao removed.

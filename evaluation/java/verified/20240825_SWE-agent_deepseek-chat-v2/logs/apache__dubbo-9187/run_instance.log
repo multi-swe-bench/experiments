@@ -1,0 +1,100 @@
+2024-08-22 20:14:27,725 - INFO - Environment image sweb.env.x86_64.1db5c641f99223455aefcf:latest found for apache__dubbo-9187
+Building instance image sweb.eval.x86_64.apache__dubbo-9187:latest for apache__dubbo-9187
+2024-08-22 20:14:27,727 - INFO - Image sweb.eval.x86_64.apache__dubbo-9187:latest already exists, skipping build.
+2024-08-22 20:14:27,727 - INFO - Creating container for apache__dubbo-9187...
+2024-08-22 20:14:27,790 - INFO - Container for apache__dubbo-9187 created: 8ec759985d18bc55a59aa0a2c948d53f4539401f180e58e4b278e78f9482353e
+2024-08-22 20:14:28,091 - INFO - Container for apache__dubbo-9187 started: 8ec759985d18bc55a59aa0a2c948d53f4539401f180e58e4b278e78f9482353e
+2024-08-22 20:14:28,091 - INFO - Intermediate patch for apache__dubbo-9187 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-9187/patch.diff, now applying to container...
+2024-08-22 20:14:28,328 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:14:28,404 - INFO - >>>>> Applied Patch:
+patching file dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
+patching file src/test/java/org/apache/dubbo/config/spring/extension/SpringExtensionApp.java
+patching file src/test/java/org/apache/dubbo/config/spring/extension/SpringExtensionFactoryTest.java
+
+2024-08-22 20:14:28,743 - INFO - Git diff before:
+diff --git a/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java b/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
+index e6d7d9d214..a83fb4bf21 100644
+--- a/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
++++ b/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
+@@ -97,17 +97,25 @@ public abstract class DubboBeanUtils {
+     /**
+      * Get optional bean by name and type if beanName is not null, or else find by type
+      *
+-     * @param beanFactory
+-     * @param beanName
+-     * @param beanType
+-     * @param <T>
+-     * @return
+-     */
+-    public static <T> T getOptionalBean(ListableBeanFactory beanFactory, String beanName, Class<T> beanType) throws BeansException {
+-        if (beanName == null) {
+-            return getOptionalBeanByType(beanFactory, beanType);
++    public static <T> T getOptionalBean(ListableBeanFactory beanFactory, String beanName, Class<T> type) {
++        if (beanName != null) {
++            try {
++                return beanFactory.getBean(beanName, type);
++            } catch (NoSuchBeanDefinitionException | BeanNotOfRequiredTypeException e) {
++                logger.debug("Failed to find bean named '" + beanName + "' of type " + type.getName() + ", trying to find by type.", e);
++            }
+         }
++        return getOptionalBeanByType(beanFactory, type);
++    }
+ 
++    private static <T> T getOptionalBeanByType(ListableBeanFactory beanFactory, Class<T> type) {
++        try {
++            return beanFactory.getBean(type);
++        } catch (NoUniqueBeanDefinitionException | NoSuchBeanDefinitionException e) {
++            logger.debug("Failed to find unique bean of type " + type.getName(), e);
++            return null;
++        }
++    }
+         T bean = null;
+         try {
+             bean = beanFactory.getBean(beanName, beanType);
+2024-08-22 20:14:28,743 - INFO - Eval script for apache__dubbo-9187 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-9187/patch.diff, now applying to container...
+2024-08-22 20:16:11,858 - INFO - Git diff after:
+diff --git a/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java b/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
+index e6d7d9d214..a83fb4bf21 100644
+--- a/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
++++ b/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
+@@ -97,17 +97,25 @@ public abstract class DubboBeanUtils {
+     /**
+      * Get optional bean by name and type if beanName is not null, or else find by type
+      *
+-     * @param beanFactory
+-     * @param beanName
+-     * @param beanType
+-     * @param <T>
+-     * @return
+-     */
+-    public static <T> T getOptionalBean(ListableBeanFactory beanFactory, String beanName, Class<T> beanType) throws BeansException {
+-        if (beanName == null) {
+-            return getOptionalBeanByType(beanFactory, beanType);
++    public static <T> T getOptionalBean(ListableBeanFactory beanFactory, String beanName, Class<T> type) {
++        if (beanName != null) {
++            try {
++                return beanFactory.getBean(beanName, type);
++            } catch (NoSuchBeanDefinitionException | BeanNotOfRequiredTypeException e) {
++                logger.debug("Failed to find bean named '" + beanName + "' of type " + type.getName() + ", trying to find by type.", e);
++            }
+         }
++        return getOptionalBeanByType(beanFactory, type);
++    }
+ 
++    private static <T> T getOptionalBeanByType(ListableBeanFactory beanFactory, Class<T> type) {
++        try {
++            return beanFactory.getBean(type);
++        } catch (NoUniqueBeanDefinitionException | NoSuchBeanDefinitionException e) {
++            logger.debug("Failed to find unique bean of type " + type.getName(), e);
++            return null;
++        }
++    }
+         T bean = null;
+         try {
+             bean = beanFactory.getBean(beanName, beanType);
+2024-08-22 20:16:11,919 - INFO - Grading answer for apache__dubbo-9187...
+2024-08-22 20:16:11,920 - INFO - report: {'apache__dubbo-9187': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['dubbo-common:org.apache.dubbo.common.extension.injection.impl.InjectExtImpl'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for apache__dubbo-9187: resolved: False
+2024-08-22 20:16:11,920 - INFO - Attempting to stop container sweb.eval.apache__dubbo-9187.deepseek-chat...
+2024-08-22 20:16:27,239 - INFO - Attempting to remove container sweb.eval.apache__dubbo-9187.deepseek-chat...
+2024-08-22 20:16:27,637 - INFO - Container sweb.eval.apache__dubbo-9187.deepseek-chat removed.

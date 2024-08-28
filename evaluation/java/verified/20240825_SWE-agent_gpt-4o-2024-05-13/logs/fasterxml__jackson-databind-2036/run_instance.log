@@ -1,0 +1,58 @@
+2024-08-24 20:27:27,789 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-2036
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-2036:latest for fasterxml__jackson-databind-2036
+2024-08-24 20:27:27,790 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-2036:latest already exists, skipping build.
+2024-08-24 20:27:27,791 - INFO - Creating container for fasterxml__jackson-databind-2036...
+2024-08-24 20:27:27,856 - INFO - Container for fasterxml__jackson-databind-2036 created: bef185de2026268bf79dff8cfc0ef2ffd6d9afccee8cf317ff81912692c728d9
+2024-08-24 20:27:28,099 - INFO - Container for fasterxml__jackson-databind-2036 started: bef185de2026268bf79dff8cfc0ef2ffd6d9afccee8cf317ff81912692c728d9
+2024-08-24 20:27:28,100 - INFO - Intermediate patch for fasterxml__jackson-databind-2036 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-2036/patch.diff, now applying to container...
+2024-08-24 20:27:28,368 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:27:28,412 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/databind/MapperFeature.java
+
+2024-08-24 20:27:28,610 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/MapperFeature.java b/src/main/java/com/fasterxml/jackson/databind/MapperFeature.java
+index 967fb8964..ee4843473 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/MapperFeature.java
++++ b/src/main/java/com/fasterxml/jackson/databind/MapperFeature.java
+@@ -97,7 +97,14 @@ public enum MapperFeature implements ConfigFeature
+      * configuration available.
+      *<p>
+      * Feature is enabled by default.
++    /**
++     * Feature that determines whether the declared base type should be used
++     * as the default implementation for polymorphic deserialization when the
++     * 'type' property is missing.
++     * <p>
++     * Feature is disabled by default.
+      */
++    USE_BASE_TYPE_AS_DEFAULT_IMPL(false),
+     AUTO_DETECT_FIELDS(true),
+     
+     /**
+2024-08-24 20:27:28,611 - INFO - Eval script for fasterxml__jackson-databind-2036 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-2036/patch.diff, now applying to container...
+2024-08-24 20:27:35,129 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/MapperFeature.java b/src/main/java/com/fasterxml/jackson/databind/MapperFeature.java
+index 967fb8964..ee4843473 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/MapperFeature.java
++++ b/src/main/java/com/fasterxml/jackson/databind/MapperFeature.java
+@@ -97,7 +97,14 @@ public enum MapperFeature implements ConfigFeature
+      * configuration available.
+      *<p>
+      * Feature is enabled by default.
++    /**
++     * Feature that determines whether the declared base type should be used
++     * as the default implementation for polymorphic deserialization when the
++     * 'type' property is missing.
++     * <p>
++     * Feature is disabled by default.
+      */
++    USE_BASE_TYPE_AS_DEFAULT_IMPL(false),
+     AUTO_DETECT_FIELDS(true),
+     
+     /**
+2024-08-24 20:27:35,175 - INFO - Grading answer for fasterxml__jackson-databind-2036...
+2024-08-24 20:27:35,176 - INFO - report: {'fasterxml__jackson-databind-2036': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.jsontype.TestBaseTypeAsDefault'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-2036: resolved: False
+2024-08-24 20:27:35,176 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-2036.gpt-4o-standard...
+2024-08-24 20:27:50,366 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-2036.gpt-4o-standard...
+2024-08-24 20:27:50,392 - INFO - Container sweb.eval.fasterxml__jackson-databind-2036.gpt-4o-standard removed.

@@ -1,0 +1,106 @@
+2024-08-24 20:25:54,695 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-174
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-174:latest for fasterxml__jackson-core-174
+2024-08-24 20:25:54,697 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-174:latest already exists, skipping build.
+2024-08-24 20:25:54,697 - INFO - Creating container for fasterxml__jackson-core-174...
+2024-08-24 20:25:54,753 - INFO - Container for fasterxml__jackson-core-174 created: 99c0edb331c37417f8974fcad4b9ad360864d8a8bb52ec28c549b12fe3e0aec0
+2024-08-24 20:25:54,991 - INFO - Container for fasterxml__jackson-core-174 started: 99c0edb331c37417f8974fcad4b9ad360864d8a8bb52ec28c549b12fe3e0aec0
+2024-08-24 20:25:54,991 - INFO - Intermediate patch for fasterxml__jackson-core-174 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-174/patch.diff, now applying to container...
+2024-08-24 20:25:55,241 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:25:55,300 - INFO - >>>>> Applied Patch:
+patching file TestRunner.java
+patching file run_tests.sh
+patching file src/main/java/com/fasterxml/jackson/core/JsonPointer.java
+patching file src/test/java/com/fasterxml/jackson/core/TestJsonPointer.java
+
+2024-08-24 20:25:55,416 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonPointer.java b/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
+index ff251034..259159a8 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
+@@ -215,7 +215,24 @@ public class JsonPointer
+     /* Internal methods
+     /**********************************************************
+      */
+-
++    /**
++     * Method to append a new segment to the current JsonPointer.
++     * This method returns a new JsonPointer instance containing the previous
++     * segments plus the new segment.
++     *
++     * @param segment the new segment to append
++     * @return a new JsonPointer instance with the appended segment
++     */
++    public JsonPointer append(String segment) {
++        if (segment == null) {
++            throw new IllegalArgumentException("Segment cannot be null");
++        }
++        if (segment.isEmpty()) {
++            return this;
++        }
++        String newPointer = _asString + "/" + segment;
++        return new JsonPointer(newPointer, segment, null, this);
++    }
+     private final static int _parseIndex(String str) {
+         final int len = str.length();
+         // [Issue#133]: beware of super long indexes; assume we never
+diff --git a/src/test/java/com/fasterxml/jackson/core/TestJsonPointer.java b/src/test/java/com/fasterxml/jackson/core/TestJsonPointer.java
+index 9ef13aa7..147fa956 100644
+--- a/src/test/java/com/fasterxml/jackson/core/TestJsonPointer.java
++++ b/src/test/java/com/fasterxml/jackson/core/TestJsonPointer.java
+@@ -97,9 +97,12 @@ public class TestJsonPointer extends BaseTest
+         assertEquals(-1, ptr.getMatchingIndex());
+         assertEquals(String.valueOf(LONG_ID), ptr.getMatchingProperty());
+ 
+-        // done!
+-        ptr = ptr.tail();
+-        assertTrue(ptr.matches());
+-        assertNull(ptr.tail());
++    public void testAppend() throws Exception
++    {
++        JsonPointer ptr = JsonPointer.compile("/root");
++        JsonPointer appendedPtr = ptr.append("child");
++        
++        assertEquals("/root/child", appendedPtr.toString());
++        assertEquals("child", appendedPtr.getMatchingProperty());
++        assertEquals("/root", appendedPtr.head().toString());
+     }
+-}
+2024-08-24 20:25:55,416 - INFO - Eval script for fasterxml__jackson-core-174 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-174/patch.diff, now applying to container...
+2024-08-24 20:25:58,535 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonPointer.java b/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
+index ff251034..259159a8 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
+@@ -215,7 +215,24 @@ public class JsonPointer
+     /* Internal methods
+     /**********************************************************
+      */
+-
++    /**
++     * Method to append a new segment to the current JsonPointer.
++     * This method returns a new JsonPointer instance containing the previous
++     * segments plus the new segment.
++     *
++     * @param segment the new segment to append
++     * @return a new JsonPointer instance with the appended segment
++     */
++    public JsonPointer append(String segment) {
++        if (segment == null) {
++            throw new IllegalArgumentException("Segment cannot be null");
++        }
++        if (segment.isEmpty()) {
++            return this;
++        }
++        String newPointer = _asString + "/" + segment;
++        return new JsonPointer(newPointer, segment, null, this);
++    }
+     private final static int _parseIndex(String str) {
+         final int len = str.length();
+         // [Issue#133]: beware of super long indexes; assume we never
+2024-08-24 20:25:58,535 - INFO - Git diff changed after running eval script
+2024-08-24 20:25:58,604 - INFO - Grading answer for fasterxml__jackson-core-174...
+2024-08-24 20:25:58,604 - INFO - report: {'fasterxml__jackson-core-174': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.TestJsonPointer'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-174: resolved: False
+2024-08-24 20:25:58,604 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-174.gpt-4o-standard...
+2024-08-24 20:26:13,789 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-174.gpt-4o-standard...
+2024-08-24 20:26:13,800 - INFO - Container sweb.eval.fasterxml__jackson-core-174.gpt-4o-standard removed.

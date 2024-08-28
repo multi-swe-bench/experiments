@@ -1,0 +1,50 @@
+2024-08-19 14:39:20,026 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1053
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1053:latest for fasterxml__jackson-core-1053
+2024-08-19 14:39:20,027 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1053:latest already exists, skipping build.
+2024-08-19 14:39:20,027 - INFO - Creating container for fasterxml__jackson-core-1053...
+2024-08-19 14:39:20,081 - INFO - Container for fasterxml__jackson-core-1053 created: c44ed095dd3c46687dbc3685dda613e094f271e2b15324b7c14601670940b62d
+2024-08-19 14:39:20,322 - INFO - Container for fasterxml__jackson-core-1053 started: c44ed095dd3c46687dbc3685dda613e094f271e2b15324b7c14601670940b62d
+2024-08-19 14:39:20,322 - INFO - Intermediate patch for fasterxml__jackson-core-1053 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1053/patch.diff, now applying to container...
+2024-08-19 14:39:20,556 - INFO - Failed to apply patch to container, trying again...
+2024-08-19 14:39:20,619 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/Version.java
+
+2024-08-19 14:39:20,740 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/Version.java b/src/main/java/com/fasterxml/jackson/core/Version.java
+index ed446afc..86b8e607 100644
+--- a/src/main/java/com/fasterxml/jackson/core/Version.java
++++ b/src/main/java/com/fasterxml/jackson/core/Version.java
+@@ -144,7 +144,9 @@ public class Version
+                 if (diff == 0) {
+                     diff = _minorVersion - other._minorVersion;
+                     if (diff == 0) {
+-                        diff = _patchLevel - other._patchLevel;
++                        diff = compareSnapshotInfo(other._snapshotInfo);
++                            diff = compareSnapshotInfo(other._snapshotInfo);
++                        }
+                     }
+                 }
+             }
+2024-08-19 14:39:20,740 - INFO - Eval script for fasterxml__jackson-core-1053 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1053/patch.diff, now applying to container...
+2024-08-19 14:39:27,004 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/Version.java b/src/main/java/com/fasterxml/jackson/core/Version.java
+index ed446afc..86b8e607 100644
+--- a/src/main/java/com/fasterxml/jackson/core/Version.java
++++ b/src/main/java/com/fasterxml/jackson/core/Version.java
+@@ -144,7 +144,9 @@ public class Version
+                 if (diff == 0) {
+                     diff = _minorVersion - other._minorVersion;
+                     if (diff == 0) {
+-                        diff = _patchLevel - other._patchLevel;
++                        diff = compareSnapshotInfo(other._snapshotInfo);
++                            diff = compareSnapshotInfo(other._snapshotInfo);
++                        }
+                     }
+                 }
+             }
+2024-08-19 14:39:27,063 - INFO - Grading answer for fasterxml__jackson-core-1053...
+2024-08-19 14:39:27,063 - INFO - report: {'fasterxml__jackson-core-1053': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.VersionTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1053: resolved: False
+2024-08-19 14:39:27,063 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1053.pred_0819...
+2024-08-19 14:39:43,136 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1053.pred_0819...
+2024-08-19 14:39:43,146 - INFO - Container sweb.eval.fasterxml__jackson-core-1053.pred_0819 removed.

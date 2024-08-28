@@ -1,0 +1,45 @@
+2024-08-21 13:13:21,188 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1263
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1263:latest for fasterxml__jackson-core-1263
+2024-08-21 13:13:21,189 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1263:latest already exists, skipping build.
+2024-08-21 13:13:21,189 - INFO - Creating container for fasterxml__jackson-core-1263...
+2024-08-21 13:13:21,246 - INFO - Container for fasterxml__jackson-core-1263 created: fcf161ae252907069a12bd90f9223f94d719628904370a8d4feba786663bf913
+2024-08-21 13:13:21,478 - INFO - Container for fasterxml__jackson-core-1263 started: fcf161ae252907069a12bd90f9223f94d719628904370a8d4feba786663bf913
+2024-08-21 13:13:21,478 - INFO - Intermediate patch for fasterxml__jackson-core-1263 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1263/patch.diff, now applying to container...
+2024-08-21 13:13:21,704 - INFO - Failed to apply patch to container, trying again...
+2024-08-21 13:13:21,767 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+patching file test_pooled_count.py
+
+2024-08-21 13:13:21,882 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+index 73ec628d..0e9ba762 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+@@ -2327,4 +2327,6 @@ public class JsonFactory
+         // or its sub-class / delegated to one, no need to check for equality, identity is enough
+         return getFormatName() == FORMAT_NAME_JSON;
+     }
+-}
++    public int pooledCount() {
++        return _recyclerPool.size();
++    }
+2024-08-21 13:13:21,882 - INFO - Eval script for fasterxml__jackson-core-1263 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1263/patch.diff, now applying to container...
+2024-08-21 13:13:30,225 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+index 73ec628d..0e9ba762 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+@@ -2327,4 +2327,6 @@ public class JsonFactory
+         // or its sub-class / delegated to one, no need to check for equality, identity is enough
+         return getFormatName() == FORMAT_NAME_JSON;
+     }
+-}
++    public int pooledCount() {
++        return _recyclerPool.size();
++    }
+2024-08-21 13:13:30,350 - INFO - Grading answer for fasterxml__jackson-core-1263...
+2024-08-21 13:13:30,350 - INFO - report: {'fasterxml__jackson-core-1263': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.io.BufferRecyclerPoolTest', 'src:com.fasterxml.jackson.core.util.JsonBufferRecyclersTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1263: resolved: False
+2024-08-21 13:13:30,350 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1263.doubao...
+2024-08-21 13:13:45,537 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1263.doubao...
+2024-08-21 13:13:45,546 - INFO - Container sweb.eval.fasterxml__jackson-core-1263.doubao removed.

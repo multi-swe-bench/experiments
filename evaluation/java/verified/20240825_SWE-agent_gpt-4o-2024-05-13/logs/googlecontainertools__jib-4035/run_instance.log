@@ -1,0 +1,122 @@
+2024-08-24 20:39:18,434 - INFO - Environment image sweb.env.x86_64.1fc51ca99796cb1af8e0b9:latest found for googlecontainertools__jib-4035
+Building instance image sweb.eval.x86_64.googlecontainertools__jib-4035:latest for googlecontainertools__jib-4035
+2024-08-24 20:39:18,435 - INFO - Image sweb.eval.x86_64.googlecontainertools__jib-4035:latest already exists, skipping build.
+2024-08-24 20:39:18,436 - INFO - Creating container for googlecontainertools__jib-4035...
+2024-08-24 20:39:18,508 - INFO - Container for googlecontainertools__jib-4035 created: e10eb4b22f2850a0b4ef2920d833350bf610319dfb30aab03721c41f6bfb69d4
+2024-08-24 20:39:18,725 - INFO - Container for googlecontainertools__jib-4035 started: e10eb4b22f2850a0b4ef2920d833350bf610319dfb30aab03721c41f6bfb69d4
+2024-08-24 20:39:18,725 - INFO - Intermediate patch for googlecontainertools__jib-4035 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/googlecontainertools__jib-4035/patch.diff, now applying to container...
+2024-08-24 20:39:18,955 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:39:19,012 - INFO - >>>>> Applied Patch:
+patching file jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java
+patching file jib-core/src/test/java/com/google/cloud/tools/jib/registry/RegistryAuthenticatorTest.java
+patching file reproduce.java
+
+2024-08-24 20:39:19,165 - INFO - Git diff before:
+diff --git a/gradle.properties b/gradle.properties
+index 7fe7ea26..cde94622 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -1,2 +1,8 @@
+ org.gradle.jvmargs=-Xmx1024m
+ org.gradle.caching=true
++
++systemProp.http.proxyHost=172.17.0.1
++systemProp.http.proxyPort=10809
++systemProp.https.proxyHost=172.17.0.1
++systemProp.https.proxyPort=10809
++
+diff --git a/gradle/wrapper/gradle-wrapper.properties b/gradle/wrapper/gradle-wrapper.properties
+index ec991f9a..1a87e7fc 100644
+--- a/gradle/wrapper/gradle-wrapper.properties
++++ b/gradle/wrapper/gradle-wrapper.properties
+@@ -1,5 +1,5 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-6.9.2-bin.zip
++distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-6.9.2-bin.zip
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+diff --git a/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java b/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java
+index 1b4acde6..aea9b85a 100644
+--- a/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java
++++ b/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java
+@@ -74,7 +74,7 @@ public class RegistryAuthenticator {
+       throws RegistryAuthenticationFailedException {
+     // If the authentication method starts with 'basic ' (case insensitive), no registry
+     // authentication is needed.
+-    if (authenticationMethod.matches("^(?i)(basic) .*")) {
++    if (authenticationMethod.matches("^(?i)(basic).*")) {
+       return Optional.empty();
+     }
+ 
+diff --git a/jib-core/src/test/java/com/google/cloud/tools/jib/registry/RegistryAuthenticatorTest.java b/jib-core/src/test/java/com/google/cloud/tools/jib/registry/RegistryAuthenticatorTest.java
+index fad7c41f..2eacd8f2 100644
+--- a/jib-core/src/test/java/com/google/cloud/tools/jib/registry/RegistryAuthenticatorTest.java
++++ b/jib-core/src/test/java/com/google/cloud/tools/jib/registry/RegistryAuthenticatorTest.java
+@@ -98,7 +98,14 @@ public class RegistryAuthenticatorTest {
+     Assert.assertEquals(
+         new URL("https://somerealm?service=someservice&scope=repository:someimage:scope"),
+         registryAuthenticator.getAuthenticationUrl(
+-            null, Collections.singletonMap("someimage", "scope")));
++@Test
++public void testFromAuthenticationMethod_basicWithoutRealm()
++    throws RegistryAuthenticationFailedException {
++  Optional<RegistryAuthenticator> authenticator =
++      RegistryAuthenticator.fromAuthenticationMethod(
++          "Basic", registryEndpointRequestProperties, "user-agent", httpClient);
++  Assert.assertFalse(authenticator.isPresent());
++}
+   }
+ 
+   @Test
+2024-08-24 20:39:19,165 - INFO - Eval script for googlecontainertools__jib-4035 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/googlecontainertools__jib-4035/patch.diff, now applying to container...
+2024-08-24 20:41:08,213 - INFO - Git diff after:
+diff --git a/gradle.properties b/gradle.properties
+index 7fe7ea26..7e495b1f 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -1,2 +1,14 @@
+ org.gradle.jvmargs=-Xmx1024m
+ org.gradle.caching=true
++
++systemProp.http.proxyHost=172.17.0.1
++systemProp.http.proxyPort=10809
++systemProp.https.proxyHost=172.17.0.1
++systemProp.https.proxyPort=10809
++
++
++systemProp.http.proxyHost=172.17.0.1
++systemProp.http.proxyPort=10809
++systemProp.https.proxyHost=172.17.0.1
++systemProp.https.proxyPort=10809
++
+diff --git a/gradle/wrapper/gradle-wrapper.properties b/gradle/wrapper/gradle-wrapper.properties
+index ec991f9a..1a87e7fc 100644
+--- a/gradle/wrapper/gradle-wrapper.properties
++++ b/gradle/wrapper/gradle-wrapper.properties
+@@ -1,5 +1,5 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-6.9.2-bin.zip
++distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-6.9.2-bin.zip
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+diff --git a/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java b/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java
+index 1b4acde6..aea9b85a 100644
+--- a/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java
++++ b/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java
+@@ -74,7 +74,7 @@ public class RegistryAuthenticator {
+       throws RegistryAuthenticationFailedException {
+     // If the authentication method starts with 'basic ' (case insensitive), no registry
+     // authentication is needed.
+-    if (authenticationMethod.matches("^(?i)(basic) .*")) {
++    if (authenticationMethod.matches("^(?i)(basic).*")) {
+       return Optional.empty();
+     }
+2024-08-24 20:41:08,213 - INFO - Git diff changed after running eval script
+2024-08-24 20:41:08,265 - INFO - Grading answer for googlecontainertools__jib-4035...
+2024-08-24 20:41:08,265 - INFO - report: {'googlecontainertools__jib-4035': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': True, 'tests_status': {'FAIL_TO_PASS': {'success': ['jib-core:com.google.cloud.tools.jib.registry.RegistryAuthenticatorTest'], 'failure': [], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for googlecontainertools__jib-4035: resolved: True
+2024-08-24 20:41:08,265 - INFO - Attempting to stop container sweb.eval.googlecontainertools__jib-4035.gpt-4o-standard...
+2024-08-24 20:41:23,566 - INFO - Attempting to remove container sweb.eval.googlecontainertools__jib-4035.gpt-4o-standard...
+2024-08-24 20:41:23,609 - INFO - Container sweb.eval.googlecontainertools__jib-4035.gpt-4o-standard removed.

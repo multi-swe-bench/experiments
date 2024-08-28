@@ -1,0 +1,197 @@
+2024-08-23 01:04:08,317 - INFO - Environment image sweb.env.x86_64.1db5c641f99223455aefcf:latest found for apache__dubbo-9187
+Building instance image sweb.eval.x86_64.apache__dubbo-9187:latest for apache__dubbo-9187
+2024-08-23 01:04:08,319 - INFO - Image sweb.eval.x86_64.apache__dubbo-9187:latest already exists, skipping build.
+2024-08-23 01:04:08,319 - INFO - Creating container for apache__dubbo-9187...
+2024-08-23 01:04:08,392 - INFO - Container for apache__dubbo-9187 created: 26554828e6c90c59c2a9c243ec9e40137f9731cb912097b534f9a638a8e62efe
+2024-08-23 01:04:08,632 - INFO - Container for apache__dubbo-9187 started: 26554828e6c90c59c2a9c243ec9e40137f9731cb912097b534f9a638a8e62efe
+2024-08-23 01:04:08,633 - INFO - Intermediate patch for apache__dubbo-9187 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-9187/patch.diff, now applying to container...
+2024-08-23 01:04:08,876 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:04:08,933 - INFO - >>>>> Applied Patch:
+patching file dubbo-common/src/test/java/org/apache/dubbo/common/extension/ExtensionLoaderTest.java
+patching file dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
+
+2024-08-23 01:04:09,196 - INFO - Git diff before:
+diff --git a/dubbo-common/src/test/java/org/apache/dubbo/common/extension/ExtensionLoaderTest.java b/dubbo-common/src/test/java/org/apache/dubbo/common/extension/ExtensionLoaderTest.java
+index 9ebfc03870..4670157f6b 100644
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/extension/ExtensionLoaderTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/extension/ExtensionLoaderTest.java
+@@ -597,27 +597,30 @@ public class ExtensionLoaderTest {
+         //recover the loading strategies
+         ExtensionLoader.setLoadingStrategies(loadingStrategies.toArray(new LoadingStrategy[loadingStrategies.size()]));
+     }
++    @Test
++    public void testGetExtensionByType() {
++        // Set up a Spring application context
++        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
++        context.registerBean(MyBean.class); // Register a test bean
++        context.refresh();
+ 
+-    /**
+-     * The external {@link LoadingStrategy}, which can set if it support overridden
+-     * see issue: https://github.com/apache/dubbo/issues/3575
+-     */
+-    private static class DubboExternalLoadingStrategyTest implements LoadingStrategy {
+-
+-        public DubboExternalLoadingStrategyTest(boolean overridden) {
+-            this.overridden = overridden;
+-        }
++        // Get the ExtensionLoader for MyBean
++        ExtensionLoader<MyBean> loader = ExtensionLoader.getExtensionLoader(MyBean.class);
++        
++        // Attempt to get the bean by type
++        MyBean myBean = loader.getExtension(null, true); // Pass null to get by type
+ 
+-        private boolean overridden;
++        // Assert that the bean is not null and is of the correct type
++        Assertions.assertNotNull(myBean);
++        Assertions.assertTrue(myBean instanceof MyBean);
+ 
+-        @Override
+-        public String directory() {
+-            return "META-INF/dubbo/external/";
+-        }
++        // Clean up the context
++        context.close();
++    }
+ 
+-        @Override
+-        public boolean overridden() {
+-            return this.overridden;
++    static class MyBean {
++        // Test bean implementation
++    }
+         }
+ 
+         @Override
+diff --git a/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java b/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
+index e6d7d9d214..6e0b3d5cff 100644
+--- a/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
++++ b/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
+@@ -1,4 +1,5 @@
+-/*
++import org.apache.dubbo.config.spring.util.DubboBeanUtils;
++
+  * Licensed to the Apache Software Foundation (ASF) under one or more
+  * contributor license agreements.  See the NOTICE file distributed with
+  * this work for additional information regarding copyright ownership.
+@@ -159,3 +160,24 @@ public abstract class DubboBeanUtils {
+         return unmodifiableList(beans);
+     }
+ }
++    public T getExtension(String name, boolean wrap) {
++        if (StringUtils.isEmpty(name)) {
++            // Attempt to get the bean by type if name is null
++            return DubboBeanUtils.getOptionalBean(beanFactory, null, T.class);
++        }
++        if ("true".equals(name)) {
++            return getDefaultExtension();
++        }
++        final Holder<Object> holder = getOrCreateHolder(name);
++        Object instance = holder.get();
++        if (instance == null) {
++            synchronized (holder) {
++                instance = holder.get();
++                if (instance == null) {
++                    instance = createExtension(name, wrap);
++                    holder.set(instance);
++                }
++            }
++        }
++        return (T) instance;
++    }
+2024-08-23 01:04:09,196 - INFO - Eval script for apache__dubbo-9187 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-9187/patch.diff, now applying to container...
+2024-08-23 01:05:50,361 - INFO - Git diff after:
+diff --git a/dubbo-common/src/test/java/org/apache/dubbo/common/extension/ExtensionLoaderTest.java b/dubbo-common/src/test/java/org/apache/dubbo/common/extension/ExtensionLoaderTest.java
+index 9ebfc03870..4670157f6b 100644
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/extension/ExtensionLoaderTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/extension/ExtensionLoaderTest.java
+@@ -597,27 +597,30 @@ public class ExtensionLoaderTest {
+         //recover the loading strategies
+         ExtensionLoader.setLoadingStrategies(loadingStrategies.toArray(new LoadingStrategy[loadingStrategies.size()]));
+     }
++    @Test
++    public void testGetExtensionByType() {
++        // Set up a Spring application context
++        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
++        context.registerBean(MyBean.class); // Register a test bean
++        context.refresh();
+ 
+-    /**
+-     * The external {@link LoadingStrategy}, which can set if it support overridden
+-     * see issue: https://github.com/apache/dubbo/issues/3575
+-     */
+-    private static class DubboExternalLoadingStrategyTest implements LoadingStrategy {
+-
+-        public DubboExternalLoadingStrategyTest(boolean overridden) {
+-            this.overridden = overridden;
+-        }
++        // Get the ExtensionLoader for MyBean
++        ExtensionLoader<MyBean> loader = ExtensionLoader.getExtensionLoader(MyBean.class);
++        
++        // Attempt to get the bean by type
++        MyBean myBean = loader.getExtension(null, true); // Pass null to get by type
+ 
+-        private boolean overridden;
++        // Assert that the bean is not null and is of the correct type
++        Assertions.assertNotNull(myBean);
++        Assertions.assertTrue(myBean instanceof MyBean);
+ 
+-        @Override
+-        public String directory() {
+-            return "META-INF/dubbo/external/";
+-        }
++        // Clean up the context
++        context.close();
++    }
+ 
+-        @Override
+-        public boolean overridden() {
+-            return this.overridden;
++    static class MyBean {
++        // Test bean implementation
++    }
+         }
+ 
+         @Override
+diff --git a/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java b/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
+index e6d7d9d214..6e0b3d5cff 100644
+--- a/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
++++ b/dubbo-config/dubbo-config-spring/src/main/java/org/apache/dubbo/config/spring/util/DubboBeanUtils.java
+@@ -1,4 +1,5 @@
+-/*
++import org.apache.dubbo.config.spring.util.DubboBeanUtils;
++
+  * Licensed to the Apache Software Foundation (ASF) under one or more
+  * contributor license agreements.  See the NOTICE file distributed with
+  * this work for additional information regarding copyright ownership.
+@@ -159,3 +160,24 @@ public abstract class DubboBeanUtils {
+         return unmodifiableList(beans);
+     }
+ }
++    public T getExtension(String name, boolean wrap) {
++        if (StringUtils.isEmpty(name)) {
++            // Attempt to get the bean by type if name is null
++            return DubboBeanUtils.getOptionalBean(beanFactory, null, T.class);
++        }
++        if ("true".equals(name)) {
++            return getDefaultExtension();
++        }
++        final Holder<Object> holder = getOrCreateHolder(name);
++        Object instance = holder.get();
++        if (instance == null) {
++            synchronized (holder) {
++                instance = holder.get();
++                if (instance == null) {
++                    instance = createExtension(name, wrap);
++                    holder.set(instance);
++                }
++            }
++        }
++        return (T) instance;
++    }
+2024-08-23 01:05:50,413 - INFO - Grading answer for apache__dubbo-9187...
+2024-08-23 01:05:50,414 - INFO - report: {'apache__dubbo-9187': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['dubbo-common:org.apache.dubbo.common.extension.injection.impl.InjectExtImpl'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for apache__dubbo-9187: resolved: False
+2024-08-23 01:05:50,414 - INFO - Attempting to stop container sweb.eval.apache__dubbo-9187.gpt-4o...
+2024-08-23 01:06:05,685 - INFO - Attempting to remove container sweb.eval.apache__dubbo-9187.gpt-4o...
+2024-08-23 01:06:06,061 - INFO - Container sweb.eval.apache__dubbo-9187.gpt-4o removed.

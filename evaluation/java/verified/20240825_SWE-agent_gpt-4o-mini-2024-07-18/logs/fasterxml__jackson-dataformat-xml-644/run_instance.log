@@ -1,0 +1,138 @@
+2024-08-23 01:15:13,321 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-dataformat-xml-644
+Building instance image sweb.eval.x86_64.fasterxml__jackson-dataformat-xml-644:latest for fasterxml__jackson-dataformat-xml-644
+2024-08-23 01:15:13,322 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-dataformat-xml-644:latest already exists, skipping build.
+2024-08-23 01:15:13,322 - INFO - Creating container for fasterxml__jackson-dataformat-xml-644...
+2024-08-23 01:15:13,379 - INFO - Container for fasterxml__jackson-dataformat-xml-644 created: e8a2d2b5f11578b5aa23550e9e4a4e5ea11364390595f0d013faf3d66c285f37
+2024-08-23 01:15:13,594 - INFO - Container for fasterxml__jackson-dataformat-xml-644 started: e8a2d2b5f11578b5aa23550e9e4a4e5ea11364390595f0d013faf3d66c285f37
+2024-08-23 01:15:13,595 - INFO - Intermediate patch for fasterxml__jackson-dataformat-xml-644 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-dataformat-xml-644/patch.diff, now applying to container...
+2024-08-23 01:15:13,825 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:15:13,884 - INFO - >>>>> Applied Patch:
+patching file Main.java
+patching file run.sh
+patching file src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java
+
+2024-08-23 01:15:13,954 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java b/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java
+index 73c4e673..55fff836 100644
+--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java
++++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java
+@@ -1179,25 +1179,47 @@ public class ToXmlGenerator
+             handleMissingName();
+         }
+         try {
++            // Check for positive and negative infinity
++            if (Double.isInfinite(d)) {
++                String value = d > 0 ? "INF" : "-INF";
++                if (_nextIsAttribute) {
++                    _xmlWriter.writeAttribute(null, _nextName.getNamespaceURI(), _nextName.getLocalPart(), value);
++                } else if (checkNextIsUnwrapped()) {
++                    _xmlWriter.writeCharacters(value);
++                } else {
++                    if (_xmlPrettyPrinter != null) {
++                        _xmlPrettyPrinter.writeLeafElement(_xmlWriter,
++                                _nextName.getNamespaceURI(), _nextName.getLocalPart(),
++                                value);
++                    } else {
++                        _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
++                        _xmlWriter.writeCharacters(value);
++                        _xmlWriter.writeEndElement();
++                    }
++                }
++                return; // Exit after handling infinity
++            }
++
+             if (_nextIsAttribute) {
+                 _xmlWriter.writeDoubleAttribute(null, _nextName.getNamespaceURI(), _nextName.getLocalPart(), d);
+             } else if (checkNextIsUnwrapped()) {
+                 _xmlWriter.writeDouble(d);
+             } else {
+                 if (_xmlPrettyPrinter != null) {
+-                	_xmlPrettyPrinter.writeLeafElement(_xmlWriter,
+-                			_nextName.getNamespaceURI(), _nextName.getLocalPart(),
+-                			d);
++                    _xmlPrettyPrinter.writeLeafElement(_xmlWriter,
++                            _nextName.getNamespaceURI(), _nextName.getLocalPart(),
++                            d);
+                 } else {
+-	                _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
+-	                _xmlWriter.writeDouble(d);
+-	                _xmlWriter.writeEndElement();
++                    _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
++                    _xmlWriter.writeDouble(d);
++                    _xmlWriter.writeEndElement();
+                 }
+             }
+         } catch (XMLStreamException e) {
+             StaxUtil.throwAsGenerationException(e, this);
+         }
+     }
++    }
+ 
+     @Override
+     public void writeNumber(float f) throws IOException
+2024-08-23 01:15:13,954 - INFO - Eval script for fasterxml__jackson-dataformat-xml-644 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-dataformat-xml-644/patch.diff, now applying to container...
+2024-08-23 01:15:20,527 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java b/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java
+index 73c4e673..55fff836 100644
+--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java
++++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java
+@@ -1179,25 +1179,47 @@ public class ToXmlGenerator
+             handleMissingName();
+         }
+         try {
++            // Check for positive and negative infinity
++            if (Double.isInfinite(d)) {
++                String value = d > 0 ? "INF" : "-INF";
++                if (_nextIsAttribute) {
++                    _xmlWriter.writeAttribute(null, _nextName.getNamespaceURI(), _nextName.getLocalPart(), value);
++                } else if (checkNextIsUnwrapped()) {
++                    _xmlWriter.writeCharacters(value);
++                } else {
++                    if (_xmlPrettyPrinter != null) {
++                        _xmlPrettyPrinter.writeLeafElement(_xmlWriter,
++                                _nextName.getNamespaceURI(), _nextName.getLocalPart(),
++                                value);
++                    } else {
++                        _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
++                        _xmlWriter.writeCharacters(value);
++                        _xmlWriter.writeEndElement();
++                    }
++                }
++                return; // Exit after handling infinity
++            }
++
+             if (_nextIsAttribute) {
+                 _xmlWriter.writeDoubleAttribute(null, _nextName.getNamespaceURI(), _nextName.getLocalPart(), d);
+             } else if (checkNextIsUnwrapped()) {
+                 _xmlWriter.writeDouble(d);
+             } else {
+                 if (_xmlPrettyPrinter != null) {
+-                	_xmlPrettyPrinter.writeLeafElement(_xmlWriter,
+-                			_nextName.getNamespaceURI(), _nextName.getLocalPart(),
+-                			d);
++                    _xmlPrettyPrinter.writeLeafElement(_xmlWriter,
++                            _nextName.getNamespaceURI(), _nextName.getLocalPart(),
++                            d);
+                 } else {
+-	                _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
+-	                _xmlWriter.writeDouble(d);
+-	                _xmlWriter.writeEndElement();
++                    _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
++                    _xmlWriter.writeDouble(d);
++                    _xmlWriter.writeEndElement();
+                 }
+             }
+         } catch (XMLStreamException e) {
+             StaxUtil.throwAsGenerationException(e, this);
+         }
+     }
++    }
+ 
+     @Override
+     public void writeNumber(float f) throws IOException
+2024-08-23 01:15:20,571 - INFO - Grading answer for fasterxml__jackson-dataformat-xml-644...
+2024-08-23 01:15:20,572 - INFO - report: {'fasterxml__jackson-dataformat-xml-644': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.dataformat.xml.ser.TestSerialization'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-dataformat-xml-644: resolved: False
+2024-08-23 01:15:20,572 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-dataformat-xml-644.gpt-4o...
+2024-08-23 01:15:35,775 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-dataformat-xml-644.gpt-4o...
+2024-08-23 01:15:35,788 - INFO - Container sweb.eval.fasterxml__jackson-dataformat-xml-644.gpt-4o removed.

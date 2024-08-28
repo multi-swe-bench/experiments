@@ -1,0 +1,82 @@
+2024-08-23 01:04:13,691 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1016
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1016:latest for fasterxml__jackson-core-1016
+2024-08-23 01:04:13,694 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1016:latest already exists, skipping build.
+2024-08-23 01:04:13,694 - INFO - Creating container for fasterxml__jackson-core-1016...
+2024-08-23 01:04:13,842 - INFO - Container for fasterxml__jackson-core-1016 created: b4ffe48bae4e0122c7256b701419a25358763349b0a19ba5bfb7d8deb76ca9dd
+2024-08-23 01:04:14,121 - INFO - Container for fasterxml__jackson-core-1016 started: b4ffe48bae4e0122c7256b701419a25358763349b0a19ba5bfb7d8deb76ca9dd
+2024-08-23 01:04:14,122 - INFO - Intermediate patch for fasterxml__jackson-core-1016 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1016/patch.diff, now applying to container...
+2024-08-23 01:04:14,400 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:04:14,474 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+
+2024-08-23 01:04:14,598 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+index bff4efba..1427ba50 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+@@ -1299,7 +1299,7 @@ public class JsonFactory
+         //   for non-JSON input:
+         _requireJSONFactory("Non-blocking source not (yet?) supported for this format (%s)");
+         IOContext ctxt = _createNonBlockingContext(null);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new NonBlockingJsonParser(ctxt, _parserFeatures, can);
+     }
+ 
+@@ -1326,7 +1326,7 @@ public class JsonFactory
+         //   for non-JSON input:
+         _requireJSONFactory("Non-blocking source not (yet?) supported for this format (%s)");
+         IOContext ctxt = _createNonBlockingContext(null);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new NonBlockingByteBufferJsonParser(ctxt, _parserFeatures, can);
+     }
+ 
+@@ -1849,7 +1849,7 @@ public class JsonFactory
+         // Also: while we can't do full bootstrapping (due to read-ahead limitations), should
+         // at least handle possible UTF-8 BOM
+         int firstByte = ByteSourceJsonBootstrapper.skipUTF8BOM(input);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new UTF8DataInputJsonParser(ctxt, _parserFeatures, input,
+                 _objectCodec, can, firstByte);
+     }
+2024-08-23 01:04:14,598 - INFO - Eval script for fasterxml__jackson-core-1016 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1016/patch.diff, now applying to container...
+2024-08-23 01:04:29,373 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+index bff4efba..1427ba50 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+@@ -1299,7 +1299,7 @@ public class JsonFactory
+         //   for non-JSON input:
+         _requireJSONFactory("Non-blocking source not (yet?) supported for this format (%s)");
+         IOContext ctxt = _createNonBlockingContext(null);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new NonBlockingJsonParser(ctxt, _parserFeatures, can);
+     }
+ 
+@@ -1326,7 +1326,7 @@ public class JsonFactory
+         //   for non-JSON input:
+         _requireJSONFactory("Non-blocking source not (yet?) supported for this format (%s)");
+         IOContext ctxt = _createNonBlockingContext(null);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new NonBlockingByteBufferJsonParser(ctxt, _parserFeatures, can);
+     }
+ 
+@@ -1849,7 +1849,7 @@ public class JsonFactory
+         // Also: while we can't do full bootstrapping (due to read-ahead limitations), should
+         // at least handle possible UTF-8 BOM
+         int firstByte = ByteSourceJsonBootstrapper.skipUTF8BOM(input);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new UTF8DataInputJsonParser(ctxt, _parserFeatures, input,
+                 _objectCodec, can, firstByte);
+     }
+2024-08-23 01:04:29,438 - INFO - Grading answer for fasterxml__jackson-core-1016...
+2024-08-23 01:04:29,439 - INFO - report: {'fasterxml__jackson-core-1016': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.json.JsonFactoryTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1016: resolved: False
+2024-08-23 01:04:29,439 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1016.gpt-4o...
+2024-08-23 01:04:46,296 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1016.gpt-4o...
+2024-08-23 01:04:46,330 - INFO - Container sweb.eval.fasterxml__jackson-core-1016.gpt-4o removed.

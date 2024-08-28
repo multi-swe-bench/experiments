@@ -1,0 +1,152 @@
+2024-08-22 20:15:44,442 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1133
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1133:latest for fasterxml__jackson-core-1133
+2024-08-22 20:15:44,444 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1133:latest already exists, skipping build.
+2024-08-22 20:15:44,444 - INFO - Creating container for fasterxml__jackson-core-1133...
+2024-08-22 20:15:44,490 - INFO - Container for fasterxml__jackson-core-1133 created: 9bcc63fdcbdce04184da615d3d1d32c83049dbdce984f90c6cd29e1807adbedc
+2024-08-22 20:15:44,729 - INFO - Container for fasterxml__jackson-core-1133 started: 9bcc63fdcbdce04184da615d3d1d32c83049dbdce984f90c6cd29e1807adbedc
+2024-08-22 20:15:44,730 - INFO - Intermediate patch for fasterxml__jackson-core-1133 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1133/patch.diff, now applying to container...
+2024-08-22 20:15:45,013 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:15:45,075 - INFO - >>>>> Applied Patch:
+patching file src/main/java/tools/jackson/core/JsonGenerator.java
+patching file src/main/java/tools/jackson/core/JsonParser.java
+patching file src/main/java/tools/jackson/core/exc/WrappedIOException.java
+
+2024-08-22 20:15:45,186 - INFO - Git diff before:
+diff --git a/src/main/java/tools/jackson/core/JsonGenerator.java b/src/main/java/tools/jackson/core/JsonGenerator.java
+index c107a954..55bf7133 100644
+--- a/src/main/java/tools/jackson/core/JsonGenerator.java
++++ b/src/main/java/tools/jackson/core/JsonGenerator.java
+@@ -330,7 +330,7 @@ public abstract class JsonGenerator
+      * are allowed: meaning everywhere except for when
+      * a property name is expected.
+      *
+-     * @throws WrappedIOException if there is an underlying I/O problem
++    public abstract JsonGenerator writeStartArray() throws JacksonException;
+      * @throws StreamWriteException for problems in encoding token stream
+      */
+     public abstract JsonGenerator writeStartArray() throws JacksonException;
+diff --git a/src/main/java/tools/jackson/core/JsonParser.java b/src/main/java/tools/jackson/core/JsonParser.java
+index 6aa7233f..98095a58 100644
+--- a/src/main/java/tools/jackson/core/JsonParser.java
++++ b/src/main/java/tools/jackson/core/JsonParser.java
+@@ -12,7 +12,7 @@ import java.math.BigInteger;
+ import tools.jackson.core.async.NonBlockingInputFeeder;
+ import tools.jackson.core.exc.InputCoercionException;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.json.JsonFactory;
+ import tools.jackson.core.sym.PropertyNameMatcher;
+ import tools.jackson.core.type.ResolvedType;
+diff --git a/src/main/java/tools/jackson/core/exc/WrappedIOException.java b/src/main/java/tools/jackson/core/exc/WrappedIOException.java
+index 6db81c0f..a53117a2 100644
+--- a/src/main/java/tools/jackson/core/exc/WrappedIOException.java
++++ b/src/main/java/tools/jackson/core/exc/WrappedIOException.java
+@@ -16,7 +16,7 @@ import tools.jackson.core.JacksonException;
+  *
+  * @since 3.0
+  */
+-public class WrappedIOException extends JacksonException
++public class JacksonIOException extends JacksonException
+ {
+     private final static long serialVersionUID = 1L;
+ 
+@@ -26,20 +26,20 @@ public class WrappedIOException extends JacksonException
+      */
+     protected transient Object _processor;
+ 
+-    protected WrappedIOException(Object processor, IOException source) {
++    protected JacksonIOException(Object processor, IOException source) {
+         super(source.getMessage(), source);
+         _processor = processor;
+     }
+ 
+-    public static WrappedIOException construct(IOException e) {
++    public static JacksonIOException construct(IOException e) {
+         return construct(e, null);
+     }
+ 
+-    public static WrappedIOException construct(IOException e, Object processor) {
+-        return new WrappedIOException(processor, e);
++    public static JacksonIOException construct(IOException e, Object processor) {
++        return new JacksonIOException(processor, e);
+     }
+ 
+-    public WrappedIOException withProcessor(Object processor) {
++    public JacksonIOException withProcessor(Object processor) {
+         _processor = processor;
+         return this;
+     }
+2024-08-22 20:15:45,186 - INFO - Eval script for fasterxml__jackson-core-1133 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1133/patch.diff, now applying to container...
+2024-08-22 20:15:55,198 - INFO - Git diff after:
+diff --git a/src/main/java/tools/jackson/core/JsonGenerator.java b/src/main/java/tools/jackson/core/JsonGenerator.java
+index c107a954..55bf7133 100644
+--- a/src/main/java/tools/jackson/core/JsonGenerator.java
++++ b/src/main/java/tools/jackson/core/JsonGenerator.java
+@@ -330,7 +330,7 @@ public abstract class JsonGenerator
+      * are allowed: meaning everywhere except for when
+      * a property name is expected.
+      *
+-     * @throws WrappedIOException if there is an underlying I/O problem
++    public abstract JsonGenerator writeStartArray() throws JacksonException;
+      * @throws StreamWriteException for problems in encoding token stream
+      */
+     public abstract JsonGenerator writeStartArray() throws JacksonException;
+diff --git a/src/main/java/tools/jackson/core/JsonParser.java b/src/main/java/tools/jackson/core/JsonParser.java
+index 6aa7233f..98095a58 100644
+--- a/src/main/java/tools/jackson/core/JsonParser.java
++++ b/src/main/java/tools/jackson/core/JsonParser.java
+@@ -12,7 +12,7 @@ import java.math.BigInteger;
+ import tools.jackson.core.async.NonBlockingInputFeeder;
+ import tools.jackson.core.exc.InputCoercionException;
+ import tools.jackson.core.exc.StreamReadException;
+-import tools.jackson.core.exc.WrappedIOException;
++import tools.jackson.core.exc.JacksonIOException;
+ import tools.jackson.core.json.JsonFactory;
+ import tools.jackson.core.sym.PropertyNameMatcher;
+ import tools.jackson.core.type.ResolvedType;
+diff --git a/src/main/java/tools/jackson/core/exc/WrappedIOException.java b/src/main/java/tools/jackson/core/exc/WrappedIOException.java
+index 6db81c0f..a53117a2 100644
+--- a/src/main/java/tools/jackson/core/exc/WrappedIOException.java
++++ b/src/main/java/tools/jackson/core/exc/WrappedIOException.java
+@@ -16,7 +16,7 @@ import tools.jackson.core.JacksonException;
+  *
+  * @since 3.0
+  */
+-public class WrappedIOException extends JacksonException
++public class JacksonIOException extends JacksonException
+ {
+     private final static long serialVersionUID = 1L;
+ 
+@@ -26,20 +26,20 @@ public class WrappedIOException extends JacksonException
+      */
+     protected transient Object _processor;
+ 
+-    protected WrappedIOException(Object processor, IOException source) {
++    protected JacksonIOException(Object processor, IOException source) {
+         super(source.getMessage(), source);
+         _processor = processor;
+     }
+ 
+-    public static WrappedIOException construct(IOException e) {
++    public static JacksonIOException construct(IOException e) {
+         return construct(e, null);
+     }
+ 
+-    public static WrappedIOException construct(IOException e, Object processor) {
+-        return new WrappedIOException(processor, e);
++    public static JacksonIOException construct(IOException e, Object processor) {
++        return new JacksonIOException(processor, e);
+     }
+ 
+-    public WrappedIOException withProcessor(Object processor) {
++    public JacksonIOException withProcessor(Object processor) {
+         _processor = processor;
+         return this;
+     }
+2024-08-22 20:15:55,326 - INFO - Grading answer for fasterxml__jackson-core-1133...
+2024-08-22 20:15:55,327 - INFO - report: {'fasterxml__jackson-core-1133': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:tools.jackson.core.fuzz.Fuzz32208UTF32ParseTest', 'src:tools.jackson.core.json.TestDecorators'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1133: resolved: False
+2024-08-22 20:15:55,327 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1133.deepseek-chat...
+2024-08-22 20:16:10,680 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1133.deepseek-chat...
+2024-08-22 20:16:10,691 - INFO - Container sweb.eval.fasterxml__jackson-core-1133.deepseek-chat removed.

@@ -1,0 +1,153 @@
+2024-08-24 20:32:15,212 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4365
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4365:latest for fasterxml__jackson-databind-4365
+2024-08-24 20:32:15,213 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4365:latest already exists, skipping build.
+2024-08-24 20:32:15,213 - INFO - Creating container for fasterxml__jackson-databind-4365...
+2024-08-24 20:32:15,282 - INFO - Container for fasterxml__jackson-databind-4365 created: d3293d92bbe1efffdccd57bc3458467cf8b8c24a508ba4ae4b1e9f9300aa9a4e
+2024-08-24 20:32:15,464 - INFO - Container for fasterxml__jackson-databind-4365 started: d3293d92bbe1efffdccd57bc3458467cf8b8c24a508ba4ae4b1e9f9300aa9a4e
+2024-08-24 20:32:15,464 - INFO - Intermediate patch for fasterxml__jackson-databind-4365 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-4365/patch.diff, now applying to container...
+2024-08-24 20:32:15,691 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:32:15,736 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
+patching file src/test/java/com/fasterxml/jackson/databind/introspect/TestAnnotationIntrospectorPair.java
+
+2024-08-24 20:32:15,900 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java b/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
+index d6e41dbbd..f1edacf31 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
++++ b/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
+@@ -575,20 +575,24 @@ public class AnnotationIntrospectorPair
+ 
+     // // // Serialization: property annotations
+ 
++    @Override
+     @Override
+     public PropertyName findNameForSerialization(Annotated a) {
+         PropertyName n = _primary.findNameForSerialization(a);
+-        // note: "use default" should not block explicit answer, so:
+-        if (n == null) {
+-            n = _secondary.findNameForSerialization(a);
+-        } else if (n == PropertyName.USE_DEFAULT) {
++        if (n == null || n == PropertyName.USE_DEFAULT) {
+             PropertyName n2 = _secondary.findNameForSerialization(a);
+-            if (n2 != null) {
++            if (n == null) {
+                 n = n2;
++            } else if (n2 != null && n2 != PropertyName.USE_DEFAULT) {
++                n = n.withSimpleName(n2.getSimpleName());
++                if (n2.hasNamespace()) {
++                    n = n.withNamespace(n2.getNamespace());
++                }
+             }
+         }
+         return n;
+     }
++    }
+ 
+     @Override
+     public Boolean hasAsKey(MapperConfig<?> config, Annotated a) {
+@@ -758,18 +762,22 @@ public class AnnotationIntrospectorPair
+         JsonPOJOBuilder.Value result = _primary.findPOJOBuilderConfig(ac);
+         return (result == null) ? _secondary.findPOJOBuilderConfig(ac) : result;
+     }
+-
+-    // // // Deserialization: method annotations
+-
+     @Override
+-    public PropertyName findNameForDeserialization(Annotated a)
+-    {
+-        // note: "use default" should not block explicit answer, so:
++    public PropertyName findNameForDeserialization(Annotated a) {
+         PropertyName n = _primary.findNameForDeserialization(a);
+-        if (n == null) {
+-            n = _secondary.findNameForDeserialization(a);
+-        } else if (n == PropertyName.USE_DEFAULT) {
++        if (n == null || n == PropertyName.USE_DEFAULT) {
+             PropertyName n2 = _secondary.findNameForDeserialization(a);
++            if (n == null) {
++                n = n2;
++            } else if (n2 != null && n2 != PropertyName.USE_DEFAULT) {
++                n = n.withSimpleName(n2.getSimpleName());
++                if (n2.hasNamespace()) {
++                    n = n.withNamespace(n2.getNamespace());
++                }
++            }
++        }
++        return n;
++    }
+             if (n2 != null) {
+                 n = n2;
+             }
+2024-08-24 20:32:15,900 - INFO - Eval script for fasterxml__jackson-databind-4365 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-4365/patch.diff, now applying to container...
+2024-08-24 20:32:22,419 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java b/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
+index d6e41dbbd..f1edacf31 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
++++ b/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
+@@ -575,20 +575,24 @@ public class AnnotationIntrospectorPair
+ 
+     // // // Serialization: property annotations
+ 
++    @Override
+     @Override
+     public PropertyName findNameForSerialization(Annotated a) {
+         PropertyName n = _primary.findNameForSerialization(a);
+-        // note: "use default" should not block explicit answer, so:
+-        if (n == null) {
+-            n = _secondary.findNameForSerialization(a);
+-        } else if (n == PropertyName.USE_DEFAULT) {
++        if (n == null || n == PropertyName.USE_DEFAULT) {
+             PropertyName n2 = _secondary.findNameForSerialization(a);
+-            if (n2 != null) {
++            if (n == null) {
+                 n = n2;
++            } else if (n2 != null && n2 != PropertyName.USE_DEFAULT) {
++                n = n.withSimpleName(n2.getSimpleName());
++                if (n2.hasNamespace()) {
++                    n = n.withNamespace(n2.getNamespace());
++                }
+             }
+         }
+         return n;
+     }
++    }
+ 
+     @Override
+     public Boolean hasAsKey(MapperConfig<?> config, Annotated a) {
+@@ -758,18 +762,22 @@ public class AnnotationIntrospectorPair
+         JsonPOJOBuilder.Value result = _primary.findPOJOBuilderConfig(ac);
+         return (result == null) ? _secondary.findPOJOBuilderConfig(ac) : result;
+     }
+-
+-    // // // Deserialization: method annotations
+-
+     @Override
+-    public PropertyName findNameForDeserialization(Annotated a)
+-    {
+-        // note: "use default" should not block explicit answer, so:
++    public PropertyName findNameForDeserialization(Annotated a) {
+         PropertyName n = _primary.findNameForDeserialization(a);
+-        if (n == null) {
+-            n = _secondary.findNameForDeserialization(a);
+-        } else if (n == PropertyName.USE_DEFAULT) {
++        if (n == null || n == PropertyName.USE_DEFAULT) {
+             PropertyName n2 = _secondary.findNameForDeserialization(a);
++            if (n == null) {
++                n = n2;
++            } else if (n2 != null && n2 != PropertyName.USE_DEFAULT) {
++                n = n.withSimpleName(n2.getSimpleName());
++                if (n2.hasNamespace()) {
++                    n = n.withNamespace(n2.getNamespace());
++                }
++            }
++        }
++        return n;
++    }
+             if (n2 != null) {
+                 n = n2;
+             }
+2024-08-24 20:32:22,480 - INFO - Grading answer for fasterxml__jackson-databind-4365...
+2024-08-24 20:32:22,480 - INFO - report: {'fasterxml__jackson-databind-4365': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.PropertyNameTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4365: resolved: False
+2024-08-24 20:32:22,480 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4365.gpt-4o-standard...
+2024-08-24 20:32:37,651 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4365.gpt-4o-standard...
+2024-08-24 20:32:37,661 - INFO - Container sweb.eval.fasterxml__jackson-databind-4365.gpt-4o-standard removed.

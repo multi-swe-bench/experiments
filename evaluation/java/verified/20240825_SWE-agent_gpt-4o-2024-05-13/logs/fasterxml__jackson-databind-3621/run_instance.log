@@ -1,0 +1,285 @@
+2024-08-24 20:27:59,301 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-3621
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-3621:latest for fasterxml__jackson-databind-3621
+2024-08-24 20:27:59,303 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-3621:latest already exists, skipping build.
+2024-08-24 20:27:59,303 - INFO - Creating container for fasterxml__jackson-databind-3621...
+2024-08-24 20:27:59,378 - INFO - Container for fasterxml__jackson-databind-3621 created: 9466380e254817dc1294c1480dd46d28330702228b72774347fce955887ee179
+2024-08-24 20:27:59,687 - INFO - Container for fasterxml__jackson-databind-3621 started: 9466380e254817dc1294c1480dd46d28330702228b72774347fce955887ee179
+2024-08-24 20:27:59,687 - INFO - Intermediate patch for fasterxml__jackson-databind-3621 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-3621/patch.diff, now applying to container...
+2024-08-24 20:27:59,954 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:28:00,021 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java
+patching file src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+
+2024-08-24 20:28:04,632 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java
+index 8b40dc4f9..05bf78e91 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java
+@@ -222,7 +222,7 @@ public class NumberDeserializers
+                 return Boolean.FALSE;
+             }
+             if (_primitive) {
+-                return _parseBooleanPrimitive(p, ctxt);
++                return _parseBooleanPrimitive(p, ctxt, 0);
+             }
+             return _parseBoolean(p, ctxt, _valueClass);
+         }
+@@ -242,7 +242,7 @@ public class NumberDeserializers
+                 return Boolean.FALSE;
+             }
+             if (_primitive) {
+-                return _parseBooleanPrimitive(p, ctxt);
++                return _parseBooleanPrimitive(p, ctxt, 0);
+             }
+             return _parseBoolean(p, ctxt, _valueClass);
+         }
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+index aa0c70874..bb5e9c6cb 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+@@ -386,37 +386,77 @@ public abstract class StdDeserializer<T>
+      * @param ctxt Deserialization context for accessing configuration
+      * @param p Underlying parser
+      */
+-    protected final boolean _parseBooleanPrimitive(JsonParser p, DeserializationContext ctxt)
+-            throws IOException
+-    {
+-        String text;
+-        switch (p.currentTokenId()) {
+-        case JsonTokenId.ID_STRING:
+-            text = p.getText();
+-            break;
+-        case JsonTokenId.ID_NUMBER_INT:
+-            // may accept ints too, (0 == false, otherwise true)
++protected final boolean _parseBooleanPrimitive(JsonParser p, DeserializationContext ctxt, int depth)
++        throws IOException
++{
++    if (depth > 10) { // limit the depth to 10
++        throw new IOException("Too deeply nested array");
++    }
++    String text;
++    switch (p.currentTokenId()) {
++    case JsonTokenId.ID_STRING:
++        text = p.getText();
++        break;
++    case JsonTokenId.ID_NUMBER_INT:
++        // may accept ints too, (0 == false, otherwise true)
++
++        // call returns `null`, Boolean.TRUE or Boolean.FALSE so:
++        return Boolean.TRUE.equals(_coerceBooleanFromInt(p, ctxt, Boolean.TYPE));
++    case JsonTokenId.ID_TRUE: // usually caller should have handled but:
++        return true;
++    case JsonTokenId.ID_FALSE:
++        return false;
++    case JsonTokenId.ID_NULL: // null fine for non-primitive
++        _verifyNullForPrimitive(ctxt);
++        return false;
++    // 29-Jun-2020, tatu: New! "Scalar from Object" (mostly for XML)
++    case JsonTokenId.ID_START_OBJECT:
++        text = ctxt.extractScalarFromObject(p, this, Boolean.TYPE);
++        break;
++    case JsonTokenId.ID_START_ARRAY:
++        // 12-Jun-2020, tatu: For some reason calling `_deserializeFromArray()` won't work so:
++        if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
++            p.nextToken();
++            final boolean parsed = _parseBooleanPrimitive(p, ctxt, depth + 1);
++            _verifyEndArrayForSingle(p, ctxt);
++            return parsed;
++        }
++        // fall through
++    default:
++        return ((Boolean) ctxt.handleUnexpectedToken(Boolean.TYPE, p)).booleanValue();
++    }
++
++    final CoercionAction act = _checkFromStringCoercion(ctxt, text,
++            LogicalType.Boolean, Boolean.TYPE);
++    if (act == CoercionAction.AsNull) {
++        _verifyNullForPrimitive(ctxt);
++        return false;
++    }
++    if (act == CoercionAction.AsEmpty) {
++        return false;
++    }
++    text = text.trim();
++    final int len = text.length();
+ 
+-            // call returns `null`, Boolean.TRUE or Boolean.FALSE so:
+-            return Boolean.TRUE.equals(_coerceBooleanFromInt(p, ctxt, Boolean.TYPE));
+-        case JsonTokenId.ID_TRUE: // usually caller should have handled but:
++    // For [databind#1852] allow some case-insensitive matches (namely,
++    // true/True/TRUE, false/False/FALSE
++    if (len == 4) {
++        if (_isTrue(text)) {
+             return true;
+-        case JsonTokenId.ID_FALSE:
+-            return false;
+-        case JsonTokenId.ID_NULL: // null fine for non-primitive
+-            _verifyNullForPrimitive(ctxt);
++        }
++    } else if (len == 5) {
++        if (_isFalse(text)) {
+             return false;
+-        // 29-Jun-2020, tatu: New! "Scalar from Object" (mostly for XML)
+-        case JsonTokenId.ID_START_OBJECT:
+-            text = ctxt.extractScalarFromObject(p, this, Boolean.TYPE);
+-            break;
+-        case JsonTokenId.ID_START_ARRAY:
+-            // 12-Jun-2020, tatu: For some reason calling `_deserializeFromArray()` won't work so:
+-            if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
+-                p.nextToken();
+-                final boolean parsed = _parseBooleanPrimitive(p, ctxt);
+-                _verifyEndArrayForSingle(p, ctxt);
+-                return parsed;
++        }
++    }
++    if (_hasTextualNull(text)) {
++        _verifyNullForPrimitiveCoercion(ctxt, text);
++        return false;
++    }
++    Boolean b = (Boolean) ctxt.handleWeirdStringValue(Boolean.TYPE, text,
++            "only \"true\"/\"True\"/\"TRUE\" or \"false\"/\"False\"/\"FALSE\" recognized");
++    return Boolean.TRUE.equals(b);
++}
+             }
+             // fall through
+         default:
+2024-08-24 20:28:04,632 - INFO - Eval script for fasterxml__jackson-databind-3621 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-3621/patch.diff, now applying to container...
+2024-08-24 20:28:11,161 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java
+index 8b40dc4f9..05bf78e91 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/NumberDeserializers.java
+@@ -222,7 +222,7 @@ public class NumberDeserializers
+                 return Boolean.FALSE;
+             }
+             if (_primitive) {
+-                return _parseBooleanPrimitive(p, ctxt);
++                return _parseBooleanPrimitive(p, ctxt, 0);
+             }
+             return _parseBoolean(p, ctxt, _valueClass);
+         }
+@@ -242,7 +242,7 @@ public class NumberDeserializers
+                 return Boolean.FALSE;
+             }
+             if (_primitive) {
+-                return _parseBooleanPrimitive(p, ctxt);
++                return _parseBooleanPrimitive(p, ctxt, 0);
+             }
+             return _parseBoolean(p, ctxt, _valueClass);
+         }
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+index aa0c70874..bb5e9c6cb 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+@@ -386,37 +386,77 @@ public abstract class StdDeserializer<T>
+      * @param ctxt Deserialization context for accessing configuration
+      * @param p Underlying parser
+      */
+-    protected final boolean _parseBooleanPrimitive(JsonParser p, DeserializationContext ctxt)
+-            throws IOException
+-    {
+-        String text;
+-        switch (p.currentTokenId()) {
+-        case JsonTokenId.ID_STRING:
+-            text = p.getText();
+-            break;
+-        case JsonTokenId.ID_NUMBER_INT:
+-            // may accept ints too, (0 == false, otherwise true)
++protected final boolean _parseBooleanPrimitive(JsonParser p, DeserializationContext ctxt, int depth)
++        throws IOException
++{
++    if (depth > 10) { // limit the depth to 10
++        throw new IOException("Too deeply nested array");
++    }
++    String text;
++    switch (p.currentTokenId()) {
++    case JsonTokenId.ID_STRING:
++        text = p.getText();
++        break;
++    case JsonTokenId.ID_NUMBER_INT:
++        // may accept ints too, (0 == false, otherwise true)
++
++        // call returns `null`, Boolean.TRUE or Boolean.FALSE so:
++        return Boolean.TRUE.equals(_coerceBooleanFromInt(p, ctxt, Boolean.TYPE));
++    case JsonTokenId.ID_TRUE: // usually caller should have handled but:
++        return true;
++    case JsonTokenId.ID_FALSE:
++        return false;
++    case JsonTokenId.ID_NULL: // null fine for non-primitive
++        _verifyNullForPrimitive(ctxt);
++        return false;
++    // 29-Jun-2020, tatu: New! "Scalar from Object" (mostly for XML)
++    case JsonTokenId.ID_START_OBJECT:
++        text = ctxt.extractScalarFromObject(p, this, Boolean.TYPE);
++        break;
++    case JsonTokenId.ID_START_ARRAY:
++        // 12-Jun-2020, tatu: For some reason calling `_deserializeFromArray()` won't work so:
++        if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
++            p.nextToken();
++            final boolean parsed = _parseBooleanPrimitive(p, ctxt, depth + 1);
++            _verifyEndArrayForSingle(p, ctxt);
++            return parsed;
++        }
++        // fall through
++    default:
++        return ((Boolean) ctxt.handleUnexpectedToken(Boolean.TYPE, p)).booleanValue();
++    }
++
++    final CoercionAction act = _checkFromStringCoercion(ctxt, text,
++            LogicalType.Boolean, Boolean.TYPE);
++    if (act == CoercionAction.AsNull) {
++        _verifyNullForPrimitive(ctxt);
++        return false;
++    }
++    if (act == CoercionAction.AsEmpty) {
++        return false;
++    }
++    text = text.trim();
++    final int len = text.length();
+ 
+-            // call returns `null`, Boolean.TRUE or Boolean.FALSE so:
+-            return Boolean.TRUE.equals(_coerceBooleanFromInt(p, ctxt, Boolean.TYPE));
+-        case JsonTokenId.ID_TRUE: // usually caller should have handled but:
++    // For [databind#1852] allow some case-insensitive matches (namely,
++    // true/True/TRUE, false/False/FALSE
++    if (len == 4) {
++        if (_isTrue(text)) {
+             return true;
+-        case JsonTokenId.ID_FALSE:
+-            return false;
+-        case JsonTokenId.ID_NULL: // null fine for non-primitive
+-            _verifyNullForPrimitive(ctxt);
++        }
++    } else if (len == 5) {
++        if (_isFalse(text)) {
+             return false;
+-        // 29-Jun-2020, tatu: New! "Scalar from Object" (mostly for XML)
+-        case JsonTokenId.ID_START_OBJECT:
+-            text = ctxt.extractScalarFromObject(p, this, Boolean.TYPE);
+-            break;
+-        case JsonTokenId.ID_START_ARRAY:
+-            // 12-Jun-2020, tatu: For some reason calling `_deserializeFromArray()` won't work so:
+-            if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
+-                p.nextToken();
+-                final boolean parsed = _parseBooleanPrimitive(p, ctxt);
+-                _verifyEndArrayForSingle(p, ctxt);
+-                return parsed;
++        }
++    }
++    if (_hasTextualNull(text)) {
++        _verifyNullForPrimitiveCoercion(ctxt, text);
++        return false;
++    }
++    Boolean b = (Boolean) ctxt.handleWeirdStringValue(Boolean.TYPE, text,
++            "only \"true\"/\"True\"/\"TRUE\" or \"false\"/\"False\"/\"FALSE\" recognized");
++    return Boolean.TRUE.equals(b);
++}
+             }
+             // fall through
+         default:
+2024-08-24 20:28:11,206 - INFO - Grading answer for fasterxml__jackson-databind-3621...
+2024-08-24 20:28:11,207 - INFO - report: {'fasterxml__jackson-databind-3621': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.deser.dos.DeepArrayWrappingForDeser3590Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-3621: resolved: False
+2024-08-24 20:28:11,207 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-3621.gpt-4o-standard...
+2024-08-24 20:28:26,452 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-3621.gpt-4o-standard...
+2024-08-24 20:28:26,469 - INFO - Container sweb.eval.fasterxml__jackson-databind-3621.gpt-4o-standard removed.

@@ -1,0 +1,132 @@
+2024-08-22 20:21:02,878 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4013
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4013:latest for fasterxml__jackson-databind-4013
+2024-08-22 20:21:02,880 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4013:latest already exists, skipping build.
+2024-08-22 20:21:02,880 - INFO - Creating container for fasterxml__jackson-databind-4013...
+2024-08-22 20:21:02,963 - INFO - Container for fasterxml__jackson-databind-4013 created: be43ca31a6f7359f498dffded501cf47df6d2147076a441178ab8596ca087b2d
+2024-08-22 20:21:03,177 - INFO - Container for fasterxml__jackson-databind-4013 started: be43ca31a6f7359f498dffded501cf47df6d2147076a441178ab8596ca087b2d
+2024-08-22 20:21:03,178 - INFO - Intermediate patch for fasterxml__jackson-databind-4013 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4013/patch.diff, now applying to container...
+2024-08-22 20:21:03,426 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:21:03,470 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
+
+2024-08-22 20:21:03,634 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java b/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
+index 6bb31f11b..60baec45b 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
++++ b/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
+@@ -62,6 +62,51 @@ public class TypeParser
+ 
+     protected List<JavaType> parseTypes(MyTokenizer tokens)
+         throws IllegalArgumentException
++    {
++        return parseTypes(tokens, 0);
++    }
++
++    protected List<JavaType> parseTypes(MyTokenizer tokens, int depth)
++        throws IllegalArgumentException
++    {
++        if (depth > MAX_TYPE_PARAMETER_DEPTH) {
++            throw _problem(tokens, "Maximum type parameter depth exceeded");
++        }
++        ArrayList<JavaType> types = new ArrayList<JavaType>();
++        while (tokens.hasMoreTokens()) {
++            types.add(parseType(tokens, depth + 1));
++            if (!tokens.hasMoreTokens()) break;
++            String token = tokens.nextToken();
++            if (">".equals(token)) return types;
++            if (!",".equals(token)) {
++                throw _problem(tokens, "Unexpected token '"+token+"', expected ',' or '>')");
++            }
++        }
++        throw _problem(tokens, "Unexpected end-of-string");
++    }
++
++    protected JavaType parseType(MyTokenizer tokens, int depth)
++        throws IllegalArgumentException
++    {
++        if (!tokens.hasMoreTokens()) {
++            throw _problem(tokens, "Unexpected end-of-string");
++        }
++        Class<?> base = findClass(tokens.nextToken(), tokens);
++
++        // either end (ok, non generic type), or generics
++        if (tokens.hasMoreTokens()) {
++            String token = tokens.nextToken();
++            if ("<".equals(token)) {
++                List<JavaType> parameterTypes = parseTypes(tokens, depth + 1);
++                TypeBindings b = TypeBindings.create(base, parameterTypes);
++                return _factory._fromClass(null, base, b);
++            }
++            // can be comma that separates types, or closing '>'
++            tokens.pushBack(token);
++        }
++        return _factory._fromClass(null, base, TypeBindings.emptyBindings());
++    }
++        throws IllegalArgumentException
+     {
+         ArrayList<JavaType> types = new ArrayList<JavaType>();
+         while (tokens.hasMoreTokens()) {
+2024-08-22 20:21:03,634 - INFO - Eval script for fasterxml__jackson-databind-4013 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4013/patch.diff, now applying to container...
+2024-08-22 20:21:09,996 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java b/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
+index 6bb31f11b..60baec45b 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
++++ b/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
+@@ -62,6 +62,51 @@ public class TypeParser
+ 
+     protected List<JavaType> parseTypes(MyTokenizer tokens)
+         throws IllegalArgumentException
++    {
++        return parseTypes(tokens, 0);
++    }
++
++    protected List<JavaType> parseTypes(MyTokenizer tokens, int depth)
++        throws IllegalArgumentException
++    {
++        if (depth > MAX_TYPE_PARAMETER_DEPTH) {
++            throw _problem(tokens, "Maximum type parameter depth exceeded");
++        }
++        ArrayList<JavaType> types = new ArrayList<JavaType>();
++        while (tokens.hasMoreTokens()) {
++            types.add(parseType(tokens, depth + 1));
++            if (!tokens.hasMoreTokens()) break;
++            String token = tokens.nextToken();
++            if (">".equals(token)) return types;
++            if (!",".equals(token)) {
++                throw _problem(tokens, "Unexpected token '"+token+"', expected ',' or '>')");
++            }
++        }
++        throw _problem(tokens, "Unexpected end-of-string");
++    }
++
++    protected JavaType parseType(MyTokenizer tokens, int depth)
++        throws IllegalArgumentException
++    {
++        if (!tokens.hasMoreTokens()) {
++            throw _problem(tokens, "Unexpected end-of-string");
++        }
++        Class<?> base = findClass(tokens.nextToken(), tokens);
++
++        // either end (ok, non generic type), or generics
++        if (tokens.hasMoreTokens()) {
++            String token = tokens.nextToken();
++            if ("<".equals(token)) {
++                List<JavaType> parameterTypes = parseTypes(tokens, depth + 1);
++                TypeBindings b = TypeBindings.create(base, parameterTypes);
++                return _factory._fromClass(null, base, b);
++            }
++            // can be comma that separates types, or closing '>'
++            tokens.pushBack(token);
++        }
++        return _factory._fromClass(null, base, TypeBindings.emptyBindings());
++    }
++        throws IllegalArgumentException
+     {
+         ArrayList<JavaType> types = new ArrayList<JavaType>();
+         while (tokens.hasMoreTokens()) {
+2024-08-22 20:21:10,057 - INFO - Grading answer for fasterxml__jackson-databind-4013...
+2024-08-22 20:21:10,058 - INFO - report: {'fasterxml__jackson-databind-4013': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.type.TestTypeFactory'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4013: resolved: False
+2024-08-22 20:21:10,058 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4013.deepseek-chat...
+2024-08-22 20:21:25,281 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4013.deepseek-chat...
+2024-08-22 20:21:25,291 - INFO - Container sweb.eval.fasterxml__jackson-databind-4013.deepseek-chat removed.

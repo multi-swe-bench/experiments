@@ -1,0 +1,58 @@
+2024-08-21 13:20:47,661 - INFO - Environment image sweb.env.x86_64.92848c9972c7cb83a2984c:latest found for google__gson-1093
+Building instance image sweb.eval.x86_64.google__gson-1093:latest for google__gson-1093
+2024-08-21 13:20:47,662 - INFO - Image sweb.eval.x86_64.google__gson-1093:latest already exists, skipping build.
+2024-08-21 13:20:47,662 - INFO - Creating container for google__gson-1093...
+2024-08-21 13:20:47,741 - INFO - Container for google__gson-1093 created: adc1bb838770faab46f68a11db9a120a9bfa83f26439985020da91ce8a2bccb3
+2024-08-21 13:20:47,995 - INFO - Container for google__gson-1093 started: adc1bb838770faab46f68a11db9a120a9bfa83f26439985020da91ce8a2bccb3
+2024-08-21 13:20:47,996 - INFO - Intermediate patch for google__gson-1093 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/google__gson-1093/patch.diff, now applying to container...
+2024-08-21 13:20:48,222 - INFO - Failed to apply patch to container, trying again...
+2024-08-21 13:20:48,256 - INFO - >>>>> Applied Patch:
+patching file gson/src/main/java/com/google/gson/stream/JsonWriter.java
+
+2024-08-21 13:20:48,329 - INFO - Git diff before:
+diff --git a/gson/src/main/java/com/google/gson/stream/JsonWriter.java b/gson/src/main/java/com/google/gson/stream/JsonWriter.java
+index e2fc1961..59b59440 100644
+--- a/gson/src/main/java/com/google/gson/stream/JsonWriter.java
++++ b/gson/src/main/java/com/google/gson/stream/JsonWriter.java
+@@ -185,7 +185,14 @@ public class JsonWriter implements Closeable, Flushable {
+ 
+   private boolean htmlSafe;
+ 
+-  private String deferredName;
++        if (Double.isNaN(value) || Double.isInfinite(value)) {
++            if (lenient) {
++                // Allow writing pseudo-numeric values in lenient mode
++                writeString(Double.toString(value));
++            } else {
++                throw new IllegalArgumentException("Numeric values must be finite, but was " + value);
++            }
++        }
+ 
+   private boolean serializeNulls = true;
+2024-08-21 13:20:48,329 - INFO - Eval script for google__gson-1093 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/google__gson-1093/patch.diff, now applying to container...
+2024-08-21 13:20:56,416 - INFO - Git diff after:
+diff --git a/gson/src/main/java/com/google/gson/stream/JsonWriter.java b/gson/src/main/java/com/google/gson/stream/JsonWriter.java
+index e2fc1961..59b59440 100644
+--- a/gson/src/main/java/com/google/gson/stream/JsonWriter.java
++++ b/gson/src/main/java/com/google/gson/stream/JsonWriter.java
+@@ -185,7 +185,14 @@ public class JsonWriter implements Closeable, Flushable {
+ 
+   private boolean htmlSafe;
+ 
+-  private String deferredName;
++        if (Double.isNaN(value) || Double.isInfinite(value)) {
++            if (lenient) {
++                // Allow writing pseudo-numeric values in lenient mode
++                writeString(Double.toString(value));
++            } else {
++                throw new IllegalArgumentException("Numeric values must be finite, but was " + value);
++            }
++        }
+ 
+   private boolean serializeNulls = true;
+2024-08-21 13:20:56,488 - INFO - Grading answer for google__gson-1093...
+2024-08-21 13:20:56,488 - INFO - report: {'google__gson-1093': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['gson:com.google.gson.stream.JsonWriterTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for google__gson-1093: resolved: False
+2024-08-21 13:20:56,488 - INFO - Attempting to stop container sweb.eval.google__gson-1093.doubao...
+2024-08-21 13:21:11,704 - INFO - Attempting to remove container sweb.eval.google__gson-1093.doubao...
+2024-08-21 13:21:11,721 - INFO - Container sweb.eval.google__gson-1093.doubao removed.

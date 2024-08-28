@@ -1,0 +1,128 @@
+2024-08-24 20:26:06,137 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-183
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-183:latest for fasterxml__jackson-core-183
+2024-08-24 20:26:06,139 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-183:latest already exists, skipping build.
+2024-08-24 20:26:06,139 - INFO - Creating container for fasterxml__jackson-core-183...
+2024-08-24 20:26:06,201 - INFO - Container for fasterxml__jackson-core-183 created: a47e3ab5ec5550221b053724cd0c753734a2459b366aa035c8f9d7a23cb0e574
+2024-08-24 20:26:06,431 - INFO - Container for fasterxml__jackson-core-183 started: a47e3ab5ec5550221b053724cd0c753734a2459b366aa035c8f9d7a23cb0e574
+2024-08-24 20:26:06,431 - INFO - Intermediate patch for fasterxml__jackson-core-183 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-183/patch.diff, now applying to container...
+2024-08-24 20:26:06,672 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:26:06,727 - INFO - >>>>> Applied Patch:
+patching file reproduce.java
+patching file src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+patching file src/test/java/com/fasterxml/jackson/core/util/TextBufferTest.java
+
+2024-08-24 20:26:06,837 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+index e6f1cbc5..01a30536 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+@@ -1,4 +1,15 @@
+-package com.fasterxml.jackson.core.util;
++import com.fasterxml.jackson.core.util.BufferRecycler;
++import com.fasterxml.jackson.core.util.TextBuffer;
++
++public class Reproduce {
++    public static void main(String[] args) {
++        TextBuffer buffer = new TextBuffer(new BufferRecycler());
++        buffer.resetWithEmpty();
++        System.out.println(buffer.getTextBuffer() == null ? "null" : "not null"); // should return "not null"
++        System.out.println(buffer.contentsAsString().isEmpty() ? "empty" : "not empty"); // should return "empty"
++        System.out.println(buffer.getTextBuffer().length == 0 ? "empty array" : "not empty array"); // should return "empty array"
++    }
++}
+ 
+ import java.math.BigDecimal;
+ import java.util.ArrayList;
+@@ -295,19 +306,19 @@ public final class TextBuffer
+         return true;
+     }
+     
+-    public char[] getTextBuffer()
+-    {
+-        // Are we just using shared input buffer?
+-        if (_inputStart >= 0) return _inputBuffer;
+-        if (_resultArray != null)  return _resultArray;
+-        if (_resultString != null) {
+-            return (_resultArray = _resultString.toCharArray());
+-        }
+-        // Nope; but does it fit in just one segment?
+-        if (!_hasSegments)  return _currentSegment;
+-        // Nope, need to have/create a non-segmented array and return it
+-        return contentsAsArray();
++public char[] getTextBuffer()
++{
++    // Are we just using shared input buffer?
++    if (_inputStart >= 0) return _inputBuffer;
++    if (_resultArray != null)  return _resultArray;
++    if (_resultString != null) {
++        return (_resultArray = _resultString.toCharArray());
+     }
++    // Nope; but does it fit in just one segment?
++    if (!_hasSegments)  return (_currentSegment == null || _currentSize == 0) ? NO_CHARS : _currentSegment;
++    // Nope, need to have/create a non-segmented array and return it
++    return contentsAsArray();
++}
+ 
+     /*
+     /**********************************************************
+2024-08-24 20:26:06,837 - INFO - Eval script for fasterxml__jackson-core-183 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-183/patch.diff, now applying to container...
+2024-08-24 20:26:09,174 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+index e6f1cbc5..01a30536 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+@@ -1,4 +1,15 @@
+-package com.fasterxml.jackson.core.util;
++import com.fasterxml.jackson.core.util.BufferRecycler;
++import com.fasterxml.jackson.core.util.TextBuffer;
++
++public class Reproduce {
++    public static void main(String[] args) {
++        TextBuffer buffer = new TextBuffer(new BufferRecycler());
++        buffer.resetWithEmpty();
++        System.out.println(buffer.getTextBuffer() == null ? "null" : "not null"); // should return "not null"
++        System.out.println(buffer.contentsAsString().isEmpty() ? "empty" : "not empty"); // should return "empty"
++        System.out.println(buffer.getTextBuffer().length == 0 ? "empty array" : "not empty array"); // should return "empty array"
++    }
++}
+ 
+ import java.math.BigDecimal;
+ import java.util.ArrayList;
+@@ -295,19 +306,19 @@ public final class TextBuffer
+         return true;
+     }
+     
+-    public char[] getTextBuffer()
+-    {
+-        // Are we just using shared input buffer?
+-        if (_inputStart >= 0) return _inputBuffer;
+-        if (_resultArray != null)  return _resultArray;
+-        if (_resultString != null) {
+-            return (_resultArray = _resultString.toCharArray());
+-        }
+-        // Nope; but does it fit in just one segment?
+-        if (!_hasSegments)  return _currentSegment;
+-        // Nope, need to have/create a non-segmented array and return it
+-        return contentsAsArray();
++public char[] getTextBuffer()
++{
++    // Are we just using shared input buffer?
++    if (_inputStart >= 0) return _inputBuffer;
++    if (_resultArray != null)  return _resultArray;
++    if (_resultString != null) {
++        return (_resultArray = _resultString.toCharArray());
+     }
++    // Nope; but does it fit in just one segment?
++    if (!_hasSegments)  return (_currentSegment == null || _currentSize == 0) ? NO_CHARS : _currentSegment;
++    // Nope, need to have/create a non-segmented array and return it
++    return contentsAsArray();
++}
+ 
+     /*
+     /**********************************************************
+2024-08-24 20:26:09,226 - INFO - Grading answer for fasterxml__jackson-core-183...
+2024-08-24 20:26:09,226 - INFO - report: {'fasterxml__jackson-core-183': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.util.TestTextBuffer'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-183: resolved: False
+2024-08-24 20:26:09,227 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-183.gpt-4o-standard...
+2024-08-24 20:26:24,596 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-183.gpt-4o-standard...
+2024-08-24 20:26:24,604 - INFO - Container sweb.eval.fasterxml__jackson-core-183.gpt-4o-standard removed.

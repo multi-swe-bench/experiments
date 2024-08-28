@@ -1,0 +1,113 @@
+2024-08-19 14:46:54,613 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4050
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4050:latest for fasterxml__jackson-databind-4050
+2024-08-19 14:46:54,615 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4050:latest already exists, skipping build.
+2024-08-19 14:46:54,615 - INFO - Creating container for fasterxml__jackson-databind-4050...
+2024-08-19 14:46:54,690 - INFO - Container for fasterxml__jackson-databind-4050 created: 736b0115214872eba5641aa43d5db2c47d55807fe43af56de6c8d15efd215b9a
+2024-08-19 14:46:54,970 - INFO - Container for fasterxml__jackson-databind-4050 started: 736b0115214872eba5641aa43d5db2c47d55807fe43af56de6c8d15efd215b9a
+2024-08-19 14:46:54,970 - INFO - Intermediate patch for fasterxml__jackson-databind-4050 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4050/patch.diff, now applying to container...
+2024-08-19 14:46:55,228 - INFO - Failed to apply patch to container, trying again...
+2024-08-19 14:46:55,284 - INFO - >>>>> Applied Patch:
+patching file ReproduceIssue.java
+patching file src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+
+2024-08-19 14:46:55,550 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+index 4610a58e5..4c94e7265 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+@@ -3519,6 +3519,41 @@ public class ObjectMapper
+             return (T) getNodeFactory().nullNode();
+         }
+ 
++        // inlined 'writeValue' with minor changes:
++        // first: check if WRAP_ROOT_VALUE is enabled
++        final SerializationConfig config = getSerializationConfig();
++        final boolean wrapRootValue = config.isEnabled(SerializationFeature.WRAP_ROOT_VALUE);
++        final DefaultSerializerProvider context = _serializerProvider(config);
++
++        // Then create TokenBuffer to use as JsonGenerator
++        TokenBuffer buf = context.bufferForValueConversion(this);
++        if (isEnabled(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)) {
++            buf = buf.forceUseOfBigDecimal(true);
++        }
++        try {
++            if (wrapRootValue) {
++                // If WRAP_ROOT_VALUE is enabled, wrap the value
++                buf.writeStartObject();
++                buf.writeFieldName(config.getRootName());
++            }
++            context.serializeValue(buf, fromValue);
++            if (wrapRootValue) {
++                buf.writeEndObject();
++            }
++            try (JsonParser p = buf.asParser()) {
++                return readTree(p);
++            }
++        } catch (IOException e) { // should not occur, no real i/o...
++            throw new IllegalArgumentException(e.getMessage(), e);
++        }
++    }
++        throws IllegalArgumentException
++    {
++        // [databind#2430]: `null` should become "null node":
++        if (fromValue == null) {
++            return (T) getNodeFactory().nullNode();
++        }
++
+         // inlined 'writeValue' with minor changes:
+         // first: disable wrapping when writing
+         final SerializationConfig config = getSerializationConfig().without(SerializationFeature.WRAP_ROOT_VALUE);
+2024-08-19 14:46:55,550 - INFO - Eval script for fasterxml__jackson-databind-4050 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4050/patch.diff, now applying to container...
+2024-08-19 14:47:21,737 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+index 4610a58e5..4c94e7265 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+@@ -3519,6 +3519,41 @@ public class ObjectMapper
+             return (T) getNodeFactory().nullNode();
+         }
+ 
++        // inlined 'writeValue' with minor changes:
++        // first: check if WRAP_ROOT_VALUE is enabled
++        final SerializationConfig config = getSerializationConfig();
++        final boolean wrapRootValue = config.isEnabled(SerializationFeature.WRAP_ROOT_VALUE);
++        final DefaultSerializerProvider context = _serializerProvider(config);
++
++        // Then create TokenBuffer to use as JsonGenerator
++        TokenBuffer buf = context.bufferForValueConversion(this);
++        if (isEnabled(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)) {
++            buf = buf.forceUseOfBigDecimal(true);
++        }
++        try {
++            if (wrapRootValue) {
++                // If WRAP_ROOT_VALUE is enabled, wrap the value
++                buf.writeStartObject();
++                buf.writeFieldName(config.getRootName());
++            }
++            context.serializeValue(buf, fromValue);
++            if (wrapRootValue) {
++                buf.writeEndObject();
++            }
++            try (JsonParser p = buf.asParser()) {
++                return readTree(p);
++            }
++        } catch (IOException e) { // should not occur, no real i/o...
++            throw new IllegalArgumentException(e.getMessage(), e);
++        }
++    }
++        throws IllegalArgumentException
++    {
++        // [databind#2430]: `null` should become "null node":
++        if (fromValue == null) {
++            return (T) getNodeFactory().nullNode();
++        }
++
+         // inlined 'writeValue' with minor changes:
+         // first: disable wrapping when writing
+         final SerializationConfig config = getSerializationConfig().without(SerializationFeature.WRAP_ROOT_VALUE);
+2024-08-19 14:47:21,791 - INFO - Grading answer for fasterxml__jackson-databind-4050...
+2024-08-19 14:47:21,791 - INFO - report: {'fasterxml__jackson-databind-4050': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.node.TestConversions'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4050: resolved: False
+2024-08-19 14:47:21,792 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4050.pred_0819...
+2024-08-19 14:47:37,041 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4050.pred_0819...
+2024-08-19 14:47:37,058 - INFO - Container sweb.eval.fasterxml__jackson-databind-4050.pred_0819 removed.

@@ -1,0 +1,51 @@
+2024-08-19 14:43:14,594 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-894
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-894:latest for fasterxml__jackson-core-894
+2024-08-19 14:43:14,596 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-894:latest already exists, skipping build.
+2024-08-19 14:43:14,596 - INFO - Creating container for fasterxml__jackson-core-894...
+2024-08-19 14:43:14,642 - INFO - Container for fasterxml__jackson-core-894 created: 0ed8ab572fc58d950b9e60d902971d6c88462066dee7889441528e5c978920fc
+2024-08-19 14:43:14,882 - INFO - Container for fasterxml__jackson-core-894 started: 0ed8ab572fc58d950b9e60d902971d6c88462066dee7889441528e5c978920fc
+2024-08-19 14:43:14,882 - INFO - Intermediate patch for fasterxml__jackson-core-894 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-894/patch.diff, now applying to container...
+2024-08-19 14:43:15,131 - INFO - Failed to apply patch to container, trying again...
+2024-08-19 14:43:15,186 - INFO - >>>>> Applied Patch:
+patching file TestFilteringGeneratorDelegate.java
+patching file src/main/java/com/fasterxml/jackson/core/filter/FilteringGeneratorDelegate.java
+
+2024-08-19 14:43:16,437 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/filter/FilteringGeneratorDelegate.java b/src/main/java/com/fasterxml/jackson/core/filter/FilteringGeneratorDelegate.java
+index e4310e92..109eb070 100644
+--- a/src/main/java/com/fasterxml/jackson/core/filter/FilteringGeneratorDelegate.java
++++ b/src/main/java/com/fasterxml/jackson/core/filter/FilteringGeneratorDelegate.java
+@@ -313,8 +313,10 @@ public class FilteringGeneratorDelegate extends JsonGeneratorDelegate
+ 
+         TokenFilter f = _filterContext.checkValue(_itemFilter);
+         if (f == null) {
++            _filterContext = _filterContext.createChildObjectContext(_itemFilter, false);
+             return;
+         }
++        }
+         
+         if (f != TokenFilter.INCLUDE_ALL) {
+             f = f.filterStartObject();
+2024-08-19 14:43:16,438 - INFO - Eval script for fasterxml__jackson-core-894 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-894/patch.diff, now applying to container...
+2024-08-19 14:43:24,899 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/filter/FilteringGeneratorDelegate.java b/src/main/java/com/fasterxml/jackson/core/filter/FilteringGeneratorDelegate.java
+index e4310e92..109eb070 100644
+--- a/src/main/java/com/fasterxml/jackson/core/filter/FilteringGeneratorDelegate.java
++++ b/src/main/java/com/fasterxml/jackson/core/filter/FilteringGeneratorDelegate.java
+@@ -313,8 +313,10 @@ public class FilteringGeneratorDelegate extends JsonGeneratorDelegate
+ 
+         TokenFilter f = _filterContext.checkValue(_itemFilter);
+         if (f == null) {
++            _filterContext = _filterContext.createChildObjectContext(_itemFilter, false);
+             return;
+         }
++        }
+         
+         if (f != TokenFilter.INCLUDE_ALL) {
+             f = f.filterStartObject();
+2024-08-19 14:43:25,004 - INFO - Grading answer for fasterxml__jackson-core-894...
+2024-08-19 14:43:25,004 - INFO - report: {'fasterxml__jackson-core-894': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.filter.GeneratorFiltering890Test', 'src:com.fasterxml.jackson.core.filter.JsonPointerGeneratorFilteringTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-894: resolved: False
+2024-08-19 14:43:25,005 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-894.pred_0819...
+2024-08-19 14:43:40,209 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-894.pred_0819...
+2024-08-19 14:43:40,218 - INFO - Container sweb.eval.fasterxml__jackson-core-894.pred_0819 removed.

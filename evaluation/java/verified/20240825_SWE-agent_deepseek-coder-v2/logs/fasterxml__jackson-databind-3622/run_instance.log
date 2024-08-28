@@ -1,0 +1,53 @@
+2024-08-19 14:45:11,345 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-3622
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-3622:latest for fasterxml__jackson-databind-3622
+2024-08-19 14:45:11,347 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-3622:latest already exists, skipping build.
+2024-08-19 14:45:11,347 - INFO - Creating container for fasterxml__jackson-databind-3622...
+2024-08-19 14:45:11,421 - INFO - Container for fasterxml__jackson-databind-3622 created: bb5f443da5b5aa9ac41a4c3f984b1d2ed1a8c929fb0a3708b4c6f5d786ab56ff
+2024-08-19 14:45:11,642 - INFO - Container for fasterxml__jackson-databind-3622 started: bb5f443da5b5aa9ac41a4c3f984b1d2ed1a8c929fb0a3708b4c6f5d786ab56ff
+2024-08-19 14:45:11,642 - INFO - Intermediate patch for fasterxml__jackson-databind-3622 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3622/patch.diff, now applying to container...
+2024-08-19 14:45:11,865 - INFO - Failed to apply patch to container, trying again...
+2024-08-19 14:45:11,926 - INFO - >>>>> Applied Patch:
+patching file TestDeeplyNestedArrays.java
+patching file src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+
+2024-08-19 14:45:16,875 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+index 3716d9398..4eb50eb74 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+@@ -601,6 +601,11 @@ public class BeanDeserializer
+ 
+     @Override
+     protected Object _deserializeFromArray(JsonParser p, DeserializationContext ctxt) throws IOException
++    {
++        // Check for deeply nested arrays
++        if (p.getParsingContext().inArray() && p.getParsingContext().getParent().inArray()) {
++            return ctxt.handleUnexpectedToken(getValueType(ctxt), p);
++        }
+     {
+         // note: cannot call `_delegateDeserializer()` since order reversed here:
+         JsonDeserializer<Object> delegateDeser = _arrayDelegateDeserializer;
+2024-08-19 14:45:16,876 - INFO - Eval script for fasterxml__jackson-databind-3622 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3622/patch.diff, now applying to container...
+2024-08-19 14:45:23,975 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+index 3716d9398..4eb50eb74 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+@@ -601,6 +601,11 @@ public class BeanDeserializer
+ 
+     @Override
+     protected Object _deserializeFromArray(JsonParser p, DeserializationContext ctxt) throws IOException
++    {
++        // Check for deeply nested arrays
++        if (p.getParsingContext().inArray() && p.getParsingContext().getParent().inArray()) {
++            return ctxt.handleUnexpectedToken(getValueType(ctxt), p);
++        }
+     {
+         // note: cannot call `_delegateDeserializer()` since order reversed here:
+         JsonDeserializer<Object> delegateDeser = _arrayDelegateDeserializer;
+2024-08-19 14:45:24,098 - INFO - Grading answer for fasterxml__jackson-databind-3622...
+2024-08-19 14:45:24,099 - INFO - report: {'fasterxml__jackson-databind-3622': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.deser.dos.DeepArrayWrappingForDeser3582Test', 'src:com.fasterxml.jackson.databind.deser.dos.DeepArrayWrappingForDeser3590Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-3622: resolved: False
+2024-08-19 14:45:24,099 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-3622.pred_0819...
+2024-08-19 14:45:39,290 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-3622.pred_0819...
+2024-08-19 14:45:39,300 - INFO - Container sweb.eval.fasterxml__jackson-databind-3622.pred_0819 removed.

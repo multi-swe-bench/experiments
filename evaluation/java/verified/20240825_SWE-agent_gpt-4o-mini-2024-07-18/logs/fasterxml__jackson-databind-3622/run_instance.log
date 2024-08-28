@@ -1,0 +1,143 @@
+2024-08-23 01:09:09,055 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-3622
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-3622:latest for fasterxml__jackson-databind-3622
+2024-08-23 01:09:09,056 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-3622:latest already exists, skipping build.
+2024-08-23 01:09:09,056 - INFO - Creating container for fasterxml__jackson-databind-3622...
+2024-08-23 01:09:09,149 - INFO - Container for fasterxml__jackson-databind-3622 created: fb0d8b1e7749aae1d7a73e49485fc6b65e0e654a794e738f76aae33bb369e183
+2024-08-23 01:09:09,374 - INFO - Container for fasterxml__jackson-databind-3622 started: fb0d8b1e7749aae1d7a73e49485fc6b65e0e654a794e738f76aae33bb369e183
+2024-08-23 01:09:09,374 - INFO - Intermediate patch for fasterxml__jackson-databind-3622 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3622/patch.diff, now applying to container...
+2024-08-23 01:09:09,612 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:09:09,671 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+patching file src/test/java/com/fasterxml/jackson/databind/deser/TestBeanDeserializer.java
+
+2024-08-23 01:09:12,601 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+index 3716d9398..2761b68f0 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+@@ -218,7 +218,7 @@ public class BeanDeserializer
+                 return deserializeFromNull(p, ctxt);
+             case START_ARRAY:
+                 // these only work if there's a (delegating) creator, or UNWRAP_SINGLE_ARRAY
+-                return _deserializeFromArray(p, ctxt);
++                return _deserializeFromArray(p, ctxt, 0);
+             case FIELD_NAME:
+             case END_OBJECT: // added to resolve [JACKSON-319], possible related issues
+                 if (_vanillaProcessing) {
+@@ -600,7 +600,23 @@ public class BeanDeserializer
+     }
+ 
+     @Override
+-    protected Object _deserializeFromArray(JsonParser p, DeserializationContext ctxt) throws IOException
++    protected Object _deserializeFromArray(JsonParser p, DeserializationContext ctxt, int depth) throws IOException
++    {
++        if (depth > 1) {
++            throw new IOException("Deeply nested arrays are not supported.");
++        }
++        // Existing code...
++        JsonDeserializer<Object> delegateDeser = _arrayDelegateDeserializer;
++        // fallback to non-array delegate
++        if ((delegateDeser != null) || ((delegateDeser = _delegateDeserializer) != null)) {
++            Object bean = _valueInstantiator.createUsingArrayDelegate(ctxt,
++                    delegateDeser.deserialize(p, ctxt, depth + 1));
++            if (_injectables != null) {
++                injectValues(ctxt, bean);
++            }
++            return bean;
++        }
++        // Existing code continues...
+     {
+         // note: cannot call `_delegateDeserializer()` since order reversed here:
+         JsonDeserializer<Object> delegateDeser = _arrayDelegateDeserializer;
+diff --git a/src/test/java/com/fasterxml/jackson/databind/deser/TestBeanDeserializer.java b/src/test/java/com/fasterxml/jackson/databind/deser/TestBeanDeserializer.java
+index 05850407c..c50868a35 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/deser/TestBeanDeserializer.java
++++ b/src/test/java/com/fasterxml/jackson/databind/deser/TestBeanDeserializer.java
+@@ -453,4 +453,17 @@ public class TestBeanDeserializer extends BaseMapTest
+         Issue1912Bean result = mapper.readValue("{\"subBean\": {\"a\":\"foo\"}}", Issue1912Bean.class);
+         assertEquals("foo_custom", result.subBean.a);
+     }
+-}
++    @Test
++    public void testDeeplyNestedArrayDeserialization() throws IOException {
++        ObjectMapper mapper = new ObjectMapper();
++        String json = "[[[1, 2, 3]]]"; // Deeply nested array
++
++        Exception exception = assertThrows(IOException.class, () -> {
++            mapper.readValue(json, Bean.class);
++        });
++
++        String expectedMessage = "Deeply nested arrays are not supported.";
++        String actualMessage = exception.getMessage();
++
++        assertTrue(actualMessage.contains(expectedMessage));
++    }
+2024-08-23 01:09:12,601 - INFO - Eval script for fasterxml__jackson-databind-3622 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3622/patch.diff, now applying to container...
+2024-08-23 01:09:18,614 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+index 3716d9398..2761b68f0 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+@@ -218,7 +218,7 @@ public class BeanDeserializer
+                 return deserializeFromNull(p, ctxt);
+             case START_ARRAY:
+                 // these only work if there's a (delegating) creator, or UNWRAP_SINGLE_ARRAY
+-                return _deserializeFromArray(p, ctxt);
++                return _deserializeFromArray(p, ctxt, 0);
+             case FIELD_NAME:
+             case END_OBJECT: // added to resolve [JACKSON-319], possible related issues
+                 if (_vanillaProcessing) {
+@@ -600,7 +600,23 @@ public class BeanDeserializer
+     }
+ 
+     @Override
+-    protected Object _deserializeFromArray(JsonParser p, DeserializationContext ctxt) throws IOException
++    protected Object _deserializeFromArray(JsonParser p, DeserializationContext ctxt, int depth) throws IOException
++    {
++        if (depth > 1) {
++            throw new IOException("Deeply nested arrays are not supported.");
++        }
++        // Existing code...
++        JsonDeserializer<Object> delegateDeser = _arrayDelegateDeserializer;
++        // fallback to non-array delegate
++        if ((delegateDeser != null) || ((delegateDeser = _delegateDeserializer) != null)) {
++            Object bean = _valueInstantiator.createUsingArrayDelegate(ctxt,
++                    delegateDeser.deserialize(p, ctxt, depth + 1));
++            if (_injectables != null) {
++                injectValues(ctxt, bean);
++            }
++            return bean;
++        }
++        // Existing code continues...
+     {
+         // note: cannot call `_delegateDeserializer()` since order reversed here:
+         JsonDeserializer<Object> delegateDeser = _arrayDelegateDeserializer;
+diff --git a/src/test/java/com/fasterxml/jackson/databind/deser/TestBeanDeserializer.java b/src/test/java/com/fasterxml/jackson/databind/deser/TestBeanDeserializer.java
+index 05850407c..c50868a35 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/deser/TestBeanDeserializer.java
++++ b/src/test/java/com/fasterxml/jackson/databind/deser/TestBeanDeserializer.java
+@@ -453,4 +453,17 @@ public class TestBeanDeserializer extends BaseMapTest
+         Issue1912Bean result = mapper.readValue("{\"subBean\": {\"a\":\"foo\"}}", Issue1912Bean.class);
+         assertEquals("foo_custom", result.subBean.a);
+     }
+-}
++    @Test
++    public void testDeeplyNestedArrayDeserialization() throws IOException {
++        ObjectMapper mapper = new ObjectMapper();
++        String json = "[[[1, 2, 3]]]"; // Deeply nested array
++
++        Exception exception = assertThrows(IOException.class, () -> {
++            mapper.readValue(json, Bean.class);
++        });
++
++        String expectedMessage = "Deeply nested arrays are not supported.";
++        String actualMessage = exception.getMessage();
++
++        assertTrue(actualMessage.contains(expectedMessage));
++    }
+2024-08-23 01:09:18,726 - INFO - Grading answer for fasterxml__jackson-databind-3622...
+2024-08-23 01:09:18,726 - INFO - report: {'fasterxml__jackson-databind-3622': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.deser.dos.DeepArrayWrappingForDeser3582Test', 'src:com.fasterxml.jackson.databind.deser.dos.DeepArrayWrappingForDeser3590Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-3622: resolved: False
+2024-08-23 01:09:18,727 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-3622.gpt-4o...
+2024-08-23 01:09:33,924 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-3622.gpt-4o...
+2024-08-23 01:09:33,938 - INFO - Container sweb.eval.fasterxml__jackson-databind-3622.gpt-4o removed.

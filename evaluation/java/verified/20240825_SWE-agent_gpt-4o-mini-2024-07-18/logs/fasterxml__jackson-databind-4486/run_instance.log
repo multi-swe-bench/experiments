@@ -1,0 +1,54 @@
+2024-08-23 01:13:43,379 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4486
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4486:latest for fasterxml__jackson-databind-4486
+2024-08-23 01:13:43,380 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4486:latest already exists, skipping build.
+2024-08-23 01:13:43,381 - INFO - Creating container for fasterxml__jackson-databind-4486...
+2024-08-23 01:13:43,472 - INFO - Container for fasterxml__jackson-databind-4486 created: e74cebc3e3132d0aeff1685ee92564f88b4f63eed2986d21e1de6fbb1a81ca5f
+2024-08-23 01:13:43,699 - INFO - Container for fasterxml__jackson-databind-4486 started: e74cebc3e3132d0aeff1685ee92564f88b4f63eed2986d21e1de6fbb1a81ca5f
+2024-08-23 01:13:43,700 - INFO - Intermediate patch for fasterxml__jackson-databind-4486 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4486/patch.diff, now applying to container...
+2024-08-23 01:13:43,928 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:13:43,978 - INFO - >>>>> Applied Patch:
+patching file EnumDeserializerTest.java
+patching file ReproduceBug.java
+patching file run_reproduce.sh
+patching file run_test.sh
+patching file src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java
+
+2024-08-23 01:13:44,128 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java
+index 68c2be07c..5a6cdb1e1 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java
+@@ -486,8 +486,8 @@ public class EnumDeserializer
+ 
+     // @since 2.15
+     protected boolean useNullForUnknownEnum(DeserializationContext ctxt) {
+-        return Boolean.TRUE.equals(_useNullForUnknownEnum)
+-          || ctxt.isEnabled(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL);
++        return Optional.ofNullable(Boolean.TRUE.equals(_useNullForUnknownEnum))
++          .orElseGet(() -> ctxt.isEnabled(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL));
+     }
+ 
+     // @since 2.15
+2024-08-23 01:13:44,128 - INFO - Eval script for fasterxml__jackson-databind-4486 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4486/patch.diff, now applying to container...
+2024-08-23 01:14:01,976 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java
+index 68c2be07c..5a6cdb1e1 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java
+@@ -486,8 +486,8 @@ public class EnumDeserializer
+ 
+     // @since 2.15
+     protected boolean useNullForUnknownEnum(DeserializationContext ctxt) {
+-        return Boolean.TRUE.equals(_useNullForUnknownEnum)
+-          || ctxt.isEnabled(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL);
++        return Optional.ofNullable(Boolean.TRUE.equals(_useNullForUnknownEnum))
++          .orElseGet(() -> ctxt.isEnabled(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL));
+     }
+ 
+     // @since 2.15
+2024-08-23 01:14:02,043 - INFO - Grading answer for fasterxml__jackson-databind-4486...
+2024-08-23 01:14:02,043 - INFO - report: {'fasterxml__jackson-databind-4486': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': True, 'tests_status': {'FAIL_TO_PASS': {'success': ['src:com.fasterxml.jackson.databind.deser.enums.EnumAltIdTest'], 'failure': [], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4486: resolved: True
+2024-08-23 01:14:02,043 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4486.gpt-4o...
+2024-08-23 01:14:17,261 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4486.gpt-4o...
+2024-08-23 01:14:17,427 - INFO - Container sweb.eval.fasterxml__jackson-databind-4486.gpt-4o removed.

@@ -1,0 +1,64 @@
+2024-08-23 01:07:00,710 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1309
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1309:latest for fasterxml__jackson-core-1309
+2024-08-23 01:07:00,711 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1309:latest already exists, skipping build.
+2024-08-23 01:07:00,711 - INFO - Creating container for fasterxml__jackson-core-1309...
+2024-08-23 01:07:00,779 - INFO - Container for fasterxml__jackson-core-1309 created: b86688b1e1d9bff991c67844c65ec29dbbfd64cff368872509879f5acd8ebfec
+2024-08-23 01:07:01,021 - INFO - Container for fasterxml__jackson-core-1309 started: b86688b1e1d9bff991c67844c65ec29dbbfd64cff368872509879f5acd8ebfec
+2024-08-23 01:07:01,021 - INFO - Intermediate patch for fasterxml__jackson-core-1309 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1309/patch.diff, now applying to container...
+2024-08-23 01:07:01,218 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:07:01,270 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/io/NumberInput.java
+patching file src/test/java/com/fasterxml/jackson/core/io/NumberInputTest.java
+patching file src/test/java/com/fasterxml/jackson/core/io/NumberInputTestCustom.java
+patching file src/test/java/com/fasterxml/jackson/core/io/TestNumberInput.java
+patching file test_number_input.py
+
+2024-08-23 01:07:01,364 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java b/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java
+index bde9e32a..4a363d2c 100644
+--- a/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java
++++ b/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java
+@@ -39,7 +39,7 @@ public final class NumberInput
+      * @since 2.17
+      */
+     private final static Pattern PATTERN_FLOAT = Pattern.compile(
+-          "[+-]?[0-9]*[\\.]?[0-9]+([eE][+-]?[0-9]+)?");
++        "[+-]?[0-9]*[\\.]?[0-9]*([eE][+-]?[0-9]+)?");
+ 
+     /**
+      * Fast method for parsing unsigned integers that are known to fit into
+diff --git a/src/test/java/com/fasterxml/jackson/core/io/NumberInputTest.java b/src/test/java/com/fasterxml/jackson/core/io/NumberInputTest.java
+index a84251ed..c8640146 100644
+--- a/src/test/java/com/fasterxml/jackson/core/io/NumberInputTest.java
++++ b/src/test/java/com/fasterxml/jackson/core/io/NumberInputTest.java
+@@ -96,7 +96,7 @@ class NumberInputTest
+         assertTrue(NumberInput.looksLikeValidNumber("-1.39"));
+         assertTrue(NumberInput.looksLikeValidNumber("+125.0")); // non-JSON
+         
+-        assertTrue(NumberInput.looksLikeValidNumber("1E10"));
++        assertTrue(NumberInput.looksLikeValidNumber("3.")); // trailing dot
+         assertTrue(NumberInput.looksLikeValidNumber("-1E10"));
+         assertTrue(NumberInput.looksLikeValidNumber("1e-10"));
+         assertTrue(NumberInput.looksLikeValidNumber("1e+10"));
+2024-08-23 01:07:01,364 - INFO - Eval script for fasterxml__jackson-core-1309 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1309/patch.diff, now applying to container...
+2024-08-23 01:07:13,653 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java b/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java
+index bde9e32a..4a363d2c 100644
+--- a/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java
++++ b/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java
+@@ -39,7 +39,7 @@ public final class NumberInput
+      * @since 2.17
+      */
+     private final static Pattern PATTERN_FLOAT = Pattern.compile(
+-          "[+-]?[0-9]*[\\.]?[0-9]+([eE][+-]?[0-9]+)?");
++        "[+-]?[0-9]*[\\.]?[0-9]*([eE][+-]?[0-9]+)?");
+ 
+     /**
+      * Fast method for parsing unsigned integers that are known to fit into
+2024-08-23 01:07:13,653 - INFO - Git diff changed after running eval script
+2024-08-23 01:07:13,714 - INFO - Grading answer for fasterxml__jackson-core-1309...
+2024-08-23 01:07:13,714 - INFO - report: {'fasterxml__jackson-core-1309': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.io.NumberInputTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1309: resolved: False
+2024-08-23 01:07:13,715 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1309.gpt-4o...
+2024-08-23 01:07:28,913 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1309.gpt-4o...
+2024-08-23 01:07:28,937 - INFO - Container sweb.eval.fasterxml__jackson-core-1309.gpt-4o removed.

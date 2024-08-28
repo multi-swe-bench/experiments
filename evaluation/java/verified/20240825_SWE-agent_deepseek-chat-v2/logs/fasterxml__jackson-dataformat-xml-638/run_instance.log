@@ -1,0 +1,52 @@
+2024-08-22 20:25:40,189 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-dataformat-xml-638
+Building instance image sweb.eval.x86_64.fasterxml__jackson-dataformat-xml-638:latest for fasterxml__jackson-dataformat-xml-638
+2024-08-22 20:25:40,192 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-dataformat-xml-638:latest already exists, skipping build.
+2024-08-22 20:25:40,192 - INFO - Creating container for fasterxml__jackson-dataformat-xml-638...
+2024-08-22 20:25:40,340 - INFO - Container for fasterxml__jackson-dataformat-xml-638 created: 901003cdec9e75500f615334e19a940a6c19c95e3c3bc080689dbe0a67b8be12
+2024-08-22 20:25:40,658 - INFO - Container for fasterxml__jackson-dataformat-xml-638 started: 901003cdec9e75500f615334e19a940a6c19c95e3c3bc080689dbe0a67b8be12
+2024-08-22 20:25:40,659 - INFO - Intermediate patch for fasterxml__jackson-dataformat-xml-638 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-dataformat-xml-638/patch.diff, now applying to container...
+2024-08-22 20:25:40,918 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:25:40,977 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+
+2024-08-22 20:25:41,058 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+index a86914fc..4eacf568 100644
+--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
++++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+@@ -118,10 +118,9 @@ public class JacksonXmlAnnotationIntrospector
+     public String findNamespace(MapperConfig<?> config, Annotated ann)
+     {
+         JacksonXmlProperty prop = _findAnnotation(ann, JacksonXmlProperty.class);
+-        if (prop != null) {
++        if (prop != null && !prop.namespace().isEmpty()) {
+             return prop.namespace();
+         }
+-        // 14-Nov-2020, tatu: 2.12 adds namespace for this too
+         JsonProperty jprop = _findAnnotation(ann, JsonProperty.class);
+         if (jprop != null) {
+             return jprop.namespace();
+2024-08-22 20:25:41,058 - INFO - Eval script for fasterxml__jackson-dataformat-xml-638 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-dataformat-xml-638/patch.diff, now applying to container...
+2024-08-22 20:25:52,465 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+index a86914fc..4eacf568 100644
+--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
++++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+@@ -118,10 +118,9 @@ public class JacksonXmlAnnotationIntrospector
+     public String findNamespace(MapperConfig<?> config, Annotated ann)
+     {
+         JacksonXmlProperty prop = _findAnnotation(ann, JacksonXmlProperty.class);
+-        if (prop != null) {
++        if (prop != null && !prop.namespace().isEmpty()) {
+             return prop.namespace();
+         }
+-        // 14-Nov-2020, tatu: 2.12 adds namespace for this too
+         JsonProperty jprop = _findAnnotation(ann, JsonProperty.class);
+         if (jprop != null) {
+             return jprop.namespace();
+2024-08-22 20:25:52,512 - INFO - Grading answer for fasterxml__jackson-dataformat-xml-638...
+2024-08-22 20:25:52,513 - INFO - report: {'fasterxml__jackson-dataformat-xml-638': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': True, 'tests_status': {'FAIL_TO_PASS': {'success': ['src:com.fasterxml.jackson.dataformat.xml.ser.SerializationNameMergingTest'], 'failure': [], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-dataformat-xml-638: resolved: True
+2024-08-22 20:25:52,513 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-dataformat-xml-638.deepseek-chat...
+2024-08-22 20:26:07,752 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-dataformat-xml-638.deepseek-chat...
+2024-08-22 20:26:07,781 - INFO - Container sweb.eval.fasterxml__jackson-dataformat-xml-638.deepseek-chat removed.

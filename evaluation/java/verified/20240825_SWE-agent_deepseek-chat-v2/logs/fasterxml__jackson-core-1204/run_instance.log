@@ -1,0 +1,76 @@
+2024-08-22 20:17:04,997 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1204
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1204:latest for fasterxml__jackson-core-1204
+2024-08-22 20:17:04,998 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1204:latest already exists, skipping build.
+2024-08-22 20:17:04,998 - INFO - Creating container for fasterxml__jackson-core-1204...
+2024-08-22 20:17:05,062 - INFO - Container for fasterxml__jackson-core-1204 created: 9aaf6c18c1f6ed24adbf7a0c3e1f2173be5c1215345d30dc077a0c93fea4d3ef
+2024-08-22 20:17:05,311 - INFO - Container for fasterxml__jackson-core-1204 started: 9aaf6c18c1f6ed24adbf7a0c3e1f2173be5c1215345d30dc077a0c93fea4d3ef
+2024-08-22 20:17:05,311 - INFO - Intermediate patch for fasterxml__jackson-core-1204 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1204/patch.diff, now applying to container...
+2024-08-22 20:17:05,575 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:17:05,633 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
+
+2024-08-22 20:17:05,760 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java b/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
+index 2a6c1e0f..e6f4c7c3 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
+@@ -96,7 +96,10 @@ public interface RecyclerPool<P extends RecyclerPool.WithPool<P>> extends Serial
+      * @param pooled Pooled instance to release back to pool
+      */
+     void releasePooled(P pooled);
+-
++    /**
++     * Method to clear all pooled objects, effectively dropping them.
++     */
++    void clear();
+     /*
+     /**********************************************************************
+     /* Partial/base RecyclerPool implementations
+@@ -341,7 +344,10 @@ public interface RecyclerPool<P extends RecyclerPool.WithPool<P>> extends Serial
+         public void releasePooled(P pooled) {
+             pool.offer(pooled);
+         }
+-
++        @Override
++        public void clear() {
++            pool.clear();
++        }
+         // // // Other methods
+ 
+         public int capacity() {
+2024-08-22 20:17:05,761 - INFO - Eval script for fasterxml__jackson-core-1204 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1204/patch.diff, now applying to container...
+2024-08-22 20:17:16,536 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java b/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
+index 2a6c1e0f..e6f4c7c3 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
+@@ -96,7 +96,10 @@ public interface RecyclerPool<P extends RecyclerPool.WithPool<P>> extends Serial
+      * @param pooled Pooled instance to release back to pool
+      */
+     void releasePooled(P pooled);
+-
++    /**
++     * Method to clear all pooled objects, effectively dropping them.
++     */
++    void clear();
+     /*
+     /**********************************************************************
+     /* Partial/base RecyclerPool implementations
+@@ -341,7 +344,10 @@ public interface RecyclerPool<P extends RecyclerPool.WithPool<P>> extends Serial
+         public void releasePooled(P pooled) {
+             pool.offer(pooled);
+         }
+-
++        @Override
++        public void clear() {
++            pool.clear();
++        }
+         // // // Other methods
+ 
+         public int capacity() {
+2024-08-22 20:17:16,651 - INFO - Grading answer for fasterxml__jackson-core-1204...
+2024-08-22 20:17:16,652 - INFO - report: {'fasterxml__jackson-core-1204': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.io.BufferRecyclerPoolTest', 'src:com.fasterxml.jackson.core.util.JsonBufferRecyclersTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1204: resolved: False
+2024-08-22 20:17:16,652 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1204.deepseek-chat...
+2024-08-22 20:17:31,870 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1204.deepseek-chat...
+2024-08-22 20:17:31,881 - INFO - Container sweb.eval.fasterxml__jackson-core-1204.deepseek-chat removed.

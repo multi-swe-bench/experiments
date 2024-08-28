@@ -1,0 +1,279 @@
+2024-08-19 14:37:10,512 - INFO - Environment image sweb.env.x86_64.1db5c641f99223455aefcf:latest found for apache__dubbo-10638
+Building instance image sweb.eval.x86_64.apache__dubbo-10638:latest for apache__dubbo-10638
+2024-08-19 14:37:10,516 - INFO - Image sweb.eval.x86_64.apache__dubbo-10638:latest already exists, skipping build.
+2024-08-19 14:37:10,516 - INFO - Creating container for apache__dubbo-10638...
+2024-08-19 14:37:10,589 - INFO - Container for apache__dubbo-10638 created: 280f5ba6962cc8e2378f0831a055e56374144f35e12e8f03fd8bf03a53ca25fd
+2024-08-19 14:37:10,924 - INFO - Container for apache__dubbo-10638 started: 280f5ba6962cc8e2378f0831a055e56374144f35e12e8f03fd8bf03a53ca25fd
+2024-08-19 14:37:10,924 - INFO - Intermediate patch for apache__dubbo-10638 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-10638/patch.diff, now applying to container...
+2024-08-19 14:37:11,157 - INFO - Failed to apply patch to container, trying again...
+2024-08-19 14:37:11,212 - INFO - >>>>> Applied Patch:
+patching file ReproduceIssue.java
+patching file dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+
+2024-08-19 14:37:11,546 - INFO - Git diff before:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+index c6e2eaeb7c..89768949d8 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+@@ -152,6 +152,104 @@ public class PojoUtils {
+         }
+         history.put(pojo, pojo);
+ 
++        if (pojo.getClass().isArray()) {
++            int len = Array.getLength(pojo);
++            Object[] dest = new Object[len];
++            history.put(pojo, dest);
++            for (int i = 0; i < len; i++) {
++                Object obj = Array.get(pojo, i);
++                dest[i] = generalize(obj, history);
++            }
++            return dest;
++        }
++        if (pojo instanceof Collection<?>) {
++            Collection<Object> src = (Collection<Object>) pojo;
++            int len = src.size();
++            Collection<Object> dest = (pojo instanceof List<?>) ? new ArrayList<Object>(len) : new HashSet<Object>(len);
++            history.put(pojo, dest);
++            for (Object obj : src) {
++                dest.add(generalize(obj, history);
++            }
++            return dest;
++        }
++        if (pojo instanceof Map<?, ?>) {
++            Map<Object, Object> src = (Map<Object, Object>) pojo;
++            Map<Object, Object> dest = createMap(src);
++            history.put(pojo, dest);
++            for (Map.Entry<Object, Object> obj : src.entrySet()) {
++                dest.put(generalize(obj.getKey(), history), generalize(obj.getValue(), history));
++            }
++            return dest;
++        }
++
++        // Add support for LocalTime, LocalDate, and LocalDateTime
++        if (pojo instanceof LocalTime) {
++            return pojo.toString();
++        }
++        if (pojo instanceof LocalDate) {
++            return pojo.toString();
++        }
++        if (pojo instanceof LocalDateTime) {
++            return pojo.toString();
++        }
++
++        Map<String, Object> map = new HashMap<String, Object>();
++        history.put(pojo, map);
++        if (GENERIC_WITH_CLZ) {
++            map.put("class", pojo.getClass().getName());
++        }
++        for (Method method : pojo.getClass().getMethods()) {
++            if (ReflectUtils.isBeanPropertyReadMethod(method)) {
++                ReflectUtils.makeAccessible(method);
++                try {
++                    map.put(ReflectUtils.getPropertyNameFromBeanReadMethod(method), generalize(method.invoke(pojo), history));
++                } catch (Exception e) {
++                    throw new RuntimeException(e.getMessage(), e);
++                }
++            }
++        }
++        // public field
++        for (Field field : pojo.getClass().getFields()) {
++            if (ReflectUtils.isPublicInstanceField(field)) {
++                try {
++                    Object fieldValue = field.get(pojo);
++                    map.put(field.getName(), generalize(fieldValue, history));
++                } catch (Exception e) {
++                    throw new RuntimeException(e.getMessage(), e);
++                }
++            }
++        }
++        return map;
++        if (pojo == null) {
++            return null;
++        }
++
++        if (pojo instanceof Enum<?>) {
++            return ((Enum<?>) pojo).name();
++        }
++        if (pojo.getClass().isArray() && Enum.class.isAssignableFrom(pojo.getClass().getComponentType())) {
++            int len = Array.getLength(pojo);
++            String[] values = new String[len];
++            for (int i = 0; i < len; i++) {
++                values[i] = ((Enum<?>) Array.get(pojo, i)).name();
++            }
++            return values;
++        }
++
++        if (ReflectUtils.isPrimitives(pojo.getClass())) {
++            return pojo;
++        }
++
++        if (pojo instanceof Class) {
++            return ((Class) pojo).getName();
++        }
++
++        Object o = history.get(pojo);
++        if (o != null) {
++            return o;
++        }
++        history.put(pojo, pojo);
++
+         if (pojo.getClass().isArray()) {
+             int len = Array.getLength(pojo);
+             Object[] dest = new Object[len];
+@@ -220,6 +318,20 @@ public class PojoUtils {
+     }
+ 
+     public static Object realize(Object pojo, Class<?> type) {
++        if (pojo instanceof String) {
++            String str = (String) pojo;
++            if (type == LocalTime.class) {
++                return LocalTime.parse(str);
++            }
++            if (type == LocalDate.class) {
++                return LocalDate.parse(str);
++            }
++            if (type == LocalDateTime.class) {
++                return LocalDateTime.parse(str);
++            }
++        }
++        return realize0(pojo, type, null, new IdentityHashMap<Object, Object>());
++    }
+         return realize0(pojo, type, null, new IdentityHashMap<Object, Object>());
+     }
+2024-08-19 14:37:11,546 - INFO - Eval script for apache__dubbo-10638 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-10638/patch.diff, now applying to container...
+2024-08-19 14:37:27,528 - INFO - Git diff after:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+index c6e2eaeb7c..89768949d8 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+@@ -152,6 +152,104 @@ public class PojoUtils {
+         }
+         history.put(pojo, pojo);
+ 
++        if (pojo.getClass().isArray()) {
++            int len = Array.getLength(pojo);
++            Object[] dest = new Object[len];
++            history.put(pojo, dest);
++            for (int i = 0; i < len; i++) {
++                Object obj = Array.get(pojo, i);
++                dest[i] = generalize(obj, history);
++            }
++            return dest;
++        }
++        if (pojo instanceof Collection<?>) {
++            Collection<Object> src = (Collection<Object>) pojo;
++            int len = src.size();
++            Collection<Object> dest = (pojo instanceof List<?>) ? new ArrayList<Object>(len) : new HashSet<Object>(len);
++            history.put(pojo, dest);
++            for (Object obj : src) {
++                dest.add(generalize(obj, history);
++            }
++            return dest;
++        }
++        if (pojo instanceof Map<?, ?>) {
++            Map<Object, Object> src = (Map<Object, Object>) pojo;
++            Map<Object, Object> dest = createMap(src);
++            history.put(pojo, dest);
++            for (Map.Entry<Object, Object> obj : src.entrySet()) {
++                dest.put(generalize(obj.getKey(), history), generalize(obj.getValue(), history));
++            }
++            return dest;
++        }
++
++        // Add support for LocalTime, LocalDate, and LocalDateTime
++        if (pojo instanceof LocalTime) {
++            return pojo.toString();
++        }
++        if (pojo instanceof LocalDate) {
++            return pojo.toString();
++        }
++        if (pojo instanceof LocalDateTime) {
++            return pojo.toString();
++        }
++
++        Map<String, Object> map = new HashMap<String, Object>();
++        history.put(pojo, map);
++        if (GENERIC_WITH_CLZ) {
++            map.put("class", pojo.getClass().getName());
++        }
++        for (Method method : pojo.getClass().getMethods()) {
++            if (ReflectUtils.isBeanPropertyReadMethod(method)) {
++                ReflectUtils.makeAccessible(method);
++                try {
++                    map.put(ReflectUtils.getPropertyNameFromBeanReadMethod(method), generalize(method.invoke(pojo), history));
++                } catch (Exception e) {
++                    throw new RuntimeException(e.getMessage(), e);
++                }
++            }
++        }
++        // public field
++        for (Field field : pojo.getClass().getFields()) {
++            if (ReflectUtils.isPublicInstanceField(field)) {
++                try {
++                    Object fieldValue = field.get(pojo);
++                    map.put(field.getName(), generalize(fieldValue, history));
++                } catch (Exception e) {
++                    throw new RuntimeException(e.getMessage(), e);
++                }
++            }
++        }
++        return map;
++        if (pojo == null) {
++            return null;
++        }
++
++        if (pojo instanceof Enum<?>) {
++            return ((Enum<?>) pojo).name();
++        }
++        if (pojo.getClass().isArray() && Enum.class.isAssignableFrom(pojo.getClass().getComponentType())) {
++            int len = Array.getLength(pojo);
++            String[] values = new String[len];
++            for (int i = 0; i < len; i++) {
++                values[i] = ((Enum<?>) Array.get(pojo, i)).name();
++            }
++            return values;
++        }
++
++        if (ReflectUtils.isPrimitives(pojo.getClass())) {
++            return pojo;
++        }
++
++        if (pojo instanceof Class) {
++            return ((Class) pojo).getName();
++        }
++
++        Object o = history.get(pojo);
++        if (o != null) {
++            return o;
++        }
++        history.put(pojo, pojo);
++
+         if (pojo.getClass().isArray()) {
+             int len = Array.getLength(pojo);
+             Object[] dest = new Object[len];
+@@ -220,6 +318,20 @@ public class PojoUtils {
+     }
+ 
+     public static Object realize(Object pojo, Class<?> type) {
++        if (pojo instanceof String) {
++            String str = (String) pojo;
++            if (type == LocalTime.class) {
++                return LocalTime.parse(str);
++            }
++            if (type == LocalDate.class) {
++                return LocalDate.parse(str);
++            }
++            if (type == LocalDateTime.class) {
++                return LocalDateTime.parse(str);
++            }
++        }
++        return realize0(pojo, type, null, new IdentityHashMap<Object, Object>());
++    }
+         return realize0(pojo, type, null, new IdentityHashMap<Object, Object>());
+     }
+2024-08-19 14:37:27,582 - INFO - Grading answer for apache__dubbo-10638...
+2024-08-19 14:37:27,582 - INFO - report: {'apache__dubbo-10638': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['dubbo-common:org.apache.dubbo.common.utils.PojoUtilsTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for apache__dubbo-10638: resolved: False
+2024-08-19 14:37:27,583 - INFO - Attempting to stop container sweb.eval.apache__dubbo-10638.pred_0819...
+2024-08-19 14:37:43,038 - INFO - Attempting to remove container sweb.eval.apache__dubbo-10638.pred_0819...
+2024-08-19 14:37:43,048 - INFO - Container sweb.eval.apache__dubbo-10638.pred_0819 removed.

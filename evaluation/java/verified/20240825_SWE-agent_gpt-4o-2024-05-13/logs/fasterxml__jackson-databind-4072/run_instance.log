@@ -1,0 +1,50 @@
+2024-08-24 20:29:55,518 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4072
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4072:latest for fasterxml__jackson-databind-4072
+2024-08-24 20:29:55,519 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4072:latest already exists, skipping build.
+2024-08-24 20:29:55,520 - INFO - Creating container for fasterxml__jackson-databind-4072...
+2024-08-24 20:29:55,572 - INFO - Container for fasterxml__jackson-databind-4072 created: 92dce4194fab368945b39e7b5365aa9c31650aa5b9b44b08a70b742f93e32f1a
+2024-08-24 20:29:55,768 - INFO - Container for fasterxml__jackson-databind-4072 started: 92dce4194fab368945b39e7b5365aa9c31650aa5b9b44b08a70b742f93e32f1a
+2024-08-24 20:29:55,768 - INFO - Intermediate patch for fasterxml__jackson-databind-4072 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-4072/patch.diff, now applying to container...
+2024-08-24 20:29:55,983 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:29:56,027 - INFO - >>>>> Applied Patch:
+patching file reproduce.java
+patching file run_reproduce.sh
+patching file src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
+
+2024-08-24 20:29:56,222 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
+index 8487b1e04..6ca075477 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
+@@ -525,7 +525,8 @@ ClassUtil.name(propName)));
+             ignored = ignorals.findIgnoredForDeserialization();
+             for (String propName : ignored) {
+                 builder.addIgnorable(propName);
+-            }
++                builder.addIgnorable("localizedMessage");
++                builder.addIgnorable("suppressed");
+         } else {
+             ignored = Collections.emptySet();
+         }
+2024-08-24 20:29:56,222 - INFO - Eval script for fasterxml__jackson-databind-4072 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-4072/patch.diff, now applying to container...
+2024-08-24 20:30:02,477 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
+index 8487b1e04..6ca075477 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
+@@ -525,7 +525,8 @@ ClassUtil.name(propName)));
+             ignored = ignorals.findIgnoredForDeserialization();
+             for (String propName : ignored) {
+                 builder.addIgnorable(propName);
+-            }
++                builder.addIgnorable("localizedMessage");
++                builder.addIgnorable("suppressed");
+         } else {
+             ignored = Collections.emptySet();
+         }
+2024-08-24 20:30:02,531 - INFO - Grading answer for fasterxml__jackson-databind-4072...
+2024-08-24 20:30:02,531 - INFO - report: {'fasterxml__jackson-databind-4072': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.exc.CustomExceptionDeser4071Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4072: resolved: False
+2024-08-24 20:30:02,531 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4072.gpt-4o-standard...
+2024-08-24 20:30:17,702 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4072.gpt-4o-standard...
+2024-08-24 20:30:17,713 - INFO - Container sweb.eval.fasterxml__jackson-databind-4072.gpt-4o-standard removed.

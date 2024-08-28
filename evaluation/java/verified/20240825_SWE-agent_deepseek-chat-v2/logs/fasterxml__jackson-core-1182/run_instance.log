@@ -1,0 +1,68 @@
+2024-08-22 20:16:38,210 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1182
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1182:latest for fasterxml__jackson-core-1182
+2024-08-22 20:16:38,212 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1182:latest already exists, skipping build.
+2024-08-22 20:16:38,213 - INFO - Creating container for fasterxml__jackson-core-1182...
+2024-08-22 20:16:38,275 - INFO - Container for fasterxml__jackson-core-1182 created: a3de803c9f7e76021e4b89713e63c6269054fa3ca331ee60e9c18c10c3bd2453
+2024-08-22 20:16:38,549 - INFO - Container for fasterxml__jackson-core-1182 started: a3de803c9f7e76021e4b89713e63c6269054fa3ca331ee60e9c18c10c3bd2453
+2024-08-22 20:16:38,550 - INFO - Intermediate patch for fasterxml__jackson-core-1182 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1182/patch.diff, now applying to container...
+2024-08-22 20:16:38,783 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:16:38,846 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/JsonParser.java
+
+2024-08-22 20:16:38,982 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonParser.java b/src/main/java/com/fasterxml/jackson/core/JsonParser.java
+index 3dddc1cb..18f058eb 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonParser.java
+@@ -40,7 +40,9 @@ public abstract class JsonParser
+      */
+     public enum NumberType {
+         INT, LONG, BIG_INTEGER, FLOAT, DOUBLE, BIG_DECIMAL
+-    };
++    public enum NumberTypeFP {
++        FLOAT, DOUBLE, BIG_DECIMAL, UNKNOWN
++    }
+ 
+     /**
+      * Default set of {@link StreamReadCapability}ies that may be used as
+@@ -1470,7 +1472,7 @@ public abstract class JsonParser
+      *
+      * @param name Name to use as the current name; may be null.
+      */
+-    public abstract void overrideCurrentName(String name);
++    public abstract NumberTypeFP getNumberTypeFP() throws IOException;
+ 
+     /*
+     /**********************************************************
+2024-08-22 20:16:38,982 - INFO - Eval script for fasterxml__jackson-core-1182 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1182/patch.diff, now applying to container...
+2024-08-22 20:16:49,647 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonParser.java b/src/main/java/com/fasterxml/jackson/core/JsonParser.java
+index 3dddc1cb..18f058eb 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonParser.java
+@@ -40,7 +40,9 @@ public abstract class JsonParser
+      */
+     public enum NumberType {
+         INT, LONG, BIG_INTEGER, FLOAT, DOUBLE, BIG_DECIMAL
+-    };
++    public enum NumberTypeFP {
++        FLOAT, DOUBLE, BIG_DECIMAL, UNKNOWN
++    }
+ 
+     /**
+      * Default set of {@link StreamReadCapability}ies that may be used as
+@@ -1470,7 +1472,7 @@ public abstract class JsonParser
+      *
+      * @param name Name to use as the current name; may be null.
+      */
+-    public abstract void overrideCurrentName(String name);
++    public abstract NumberTypeFP getNumberTypeFP() throws IOException;
+ 
+     /*
+     /**********************************************************
+2024-08-22 20:16:49,751 - INFO - Grading answer for fasterxml__jackson-core-1182...
+2024-08-22 20:16:49,752 - INFO - report: {'fasterxml__jackson-core-1182': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.read.NumberParsingTest', 'src:com.fasterxml.jackson.core.util.TestDelegates'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1182: resolved: False
+2024-08-22 20:16:49,752 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1182.deepseek-chat...
+2024-08-22 20:17:05,041 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1182.deepseek-chat...
+2024-08-22 20:17:05,049 - INFO - Container sweb.eval.fasterxml__jackson-core-1182.deepseek-chat removed.

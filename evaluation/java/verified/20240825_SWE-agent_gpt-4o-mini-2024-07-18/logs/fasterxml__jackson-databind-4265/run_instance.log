@@ -1,0 +1,122 @@
+2024-08-23 01:12:12,942 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4265
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4265:latest for fasterxml__jackson-databind-4265
+2024-08-23 01:12:12,944 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4265:latest already exists, skipping build.
+2024-08-23 01:12:12,944 - INFO - Creating container for fasterxml__jackson-databind-4265...
+2024-08-23 01:12:13,003 - INFO - Container for fasterxml__jackson-databind-4265 created: ba54ea5b7c5c12d17ab0356e1d22794b35bc36d14cf5f171e98ec7b148f28242
+2024-08-23 01:12:13,234 - INFO - Container for fasterxml__jackson-databind-4265 started: ba54ea5b7c5c12d17ab0356e1d22794b35bc36d14cf5f171e98ec7b148f28242
+2024-08-23 01:12:13,234 - INFO - Intermediate patch for fasterxml__jackson-databind-4265 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4265/patch.diff, now applying to container...
+2024-08-23 01:12:13,511 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:12:13,572 - INFO - >>>>> Applied Patch:
+patching file reproduce.py
+patching file src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+patching file src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java
+
+2024-08-23 01:12:13,756 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+index ff060f4f5..8e1ff5c7b 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+@@ -1372,13 +1372,22 @@ paramIndex, candidate);
+      */
+ 
+     @Override
++    public JsonDeserializer<?> createCollectionDeserializer(DeserializationContext ctxt,
++            CollectionType type, BeanDescription beanDesc)
++        throws JsonMappingException
+     public JsonDeserializer<?> createCollectionDeserializer(DeserializationContext ctxt,
+             CollectionType type, BeanDescription beanDesc)
+         throws JsonMappingException
+     {
++        // Check for null values and throw a meaningful exception
++        if (type.getRawClass() == TreeSet.class) {
++            throw new JsonMappingException("Cannot insert null into TreeSet");
++        }
++        
+         JavaType contentType = type.getContentType();
+         // Very first thing: is deserializer hard-coded for elements?
+         JsonDeserializer<Object> contentDeser = contentType.getValueHandler();
++        JsonDeserializer<Object> contentDeser = contentType.getValueHandler();
+         final DeserializationConfig config = ctxt.getConfig();
+ 
+         // Then optional type info: if type has been resolved, we may already know type deserializer:
+diff --git a/src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java b/src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java
+index c8385097b..d995ada06 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java
+@@ -547,7 +547,17 @@ public class ObjectMapperTest extends BaseMapTest
+         assertSame(TZ, mapper.getDeserializationConfig().getTimeZone());
+         assertTrue(mapper.getSerializationConfig().hasExplicitTimeZone());
+         assertTrue(mapper.getDeserializationConfig().hasExplicitTimeZone());
+-        assertTrue(mapper.reader().getConfig().hasExplicitTimeZone());
++public void testNullTreeSetDeserialization() throws Exception {
++    ObjectMapper mapper = new ObjectMapper();
++    
++    try {
++        // Attempt to deserialize a null value into a TreeSet
++        mapper.readValue("null", TreeSet.class);
++        fail("Expected JsonMappingException to be thrown");
++    } catch (JsonMappingException e) {
++        assertEquals("Cannot insert null into TreeSet", e.getMessage());
++    }
++}
+         assertTrue(mapper.writer().getConfig().hasExplicitTimeZone());
+ 
+         // ... as well as via ObjectReader/-Writer
+2024-08-23 01:12:13,757 - INFO - Eval script for fasterxml__jackson-databind-4265 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4265/patch.diff, now applying to container...
+2024-08-23 01:12:19,610 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+index ff060f4f5..8e1ff5c7b 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+@@ -1372,13 +1372,22 @@ paramIndex, candidate);
+      */
+ 
+     @Override
++    public JsonDeserializer<?> createCollectionDeserializer(DeserializationContext ctxt,
++            CollectionType type, BeanDescription beanDesc)
++        throws JsonMappingException
+     public JsonDeserializer<?> createCollectionDeserializer(DeserializationContext ctxt,
+             CollectionType type, BeanDescription beanDesc)
+         throws JsonMappingException
+     {
++        // Check for null values and throw a meaningful exception
++        if (type.getRawClass() == TreeSet.class) {
++            throw new JsonMappingException("Cannot insert null into TreeSet");
++        }
++        
+         JavaType contentType = type.getContentType();
+         // Very first thing: is deserializer hard-coded for elements?
+         JsonDeserializer<Object> contentDeser = contentType.getValueHandler();
++        JsonDeserializer<Object> contentDeser = contentType.getValueHandler();
+         final DeserializationConfig config = ctxt.getConfig();
+ 
+         // Then optional type info: if type has been resolved, we may already know type deserializer:
+diff --git a/src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java b/src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java
+index c8385097b..d995ada06 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/ObjectMapperTest.java
+@@ -547,7 +547,17 @@ public class ObjectMapperTest extends BaseMapTest
+         assertSame(TZ, mapper.getDeserializationConfig().getTimeZone());
+         assertTrue(mapper.getSerializationConfig().hasExplicitTimeZone());
+         assertTrue(mapper.getDeserializationConfig().hasExplicitTimeZone());
+-        assertTrue(mapper.reader().getConfig().hasExplicitTimeZone());
++public void testNullTreeSetDeserialization() throws Exception {
++    ObjectMapper mapper = new ObjectMapper();
++    
++    try {
++        // Attempt to deserialize a null value into a TreeSet
++        mapper.readValue("null", TreeSet.class);
++        fail("Expected JsonMappingException to be thrown");
++    } catch (JsonMappingException e) {
++        assertEquals("Cannot insert null into TreeSet", e.getMessage());
++    }
++}
+         assertTrue(mapper.writer().getConfig().hasExplicitTimeZone());
+ 
+         // ... as well as via ObjectReader/-Writer
+2024-08-23 01:12:19,668 - INFO - Grading answer for fasterxml__jackson-databind-4265...
+2024-08-23 01:12:19,668 - INFO - report: {'fasterxml__jackson-databind-4265': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.deser.jdk.JDKCollectionsDeserTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4265: resolved: False
+2024-08-23 01:12:19,669 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4265.gpt-4o...
+2024-08-23 01:12:34,988 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4265.gpt-4o...
+2024-08-23 01:12:34,998 - INFO - Container sweb.eval.fasterxml__jackson-databind-4265.gpt-4o removed.

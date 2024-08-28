@@ -1,0 +1,93 @@
+2024-08-22 20:12:54,035 - INFO - Environment image sweb.env.x86_64.1db5c641f99223455aefcf:latest found for apache__dubbo-10638
+Building instance image sweb.eval.x86_64.apache__dubbo-10638:latest for apache__dubbo-10638
+2024-08-22 20:12:54,039 - INFO - Image sweb.eval.x86_64.apache__dubbo-10638:latest already exists, skipping build.
+2024-08-22 20:12:54,040 - INFO - Creating container for apache__dubbo-10638...
+2024-08-22 20:12:54,098 - INFO - Container for apache__dubbo-10638 created: 63c216d3af3aa8477363218e0a423e5ae6187f727dfe0b1e2c02e82bbb0808d0
+2024-08-22 20:12:54,334 - INFO - Container for apache__dubbo-10638 started: 63c216d3af3aa8477363218e0a423e5ae6187f727dfe0b1e2c02e82bbb0808d0
+2024-08-22 20:12:54,335 - INFO - Intermediate patch for apache__dubbo-10638 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-10638/patch.diff, now applying to container...
+2024-08-22 20:12:54,578 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:12:54,627 - INFO - >>>>> Applied Patch:
+patching file TestJava8Time.java
+patching file dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+
+2024-08-22 20:12:54,966 - INFO - Git diff before:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+index c6e2eaeb7c..3889299bc0 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+@@ -121,7 +121,13 @@ public class PojoUtils {
+     }
+ 
+     @SuppressWarnings("unchecked")
+-    private static Object generalize(Object pojo, Map<Object, Object> history) {
++        if (pojo instanceof LocalDateTime) {
++        if (pojo instanceof LocalDate) {
++        if (pojo instanceof LocalTime) {
++            return ((LocalTime) pojo).toString();
++        }
++        }
++        }
+         if (pojo == null) {
+             return null;
+         }
+@@ -193,8 +199,14 @@ public class PojoUtils {
+                     map.put(ReflectUtils.getPropertyNameFromBeanReadMethod(method), generalize(method.invoke(pojo), history));
+                 } catch (Exception e) {
+                     throw new RuntimeException(e.getMessage(), e);
+-                }
+-            }
++        if (type == LocalTime.class) {
++            return LocalTime.parse((String) obj);
++        }
++        if (type == LocalDate.class) {
++            return LocalDate.parse((String) obj);
++        }
++        if (type == LocalDateTime.class) {
++            return LocalDateTime.parse((String) obj);
+         }
+         // public field
+         for (Field field : pojo.getClass().getFields()) {
+2024-08-22 20:12:54,967 - INFO - Eval script for apache__dubbo-10638 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-10638/patch.diff, now applying to container...
+2024-08-22 20:13:10,299 - INFO - Git diff after:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+index c6e2eaeb7c..3889299bc0 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+@@ -121,7 +121,13 @@ public class PojoUtils {
+     }
+ 
+     @SuppressWarnings("unchecked")
+-    private static Object generalize(Object pojo, Map<Object, Object> history) {
++        if (pojo instanceof LocalDateTime) {
++        if (pojo instanceof LocalDate) {
++        if (pojo instanceof LocalTime) {
++            return ((LocalTime) pojo).toString();
++        }
++        }
++        }
+         if (pojo == null) {
+             return null;
+         }
+@@ -193,8 +199,14 @@ public class PojoUtils {
+                     map.put(ReflectUtils.getPropertyNameFromBeanReadMethod(method), generalize(method.invoke(pojo), history));
+                 } catch (Exception e) {
+                     throw new RuntimeException(e.getMessage(), e);
+-                }
+-            }
++        if (type == LocalTime.class) {
++            return LocalTime.parse((String) obj);
++        }
++        if (type == LocalDate.class) {
++            return LocalDate.parse((String) obj);
++        }
++        if (type == LocalDateTime.class) {
++            return LocalDateTime.parse((String) obj);
+         }
+         // public field
+         for (Field field : pojo.getClass().getFields()) {
+2024-08-22 20:13:10,360 - INFO - Grading answer for apache__dubbo-10638...
+2024-08-22 20:13:10,360 - INFO - report: {'apache__dubbo-10638': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['dubbo-common:org.apache.dubbo.common.utils.PojoUtilsTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for apache__dubbo-10638: resolved: False
+2024-08-22 20:13:10,360 - INFO - Attempting to stop container sweb.eval.apache__dubbo-10638.deepseek-chat...
+2024-08-22 20:13:25,568 - INFO - Attempting to remove container sweb.eval.apache__dubbo-10638.deepseek-chat...
+2024-08-22 20:13:25,581 - INFO - Container sweb.eval.apache__dubbo-10638.deepseek-chat removed.

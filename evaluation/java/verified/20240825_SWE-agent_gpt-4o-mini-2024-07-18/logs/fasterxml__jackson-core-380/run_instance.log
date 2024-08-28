@@ -1,0 +1,64 @@
+2024-08-23 01:07:31,034 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-380
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-380:latest for fasterxml__jackson-core-380
+2024-08-23 01:07:31,037 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-380:latest already exists, skipping build.
+2024-08-23 01:07:31,037 - INFO - Creating container for fasterxml__jackson-core-380...
+2024-08-23 01:07:31,121 - INFO - Container for fasterxml__jackson-core-380 created: 26f89cde914e8ac271978165cc6746ef07d8f1a671e8b5da6a67f3c061c78a11
+2024-08-23 01:07:31,384 - INFO - Container for fasterxml__jackson-core-380 started: 26f89cde914e8ac271978165cc6746ef07d8f1a671e8b5da6a67f3c061c78a11
+2024-08-23 01:07:31,385 - INFO - Intermediate patch for fasterxml__jackson-core-380 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-380/patch.diff, now applying to container...
+2024-08-23 01:07:31,651 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:07:31,698 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
+
+2024-08-23 01:07:31,794 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java b/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
+index c3554467..05966293 100644
+--- a/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
++++ b/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
+@@ -297,7 +297,7 @@ public class FilteringParserDelegate extends JsonParserDelegate
+         switch (t.id()) {
+         case ID_START_ARRAY:
+             f = _itemFilter;
+-            if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;  // Increment match count for array
+                 _headContext = _headContext.createChildArrayContext(f, true);
+                 return (_currToken = t);
+             }
+@@ -333,7 +333,7 @@ public class FilteringParserDelegate extends JsonParserDelegate
+ 
+         case ID_START_OBJECT:
+             f = _itemFilter;
+-            if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;  // Increment match count for object
+                 _headContext = _headContext.createChildObjectContext(f, true);
+                 return (_currToken = t);
+             }
+2024-08-23 01:07:31,795 - INFO - Eval script for fasterxml__jackson-core-380 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-380/patch.diff, now applying to container...
+2024-08-23 01:07:34,799 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java b/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
+index c3554467..05966293 100644
+--- a/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
++++ b/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
+@@ -297,7 +297,7 @@ public class FilteringParserDelegate extends JsonParserDelegate
+         switch (t.id()) {
+         case ID_START_ARRAY:
+             f = _itemFilter;
+-            if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;  // Increment match count for array
+                 _headContext = _headContext.createChildArrayContext(f, true);
+                 return (_currToken = t);
+             }
+@@ -333,7 +333,7 @@ public class FilteringParserDelegate extends JsonParserDelegate
+ 
+         case ID_START_OBJECT:
+             f = _itemFilter;
+-            if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;  // Increment match count for object
+                 _headContext = _headContext.createChildObjectContext(f, true);
+                 return (_currToken = t);
+             }
+2024-08-23 01:07:34,847 - INFO - Grading answer for fasterxml__jackson-core-380...
+2024-08-23 01:07:34,847 - INFO - report: {'fasterxml__jackson-core-380': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.filter.BasicParserFilteringTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-380: resolved: False
+2024-08-23 01:07:34,847 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-380.gpt-4o...
+2024-08-23 01:07:50,075 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-380.gpt-4o...
+2024-08-23 01:07:50,095 - INFO - Container sweb.eval.fasterxml__jackson-core-380.gpt-4o removed.

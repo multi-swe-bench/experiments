@@ -1,0 +1,124 @@
+2024-08-21 13:18:59,869 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4365
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4365:latest for fasterxml__jackson-databind-4365
+2024-08-21 13:18:59,870 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4365:latest already exists, skipping build.
+2024-08-21 13:18:59,870 - INFO - Creating container for fasterxml__jackson-databind-4365...
+2024-08-21 13:18:59,977 - INFO - Container for fasterxml__jackson-databind-4365 created: 8446cfbac6b401d6e57e1ce4ff3edc1708104bd6840d79e786c64f653e851bc2
+2024-08-21 13:19:00,195 - INFO - Container for fasterxml__jackson-databind-4365 started: 8446cfbac6b401d6e57e1ce4ff3edc1708104bd6840d79e786c64f653e851bc2
+2024-08-21 13:19:00,196 - INFO - Intermediate patch for fasterxml__jackson-databind-4365 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4365/patch.diff, now applying to container...
+2024-08-21 13:19:00,422 - INFO - Failed to apply patch to container, trying again...
+2024-08-21 13:19:00,491 - INFO - >>>>> Applied Patch:
+patching file reproduce_bug.py
+patching file src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java
+patching file src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
+
+2024-08-21 13:19:00,663 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java b/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java
+index 95b863f8d..553b62600 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java
++++ b/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java
+@@ -768,7 +768,17 @@ public abstract class AnnotationIntrospector
+      *
+      * @since 2.6
+      */
+-    public JsonProperty.Access findPropertyAccess(Annotated ann) { return null; }
++    public JsonProperty.Access findPropertyAccess(Annotated ann) {
++        JsonProperty.Access primaryAcc = findPrimaryPropertyAccess(ann);
++        if (primaryAcc == null || primaryAcc == JsonProperty.Access.AUTO) {
++            JsonProperty.Access secondaryAcc = findSecondaryPropertyAccess(ann);
++            if (secondaryAcc == null) {
++                return JsonProperty.Access.AUTO;
++            }
++            return secondaryAcc;
++        }
++        return primaryAcc;
++    }
+ 
+     /**
+      * Method called in cases where a class has two methods eligible to be used
+diff --git a/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java b/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
+index d6e41dbbd..687d54a9d 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
++++ b/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
+@@ -508,16 +508,15 @@ public class AnnotationIntrospectorPair
+     }
+ 
+     @Override
+-    public JsonProperty.Access findPropertyAccess(Annotated ann) {
+-        JsonProperty.Access acc = _primary.findPropertyAccess(ann);
+-        if ((acc != null) && (acc != JsonProperty.Access.AUTO)) {
+-            return acc;
+-        }
++public JsonProperty.Access findPropertyAccess(Annotated ann) {
++    JsonProperty.Access acc = _primary.findPropertyAccess(ann);
++    if (acc == null || acc == JsonProperty.Access.AUTO) {
+         acc = _secondary.findPropertyAccess(ann);
+-        if (acc != null) {
+-            return acc;
++        if (acc == null) {
++            return JsonProperty.Access.AUTO;
+         }
+-        return JsonProperty.Access.AUTO;
++    }
++    return acc;
+     }
+ 
+     @Override // since 2.7
+2024-08-21 13:19:00,664 - INFO - Eval script for fasterxml__jackson-databind-4365 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4365/patch.diff, now applying to container...
+2024-08-21 13:19:12,599 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java b/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java
+index 95b863f8d..553b62600 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java
++++ b/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java
+@@ -768,7 +768,17 @@ public abstract class AnnotationIntrospector
+      *
+      * @since 2.6
+      */
+-    public JsonProperty.Access findPropertyAccess(Annotated ann) { return null; }
++    public JsonProperty.Access findPropertyAccess(Annotated ann) {
++        JsonProperty.Access primaryAcc = findPrimaryPropertyAccess(ann);
++        if (primaryAcc == null || primaryAcc == JsonProperty.Access.AUTO) {
++            JsonProperty.Access secondaryAcc = findSecondaryPropertyAccess(ann);
++            if (secondaryAcc == null) {
++                return JsonProperty.Access.AUTO;
++            }
++            return secondaryAcc;
++        }
++        return primaryAcc;
++    }
+ 
+     /**
+      * Method called in cases where a class has two methods eligible to be used
+diff --git a/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java b/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
+index d6e41dbbd..687d54a9d 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
++++ b/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
+@@ -508,16 +508,15 @@ public class AnnotationIntrospectorPair
+     }
+ 
+     @Override
+-    public JsonProperty.Access findPropertyAccess(Annotated ann) {
+-        JsonProperty.Access acc = _primary.findPropertyAccess(ann);
+-        if ((acc != null) && (acc != JsonProperty.Access.AUTO)) {
+-            return acc;
+-        }
++public JsonProperty.Access findPropertyAccess(Annotated ann) {
++    JsonProperty.Access acc = _primary.findPropertyAccess(ann);
++    if (acc == null || acc == JsonProperty.Access.AUTO) {
+         acc = _secondary.findPropertyAccess(ann);
+-        if (acc != null) {
+-            return acc;
++        if (acc == null) {
++            return JsonProperty.Access.AUTO;
+         }
+-        return JsonProperty.Access.AUTO;
++    }
++    return acc;
+     }
+ 
+     @Override // since 2.7
+2024-08-21 13:19:12,657 - INFO - Grading answer for fasterxml__jackson-databind-4365...
+2024-08-21 13:19:12,658 - INFO - report: {'fasterxml__jackson-databind-4365': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.PropertyNameTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4365: resolved: False
+2024-08-21 13:19:12,658 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4365.doubao...
+2024-08-21 13:19:27,909 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4365.doubao...
+2024-08-21 13:19:27,924 - INFO - Container sweb.eval.fasterxml__jackson-databind-4365.doubao removed.

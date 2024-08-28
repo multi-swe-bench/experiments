@@ -1,0 +1,46 @@
+2024-08-22 20:18:21,093 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-964
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-964:latest for fasterxml__jackson-core-964
+2024-08-22 20:18:21,094 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-964:latest already exists, skipping build.
+2024-08-22 20:18:21,095 - INFO - Creating container for fasterxml__jackson-core-964...
+2024-08-22 20:18:21,153 - INFO - Container for fasterxml__jackson-core-964 created: cf596896ee5d83c820ac12c0f9010174e892b9554c887d60ccfb815fced3e895
+2024-08-22 20:18:21,399 - INFO - Container for fasterxml__jackson-core-964 started: cf596896ee5d83c820ac12c0f9010174e892b9554c887d60ccfb815fced3e895
+2024-08-22 20:18:21,399 - INFO - Intermediate patch for fasterxml__jackson-core-964 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-964/patch.diff, now applying to container...
+2024-08-22 20:18:21,663 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:18:21,719 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+
+2024-08-22 20:18:21,816 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+index 08700ff1..e4314ab2 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+@@ -2124,4 +2124,7 @@ public class JsonFactory
+         // or its sub-class / delegated to one, no need to check for equality, identity is enough
+         return getFormatName() == FORMAT_NAME_JSON;
+     }
+-}
++    public JsonFactory setStreamReadConstraints(StreamReadConstraints constraints) {
++        _streamReadConstraints = constraints;
++        return this;
++    }
+2024-08-22 20:18:21,817 - INFO - Eval script for fasterxml__jackson-core-964 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-964/patch.diff, now applying to container...
+2024-08-22 20:18:27,809 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+index 08700ff1..e4314ab2 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+@@ -2124,4 +2124,7 @@ public class JsonFactory
+         // or its sub-class / delegated to one, no need to check for equality, identity is enough
+         return getFormatName() == FORMAT_NAME_JSON;
+     }
+-}
++    public JsonFactory setStreamReadConstraints(StreamReadConstraints constraints) {
++        _streamReadConstraints = constraints;
++        return this;
++    }
+2024-08-22 20:18:27,873 - INFO - Grading answer for fasterxml__jackson-core-964...
+2024-08-22 20:18:27,874 - INFO - report: {'fasterxml__jackson-core-964': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.constraints.DeeplyNestedContentReadTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-964: resolved: False
+2024-08-22 20:18:27,874 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-964.deepseek-chat...
+2024-08-22 20:18:43,059 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-964.deepseek-chat...
+2024-08-22 20:18:43,068 - INFO - Container sweb.eval.fasterxml__jackson-core-964.deepseek-chat removed.

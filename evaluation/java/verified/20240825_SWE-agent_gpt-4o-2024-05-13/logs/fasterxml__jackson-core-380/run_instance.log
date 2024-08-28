@@ -1,0 +1,129 @@
+2024-08-24 20:26:13,803 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-380
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-380:latest for fasterxml__jackson-core-380
+2024-08-24 20:26:13,805 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-380:latest already exists, skipping build.
+2024-08-24 20:26:13,805 - INFO - Creating container for fasterxml__jackson-core-380...
+2024-08-24 20:26:13,876 - INFO - Container for fasterxml__jackson-core-380 created: 7cb956c649bb57c5b00c43a879e5a9240a3a196742485983af4f55427e4a4d9a
+2024-08-24 20:26:14,119 - INFO - Container for fasterxml__jackson-core-380 started: 7cb956c649bb57c5b00c43a879e5a9240a3a196742485983af4f55427e4a4d9a
+2024-08-24 20:26:14,119 - INFO - Intermediate patch for fasterxml__jackson-core-380 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-380/patch.diff, now applying to container...
+2024-08-24 20:26:14,384 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:26:14,444 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
+patching file test_match_count.java
+
+2024-08-24 20:26:14,554 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java b/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
+index c3554467..8b2eebfc 100644
+--- a/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
++++ b/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
+@@ -298,6 +298,7 @@ public class FilteringParserDelegate extends JsonParserDelegate
+         case ID_START_ARRAY:
+             f = _itemFilter;
+             if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;
+                 _headContext = _headContext.createChildArrayContext(f, true);
+                 return (_currToken = t);
+             }
+@@ -314,7 +315,8 @@ public class FilteringParserDelegate extends JsonParserDelegate
+             if (f != TokenFilter.INCLUDE_ALL) {
+                 f = f.filterStartArray();
+             }
+-            _itemFilter = f;
++            if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;
+             if (f == TokenFilter.INCLUDE_ALL) {
+                 _headContext = _headContext.createChildArrayContext(f, true);
+                 return (_currToken = t);
+@@ -331,7 +333,8 @@ public class FilteringParserDelegate extends JsonParserDelegate
+             }
+             break;
+ 
+-        case ID_START_OBJECT:
++            if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;
+             f = _itemFilter;
+             if (f == TokenFilter.INCLUDE_ALL) {
+                 _headContext = _headContext.createChildObjectContext(f, true);
+@@ -348,10 +351,12 @@ public class FilteringParserDelegate extends JsonParserDelegate
+                 break;
+             }
+             if (f != TokenFilter.INCLUDE_ALL) {
+-                f = f.filterStartObject();
++            if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;
+             }
+             _itemFilter = f;
+             if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;
+                 _headContext = _headContext.createChildObjectContext(f, true);
+                 return (_currToken = t);
+             }
+@@ -390,6 +395,7 @@ public class FilteringParserDelegate extends JsonParserDelegate
+                 // note: this will also set 'needToHandleName'
+                 f = _headContext.setFieldName(name);
+                 if (f == TokenFilter.INCLUDE_ALL) {
++                    _matchCount++;
+                     _itemFilter = f;
+                     if (!_includePath) {
+                         // Minor twist here: if parent NOT included, may need to induce output of
+2024-08-24 20:26:14,554 - INFO - Eval script for fasterxml__jackson-core-380 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-380/patch.diff, now applying to container...
+2024-08-24 20:26:17,298 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java b/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
+index c3554467..8b2eebfc 100644
+--- a/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
++++ b/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java
+@@ -298,6 +298,7 @@ public class FilteringParserDelegate extends JsonParserDelegate
+         case ID_START_ARRAY:
+             f = _itemFilter;
+             if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;
+                 _headContext = _headContext.createChildArrayContext(f, true);
+                 return (_currToken = t);
+             }
+@@ -314,7 +315,8 @@ public class FilteringParserDelegate extends JsonParserDelegate
+             if (f != TokenFilter.INCLUDE_ALL) {
+                 f = f.filterStartArray();
+             }
+-            _itemFilter = f;
++            if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;
+             if (f == TokenFilter.INCLUDE_ALL) {
+                 _headContext = _headContext.createChildArrayContext(f, true);
+                 return (_currToken = t);
+@@ -331,7 +333,8 @@ public class FilteringParserDelegate extends JsonParserDelegate
+             }
+             break;
+ 
+-        case ID_START_OBJECT:
++            if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;
+             f = _itemFilter;
+             if (f == TokenFilter.INCLUDE_ALL) {
+                 _headContext = _headContext.createChildObjectContext(f, true);
+@@ -348,10 +351,12 @@ public class FilteringParserDelegate extends JsonParserDelegate
+                 break;
+             }
+             if (f != TokenFilter.INCLUDE_ALL) {
+-                f = f.filterStartObject();
++            if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;
+             }
+             _itemFilter = f;
+             if (f == TokenFilter.INCLUDE_ALL) {
++                _matchCount++;
+                 _headContext = _headContext.createChildObjectContext(f, true);
+                 return (_currToken = t);
+             }
+@@ -390,6 +395,7 @@ public class FilteringParserDelegate extends JsonParserDelegate
+                 // note: this will also set 'needToHandleName'
+                 f = _headContext.setFieldName(name);
+                 if (f == TokenFilter.INCLUDE_ALL) {
++                    _matchCount++;
+                     _itemFilter = f;
+                     if (!_includePath) {
+                         // Minor twist here: if parent NOT included, may need to induce output of
+2024-08-24 20:26:17,366 - INFO - Grading answer for fasterxml__jackson-core-380...
+2024-08-24 20:26:17,366 - INFO - report: {'fasterxml__jackson-core-380': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.filter.BasicParserFilteringTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-380: resolved: False
+2024-08-24 20:26:17,366 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-380.gpt-4o-standard...
+2024-08-24 20:26:32,539 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-380.gpt-4o-standard...
+2024-08-24 20:26:32,553 - INFO - Container sweb.eval.fasterxml__jackson-core-380.gpt-4o-standard removed.

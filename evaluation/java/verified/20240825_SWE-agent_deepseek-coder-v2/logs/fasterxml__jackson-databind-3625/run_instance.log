@@ -1,0 +1,107 @@
+2024-08-19 14:45:13,993 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-3625
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-3625:latest for fasterxml__jackson-databind-3625
+2024-08-19 14:45:13,995 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-3625:latest already exists, skipping build.
+2024-08-19 14:45:13,995 - INFO - Creating container for fasterxml__jackson-databind-3625...
+2024-08-19 14:45:14,050 - INFO - Container for fasterxml__jackson-databind-3625 created: c91eb378606b57f1635690d155f26108527383b3bfc6c6ee7f36c6c0909f102e
+2024-08-19 14:45:14,268 - INFO - Container for fasterxml__jackson-databind-3625 started: c91eb378606b57f1635690d155f26108527383b3bfc6c6ee7f36c6c0909f102e
+2024-08-19 14:45:14,268 - INFO - Intermediate patch for fasterxml__jackson-databind-3625 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3625/patch.diff, now applying to container...
+2024-08-19 14:45:14,492 - INFO - Failed to apply patch to container, trying again...
+2024-08-19 14:45:14,547 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+patching file src/test/java/com/fasterxml/jackson/databind/convert/CoerceIntToFloatTest.java
+
+2024-08-19 14:45:21,635 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+index 2d77d9bcb..baff7f40f 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+@@ -2286,4 +2286,25 @@ handledType().getName());
+         }
+         return n;
+     }
+-}
++
++    protected void _handleIntToFloatCoercion(DeserializationContext ctxt, JsonParser p) throws IOException {
++        if (!ctxt.isEnabled(MapperFeature.ALLOW_COERCION_OF_SCALARS)) {
++            ctxt.reportInputMismatch(this, "Cannot coerce integer to float when ALLOW_COERCION_OF_SCALARS is disabled");
++        }
++
++    protected Float _coerceIntToFloat(JsonParser p, DeserializationContext ctxt) throws IOException {
++        if (!ctxt.isEnabled(MapperFeature.ALLOW_COERCION_OF_SCALARS)) {
++            ctxt.reportInputMismatch(this, "Cannot coerce integer to float when ALLOW_COERCION_OF_SCALARS is disabled");
++        }
++        return p.getFloatValue();
++
++            ctxt.reportInputMismatch(this, "Cannot coerce integer to float when ALLOW_COERCION_OF_SCALARS is disabled");
++        }
++        return p.getFloatValue();
++
++    protected Float _coerceIntToFloat(JsonParser p, DeserializationContext ctxt) throws IOException {
++        if (!ctxt.isEnabled(MapperFeature.ALLOW_COERCION_OF_SCALARS)) {
++            ctxt.reportInputMismatch(this, "Cannot coerce integer to float when ALLOW_COERCION_OF_SCALARS is disabled");
++        }
++        return p.getFloatValue();
++    }
+diff --git a/src/test/java/com/fasterxml/jackson/databind/convert/CoerceIntToFloatTest.java b/src/test/java/com/fasterxml/jackson/databind/convert/CoerceIntToFloatTest.java
+index 249cc7909..794cc3b10 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/convert/CoerceIntToFloatTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/convert/CoerceIntToFloatTest.java
+@@ -169,4 +169,17 @@ public class CoerceIntToFloatTest extends BaseMapTest
+             verifyException(e, targetTypeDesc);
+         }
+     }
+-}
++
++    public void testIntToFloatCoercionWithAllowCoercionOfScalarsDisabled() throws JsonProcessingException
++    {
++        ObjectMapper mapper = jsonMapperBuilder()
++                .disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
++                .withCoercionConfig(LogicalType.Float, cfg ->
++                        cfg.setCoercion(CoercionInputShape.Integer, CoercionAction.TryConvert))
++                .build();
++
++        // Test that integer to float coercion does not fail when ALLOW_COERCION_OF_SCALARS is disabled
++        Float result = mapper.readValue("1", Float.class);
++        assertNotNull(result);
++        assertEquals(1.0f, result);
++    }
+2024-08-19 14:45:21,635 - INFO - Eval script for fasterxml__jackson-databind-3625 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3625/patch.diff, now applying to container...
+2024-08-19 14:45:28,253 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+index 2d77d9bcb..baff7f40f 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+@@ -2286,4 +2286,25 @@ handledType().getName());
+         }
+         return n;
+     }
+-}
++
++    protected void _handleIntToFloatCoercion(DeserializationContext ctxt, JsonParser p) throws IOException {
++        if (!ctxt.isEnabled(MapperFeature.ALLOW_COERCION_OF_SCALARS)) {
++            ctxt.reportInputMismatch(this, "Cannot coerce integer to float when ALLOW_COERCION_OF_SCALARS is disabled");
++        }
++
++    protected Float _coerceIntToFloat(JsonParser p, DeserializationContext ctxt) throws IOException {
++        if (!ctxt.isEnabled(MapperFeature.ALLOW_COERCION_OF_SCALARS)) {
++            ctxt.reportInputMismatch(this, "Cannot coerce integer to float when ALLOW_COERCION_OF_SCALARS is disabled");
++        }
++        return p.getFloatValue();
++
++            ctxt.reportInputMismatch(this, "Cannot coerce integer to float when ALLOW_COERCION_OF_SCALARS is disabled");
++        }
++        return p.getFloatValue();
++
++    protected Float _coerceIntToFloat(JsonParser p, DeserializationContext ctxt) throws IOException {
++        if (!ctxt.isEnabled(MapperFeature.ALLOW_COERCION_OF_SCALARS)) {
++            ctxt.reportInputMismatch(this, "Cannot coerce integer to float when ALLOW_COERCION_OF_SCALARS is disabled");
++        }
++        return p.getFloatValue();
++    }
+2024-08-19 14:45:28,253 - INFO - Git diff changed after running eval script
+2024-08-19 14:45:28,312 - INFO - Grading answer for fasterxml__jackson-databind-3625...
+2024-08-19 14:45:28,313 - INFO - report: {'fasterxml__jackson-databind-3625': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.convert.CoerceIntToFloatTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-3625: resolved: False
+2024-08-19 14:45:28,313 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-3625.pred_0819...
+2024-08-19 14:45:43,549 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-3625.pred_0819...
+2024-08-19 14:45:43,560 - INFO - Container sweb.eval.fasterxml__jackson-databind-3625.pred_0819 removed.

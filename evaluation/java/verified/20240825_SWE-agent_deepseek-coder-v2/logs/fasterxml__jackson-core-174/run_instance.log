@@ -1,0 +1,58 @@
+2024-08-19 14:42:32,381 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-174
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-174:latest for fasterxml__jackson-core-174
+2024-08-19 14:42:32,383 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-174:latest already exists, skipping build.
+2024-08-19 14:42:32,383 - INFO - Creating container for fasterxml__jackson-core-174...
+2024-08-19 14:42:32,441 - INFO - Container for fasterxml__jackson-core-174 created: 4be1cdf31223e6daf8bb272c1bb2e203f522b63dd312dfc3bce48aed3383a969
+2024-08-19 14:42:32,681 - INFO - Container for fasterxml__jackson-core-174 started: 4be1cdf31223e6daf8bb272c1bb2e203f522b63dd312dfc3bce48aed3383a969
+2024-08-19 14:42:32,681 - INFO - Intermediate patch for fasterxml__jackson-core-174 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-174/patch.diff, now applying to container...
+2024-08-19 14:42:32,937 - INFO - Failed to apply patch to container, trying again...
+2024-08-19 14:42:33,004 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/JsonPointer.java
+
+2024-08-19 14:42:33,066 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonPointer.java b/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
+index ff251034..4059aaaf 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
+@@ -315,4 +315,13 @@ public class JsonPointer
+         }
+         sb.append(c);
+     }
+-}
++    public JsonPointer append(JsonPointer toAppend) {
++        if (this == EMPTY) {
++            return toAppend;
++        }
++        if (toAppend == EMPTY) {
++            return this;
++        }
++        String newPath = this._asString + "/" + toAppend._asString.substring(1);
++        return compile(newPath);
++    }
+2024-08-19 14:42:33,066 - INFO - Eval script for fasterxml__jackson-core-174 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-174/patch.diff, now applying to container...
+2024-08-19 14:42:35,980 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonPointer.java b/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
+index ff251034..4059aaaf 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
+@@ -315,4 +315,13 @@ public class JsonPointer
+         }
+         sb.append(c);
+     }
+-}
++    public JsonPointer append(JsonPointer toAppend) {
++        if (this == EMPTY) {
++            return toAppend;
++        }
++        if (toAppend == EMPTY) {
++            return this;
++        }
++        String newPath = this._asString + "/" + toAppend._asString.substring(1);
++        return compile(newPath);
++    }
+2024-08-19 14:42:36,025 - INFO - Grading answer for fasterxml__jackson-core-174...
+2024-08-19 14:42:36,025 - INFO - report: {'fasterxml__jackson-core-174': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.TestJsonPointer'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-174: resolved: False
+2024-08-19 14:42:36,025 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-174.pred_0819...
+2024-08-19 14:42:51,216 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-174.pred_0819...
+2024-08-19 14:42:51,224 - INFO - Container sweb.eval.fasterxml__jackson-core-174.pred_0819 removed.

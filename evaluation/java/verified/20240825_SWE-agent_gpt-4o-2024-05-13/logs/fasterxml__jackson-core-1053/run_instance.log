@@ -1,0 +1,143 @@
+2024-08-24 20:24:09,855 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1053
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1053:latest for fasterxml__jackson-core-1053
+2024-08-24 20:24:09,858 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1053:latest already exists, skipping build.
+2024-08-24 20:24:09,858 - INFO - Creating container for fasterxml__jackson-core-1053...
+2024-08-24 20:24:09,909 - INFO - Container for fasterxml__jackson-core-1053 created: 044c42300aa65b97f64ed1ef5bfa069ce88554056d3d5c6b0380ee2e3c2d21a7
+2024-08-24 20:24:10,162 - INFO - Container for fasterxml__jackson-core-1053 started: 044c42300aa65b97f64ed1ef5bfa069ce88554056d3d5c6b0380ee2e3c2d21a7
+2024-08-24 20:24:10,163 - INFO - Intermediate patch for fasterxml__jackson-core-1053 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-1053/patch.diff, now applying to container...
+2024-08-24 20:24:10,433 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:24:10,500 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/Version.java
+patching file src/test/java/com/fasterxml/jackson/core/VersionTest.java
+
+2024-08-24 20:24:10,624 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/Version.java b/src/main/java/com/fasterxml/jackson/core/Version.java
+index ed446afc..e576e5d3 100644
+--- a/src/main/java/com/fasterxml/jackson/core/Version.java
++++ b/src/main/java/com/fasterxml/jackson/core/Version.java
+@@ -132,23 +132,35 @@ public class Version
+     }
+ 
+     @Override
+-    public int compareTo(Version other)
+-    {
+-        if (other == this) return 0;
++public int compareTo(Version other)
++{
++    if (other == this) return 0;
+ 
+-        int diff = _groupId.compareTo(other._groupId);
++    int diff = _groupId.compareTo(other._groupId);
++    if (diff == 0) {
++        diff = _artifactId.compareTo(other._artifactId);
+         if (diff == 0) {
+-            diff = _artifactId.compareTo(other._artifactId);
++            diff = _majorVersion - other._majorVersion;
+             if (diff == 0) {
+-                diff = _majorVersion - other._majorVersion;
++                diff = _minorVersion - other._minorVersion;
+                 if (diff == 0) {
+-                    diff = _minorVersion - other._minorVersion;
++                    diff = _patchLevel - other._patchLevel;
+                     if (diff == 0) {
+-                        diff = _patchLevel - other._patchLevel;
++                        if (_snapshotInfo == null) {
++                            if (other._snapshotInfo != null) {
++                                diff = -1;
++                            }
++                        } else if (other._snapshotInfo == null) {
++                            diff = 1;
++                        } else {
++                            diff = _snapshotInfo.compareTo(other._snapshotInfo);
++                        }
+                     }
+                 }
+             }
+         }
+-        return diff;
++    }
++    return diff;
++}
+     }
+ }
+diff --git a/src/test/java/com/fasterxml/jackson/core/VersionTest.java b/src/test/java/com/fasterxml/jackson/core/VersionTest.java
+index e7ba0eea..9c5a44f2 100644
+--- a/src/test/java/com/fasterxml/jackson/core/VersionTest.java
++++ b/src/test/java/com/fasterxml/jackson/core/VersionTest.java
+@@ -51,4 +51,18 @@ public class VersionTest{
+ 
+       assertTrue(version.compareTo(versionTwo) < 0);
+   }
++    @Test
++    public void testCompareSnapshotInfo() {
++        Version version1 = new Version(1, 0, 0, "alpha", "", "");
++        Version version2 = new Version(1, 0, 0, "beta", "", "");
++        assertTrue(version1.compareTo(version2) < 0);
++
++        Version version3 = new Version(1, 0, 0, "beta", "", "");
++        Version version4 = new Version(1, 0, 0, "alpha", "", "");
++        assertTrue(version3.compareTo(version4) > 0);
++
++        Version version5 = new Version(1, 0, 0, "alpha", "", "");
++        Version version6 = new Version(1, 0, 0, "alpha", "", "");
++        assertEquals(0, version5.compareTo(version6));
++    }
+ }
+2024-08-24 20:24:10,624 - INFO - Eval script for fasterxml__jackson-core-1053 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-1053/patch.diff, now applying to container...
+2024-08-24 20:24:17,210 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/Version.java b/src/main/java/com/fasterxml/jackson/core/Version.java
+index ed446afc..e576e5d3 100644
+--- a/src/main/java/com/fasterxml/jackson/core/Version.java
++++ b/src/main/java/com/fasterxml/jackson/core/Version.java
+@@ -132,23 +132,35 @@ public class Version
+     }
+ 
+     @Override
+-    public int compareTo(Version other)
+-    {
+-        if (other == this) return 0;
++public int compareTo(Version other)
++{
++    if (other == this) return 0;
+ 
+-        int diff = _groupId.compareTo(other._groupId);
++    int diff = _groupId.compareTo(other._groupId);
++    if (diff == 0) {
++        diff = _artifactId.compareTo(other._artifactId);
+         if (diff == 0) {
+-            diff = _artifactId.compareTo(other._artifactId);
++            diff = _majorVersion - other._majorVersion;
+             if (diff == 0) {
+-                diff = _majorVersion - other._majorVersion;
++                diff = _minorVersion - other._minorVersion;
+                 if (diff == 0) {
+-                    diff = _minorVersion - other._minorVersion;
++                    diff = _patchLevel - other._patchLevel;
+                     if (diff == 0) {
+-                        diff = _patchLevel - other._patchLevel;
++                        if (_snapshotInfo == null) {
++                            if (other._snapshotInfo != null) {
++                                diff = -1;
++                            }
++                        } else if (other._snapshotInfo == null) {
++                            diff = 1;
++                        } else {
++                            diff = _snapshotInfo.compareTo(other._snapshotInfo);
++                        }
+                     }
+                 }
+             }
+         }
+-        return diff;
++    }
++    return diff;
++}
+     }
+ }
+2024-08-24 20:24:17,210 - INFO - Git diff changed after running eval script
+2024-08-24 20:24:17,269 - INFO - Grading answer for fasterxml__jackson-core-1053...
+2024-08-24 20:24:17,269 - INFO - report: {'fasterxml__jackson-core-1053': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.VersionTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1053: resolved: False
+2024-08-24 20:24:17,269 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1053.gpt-4o-standard...
+2024-08-24 20:24:32,760 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1053.gpt-4o-standard...
+2024-08-24 20:24:32,769 - INFO - Container sweb.eval.fasterxml__jackson-core-1053.gpt-4o-standard removed.

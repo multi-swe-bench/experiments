@@ -1,0 +1,55 @@
+2024-08-23 01:07:56,992 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-1650
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-1650:latest for fasterxml__jackson-databind-1650
+2024-08-23 01:07:56,993 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-1650:latest already exists, skipping build.
+2024-08-23 01:07:56,993 - INFO - Creating container for fasterxml__jackson-databind-1650...
+2024-08-23 01:07:57,068 - INFO - Container for fasterxml__jackson-databind-1650 created: 36f701a2c2d5e9460315cb95274f3963c7248ea41fa37ab61067db9796c75106
+2024-08-23 01:07:57,315 - INFO - Container for fasterxml__jackson-databind-1650 started: 36f701a2c2d5e9460315cb95274f3963c7248ea41fa37ab61067db9796c75106
+2024-08-23 01:07:57,316 - INFO - Intermediate patch for fasterxml__jackson-databind-1650 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-1650/patch.diff, now applying to container...
+2024-08-23 01:07:57,618 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:07:57,671 - INFO - >>>>> Applied Patch:
+patching file reproduce_bug.py
+patching file src/test/java/com/fasterxml/jackson/databind/jsontype/TestSubtypes.java
+
+2024-08-23 01:07:57,845 - INFO - Git diff before:
+diff --git a/src/test/java/com/fasterxml/jackson/databind/jsontype/TestSubtypes.java b/src/test/java/com/fasterxml/jackson/databind/jsontype/TestSubtypes.java
+index 4450c044e..7b9154403 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/jsontype/TestSubtypes.java
++++ b/src/test/java/com/fasterxml/jackson/databind/jsontype/TestSubtypes.java
+@@ -188,7 +188,11 @@ public class TestSubtypes extends com.fasterxml.jackson.databind.BaseMapTest
+         assertSame(SubC.class, result.value.getClass());
+     }
+     
+-    public void testSerialization() throws Exception
++public void testImpl1125Serialization() throws Exception {
++    Impl1125 impl = new Impl1125(1, 2, 3);
++    String json = MAPPER.writeValueAsString(impl);
++    assertEquals("{\"a\":1,\"b\":2,\"c\":3}", json);
++}
+     {
+         // serialization can detect type name ok without anything extra:
+         SubB bean = new SubB();
+2024-08-23 01:07:57,845 - INFO - Eval script for fasterxml__jackson-databind-1650 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-1650/patch.diff, now applying to container...
+2024-08-23 01:08:07,078 - INFO - Git diff after:
+diff --git a/src/test/java/com/fasterxml/jackson/databind/jsontype/TestSubtypes.java b/src/test/java/com/fasterxml/jackson/databind/jsontype/TestSubtypes.java
+index 4450c044e..7b9154403 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/jsontype/TestSubtypes.java
++++ b/src/test/java/com/fasterxml/jackson/databind/jsontype/TestSubtypes.java
+@@ -188,7 +188,11 @@ public class TestSubtypes extends com.fasterxml.jackson.databind.BaseMapTest
+         assertSame(SubC.class, result.value.getClass());
+     }
+     
+-    public void testSerialization() throws Exception
++public void testImpl1125Serialization() throws Exception {
++    Impl1125 impl = new Impl1125(1, 2, 3);
++    String json = MAPPER.writeValueAsString(impl);
++    assertEquals("{\"a\":1,\"b\":2,\"c\":3}", json);
++}
+     {
+         // serialization can detect type name ok without anything extra:
+         SubB bean = new SubB();
+2024-08-23 01:08:07,182 - INFO - Grading answer for fasterxml__jackson-databind-1650...
+2024-08-23 01:08:07,183 - INFO - report: {'fasterxml__jackson-databind-1650': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.type.RecursiveTypeTest', 'src:com.fasterxml.jackson.databind.type.TestTypeFactoryWithRecursiveTypes'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-1650: resolved: False
+2024-08-23 01:08:07,183 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-1650.gpt-4o...
+2024-08-23 01:08:22,420 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-1650.gpt-4o...
+2024-08-23 01:08:22,443 - INFO - Container sweb.eval.fasterxml__jackson-databind-1650.gpt-4o removed.

@@ -1,0 +1,53 @@
+2024-08-24 20:33:58,742 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-dataformat-xml-544
+Building instance image sweb.eval.x86_64.fasterxml__jackson-dataformat-xml-544:latest for fasterxml__jackson-dataformat-xml-544
+2024-08-24 20:33:58,743 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-dataformat-xml-544:latest already exists, skipping build.
+2024-08-24 20:33:58,743 - INFO - Creating container for fasterxml__jackson-dataformat-xml-544...
+2024-08-24 20:33:58,787 - INFO - Container for fasterxml__jackson-dataformat-xml-544 created: e6ae70552ab434280c6161686a0c9d77ad18bfb39ee4c79ae0e8c41cc40b14a4
+2024-08-24 20:33:58,979 - INFO - Container for fasterxml__jackson-dataformat-xml-544 started: e6ae70552ab434280c6161686a0c9d77ad18bfb39ee4c79ae0e8c41cc40b14a4
+2024-08-24 20:33:58,980 - INFO - Intermediate patch for fasterxml__jackson-dataformat-xml-544 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-dataformat-xml-544/patch.diff, now applying to container...
+2024-08-24 20:33:59,234 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:33:59,302 - INFO - >>>>> Applied Patch:
+patching file ReproduceIssue.java
+patching file run_reproduce.sh
+patching file src/test/java/com/fasterxml/jackson/dataformat/xml/misc/XmlTextTest.java
+
+2024-08-24 20:33:59,635 - INFO - Git diff before:
+diff --git a/src/test/java/com/fasterxml/jackson/dataformat/xml/misc/XmlTextTest.java b/src/test/java/com/fasterxml/jackson/dataformat/xml/misc/XmlTextTest.java
+index 6bfc69fa..c47154d7 100644
+--- a/src/test/java/com/fasterxml/jackson/dataformat/xml/misc/XmlTextTest.java
++++ b/src/test/java/com/fasterxml/jackson/dataformat/xml/misc/XmlTextTest.java
+@@ -79,4 +79,24 @@ public class XmlTextTest extends XmlTestBase
+         Phone result = MAPPER.readValue(xml, Phone.class);
+         assertNotNull(result);
+     }
++    // Test case for @JacksonXmlText and @JsonRawValue issue
++    public void testJacksonXmlTextWithJsonRawValue() throws Exception {
++        @JacksonXmlRootElement(localName = "test-pojo")
++        class TestPojo {
++            @JacksonXmlProperty(isAttribute = true)
++            public String id;
++
++            @JacksonXmlText
++            @JsonRawValue
++            public String value;
++        }
++
++        TestPojo sut = new TestPojo();
++        sut.id = "123";
++        sut.value = "<a>A</a><b someAttribute=\"B\">B</b>";
++
++        String xml = MAPPER.writeValueAsString(sut);
++        String expectedXml = "<test-pojo id=\"123\"><a>A</a><b someAttribute=\"B\">B</b></test-pojo>";
++        assertEquals(expectedXml, xml);
++    }
+ }
+2024-08-24 20:33:59,635 - INFO - Eval script for fasterxml__jackson-dataformat-xml-544 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-dataformat-xml-544/patch.diff, now applying to container...
+2024-08-24 20:34:15,679 - INFO - Git diff after:
+
+2024-08-24 20:34:15,679 - INFO - Git diff changed after running eval script
+2024-08-24 20:34:15,773 - INFO - Grading answer for fasterxml__jackson-dataformat-xml-544...
+2024-08-24 20:34:15,773 - INFO - report: {'fasterxml__jackson-dataformat-xml-544': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.dataformat.xml.misc.XmlTextTest', 'src:com.fasterxml.jackson.dataformat.xml.stream.XmlGeneratorTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-dataformat-xml-544: resolved: False
+2024-08-24 20:34:15,773 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-dataformat-xml-544.gpt-4o-standard...
+2024-08-24 20:34:30,946 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-dataformat-xml-544.gpt-4o-standard...
+2024-08-24 20:34:30,965 - INFO - Container sweb.eval.fasterxml__jackson-dataformat-xml-544.gpt-4o-standard removed.

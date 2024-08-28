@@ -1,0 +1,53 @@
+2024-08-24 20:26:55,014 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-973
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-973:latest for fasterxml__jackson-core-973
+2024-08-24 20:26:55,015 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-973:latest already exists, skipping build.
+2024-08-24 20:26:55,015 - INFO - Creating container for fasterxml__jackson-core-973...
+2024-08-24 20:26:55,299 - INFO - Container for fasterxml__jackson-core-973 created: 01a9ffe5d71fd4d9b15d32ba3c77a10a5f58a8578869f736a02e32e12d88161d
+2024-08-24 20:26:55,508 - INFO - Container for fasterxml__jackson-core-973 started: 01a9ffe5d71fd4d9b15d32ba3c77a10a5f58a8578869f736a02e32e12d88161d
+2024-08-24 20:26:55,508 - INFO - Intermediate patch for fasterxml__jackson-core-973 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-973/patch.diff, now applying to container...
+2024-08-24 20:26:55,733 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:26:55,780 - INFO - >>>>> Applied Patch:
+patching file run_tests.sh
+patching file src/main/java/com/fasterxml/jackson/core/io/BigDecimalParser.java
+
+2024-08-24 20:26:55,907 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/io/BigDecimalParser.java b/src/main/java/com/fasterxml/jackson/core/io/BigDecimalParser.java
+index 173af830..b969830d 100644
+--- a/src/main/java/com/fasterxml/jackson/core/io/BigDecimalParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/io/BigDecimalParser.java
+@@ -60,7 +60,10 @@ public final class BigDecimalParser
+         return parse(chars, 0, chars.length);
+     }
+ 
+-    private static BigDecimal parseBigDecimal(final char[] chars, final int off, final int len, final int splitLen) {
++        if (expIdx >= 0) {
++            // Use JDK's BigDecimal parser for scientific notation
++            return new BigDecimal(new String(chars, off, len));
++        }
+         boolean numHasSign = false;
+         boolean expHasSign = false;
+         boolean neg = false;
+2024-08-24 20:26:55,908 - INFO - Eval script for fasterxml__jackson-core-973 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-973/patch.diff, now applying to container...
+2024-08-24 20:27:01,240 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/io/BigDecimalParser.java b/src/main/java/com/fasterxml/jackson/core/io/BigDecimalParser.java
+index 173af830..b969830d 100644
+--- a/src/main/java/com/fasterxml/jackson/core/io/BigDecimalParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/io/BigDecimalParser.java
+@@ -60,7 +60,10 @@ public final class BigDecimalParser
+         return parse(chars, 0, chars.length);
+     }
+ 
+-    private static BigDecimal parseBigDecimal(final char[] chars, final int off, final int len, final int splitLen) {
++        if (expIdx >= 0) {
++            // Use JDK's BigDecimal parser for scientific notation
++            return new BigDecimal(new String(chars, off, len));
++        }
+         boolean numHasSign = false;
+         boolean expHasSign = false;
+         boolean neg = false;
+2024-08-24 20:27:01,294 - INFO - Grading answer for fasterxml__jackson-core-973...
+2024-08-24 20:27:01,294 - INFO - report: {'fasterxml__jackson-core-973': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.failing.PerfBigDecimalParser967'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-973: resolved: False
+2024-08-24 20:27:01,295 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-973.gpt-4o-standard...
+2024-08-24 20:27:16,478 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-973.gpt-4o-standard...
+2024-08-24 20:27:16,488 - INFO - Container sweb.eval.fasterxml__jackson-core-973.gpt-4o-standard removed.

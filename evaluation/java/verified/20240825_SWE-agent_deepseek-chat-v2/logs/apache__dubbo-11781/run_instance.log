@@ -1,0 +1,123 @@
+2024-08-22 20:13:25,583 - INFO - Environment image sweb.env.x86_64.1db5c641f99223455aefcf:latest found for apache__dubbo-11781
+Building instance image sweb.eval.x86_64.apache__dubbo-11781:latest for apache__dubbo-11781
+2024-08-22 20:13:25,587 - INFO - Image sweb.eval.x86_64.apache__dubbo-11781:latest already exists, skipping build.
+2024-08-22 20:13:25,587 - INFO - Creating container for apache__dubbo-11781...
+2024-08-22 20:13:25,639 - INFO - Container for apache__dubbo-11781 created: d30ba428e01bcef53fd2c5e3717a16ca580457537179d1eeca0ae3ada9e43d6b
+2024-08-22 20:13:25,883 - INFO - Container for apache__dubbo-11781 started: d30ba428e01bcef53fd2c5e3717a16ca580457537179d1eeca0ae3ada9e43d6b
+2024-08-22 20:13:25,883 - INFO - Intermediate patch for apache__dubbo-11781 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-11781/patch.diff, now applying to container...
+2024-08-22 20:13:26,135 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:13:26,199 - INFO - >>>>> Applied Patch:
+patching file dubbo-common/src/main/java/org/apache/dubbo/common/utils/UrlUtils.java
+patching file dubbo-registry/dubbo-registry-api/src/main/java/org/apache/dubbo/registry/integration/RegistryProtocol.java
+
+2024-08-22 20:13:26,569 - INFO - Git diff before:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/UrlUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/UrlUtils.java
+index 0167438a1e..2957e02400 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/UrlUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/UrlUtils.java
+@@ -100,6 +100,32 @@ public class UrlUtils {
+         if (StringUtils.isEmpty(defaultProtocol)) {
+             defaultProtocol = DUBBO_PROTOCOL;
+         }
++        URL u = URLStrParser.parseEncodedStr(url);
++        if (u == null) {
++            throw new IllegalArgumentException("Failed to parse url " + url);
++        }
++        Map<String, String> parameters = new HashMap<>(u.getParameters());
++        if (defaults != null && !defaults.isEmpty()) {
++            for (Map.Entry<String, String> entry : defaults.entrySet()) {
++                if (!parameters.containsKey(entry.getKey())) {
++                    parameters.put(entry.getKey(), entry.getValue());
++                }
++            }
++        }
++        // Handle empty parameters for username, password, and namespace
++        if (parameters.get(USERNAME_KEY) != null && parameters.get(USERNAME_KEY).isEmpty()) {
++            parameters.remove(USERNAME_KEY);
++        }
++        if (parameters.get(PASSWORD_KEY) != null && parameters.get(PASSWORD_KEY).isEmpty()) {
++            parameters.remove(PASSWORD_KEY);
++        }
++        if (parameters.get(CommonConstants.NAMESPACE_KEY) != null && parameters.get(CommonConstants.NAMESPACE_KEY).isEmpty()) {
++            parameters.remove(CommonConstants.NAMESPACE_KEY);
++        }
++        return new ServiceConfigURL(u.getProtocol(), u.getUsername(), u.getPassword(), u.getHost(), u.getPort(), u.getPath(), parameters);
++    }
++            defaultProtocol = DUBBO_PROTOCOL;
++        }
+         String defaultUsername = defaults == null ? null : defaults.get(USERNAME_KEY);
+         String defaultPassword = defaults == null ? null : defaults.get(PASSWORD_KEY);
+         int defaultPort = StringUtils.parseInteger(defaults == null ? null : defaults.get(PORT_KEY));
+diff --git a/dubbo-registry/dubbo-registry-api/src/main/java/org/apache/dubbo/registry/integration/RegistryProtocol.java b/dubbo-registry/dubbo-registry-api/src/main/java/org/apache/dubbo/registry/integration/RegistryProtocol.java
+index 02e75993a4..8e575a0880 100644
+--- a/dubbo-registry/dubbo-registry-api/src/main/java/org/apache/dubbo/registry/integration/RegistryProtocol.java
++++ b/dubbo-registry/dubbo-registry-api/src/main/java/org/apache/dubbo/registry/integration/RegistryProtocol.java
+@@ -909,6 +909,9 @@ public class RegistryProtocol implements Protocol, ScopeModelAware {
+                 if (subscribeUrl != null) {
+                     Map<URL, Set<NotifyListener>> overrideListeners = getProviderConfigurationListener(subscribeUrl).getOverrideListeners();
+                     Set<NotifyListener> listeners = overrideListeners.get(subscribeUrl);
++                    if(listeners == null){
++                        listeners = new HashSet<>();
++                    }
+                     if(listeners != null){
+                         if (listeners.remove(notifyListener)) {
+                             if (!registry.isServiceDiscovery()) {
+2024-08-22 20:13:26,569 - INFO - Eval script for apache__dubbo-11781 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/apache__dubbo-11781/patch.diff, now applying to container...
+2024-08-22 20:13:39,276 - INFO - Git diff after:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/UrlUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/UrlUtils.java
+index 0167438a1e..2957e02400 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/UrlUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/UrlUtils.java
+@@ -100,6 +100,32 @@ public class UrlUtils {
+         if (StringUtils.isEmpty(defaultProtocol)) {
+             defaultProtocol = DUBBO_PROTOCOL;
+         }
++        URL u = URLStrParser.parseEncodedStr(url);
++        if (u == null) {
++            throw new IllegalArgumentException("Failed to parse url " + url);
++        }
++        Map<String, String> parameters = new HashMap<>(u.getParameters());
++        if (defaults != null && !defaults.isEmpty()) {
++            for (Map.Entry<String, String> entry : defaults.entrySet()) {
++                if (!parameters.containsKey(entry.getKey())) {
++                    parameters.put(entry.getKey(), entry.getValue());
++                }
++            }
++        }
++        // Handle empty parameters for username, password, and namespace
++        if (parameters.get(USERNAME_KEY) != null && parameters.get(USERNAME_KEY).isEmpty()) {
++            parameters.remove(USERNAME_KEY);
++        }
++        if (parameters.get(PASSWORD_KEY) != null && parameters.get(PASSWORD_KEY).isEmpty()) {
++            parameters.remove(PASSWORD_KEY);
++        }
++        if (parameters.get(CommonConstants.NAMESPACE_KEY) != null && parameters.get(CommonConstants.NAMESPACE_KEY).isEmpty()) {
++            parameters.remove(CommonConstants.NAMESPACE_KEY);
++        }
++        return new ServiceConfigURL(u.getProtocol(), u.getUsername(), u.getPassword(), u.getHost(), u.getPort(), u.getPath(), parameters);
++    }
++            defaultProtocol = DUBBO_PROTOCOL;
++        }
+         String defaultUsername = defaults == null ? null : defaults.get(USERNAME_KEY);
+         String defaultPassword = defaults == null ? null : defaults.get(PASSWORD_KEY);
+         int defaultPort = StringUtils.parseInteger(defaults == null ? null : defaults.get(PORT_KEY));
+diff --git a/dubbo-registry/dubbo-registry-api/src/main/java/org/apache/dubbo/registry/integration/RegistryProtocol.java b/dubbo-registry/dubbo-registry-api/src/main/java/org/apache/dubbo/registry/integration/RegistryProtocol.java
+index 02e75993a4..8e575a0880 100644
+--- a/dubbo-registry/dubbo-registry-api/src/main/java/org/apache/dubbo/registry/integration/RegistryProtocol.java
++++ b/dubbo-registry/dubbo-registry-api/src/main/java/org/apache/dubbo/registry/integration/RegistryProtocol.java
+@@ -909,6 +909,9 @@ public class RegistryProtocol implements Protocol, ScopeModelAware {
+                 if (subscribeUrl != null) {
+                     Map<URL, Set<NotifyListener>> overrideListeners = getProviderConfigurationListener(subscribeUrl).getOverrideListeners();
+                     Set<NotifyListener> listeners = overrideListeners.get(subscribeUrl);
++                    if(listeners == null){
++                        listeners = new HashSet<>();
++                    }
+                     if(listeners != null){
+                         if (listeners.remove(notifyListener)) {
+                             if (!registry.isServiceDiscovery()) {
+2024-08-22 20:13:39,337 - INFO - Grading answer for apache__dubbo-11781...
+2024-08-22 20:13:39,338 - INFO - report: {'apache__dubbo-11781': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['dubbo-common:org.apache.dubbo.common.URLTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for apache__dubbo-11781: resolved: False
+2024-08-22 20:13:39,338 - INFO - Attempting to stop container sweb.eval.apache__dubbo-11781.deepseek-chat...
+2024-08-22 20:13:54,815 - INFO - Attempting to remove container sweb.eval.apache__dubbo-11781.deepseek-chat...
+2024-08-22 20:13:54,845 - INFO - Container sweb.eval.apache__dubbo-11781.deepseek-chat removed.

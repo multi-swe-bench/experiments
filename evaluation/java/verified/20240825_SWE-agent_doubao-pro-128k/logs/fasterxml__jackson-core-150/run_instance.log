@@ -1,0 +1,205 @@
+2024-08-21 13:13:34,495 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-150
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-150:latest for fasterxml__jackson-core-150
+2024-08-21 13:13:34,497 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-150:latest already exists, skipping build.
+2024-08-21 13:13:34,497 - INFO - Creating container for fasterxml__jackson-core-150...
+2024-08-21 13:13:34,560 - INFO - Container for fasterxml__jackson-core-150 created: 4fa32573919e38945d8464a79b6688ec010fa6d5afc0bd18c419af3ff9791ef6
+2024-08-21 13:13:34,798 - INFO - Container for fasterxml__jackson-core-150 started: 4fa32573919e38945d8464a79b6688ec010fa6d5afc0bd18c419af3ff9791ef6
+2024-08-21 13:13:34,798 - INFO - Intermediate patch for fasterxml__jackson-core-150 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-150/patch.diff, now applying to container...
+2024-08-21 13:13:35,053 - INFO - Failed to apply patch to container, trying again...
+2024-08-21 13:13:35,113 - INFO - >>>>> Applied Patch:
+patching file reproduce_bug.py
+patching file src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+
+2024-08-21 13:13:35,192 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+index 187754cd..4574803f 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+@@ -1,10 +1,65 @@
+-package com.fasterxml.jackson.core.util;
+-
+-import java.math.BigDecimal;
+-import java.util.ArrayList;
+-import java.util.Arrays;
+-
+-import com.fasterxml.jackson.core.io.NumberInput;
++{  
++   "values":{  
++      "datatypes":{  
++         "test":999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
++      }
++   }
++}
++try:
++    # Your code to reproduce the bug
++    print("Checking key length...")
++    MAX_KEY_LENGTH = 262144
++    if len("test") > MAX_KEY_LENGTH:
++        print("Key length exceeds the maximum allowed length.")
++        raise RuntimeException("Key length exceeds the maximum allowed length of " + MAX_KEY_LENGTH + " bytes.")
++    else:
++        print("Key length is within the allowed limit.")
++    raise Exception("Forcing an exception to check the stack trace")
++except Exception as e:
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
+ 
+ /**
+  * TextBuffer is a class similar to {@link StringBuffer}, with
+@@ -601,7 +656,14 @@ public final class TextBuffer
+         if (curr.length >= minSize) return curr;
+         _currentSegment = curr = Arrays.copyOf(curr, minSize);
+         return curr;
++    if (curr.length >= minSize) {
++        if (minSize > MAX_KEY_LENGTH) {
++            throw new RuntimeException("Key length exceeds the maximum allowed length of " + MAX_KEY_LENGTH + " bytes.");
++        }
++        return curr;
+     }
++    _currentSegment = curr = Arrays.copyOf(curr, minSize);
++    return curr;
+ 
+     /*
+     /**********************************************************
+2024-08-21 13:13:35,192 - INFO - Eval script for fasterxml__jackson-core-150 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-150/patch.diff, now applying to container...
+2024-08-21 13:13:39,613 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+index 187754cd..4574803f 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java
+@@ -1,10 +1,65 @@
+-package com.fasterxml.jackson.core.util;
+-
+-import java.math.BigDecimal;
+-import java.util.ArrayList;
+-import java.util.Arrays;
+-
+-import com.fasterxml.jackson.core.io.NumberInput;
++{  
++   "values":{  
++      "datatypes":{  
++         "test":999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
++      }
++   }
++}
++try:
++    # Your code to reproduce the bug
++    print("Checking key length...")
++    MAX_KEY_LENGTH = 262144
++    if len("test") > MAX_KEY_LENGTH:
++        print("Key length exceeds the maximum allowed length.")
++        raise RuntimeException("Key length exceeds the maximum allowed length of " + MAX_KEY_LENGTH + " bytes.")
++    else:
++        print("Key length is within the allowed limit.")
++    raise Exception("Forcing an exception to check the stack trace")
++except Exception as e:
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
++    print("Exception occurred:", e)
++    print("Stack trace:")
++    import traceback
++    traceback.print_exc()
+ 
+ /**
+  * TextBuffer is a class similar to {@link StringBuffer}, with
+@@ -601,7 +656,14 @@ public final class TextBuffer
+         if (curr.length >= minSize) return curr;
+         _currentSegment = curr = Arrays.copyOf(curr, minSize);
+         return curr;
++    if (curr.length >= minSize) {
++        if (minSize > MAX_KEY_LENGTH) {
++            throw new RuntimeException("Key length exceeds the maximum allowed length of " + MAX_KEY_LENGTH + " bytes.");
++        }
++        return curr;
+     }
++    _currentSegment = curr = Arrays.copyOf(curr, minSize);
++    return curr;
+ 
+     /*
+     /**********************************************************
+2024-08-21 13:13:39,702 - INFO - Grading answer for fasterxml__jackson-core-150...
+2024-08-21 13:13:39,702 - INFO - report: {'fasterxml__jackson-core-150': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.json.TestNumericValues', 'src:com.fasterxml.jackson.core.util.TestTextBuffer'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-150: resolved: False
+2024-08-21 13:13:39,702 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-150.doubao...
+2024-08-21 13:13:54,880 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-150.doubao...
+2024-08-21 13:13:54,890 - INFO - Container sweb.eval.fasterxml__jackson-core-150.doubao removed.

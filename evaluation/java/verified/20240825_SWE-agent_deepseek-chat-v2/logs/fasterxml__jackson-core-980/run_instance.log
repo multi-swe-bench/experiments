@@ -1,0 +1,237 @@
+2024-08-22 20:18:38,872 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-980
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-980:latest for fasterxml__jackson-core-980
+2024-08-22 20:18:38,874 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-980:latest already exists, skipping build.
+2024-08-22 20:18:38,874 - INFO - Creating container for fasterxml__jackson-core-980...
+2024-08-22 20:18:38,931 - INFO - Container for fasterxml__jackson-core-980 created: 5a7a88665f46da17dded9273a69393e75da59aece3c7560b26bf202c7d099f4f
+2024-08-22 20:18:39,169 - INFO - Container for fasterxml__jackson-core-980 started: 5a7a88665f46da17dded9273a69393e75da59aece3c7560b26bf202c7d099f4f
+2024-08-22 20:18:39,170 - INFO - Intermediate patch for fasterxml__jackson-core-980 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-980/patch.diff, now applying to container...
+2024-08-22 20:18:39,433 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:18:39,497 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/StreamReadConstraints.java
+patching file src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
+
+2024-08-22 20:18:39,606 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/StreamReadConstraints.java b/src/main/java/com/fasterxml/jackson/core/StreamReadConstraints.java
+index 85b25684..84c11b62 100644
+--- a/src/main/java/com/fasterxml/jackson/core/StreamReadConstraints.java
++++ b/src/main/java/com/fasterxml/jackson/core/StreamReadConstraints.java
+@@ -36,6 +36,7 @@ public class StreamReadConstraints
+      * Default setting for maximum number length: see {@link Builder#maxNumberLength(int)} for details.
+      */
+     public static final int DEFAULT_MAX_NUM_LEN = 1000;
++    public static final int DEFAULT_MAX_SCALE = 1000; // Add this line to declare the default maxScale value
+ 
+     /**
+      * Default setting for maximum string length: see {@link Builder#maxStringLength(int)} for details.
+@@ -45,14 +46,17 @@ public class StreamReadConstraints
+     protected final int _maxNestingDepth;
+     protected final int _maxNumLen;
+     protected final int _maxStringLen;
++    protected final int _maxScale; // Add this line to declare the maxScale field
+ 
+     private static final StreamReadConstraints DEFAULT =
++        new StreamReadConstraints(DEFAULT_MAX_DEPTH, DEFAULT_MAX_NUM_LEN, DEFAULT_MAX_STRING_LEN, DEFAULT_MAX_SCALE);
+         new StreamReadConstraints(DEFAULT_MAX_DEPTH, DEFAULT_MAX_NUM_LEN, DEFAULT_MAX_STRING_LEN);
+ 
+     public static final class Builder {
+         private int maxNestingDepth;
+         private int maxNumLen;
+         private int maxStringLen;
++        private int maxScale; // Add this line to declare the maxScale field
+ 
+         /**
+          * Sets the maximum nesting depth. The depth is a count of objects and arrays that have not
+@@ -80,7 +84,21 @@ public class StreamReadConstraints
+          * @return this builder
+          * @throws IllegalArgumentException if the maxNumLen is set to a negative value
+          */
+-        public Builder maxNumberLength(final int maxNumLen) {
++    /**
++     * Sets the maximum scale for floating-point numbers.
++     *
++     * @param maxScale the maximum scale
++     *
++     * @return this builder
++     * @throws IllegalArgumentException if the maxScale is set to a negative value
++     */
++    public Builder maxScale(final int maxScale) {
++        if (maxScale < 0) {
++            throw new IllegalArgumentException("Cannot set maxScale to a negative value");
++        }
++        this.maxScale = maxScale;
++        return this;
++    }
+             if (maxNumLen < 0) {
+                 throw new IllegalArgumentException("Cannot set maxNumberLength to a negative value");
+             }
+@@ -112,7 +130,12 @@ public class StreamReadConstraints
+         }
+ 
+         Builder() {
+-            this(DEFAULT_MAX_DEPTH, DEFAULT_MAX_NUM_LEN, DEFAULT_MAX_STRING_LEN);
++        Builder(final int maxNestingDepth, final int maxNumLen, final int maxStringLen, final int maxScale) {
++            this.maxNestingDepth = maxNestingDepth;
++            this.maxNumLen = maxNumLen;
++            this.maxStringLen = maxStringLen;
++            this.maxScale = maxScale;
++        }
+         }
+ 
+         Builder(final int maxNestingDepth, final int maxNumLen, final int maxStringLen) {
+@@ -128,6 +151,8 @@ public class StreamReadConstraints
+         }
+ 
+         public StreamReadConstraints build() {
++            return new StreamReadConstraints(maxNestingDepth, maxNumLen, maxStringLen, maxScale);
++        }
+             return new StreamReadConstraints(maxNestingDepth, maxNumLen, maxStringLen);
+         }
+     }
+@@ -138,7 +163,12 @@ public class StreamReadConstraints
+     /**********************************************************************
+      */
+ 
+-    protected StreamReadConstraints(final int maxNestingDepth, final int maxNumLen, final int maxStringLen) {
++    protected StreamReadConstraints(final int maxNestingDepth, final int maxNumLen, final int maxStringLen, final int maxScale) {
++        _maxNestingDepth = maxNestingDepth;
++        _maxNumLen = maxNumLen;
++        _maxStringLen = maxStringLen;
++        _maxScale = maxScale;
++    }
+         _maxNestingDepth = maxNestingDepth;
+         _maxNumLen = maxNumLen;
+         _maxStringLen = maxStringLen;
+diff --git a/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java b/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
+index 023661e9..0dc385cf 100644
+--- a/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
++++ b/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
+@@ -1216,6 +1216,13 @@ public abstract class ParserBase extends ParserMinimalBase
+ 
+     // @since 2.15
+     protected BigInteger _convertBigDecimalToBigInteger(BigDecimal bigDec) throws IOException {
++        // Check if the scale of the BigDecimal exceeds the maximum scale constraint
++        if (bigDec.scale() > _streamReadConstraints.getMaxScale()) {
++            throw new IOException("Scale of BigDecimal exceeds maximum allowed scale: " + _streamReadConstraints.getMaxScale());
++        }
++        // 04-Apr-2022, tatu: wrt [core#968] Need to limit max scale magnitude
++        return bigDec.toBigInteger();
++    }
+         // 04-Apr-2022, tatu: wrt [core#968] Need to limit max scale magnitude
+         return bigDec.toBigInteger();
+     }
+2024-08-22 20:18:39,606 - INFO - Eval script for fasterxml__jackson-core-980 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-980/patch.diff, now applying to container...
+2024-08-22 20:18:45,126 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/StreamReadConstraints.java b/src/main/java/com/fasterxml/jackson/core/StreamReadConstraints.java
+index 85b25684..84c11b62 100644
+--- a/src/main/java/com/fasterxml/jackson/core/StreamReadConstraints.java
++++ b/src/main/java/com/fasterxml/jackson/core/StreamReadConstraints.java
+@@ -36,6 +36,7 @@ public class StreamReadConstraints
+      * Default setting for maximum number length: see {@link Builder#maxNumberLength(int)} for details.
+      */
+     public static final int DEFAULT_MAX_NUM_LEN = 1000;
++    public static final int DEFAULT_MAX_SCALE = 1000; // Add this line to declare the default maxScale value
+ 
+     /**
+      * Default setting for maximum string length: see {@link Builder#maxStringLength(int)} for details.
+@@ -45,14 +46,17 @@ public class StreamReadConstraints
+     protected final int _maxNestingDepth;
+     protected final int _maxNumLen;
+     protected final int _maxStringLen;
++    protected final int _maxScale; // Add this line to declare the maxScale field
+ 
+     private static final StreamReadConstraints DEFAULT =
++        new StreamReadConstraints(DEFAULT_MAX_DEPTH, DEFAULT_MAX_NUM_LEN, DEFAULT_MAX_STRING_LEN, DEFAULT_MAX_SCALE);
+         new StreamReadConstraints(DEFAULT_MAX_DEPTH, DEFAULT_MAX_NUM_LEN, DEFAULT_MAX_STRING_LEN);
+ 
+     public static final class Builder {
+         private int maxNestingDepth;
+         private int maxNumLen;
+         private int maxStringLen;
++        private int maxScale; // Add this line to declare the maxScale field
+ 
+         /**
+          * Sets the maximum nesting depth. The depth is a count of objects and arrays that have not
+@@ -80,7 +84,21 @@ public class StreamReadConstraints
+          * @return this builder
+          * @throws IllegalArgumentException if the maxNumLen is set to a negative value
+          */
+-        public Builder maxNumberLength(final int maxNumLen) {
++    /**
++     * Sets the maximum scale for floating-point numbers.
++     *
++     * @param maxScale the maximum scale
++     *
++     * @return this builder
++     * @throws IllegalArgumentException if the maxScale is set to a negative value
++     */
++    public Builder maxScale(final int maxScale) {
++        if (maxScale < 0) {
++            throw new IllegalArgumentException("Cannot set maxScale to a negative value");
++        }
++        this.maxScale = maxScale;
++        return this;
++    }
+             if (maxNumLen < 0) {
+                 throw new IllegalArgumentException("Cannot set maxNumberLength to a negative value");
+             }
+@@ -112,7 +130,12 @@ public class StreamReadConstraints
+         }
+ 
+         Builder() {
+-            this(DEFAULT_MAX_DEPTH, DEFAULT_MAX_NUM_LEN, DEFAULT_MAX_STRING_LEN);
++        Builder(final int maxNestingDepth, final int maxNumLen, final int maxStringLen, final int maxScale) {
++            this.maxNestingDepth = maxNestingDepth;
++            this.maxNumLen = maxNumLen;
++            this.maxStringLen = maxStringLen;
++            this.maxScale = maxScale;
++        }
+         }
+ 
+         Builder(final int maxNestingDepth, final int maxNumLen, final int maxStringLen) {
+@@ -128,6 +151,8 @@ public class StreamReadConstraints
+         }
+ 
+         public StreamReadConstraints build() {
++            return new StreamReadConstraints(maxNestingDepth, maxNumLen, maxStringLen, maxScale);
++        }
+             return new StreamReadConstraints(maxNestingDepth, maxNumLen, maxStringLen);
+         }
+     }
+@@ -138,7 +163,12 @@ public class StreamReadConstraints
+     /**********************************************************************
+      */
+ 
+-    protected StreamReadConstraints(final int maxNestingDepth, final int maxNumLen, final int maxStringLen) {
++    protected StreamReadConstraints(final int maxNestingDepth, final int maxNumLen, final int maxStringLen, final int maxScale) {
++        _maxNestingDepth = maxNestingDepth;
++        _maxNumLen = maxNumLen;
++        _maxStringLen = maxStringLen;
++        _maxScale = maxScale;
++    }
+         _maxNestingDepth = maxNestingDepth;
+         _maxNumLen = maxNumLen;
+         _maxStringLen = maxStringLen;
+diff --git a/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java b/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
+index 023661e9..0dc385cf 100644
+--- a/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
++++ b/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
+@@ -1216,6 +1216,13 @@ public abstract class ParserBase extends ParserMinimalBase
+ 
+     // @since 2.15
+     protected BigInteger _convertBigDecimalToBigInteger(BigDecimal bigDec) throws IOException {
++        // Check if the scale of the BigDecimal exceeds the maximum scale constraint
++        if (bigDec.scale() > _streamReadConstraints.getMaxScale()) {
++            throw new IOException("Scale of BigDecimal exceeds maximum allowed scale: " + _streamReadConstraints.getMaxScale());
++        }
++        // 04-Apr-2022, tatu: wrt [core#968] Need to limit max scale magnitude
++        return bigDec.toBigInteger();
++    }
+         // 04-Apr-2022, tatu: wrt [core#968] Need to limit max scale magnitude
+         return bigDec.toBigInteger();
+     }
+2024-08-22 20:18:45,189 - INFO - Grading answer for fasterxml__jackson-core-980...
+2024-08-22 20:18:45,190 - INFO - report: {'fasterxml__jackson-core-980': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.failing.PerfBigDecimalToInteger968'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-980: resolved: False
+2024-08-22 20:18:45,190 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-980.deepseek-chat...
+2024-08-22 20:19:00,389 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-980.deepseek-chat...
+2024-08-22 20:19:00,400 - INFO - Container sweb.eval.fasterxml__jackson-core-980.deepseek-chat removed.

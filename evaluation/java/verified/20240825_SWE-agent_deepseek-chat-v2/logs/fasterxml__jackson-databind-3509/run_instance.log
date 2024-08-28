@@ -1,0 +1,51 @@
+2024-08-22 20:19:29,103 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-3509
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-3509:latest for fasterxml__jackson-databind-3509
+2024-08-22 20:19:29,105 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-3509:latest already exists, skipping build.
+2024-08-22 20:19:29,105 - INFO - Creating container for fasterxml__jackson-databind-3509...
+2024-08-22 20:19:29,167 - INFO - Container for fasterxml__jackson-databind-3509 created: 5ec01196959f2fbbdb3915ce244e1acb59ff300182ea91cea137e1afe18d2738
+2024-08-22 20:19:29,394 - INFO - Container for fasterxml__jackson-databind-3509 started: 5ec01196959f2fbbdb3915ce244e1acb59ff300182ea91cea137e1afe18d2738
+2024-08-22 20:19:29,394 - INFO - Intermediate patch for fasterxml__jackson-databind-3509 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3509/patch.diff, now applying to container...
+2024-08-22 20:19:29,630 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:19:29,685 - INFO - >>>>> Applied Patch:
+patching file IntToFloatCoercionTest.java
+patching file src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+
+2024-08-22 20:19:32,795 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+index bc58c448d..80e295d59 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+@@ -984,6 +984,10 @@ public abstract class StdDeserializer<T>
+             text = p.getText();
+             break;
+         case JsonTokenId.ID_NUMBER_INT:
++            if (ctxt.coercionConfigFor(LogicalType.Float).getCoercion(CoercionInputShape.Integer) == CoercionAction.Fail) {
++                throw ctxt.instantiateThrowable(MismatchedInputException.class, "Integer value cannot be coerced to Float");
++            }
++            return p.getFloatValue();
+         case JsonTokenId.ID_NUMBER_FLOAT:
+             return p.getFloatValue();
+         case JsonTokenId.ID_NULL:
+2024-08-22 20:19:32,796 - INFO - Eval script for fasterxml__jackson-databind-3509 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3509/patch.diff, now applying to container...
+2024-08-22 20:19:41,839 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+index bc58c448d..80e295d59 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+@@ -984,6 +984,10 @@ public abstract class StdDeserializer<T>
+             text = p.getText();
+             break;
+         case JsonTokenId.ID_NUMBER_INT:
++            if (ctxt.coercionConfigFor(LogicalType.Float).getCoercion(CoercionInputShape.Integer) == CoercionAction.Fail) {
++                throw ctxt.instantiateThrowable(MismatchedInputException.class, "Integer value cannot be coerced to Float");
++            }
++            return p.getFloatValue();
+         case JsonTokenId.ID_NUMBER_FLOAT:
+             return p.getFloatValue();
+         case JsonTokenId.ID_NULL:
+2024-08-22 20:19:41,901 - INFO - Grading answer for fasterxml__jackson-databind-3509...
+2024-08-22 20:19:41,902 - INFO - report: {'fasterxml__jackson-databind-3509': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.convert.CoerceIntToFloatTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-3509: resolved: False
+2024-08-22 20:19:41,902 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-3509.deepseek-chat...
+2024-08-22 20:19:57,208 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-3509.deepseek-chat...
+2024-08-22 20:19:57,222 - INFO - Container sweb.eval.fasterxml__jackson-databind-3509.deepseek-chat removed.

@@ -1,0 +1,178 @@
+2024-08-21 13:20:33,256 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-dataformat-xml-638
+Building instance image sweb.eval.x86_64.fasterxml__jackson-dataformat-xml-638:latest for fasterxml__jackson-dataformat-xml-638
+2024-08-21 13:20:33,257 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-dataformat-xml-638:latest already exists, skipping build.
+2024-08-21 13:20:33,257 - INFO - Creating container for fasterxml__jackson-dataformat-xml-638...
+2024-08-21 13:20:33,321 - INFO - Container for fasterxml__jackson-dataformat-xml-638 created: d9a59fed9d765ce61f83d5341512756d30ca74fe2a32cee005d72faefc2af709
+2024-08-21 13:20:33,564 - INFO - Container for fasterxml__jackson-dataformat-xml-638 started: d9a59fed9d765ce61f83d5341512756d30ca74fe2a32cee005d72faefc2af709
+2024-08-21 13:20:33,565 - INFO - Intermediate patch for fasterxml__jackson-dataformat-xml-638 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-dataformat-xml-638/patch.diff, now applying to container...
+2024-08-21 13:20:33,793 - INFO - Failed to apply patch to container, trying again...
+2024-08-21 13:20:33,845 - INFO - >>>>> Applied Patch:
+patching file pom.xml
+patching file reproduce_bug.py
+patching file src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+
+2024-08-21 13:20:33,915 - INFO - Git diff before:
+diff --git a/pom.xml b/pom.xml
+index 18c71341..f62b63b0 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -37,17 +37,13 @@ alternative support for serializing POJOs as XML and deserializing XML as pojos.
+     <project.build.outputTimestamp>2023-11-15T23:23:21Z</project.build.outputTimestamp>
+   </properties>
+ 
+-  <dependencies>
+-    <!-- Extends Jackson (jackson-mapper); requires Stax API (and implementation on
+-         deploy time), Stax2 API.
+-      -->
+-    <dependency>
+-      <groupId>com.fasterxml.jackson.core</groupId>
+-      <artifactId>jackson-core</artifactId>
+-    </dependency>
+-    <dependency>
+-      <groupId>com.fasterxml.jackson.core</groupId>
+-      <artifactId>jackson-annotations</artifactId>
++    <dependencies>
++      <dependency>
++        <groupId>com.fasterxml.jackson.dataformat</groupId>
++        <artifactId>jackson-dataformat-xml</artifactId>
++        <version>2.15.0</version>
++      </dependency>
++    </dependencies>
+     </dependency>
+     <dependency>
+       <groupId>com.fasterxml.jackson.core</groupId>
+diff --git a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+index a86914fc..76cefb62 100644
+--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
++++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+@@ -1,4 +1,10 @@
+-package com.fasterxml.jackson.dataformat.xml;
++from com.fasterxml.jackson.dataformat.xml import JsonProperty, JacksonXmlProperty
++# Assuming we need to simulate the annotations and the class declaration
++class Dummy:
++    @JsonProperty(value="value", namespace="uri:ns1")
++    @JacksonXmlProperty(isAttribute=True)
++    def __init__(self):
++        self.valueDefault = 42
+ 
+ import java.lang.annotation.Annotation;
+ import java.util.List;
+@@ -115,19 +121,21 @@ public class JacksonXmlAnnotationIntrospector
+      */
+ 
+     @Override
+-    public String findNamespace(MapperConfig<?> config, Annotated ann)
+-    {
+-        JacksonXmlProperty prop = _findAnnotation(ann, JacksonXmlProperty.class);
+-        if (prop != null) {
+-            return prop.namespace();
+-        }
+-        // 14-Nov-2020, tatu: 2.12 adds namespace for this too
+-        JsonProperty jprop = _findAnnotation(ann, JsonProperty.class);
+-        if (jprop != null) {
+-            return jprop.namespace();
++@Override
++public String findNamespace(MapperConfig<?> config, Annotated ann) {
++    JacksonXmlProperty prop = _findAnnotation(ann, JacksonXmlProperty.class);
++    if (prop!= null) {
++        String namespace = prop.namespace();
++        if (namespace.isEmpty()) {
++            JsonProperty jprop = _findAnnotation(ann, JsonProperty.class);
++            if (jprop!= null) {
++                return jprop.namespace();
++            }
+         }
+-        return null;
++        return namespace;
+     }
++    return null;
++}
+ 
+     /**
+      * Due to issue [dataformat-xml#578] need to suppress calls to this method
+2024-08-21 13:20:33,916 - INFO - Eval script for fasterxml__jackson-dataformat-xml-638 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-dataformat-xml-638/patch.diff, now applying to container...
+2024-08-21 13:20:35,227 - INFO - Git diff after:
+diff --git a/pom.xml b/pom.xml
+index 18c71341..f62b63b0 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -37,17 +37,13 @@ alternative support for serializing POJOs as XML and deserializing XML as pojos.
+     <project.build.outputTimestamp>2023-11-15T23:23:21Z</project.build.outputTimestamp>
+   </properties>
+ 
+-  <dependencies>
+-    <!-- Extends Jackson (jackson-mapper); requires Stax API (and implementation on
+-         deploy time), Stax2 API.
+-      -->
+-    <dependency>
+-      <groupId>com.fasterxml.jackson.core</groupId>
+-      <artifactId>jackson-core</artifactId>
+-    </dependency>
+-    <dependency>
+-      <groupId>com.fasterxml.jackson.core</groupId>
+-      <artifactId>jackson-annotations</artifactId>
++    <dependencies>
++      <dependency>
++        <groupId>com.fasterxml.jackson.dataformat</groupId>
++        <artifactId>jackson-dataformat-xml</artifactId>
++        <version>2.15.0</version>
++      </dependency>
++    </dependencies>
+     </dependency>
+     <dependency>
+       <groupId>com.fasterxml.jackson.core</groupId>
+diff --git a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+index a86914fc..76cefb62 100644
+--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
++++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+@@ -1,4 +1,10 @@
+-package com.fasterxml.jackson.dataformat.xml;
++from com.fasterxml.jackson.dataformat.xml import JsonProperty, JacksonXmlProperty
++# Assuming we need to simulate the annotations and the class declaration
++class Dummy:
++    @JsonProperty(value="value", namespace="uri:ns1")
++    @JacksonXmlProperty(isAttribute=True)
++    def __init__(self):
++        self.valueDefault = 42
+ 
+ import java.lang.annotation.Annotation;
+ import java.util.List;
+@@ -115,19 +121,21 @@ public class JacksonXmlAnnotationIntrospector
+      */
+ 
+     @Override
+-    public String findNamespace(MapperConfig<?> config, Annotated ann)
+-    {
+-        JacksonXmlProperty prop = _findAnnotation(ann, JacksonXmlProperty.class);
+-        if (prop != null) {
+-            return prop.namespace();
+-        }
+-        // 14-Nov-2020, tatu: 2.12 adds namespace for this too
+-        JsonProperty jprop = _findAnnotation(ann, JsonProperty.class);
+-        if (jprop != null) {
+-            return jprop.namespace();
++@Override
++public String findNamespace(MapperConfig<?> config, Annotated ann) {
++    JacksonXmlProperty prop = _findAnnotation(ann, JacksonXmlProperty.class);
++    if (prop!= null) {
++        String namespace = prop.namespace();
++        if (namespace.isEmpty()) {
++            JsonProperty jprop = _findAnnotation(ann, JsonProperty.class);
++            if (jprop!= null) {
++                return jprop.namespace();
++            }
+         }
+-        return null;
++        return namespace;
+     }
++    return null;
++}
+ 
+     /**
+      * Due to issue [dataformat-xml#578] need to suppress calls to this method
+2024-08-21 13:20:35,282 - INFO - Grading answer for fasterxml__jackson-dataformat-xml-638...
+2024-08-21 13:20:35,282 - INFO - report: {'fasterxml__jackson-dataformat-xml-638': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.dataformat.xml.ser.SerializationNameMergingTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-dataformat-xml-638: resolved: False
+2024-08-21 13:20:35,282 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-dataformat-xml-638.doubao...
+2024-08-21 13:20:50,447 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-dataformat-xml-638.doubao...
+2024-08-21 13:20:50,463 - INFO - Container sweb.eval.fasterxml__jackson-dataformat-xml-638.doubao removed.

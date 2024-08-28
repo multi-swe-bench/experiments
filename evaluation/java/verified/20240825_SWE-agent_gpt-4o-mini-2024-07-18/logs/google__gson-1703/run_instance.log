@@ -1,0 +1,53 @@
+2024-08-23 01:15:41,895 - INFO - Environment image sweb.env.x86_64.92848c9972c7cb83a2984c:latest found for google__gson-1703
+Building instance image sweb.eval.x86_64.google__gson-1703:latest for google__gson-1703
+2024-08-23 01:15:41,897 - INFO - Image sweb.eval.x86_64.google__gson-1703:latest already exists, skipping build.
+2024-08-23 01:15:41,897 - INFO - Creating container for google__gson-1703...
+2024-08-23 01:15:41,957 - INFO - Container for google__gson-1703 created: 55062c5c732efb2c70f9e678891c398f15fe0a1fb2759513ddfdfdd9b44ff208
+2024-08-23 01:15:42,181 - INFO - Container for google__gson-1703 started: 55062c5c732efb2c70f9e678891c398f15fe0a1fb2759513ddfdfdd9b44ff208
+2024-08-23 01:15:42,182 - INFO - Intermediate patch for google__gson-1703 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/google__gson-1703/patch.diff, now applying to container...
+2024-08-23 01:15:42,390 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:15:42,452 - INFO - >>>>> Applied Patch:
+patching file RunReproduce.java
+patching file gson/src/main/java/com/google/gson/Gson.java
+patching file reproduce.java
+patching file reproduce.py
+
+2024-08-23 01:15:42,528 - INFO - Git diff before:
+diff --git a/gson/src/main/java/com/google/gson/Gson.java b/gson/src/main/java/com/google/gson/Gson.java
+index 27f3ee92..53715196 100644
+--- a/gson/src/main/java/com/google/gson/Gson.java
++++ b/gson/src/main/java/com/google/gson/Gson.java
+@@ -677,7 +677,9 @@ public final class Gson {
+    * @throws JsonIOException if there was a problem writing to the writer
+    * @since 1.2
+    */
+-  public void toJson(Object src, Type typeOfSrc, Appendable writer) throws JsonIOException {
++    if (writer instanceof CharSequence && !(writer instanceof Writer)) {
++        throw new JsonIOException("CharSequence passed to Appendable does not implement toString()");
++    }
+     try {
+       JsonWriter jsonWriter = newJsonWriter(Streams.writerForAppendable(writer));
+       toJson(src, typeOfSrc, jsonWriter);
+2024-08-23 01:15:42,528 - INFO - Eval script for google__gson-1703 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/google__gson-1703/patch.diff, now applying to container...
+2024-08-23 01:15:45,640 - INFO - Git diff after:
+diff --git a/gson/src/main/java/com/google/gson/Gson.java b/gson/src/main/java/com/google/gson/Gson.java
+index 27f3ee92..53715196 100644
+--- a/gson/src/main/java/com/google/gson/Gson.java
++++ b/gson/src/main/java/com/google/gson/Gson.java
+@@ -677,7 +677,9 @@ public final class Gson {
+    * @throws JsonIOException if there was a problem writing to the writer
+    * @since 1.2
+    */
+-  public void toJson(Object src, Type typeOfSrc, Appendable writer) throws JsonIOException {
++    if (writer instanceof CharSequence && !(writer instanceof Writer)) {
++        throw new JsonIOException("CharSequence passed to Appendable does not implement toString()");
++    }
+     try {
+       JsonWriter jsonWriter = newJsonWriter(Streams.writerForAppendable(writer));
+       toJson(src, typeOfSrc, jsonWriter);
+2024-08-23 01:15:45,695 - INFO - Grading answer for google__gson-1703...
+2024-08-23 01:15:45,695 - INFO - report: {'google__gson-1703': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['gson:com.google.gson.functional.ReadersWritersTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for google__gson-1703: resolved: False
+2024-08-23 01:15:45,695 - INFO - Attempting to stop container sweb.eval.google__gson-1703.gpt-4o...
+2024-08-23 01:16:00,878 - INFO - Attempting to remove container sweb.eval.google__gson-1703.gpt-4o...
+2024-08-23 01:16:00,895 - INFO - Container sweb.eval.google__gson-1703.gpt-4o removed.

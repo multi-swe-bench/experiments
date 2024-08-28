@@ -1,0 +1,50 @@
+2024-08-21 13:17:00,326 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4087
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4087:latest for fasterxml__jackson-databind-4087
+2024-08-21 13:17:00,328 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4087:latest already exists, skipping build.
+2024-08-21 13:17:00,328 - INFO - Creating container for fasterxml__jackson-databind-4087...
+2024-08-21 13:17:00,409 - INFO - Container for fasterxml__jackson-databind-4087 created: 80ef1ebb794a35396533936e451aa6a955154eb4447f371d3331817a07e4e638
+2024-08-21 13:17:00,675 - INFO - Container for fasterxml__jackson-databind-4087 started: 80ef1ebb794a35396533936e451aa6a955154eb4447f371d3331817a07e4e638
+2024-08-21 13:17:00,675 - INFO - Intermediate patch for fasterxml__jackson-databind-4087 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4087/patch.diff, now applying to container...
+2024-08-21 13:17:00,932 - INFO - Failed to apply patch to container, trying again...
+2024-08-21 13:17:00,985 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/databind/util/ClassUtil.java
+
+2024-08-21 13:17:01,156 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/util/ClassUtil.java b/src/main/java/com/fasterxml/jackson/databind/util/ClassUtil.java
+index 4677fd262..5e20a1b7e 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/util/ClassUtil.java
++++ b/src/main/java/com/fasterxml/jackson/databind/util/ClassUtil.java
+@@ -1389,7 +1389,9 @@ cls.getName(), rootCause.getClass().getName(), rootCause.getMessage()),
+         private final Field enumSetTypeField;
+         private final Field enumMapTypeField;
+ 
+-        private final String failForEnumSet;
++        if (!isJDKClass(declaringClass) && (!isPublic || evenIfAlreadyPublic)) {
++            ao.setAccessible(true);
++        }
+         private final String failForEnumMap;
+ 
+         private EnumTypeLocator() {
+2024-08-21 13:17:01,156 - INFO - Eval script for fasterxml__jackson-databind-4087 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4087/patch.diff, now applying to container...
+2024-08-21 13:17:09,257 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/util/ClassUtil.java b/src/main/java/com/fasterxml/jackson/databind/util/ClassUtil.java
+index 4677fd262..5e20a1b7e 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/util/ClassUtil.java
++++ b/src/main/java/com/fasterxml/jackson/databind/util/ClassUtil.java
+@@ -1389,7 +1389,9 @@ cls.getName(), rootCause.getClass().getName(), rootCause.getMessage()),
+         private final Field enumSetTypeField;
+         private final Field enumMapTypeField;
+ 
+-        private final String failForEnumSet;
++        if (!isJDKClass(declaringClass) && (!isPublic || evenIfAlreadyPublic)) {
++            ao.setAccessible(true);
++        }
+         private final String failForEnumMap;
+ 
+         private EnumTypeLocator() {
+2024-08-21 13:17:09,314 - INFO - Grading answer for fasterxml__jackson-databind-4087...
+2024-08-21 13:17:09,314 - INFO - report: {'fasterxml__jackson-databind-4087': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.interop.OptionalJava8Fallbacks4082Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4087: resolved: False
+2024-08-21 13:17:09,314 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4087.doubao...
+2024-08-21 13:17:24,582 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4087.doubao...
+2024-08-21 13:17:24,595 - INFO - Container sweb.eval.fasterxml__jackson-databind-4087.doubao removed.

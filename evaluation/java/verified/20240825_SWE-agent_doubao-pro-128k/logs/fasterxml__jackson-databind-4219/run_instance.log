@@ -1,0 +1,77 @@
+2024-08-21 13:17:40,103 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4219
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4219:latest for fasterxml__jackson-databind-4219
+2024-08-21 13:17:40,104 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4219:latest already exists, skipping build.
+2024-08-21 13:17:40,104 - INFO - Creating container for fasterxml__jackson-databind-4219...
+2024-08-21 13:17:40,214 - INFO - Container for fasterxml__jackson-databind-4219 created: 7c2d5d2c4d2b813d79632abcd6114c154fb6a28e8db25e5876910fe7bff5d961
+2024-08-21 13:17:40,443 - INFO - Container for fasterxml__jackson-databind-4219 started: 7c2d5d2c4d2b813d79632abcd6114c154fb6a28e8db25e5876910fe7bff5d961
+2024-08-21 13:17:40,444 - INFO - Intermediate patch for fasterxml__jackson-databind-4219 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4219/patch.diff, now applying to container...
+2024-08-21 13:17:40,671 - INFO - Failed to apply patch to container, trying again...
+2024-08-21 13:17:40,722 - INFO - >>>>> Applied Patch:
+patching file run.sh
+patching file src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+
+2024-08-21 13:17:40,895 - INFO - Git diff before:
+diff --git a/run.sh b/run.sh
+index 89bc37699..beff41780 100755
+--- a/run.sh
++++ b/run.sh
+@@ -1,4 +1,4 @@
+ #!/bin/sh
+-
+-java -Xmx256m -server -cp lib/\*:target/classes:target/test-classes $*
++. ~/.profile
++"$JAVA_HOME/bin/java" -Xmx256m -server -cp "lib/*:target/classes:target/test-classes" "$*"
+ 
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+index 85d106694..802283d8d 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+@@ -1348,7 +1348,11 @@ paramIndex, candidate);
+             if (contentDeser == null) {
+                 Class<?> raw = elemType.getRawClass();
+                 if (elemType.isPrimitive()) {
+-                    return PrimitiveArrayDeserializers.forType(raw);
++if (_factoryConfig.hasDeserializerModifiers()) {
++    return _factoryConfig.deserializerModifiers().get(0).modifyArrayDeserializer(config, type, beanDesc, PrimitiveArrayDeserializers.forType(raw));
++} else {
++    return PrimitiveArrayDeserializers.forType(raw);
++}
+                 }
+                 if (raw == String.class) {
+                     return StringArrayDeserializer.instance;
+2024-08-21 13:17:40,895 - INFO - Eval script for fasterxml__jackson-databind-4219 written to run_instance_logs/doubao/ep-20240710140617-gs7h4__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4219/patch.diff, now applying to container...
+2024-08-21 13:17:55,445 - INFO - Git diff after:
+diff --git a/run.sh b/run.sh
+index 89bc37699..beff41780 100755
+--- a/run.sh
++++ b/run.sh
+@@ -1,4 +1,4 @@
+ #!/bin/sh
+-
+-java -Xmx256m -server -cp lib/\*:target/classes:target/test-classes $*
++. ~/.profile
++"$JAVA_HOME/bin/java" -Xmx256m -server -cp "lib/*:target/classes:target/test-classes" "$*"
+ 
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+index 85d106694..802283d8d 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BasicDeserializerFactory.java
+@@ -1348,7 +1348,11 @@ paramIndex, candidate);
+             if (contentDeser == null) {
+                 Class<?> raw = elemType.getRawClass();
+                 if (elemType.isPrimitive()) {
+-                    return PrimitiveArrayDeserializers.forType(raw);
++if (_factoryConfig.hasDeserializerModifiers()) {
++    return _factoryConfig.deserializerModifiers().get(0).modifyArrayDeserializer(config, type, beanDesc, PrimitiveArrayDeserializers.forType(raw));
++} else {
++    return PrimitiveArrayDeserializers.forType(raw);
++}
+                 }
+                 if (raw == String.class) {
+                     return StringArrayDeserializer.instance;
+2024-08-21 13:17:55,504 - INFO - Grading answer for fasterxml__jackson-databind-4219...
+2024-08-21 13:17:55,505 - INFO - report: {'fasterxml__jackson-databind-4219': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.deser.BeanDeserializerModifier4216Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4219: resolved: False
+2024-08-21 13:17:55,505 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4219.doubao...
+2024-08-21 13:18:10,784 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4219.doubao...
+2024-08-21 13:18:10,806 - INFO - Container sweb.eval.fasterxml__jackson-databind-4219.doubao removed.

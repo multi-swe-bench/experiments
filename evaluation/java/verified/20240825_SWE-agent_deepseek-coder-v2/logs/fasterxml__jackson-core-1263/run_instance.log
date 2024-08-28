@@ -1,0 +1,89 @@
+2024-08-19 14:42:19,591 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1263
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1263:latest for fasterxml__jackson-core-1263
+2024-08-19 14:42:19,592 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1263:latest already exists, skipping build.
+2024-08-19 14:42:19,592 - INFO - Creating container for fasterxml__jackson-core-1263...
+2024-08-19 14:42:19,643 - INFO - Container for fasterxml__jackson-core-1263 created: 5e780e09921b30aa08764192f76f1ae6235d7ba86f1cb387557d97972a923171
+2024-08-19 14:42:19,832 - INFO - Container for fasterxml__jackson-core-1263 started: 5e780e09921b30aa08764192f76f1ae6235d7ba86f1cb387557d97972a923171
+2024-08-19 14:42:19,832 - INFO - Intermediate patch for fasterxml__jackson-core-1263 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1263/patch.diff, now applying to container...
+2024-08-19 14:42:20,046 - INFO - Failed to apply patch to container, trying again...
+2024-08-19 14:42:20,108 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/util/JsonRecyclerPools.java
+patching file src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
+
+2024-08-19 14:42:20,215 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/JsonRecyclerPools.java b/src/main/java/com/fasterxml/jackson/core/util/JsonRecyclerPools.java
+index 4547b2c3..e62c9418 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/JsonRecyclerPools.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/JsonRecyclerPools.java
+@@ -193,7 +193,10 @@ public final class JsonRecyclerPools
+         protected Object readResolve() {
+             return _resolveToShared(GLOBAL).orElseGet(() -> construct());
+         }
+-    }
++        @Override
++        public int pooledCount() {
++            return _pool.size();
++        }
+ 
+     /**
+      * {@link RecyclerPool} implementation that uses
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java b/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
+index fb374bee..14d74f13 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
+@@ -96,7 +96,12 @@ public interface RecyclerPool<P extends RecyclerPool.WithPool<P>> extends Serial
+      * @param pooled Pooled instance to release back to pool
+      */
+     void releasePooled(P pooled);
+-
++    /**
++     * Method to get an estimate number of recyclable entries in the pool.
++     *
++     * @return An estimate number of recyclable entries.
++     */
++    int pooledCount();
+     /**
+      * Optional method that may allow dropping of all pooled Objects; mostly
+      * useful for unbounded pool implementations that may retain significant
+2024-08-19 14:42:20,215 - INFO - Eval script for fasterxml__jackson-core-1263 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1263/patch.diff, now applying to container...
+2024-08-19 14:42:27,882 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/JsonRecyclerPools.java b/src/main/java/com/fasterxml/jackson/core/util/JsonRecyclerPools.java
+index 4547b2c3..e62c9418 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/JsonRecyclerPools.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/JsonRecyclerPools.java
+@@ -193,7 +193,10 @@ public final class JsonRecyclerPools
+         protected Object readResolve() {
+             return _resolveToShared(GLOBAL).orElseGet(() -> construct());
+         }
+-    }
++        @Override
++        public int pooledCount() {
++            return _pool.size();
++        }
+ 
+     /**
+      * {@link RecyclerPool} implementation that uses
+diff --git a/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java b/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
+index fb374bee..14d74f13 100644
+--- a/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
+@@ -96,7 +96,12 @@ public interface RecyclerPool<P extends RecyclerPool.WithPool<P>> extends Serial
+      * @param pooled Pooled instance to release back to pool
+      */
+     void releasePooled(P pooled);
+-
++    /**
++     * Method to get an estimate number of recyclable entries in the pool.
++     *
++     * @return An estimate number of recyclable entries.
++     */
++    int pooledCount();
+     /**
+      * Optional method that may allow dropping of all pooled Objects; mostly
+      * useful for unbounded pool implementations that may retain significant
+2024-08-19 14:42:28,007 - INFO - Grading answer for fasterxml__jackson-core-1263...
+2024-08-19 14:42:28,008 - INFO - report: {'fasterxml__jackson-core-1263': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.io.BufferRecyclerPoolTest', 'src:com.fasterxml.jackson.core.util.JsonBufferRecyclersTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1263: resolved: False
+2024-08-19 14:42:28,008 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1263.pred_0819...
+2024-08-19 14:42:43,196 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1263.pred_0819...
+2024-08-19 14:42:43,207 - INFO - Container sweb.eval.fasterxml__jackson-core-1263.pred_0819 removed.

@@ -1,0 +1,55 @@
+2024-08-22 20:17:47,029 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-370
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-370:latest for fasterxml__jackson-core-370
+2024-08-22 20:17:47,030 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-370:latest already exists, skipping build.
+2024-08-22 20:17:47,030 - INFO - Creating container for fasterxml__jackson-core-370...
+2024-08-22 20:17:47,124 - INFO - Container for fasterxml__jackson-core-370 created: 4385f31c0f10f410db5ab5615aae5eadac3fc48eee2fb07af35925b3e5c247e4
+2024-08-22 20:17:47,324 - INFO - Container for fasterxml__jackson-core-370 started: 4385f31c0f10f410db5ab5615aae5eadac3fc48eee2fb07af35925b3e5c247e4
+2024-08-22 20:17:47,324 - INFO - Intermediate patch for fasterxml__jackson-core-370 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-370/patch.diff, now applying to container...
+2024-08-22 20:17:47,551 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:17:47,605 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+patching file test_trailing_comma.java
+
+2024-08-22 20:17:47,674 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+index a0014052..3b3fbb60 100644
+--- a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+@@ -913,6 +913,12 @@ public class ReaderBasedJsonParser // final in 2.3, earlier
+ 
+         _updateNameLocation();
+         String name = (i == INT_QUOTE) ? _parseName() : _handleOddName(i);
++        if (isEnabled(Feature.ALLOW_TRAILING_COMMA) && _inputPtr < _inputEnd && _inputBuffer[_inputPtr] == '}') {
++            _inputPtr++; // Skip the trailing comma
++        }
++        _parsingContext.setCurrentName(name);
++        _currToken = JsonToken.FIELD_NAME;
++        i = _skipColon();
+         _parsingContext.setCurrentName(name);
+         _currToken = JsonToken.FIELD_NAME;
+         i = _skipColon();
+2024-08-22 20:17:47,674 - INFO - Eval script for fasterxml__jackson-core-370 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-370/patch.diff, now applying to container...
+2024-08-22 20:17:53,289 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+index a0014052..3b3fbb60 100644
+--- a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+@@ -913,6 +913,12 @@ public class ReaderBasedJsonParser // final in 2.3, earlier
+ 
+         _updateNameLocation();
+         String name = (i == INT_QUOTE) ? _parseName() : _handleOddName(i);
++        if (isEnabled(Feature.ALLOW_TRAILING_COMMA) && _inputPtr < _inputEnd && _inputBuffer[_inputPtr] == '}') {
++            _inputPtr++; // Skip the trailing comma
++        }
++        _parsingContext.setCurrentName(name);
++        _currToken = JsonToken.FIELD_NAME;
++        i = _skipColon();
+         _parsingContext.setCurrentName(name);
+         _currToken = JsonToken.FIELD_NAME;
+         i = _skipColon();
+2024-08-22 20:17:53,345 - INFO - Grading answer for fasterxml__jackson-core-370...
+2024-08-22 20:17:53,345 - INFO - report: {'fasterxml__jackson-core-370': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.read.TrailingCommasTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-370: resolved: False
+2024-08-22 20:17:53,346 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-370.deepseek-chat...
+2024-08-22 20:18:08,519 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-370.deepseek-chat...
+2024-08-22 20:18:08,533 - INFO - Container sweb.eval.fasterxml__jackson-core-370.deepseek-chat removed.

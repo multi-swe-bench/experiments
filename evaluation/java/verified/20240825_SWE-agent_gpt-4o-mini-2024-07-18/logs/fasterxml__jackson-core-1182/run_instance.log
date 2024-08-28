@@ -1,0 +1,77 @@
+2024-08-23 01:06:26,423 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1182
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1182:latest for fasterxml__jackson-core-1182
+2024-08-23 01:06:26,425 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1182:latest already exists, skipping build.
+2024-08-23 01:06:26,425 - INFO - Creating container for fasterxml__jackson-core-1182...
+2024-08-23 01:06:26,494 - INFO - Container for fasterxml__jackson-core-1182 created: 75cacb9e583564c5cce867493eca2fccea5eb090a9b518d38280eb7ac778be32
+2024-08-23 01:06:26,748 - INFO - Container for fasterxml__jackson-core-1182 started: 75cacb9e583564c5cce867493eca2fccea5eb090a9b518d38280eb7ac778be32
+2024-08-23 01:06:26,749 - INFO - Intermediate patch for fasterxml__jackson-core-1182 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1182/patch.diff, now applying to container...
+2024-08-23 01:06:27,010 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:06:27,063 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/JsonParser.java
+patching file src/test/java/com/fasterxml/jackson/core/JsonParserTest.java
+
+2024-08-23 01:06:27,180 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonParser.java b/src/main/java/com/fasterxml/jackson/core/JsonParser.java
+index 3dddc1cb..49e0737c 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonParser.java
+@@ -1723,7 +1723,23 @@ public abstract class JsonParser
+      *   {@link JsonParseException} for decoding problems
+      */
+     public abstract NumberType getNumberType() throws IOException;
++    public NumberTypeFP getNumberTypeFP() throws IOException {
++        if (currentToken() == JsonToken.VALUE_NUMBER_FLOAT) {
++            // Logic to determine if it's a DOUBLE or BIG_DECIMAL
++            // For now, let's assume we return DOUBLE for all float values
++            return NumberTypeFP.DOUBLE;
++        } else if (currentToken() == JsonToken.VALUE_NUMBER_INT) {
++            // Logic for integer types, if needed
++            return NumberTypeFP.UNKNOWN; // Placeholder
++        }
++        return NumberTypeFP.UNKNOWN; // Default case
++    }
+ 
++    public enum NumberTypeFP {
++        UNKNOWN,
++        DOUBLE,
++        BIG_DECIMAL
++    }
+     /**
+      * Numeric accessor that can be called when the current
+      * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
+2024-08-23 01:06:27,180 - INFO - Eval script for fasterxml__jackson-core-1182 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1182/patch.diff, now applying to container...
+2024-08-23 01:06:41,156 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonParser.java b/src/main/java/com/fasterxml/jackson/core/JsonParser.java
+index 3dddc1cb..49e0737c 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonParser.java
+@@ -1723,7 +1723,23 @@ public abstract class JsonParser
+      *   {@link JsonParseException} for decoding problems
+      */
+     public abstract NumberType getNumberType() throws IOException;
++    public NumberTypeFP getNumberTypeFP() throws IOException {
++        if (currentToken() == JsonToken.VALUE_NUMBER_FLOAT) {
++            // Logic to determine if it's a DOUBLE or BIG_DECIMAL
++            // For now, let's assume we return DOUBLE for all float values
++            return NumberTypeFP.DOUBLE;
++        } else if (currentToken() == JsonToken.VALUE_NUMBER_INT) {
++            // Logic for integer types, if needed
++            return NumberTypeFP.UNKNOWN; // Placeholder
++        }
++        return NumberTypeFP.UNKNOWN; // Default case
++    }
+ 
++    public enum NumberTypeFP {
++        UNKNOWN,
++        DOUBLE,
++        BIG_DECIMAL
++    }
+     /**
+      * Numeric accessor that can be called when the current
+      * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
+2024-08-23 01:06:41,285 - INFO - Grading answer for fasterxml__jackson-core-1182...
+2024-08-23 01:06:41,285 - INFO - report: {'fasterxml__jackson-core-1182': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.read.NumberParsingTest', 'src:com.fasterxml.jackson.core.util.TestDelegates'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1182: resolved: False
+2024-08-23 01:06:41,286 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1182.gpt-4o...
+2024-08-23 01:06:56,490 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1182.gpt-4o...
+2024-08-23 01:06:56,510 - INFO - Container sweb.eval.fasterxml__jackson-core-1182.gpt-4o removed.

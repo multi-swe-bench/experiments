@@ -1,0 +1,47 @@
+2024-08-22 20:22:45,221 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4257
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4257:latest for fasterxml__jackson-databind-4257
+2024-08-22 20:22:45,222 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4257:latest already exists, skipping build.
+2024-08-22 20:22:45,223 - INFO - Creating container for fasterxml__jackson-databind-4257...
+2024-08-22 20:22:45,302 - INFO - Container for fasterxml__jackson-databind-4257 created: 06f75892e8368083622ac9bac0243a3d7d606ebbb24a9b8c4a91947c5fd64328
+2024-08-22 20:22:45,490 - INFO - Container for fasterxml__jackson-databind-4257 started: 06f75892e8368083622ac9bac0243a3d7d606ebbb24a9b8c4a91947c5fd64328
+2024-08-22 20:22:45,490 - INFO - Intermediate patch for fasterxml__jackson-databind-4257 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4257/patch.diff, now applying to container...
+2024-08-22 20:22:45,709 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:22:45,748 - INFO - >>>>> Applied Patch:
+patching file Main.java
+patching file src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java
+
+2024-08-22 20:22:45,908 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java
+index 0f70bd971..b04e601e5 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java
+@@ -804,7 +804,7 @@ ClassUtil.getTypeDescription(beanDesc.getType()), ClassUtil.name(propName)));
+     {
+         // one caveat: only remove implicit properties;
+         // explicitly annotated ones should remain
+-        properties.removeIf(property -> !property.couldDeserialize() && !property.isExplicitlyIncluded());
++            properties.removeIf(property -> !property.couldDeserialize() && !property.isExplicitlyIncluded() && property.getMutator() == null);
+     }
+ 
+     /**
+2024-08-22 20:22:45,908 - INFO - Eval script for fasterxml__jackson-databind-4257 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4257/patch.diff, now applying to container...
+2024-08-22 20:23:03,364 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java
+index 0f70bd971..b04e601e5 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java
+@@ -804,7 +804,7 @@ ClassUtil.getTypeDescription(beanDesc.getType()), ClassUtil.name(propName)));
+     {
+         // one caveat: only remove implicit properties;
+         // explicitly annotated ones should remain
+-        properties.removeIf(property -> !property.couldDeserialize() && !property.isExplicitlyIncluded());
++            properties.removeIf(property -> !property.couldDeserialize() && !property.isExplicitlyIncluded() && property.getMutator() == null);
+     }
+ 
+     /**
+2024-08-22 20:23:03,411 - INFO - Grading answer for fasterxml__jackson-databind-4257...
+2024-08-22 20:23:03,411 - INFO - report: {'fasterxml__jackson-databind-4257': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.ser.RequireSetterForGetter736Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4257: resolved: False
+2024-08-22 20:23:03,411 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4257.deepseek-chat...
+2024-08-22 20:23:18,591 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4257.deepseek-chat...
+2024-08-22 20:23:18,673 - INFO - Container sweb.eval.fasterxml__jackson-databind-4257.deepseek-chat removed.

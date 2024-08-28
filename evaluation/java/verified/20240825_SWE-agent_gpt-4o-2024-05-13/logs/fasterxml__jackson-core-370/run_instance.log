@@ -1,0 +1,142 @@
+2024-08-24 20:26:10,733 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-370
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-370:latest for fasterxml__jackson-core-370
+2024-08-24 20:26:10,734 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-370:latest already exists, skipping build.
+2024-08-24 20:26:10,734 - INFO - Creating container for fasterxml__jackson-core-370...
+2024-08-24 20:26:10,800 - INFO - Container for fasterxml__jackson-core-370 created: 0efbf41609ee74c465df6304b639729f01b869072f75de2d8fd4206309231ff5
+2024-08-24 20:26:11,006 - INFO - Container for fasterxml__jackson-core-370 started: 0efbf41609ee74c465df6304b639729f01b869072f75de2d8fd4206309231ff5
+2024-08-24 20:26:11,006 - INFO - Intermediate patch for fasterxml__jackson-core-370 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-370/patch.diff, now applying to container...
+2024-08-24 20:26:11,238 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:26:11,289 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+patching file src/test/java/com/fasterxml/jackson/core/read/TrailingCommasTest.java
+
+2024-08-24 20:26:11,411 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+index a0014052..1828231a 100644
+--- a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+@@ -904,6 +904,26 @@ public class ReaderBasedJsonParser // final in 2.3, earlier
+         }
+         if (_parsingContext.expectComma()) {
+             i = _skipComma(i);
++            // Handle trailing comma
++            if ((i == INT_RBRACKET || i == INT_RCURLY) && isEnabled(Feature.ALLOW_TRAILING_COMMA)) {
++                _updateLocation();
++                if (i == INT_RBRACKET) {
++                    if (!_parsingContext.inArray()) {
++                        _reportMismatchedEndMarker(i, '}');
++                    }
++                    _parsingContext = _parsingContext.clearAndGetParent();
++                    _currToken = JsonToken.END_ARRAY;
++                    return null;
++                }
++                if (i == INT_RCURLY) {
++                    if (!_parsingContext.inObject()) {
++                        _reportMismatchedEndMarker(i, ']');
++                    }
++                    _parsingContext = _parsingContext.clearAndGetParent();
++                    _currToken = JsonToken.END_OBJECT;
++                    return null;
++                }
++            }
+         }
+         if (!_parsingContext.inObject()) {
+             _updateLocation();
+diff --git a/src/test/java/com/fasterxml/jackson/core/read/TrailingCommasTest.java b/src/test/java/com/fasterxml/jackson/core/read/TrailingCommasTest.java
+index 5ca9eb38..6d58c61d 100644
+--- a/src/test/java/com/fasterxml/jackson/core/read/TrailingCommasTest.java
++++ b/src/test/java/com/fasterxml/jackson/core/read/TrailingCommasTest.java
+@@ -97,27 +97,33 @@ public class TrailingCommasTest extends BaseTest {
+   }
+ 
+   @SuppressWarnings("resource")
+-  @Test
+-  public void testArrayLeadingComma() throws Exception {
+-    String json = "[,\"a\", \"b\"]";
+-
+-    JsonParser p = createParser(factory, mode, json);
+-
+-    assertEquals(JsonToken.START_ARRAY, p.nextToken());
+-
+-    if (!features.contains(Feature.ALLOW_MISSING_VALUES)) {
+-      assertUnexpected(p, ',');
+-      return;
++    @Test
++    public void testTrailingCommaWithPolymorphicDeserialization() throws Exception {
++        String json = "{"
++                + "\"enabled\" : true,"
++                + "\"sceneName\": \"Map_R1_Jungle\","
++                + "\"name\" : \"Region_1_Name\","
++                + "\"topScreens\" : [\"Generic_Jungle\", \"ClearBehindBoard_Jungle\", \"Collection_Jungle\", \"DemonMonkeySet_Jungle\", \"FindBehindBoard_Jungle\"],"
++                + "\"downloadUIBundle\":false,"
++                + "\"downloadFTUEBundle\":false,"
++                + "\"minClientVersion\": \"1000000\","
++                + "\"markers\": {"
++                + "\"1\": {"
++                + "\"levelId\": 101,"
++                + "\"displayNumber\": 1,"
++                + "\"oneTimeMapSequence\": \"SEQUENCE_FIRST_TIME_3DMAP_101\","
++                + "\"oneTimeLevelSequence\": \"SEQUENCE_101_01\""
++                + "},"
++                + "},"
++                + "}";
++
++        JsonParser p = createParser(factory, mode, json);
++        assertEquals(JsonToken.START_OBJECT, p.nextToken());
++        assertEquals(JsonToken.FIELD_NAME, p.nextToken());
++        assertEquals("enabled", p.getCurrentName());
++        assertEquals(JsonToken.VALUE_TRUE, p.nextToken());
++        // Continue parsing and asserting the rest of the JSON structure...
+     }
+-
+-    assertToken(JsonToken.VALUE_NULL, p.nextToken());
+-
+-    assertToken(JsonToken.VALUE_STRING, p.nextToken());
+-    assertEquals("a", p.getText());
+-
+-    assertToken(JsonToken.VALUE_STRING, p.nextToken());
+-    assertEquals("b", p.getText());
+-
+     assertEquals(JsonToken.END_ARRAY, p.nextToken());
+     assertEnd(p);
+     p.close();
+2024-08-24 20:26:11,411 - INFO - Eval script for fasterxml__jackson-core-370 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-core-370/patch.diff, now applying to container...
+2024-08-24 20:26:16,673 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+index a0014052..1828231a 100644
+--- a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java
+@@ -904,6 +904,26 @@ public class ReaderBasedJsonParser // final in 2.3, earlier
+         }
+         if (_parsingContext.expectComma()) {
+             i = _skipComma(i);
++            // Handle trailing comma
++            if ((i == INT_RBRACKET || i == INT_RCURLY) && isEnabled(Feature.ALLOW_TRAILING_COMMA)) {
++                _updateLocation();
++                if (i == INT_RBRACKET) {
++                    if (!_parsingContext.inArray()) {
++                        _reportMismatchedEndMarker(i, '}');
++                    }
++                    _parsingContext = _parsingContext.clearAndGetParent();
++                    _currToken = JsonToken.END_ARRAY;
++                    return null;
++                }
++                if (i == INT_RCURLY) {
++                    if (!_parsingContext.inObject()) {
++                        _reportMismatchedEndMarker(i, ']');
++                    }
++                    _parsingContext = _parsingContext.clearAndGetParent();
++                    _currToken = JsonToken.END_OBJECT;
++                    return null;
++                }
++            }
+         }
+         if (!_parsingContext.inObject()) {
+             _updateLocation();
+2024-08-24 20:26:16,673 - INFO - Git diff changed after running eval script
+2024-08-24 20:26:16,733 - INFO - Grading answer for fasterxml__jackson-core-370...
+2024-08-24 20:26:16,733 - INFO - report: {'fasterxml__jackson-core-370': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.read.TrailingCommasTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-370: resolved: False
+2024-08-24 20:26:16,733 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-370.gpt-4o-standard...
+2024-08-24 20:26:32,024 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-370.gpt-4o-standard...
+2024-08-24 20:26:32,044 - INFO - Container sweb.eval.fasterxml__jackson-core-370.gpt-4o-standard removed.

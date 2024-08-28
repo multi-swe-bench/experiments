@@ -1,0 +1,111 @@
+2024-08-24 20:23:38,747 - INFO - Environment image sweb.env.x86_64.1db5c641f99223455aefcf:latest found for apache__dubbo-7041
+Building instance image sweb.eval.x86_64.apache__dubbo-7041:latest for apache__dubbo-7041
+2024-08-24 20:23:38,748 - INFO - Image sweb.eval.x86_64.apache__dubbo-7041:latest already exists, skipping build.
+2024-08-24 20:23:38,748 - INFO - Creating container for apache__dubbo-7041...
+2024-08-24 20:23:38,808 - INFO - Container for apache__dubbo-7041 created: d54160688c3a088213515e823fa77c211b82739998d0fe3d7f5cc70a964cdc9c
+2024-08-24 20:23:39,077 - INFO - Container for apache__dubbo-7041 started: d54160688c3a088213515e823fa77c211b82739998d0fe3d7f5cc70a964cdc9c
+2024-08-24 20:23:39,077 - INFO - Intermediate patch for apache__dubbo-7041 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/apache__dubbo-7041/patch.diff, now applying to container...
+2024-08-24 20:23:39,325 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:23:39,396 - INFO - >>>>> Applied Patch:
+patching file ReflectUtilsTest.java
+patching file ReproduceIssue.java
+patching file dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+patching file dubbo-common/src/test/java/org/apache/dubbo/common/utils/ReflectUtilsTest.java
+
+2024-08-24 20:23:39,783 - INFO - Git diff before:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+index a8b728b8ca..0c28d473b6 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+@@ -1203,9 +1203,13 @@ public final class ReflectUtils {
+                     returnType = (Class<?>) ((ParameterizedType) actualArgType).getRawType();
+                     genericReturnType = actualArgType;
+                 } else {
+-                    returnType = (Class<?>) actualArgType;
+-                    genericReturnType = returnType;
+-                }
++                    if (actualArgType instanceof Class) {
++                        returnType = (Class<?>) actualArgType;
++                        genericReturnType = returnType;
++                    } else {
++                        returnType = null;
++                        genericReturnType = actualArgType;
++                    }
+             } else {
+                 returnType = null;
+                 genericReturnType = null;
+@@ -1328,4 +1332,4 @@ public final class ReflectUtils {
+ 
+         return types;
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ReflectUtilsTest.java b/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ReflectUtilsTest.java
+index 6b6b7f6615..520a8e34fd 100644
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ReflectUtilsTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ReflectUtilsTest.java
+@@ -428,6 +428,19 @@ public class ReflectUtilsTest {
+         String getString();
+ 
+         CompletableFuture<List<String>> getListFuture();
++    @Test
++    public void testGetReturnTypes() throws NoSuchMethodException {
++        Method method = TypeClass.class.getMethod("getGenericFuture");
++        try {
++            ReflectUtils.getReturnTypes(method);
++            System.out.println("Test passed: No ClassCastException thrown.");
++        } catch (ClassCastException e) {
++            System.out.println("Test failed: ClassCastException thrown.");
++        }
++    }
++
++    public interface TypeClass<T> {
++        CompletableFuture<T> getGenericFuture();
+     }
+ 
+     public static class EmptyClass {
+@@ -518,4 +531,4 @@ public class ReflectUtilsTest {
+     }
+ 
+ 
+-}
+\ No newline at end of file
++}
+2024-08-24 20:23:39,783 - INFO - Eval script for apache__dubbo-7041 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/apache__dubbo-7041/patch.diff, now applying to container...
+2024-08-24 20:23:54,486 - INFO - Git diff after:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+index a8b728b8ca..0c28d473b6 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+@@ -1203,9 +1203,13 @@ public final class ReflectUtils {
+                     returnType = (Class<?>) ((ParameterizedType) actualArgType).getRawType();
+                     genericReturnType = actualArgType;
+                 } else {
+-                    returnType = (Class<?>) actualArgType;
+-                    genericReturnType = returnType;
+-                }
++                    if (actualArgType instanceof Class) {
++                        returnType = (Class<?>) actualArgType;
++                        genericReturnType = returnType;
++                    } else {
++                        returnType = null;
++                        genericReturnType = actualArgType;
++                    }
+             } else {
+                 returnType = null;
+                 genericReturnType = null;
+@@ -1328,4 +1332,4 @@ public final class ReflectUtils {
+ 
+         return types;
+     }
+-}
+\ No newline at end of file
++}
+2024-08-24 20:23:54,487 - INFO - Git diff changed after running eval script
+2024-08-24 20:23:54,555 - INFO - Grading answer for apache__dubbo-7041...
+2024-08-24 20:23:54,555 - INFO - report: {'apache__dubbo-7041': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['dubbo-common:org.apache.dubbo.common.utils.ReflectUtilsTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for apache__dubbo-7041: resolved: False
+2024-08-24 20:23:54,556 - INFO - Attempting to stop container sweb.eval.apache__dubbo-7041.gpt-4o-standard...
+2024-08-24 20:24:09,839 - INFO - Attempting to remove container sweb.eval.apache__dubbo-7041.gpt-4o-standard...
+2024-08-24 20:24:09,852 - INFO - Container sweb.eval.apache__dubbo-7041.gpt-4o-standard removed.

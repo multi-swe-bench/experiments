@@ -1,0 +1,91 @@
+2024-08-23 01:12:00,263 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4249
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4249:latest for fasterxml__jackson-databind-4249
+2024-08-23 01:12:00,265 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4249:latest already exists, skipping build.
+2024-08-23 01:12:00,265 - INFO - Creating container for fasterxml__jackson-databind-4249...
+2024-08-23 01:12:00,321 - INFO - Container for fasterxml__jackson-databind-4249 created: e806dc197e51a73363a2859bd88c69bd667ca804f5e0ce6d8701100f88e6b9b8
+2024-08-23 01:12:00,554 - INFO - Container for fasterxml__jackson-databind-4249 started: e806dc197e51a73363a2859bd88c69bd667ca804f5e0ce6d8701100f88e6b9b8
+2024-08-23 01:12:00,554 - INFO - Intermediate patch for fasterxml__jackson-databind-4249 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4249/patch.diff, now applying to container...
+2024-08-23 01:12:00,827 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:12:00,880 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java
+patching file test_throwable_deserializer.py
+
+2024-08-23 01:12:01,051 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java
+index eafb470f3..0798245d3 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java
+@@ -163,7 +163,29 @@ public class ThrowableDeserializer
+             }
+             // Unknown: let's call handler method
+             handleUnknownProperty(p, ctxt, throwable, propName);
+-        }
++            if (PROP_NAME_CAUSE.equalsIgnoreCase(propName)) {
++                Object causeValue = p.readValueAs(Object.class);
++                if (causeValue != null) {
++                    throwable.initCause((Throwable) causeValue);
++                }
++                continue;
++            }
++            }
++            }
++            }
++            }
++            }
++            }
++            }
++            }
++            }
++            }
++                Object causeValue = p.readValueAs(Object.class);
++                if (causeValue != null) {
++                    throwable.initCause((Throwable) causeValue);
++                }
++                continue;
++            }
+         // Sanity check: did we find "message"?
+         if (throwable == null) {
+             /* 15-Oct-2010, tatu: Can't assume missing message is an error, since it may be
+2024-08-23 01:12:01,051 - INFO - Eval script for fasterxml__jackson-databind-4249 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4249/patch.diff, now applying to container...
+2024-08-23 01:12:07,387 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java
+index eafb470f3..0798245d3 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java
+@@ -163,7 +163,29 @@ public class ThrowableDeserializer
+             }
+             // Unknown: let's call handler method
+             handleUnknownProperty(p, ctxt, throwable, propName);
+-        }
++            if (PROP_NAME_CAUSE.equalsIgnoreCase(propName)) {
++                Object causeValue = p.readValueAs(Object.class);
++                if (causeValue != null) {
++                    throwable.initCause((Throwable) causeValue);
++                }
++                continue;
++            }
++            }
++            }
++            }
++            }
++            }
++            }
++            }
++            }
++            }
++            }
++                Object causeValue = p.readValueAs(Object.class);
++                if (causeValue != null) {
++                    throwable.initCause((Throwable) causeValue);
++                }
++                continue;
++            }
+         // Sanity check: did we find "message"?
+         if (throwable == null) {
+             /* 15-Oct-2010, tatu: Can't assume missing message is an error, since it may be
+2024-08-23 01:12:07,431 - INFO - Grading answer for fasterxml__jackson-databind-4249...
+2024-08-23 01:12:07,432 - INFO - report: {'fasterxml__jackson-databind-4249': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.exc.ExceptionDeserializationTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4249: resolved: False
+2024-08-23 01:12:07,432 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4249.gpt-4o...
+2024-08-23 01:12:22,728 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4249.gpt-4o...
+2024-08-23 01:12:22,737 - INFO - Container sweb.eval.fasterxml__jackson-databind-4249.gpt-4o removed.

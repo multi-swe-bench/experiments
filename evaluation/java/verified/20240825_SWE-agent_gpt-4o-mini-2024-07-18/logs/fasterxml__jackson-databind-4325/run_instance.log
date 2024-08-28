@@ -1,0 +1,97 @@
+2024-08-23 01:12:35,657 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-4325
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-4325:latest for fasterxml__jackson-databind-4325
+2024-08-23 01:12:35,659 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-4325:latest already exists, skipping build.
+2024-08-23 01:12:35,659 - INFO - Creating container for fasterxml__jackson-databind-4325...
+2024-08-23 01:12:35,758 - INFO - Container for fasterxml__jackson-databind-4325 created: c0aca13615b36819bb36fed2c32c7a3ffa5930a37f2ce3f3e22e07ef1bd7ab87
+2024-08-23 01:12:35,995 - INFO - Container for fasterxml__jackson-databind-4325 started: c0aca13615b36819bb36fed2c32c7a3ffa5930a37f2ce3f3e22e07ef1bd7ab87
+2024-08-23 01:12:35,995 - INFO - Intermediate patch for fasterxml__jackson-databind-4325 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4325/patch.diff, now applying to container...
+2024-08-23 01:12:36,236 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:12:36,289 - INFO - >>>>> Applied Patch:
+patching file Main.java
+patching file TestProblem.java
+patching file run.sh
+patching file run_test.sh
+patching file run_tests.sh
+patching file src/test/java/com/fasterxml/jackson/databind/exc/ExceptionDeserializationTest.java
+
+2024-08-23 01:12:36,492 - INFO - Git diff before:
+diff --git a/run.sh b/run.sh
+index 89bc37699..6200e6dd8 100755
+--- a/run.sh
++++ b/run.sh
+@@ -1,4 +1 @@
+-#!/bin/sh
+-
+-java -Xmx256m -server -cp lib/\*:target/classes:target/test-classes $*
+-
++javac Main.java && java Main
+diff --git a/src/test/java/com/fasterxml/jackson/databind/exc/ExceptionDeserializationTest.java b/src/test/java/com/fasterxml/jackson/databind/exc/ExceptionDeserializationTest.java
+index b575b4902..90dfc2170 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/exc/ExceptionDeserializationTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/exc/ExceptionDeserializationTest.java
+@@ -1,4 +1,20 @@
+-package com.fasterxml.jackson.databind.exc;
++    // New test case for JsonAnySetter in Throwable context
++    @SuppressWarnings("serial")
++    static class Problem extends Exception {
++        @JsonAnySetter
++        protected Map<String, Object> additionalProperties = new HashMap<>();
++
++        public Problem() { }
++    }
++
++    public void testProblemDeserialization() throws IOException {
++        Problem problem = new Problem();
++        problem.additionalProperties.put("additional", "additional");
++        String json = MAPPER.writeValueAsString(problem);
++        
++        Problem result = MAPPER.readValue(json, Problem.class);
++        assertEquals("additional", result.additionalProperties.get("additional"));
++    }
+ 
+ import java.io.IOException;
+ import java.util.*;
+2024-08-23 01:12:36,492 - INFO - Eval script for fasterxml__jackson-databind-4325 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-4325/patch.diff, now applying to container...
+2024-08-23 01:12:46,604 - INFO - Git diff after:
+diff --git a/run.sh b/run.sh
+index 89bc37699..6200e6dd8 100755
+--- a/run.sh
++++ b/run.sh
+@@ -1,4 +1 @@
+-#!/bin/sh
+-
+-java -Xmx256m -server -cp lib/\*:target/classes:target/test-classes $*
+-
++javac Main.java && java Main
+diff --git a/src/test/java/com/fasterxml/jackson/databind/exc/ExceptionDeserializationTest.java b/src/test/java/com/fasterxml/jackson/databind/exc/ExceptionDeserializationTest.java
+index b575b4902..90dfc2170 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/exc/ExceptionDeserializationTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/exc/ExceptionDeserializationTest.java
+@@ -1,4 +1,20 @@
+-package com.fasterxml.jackson.databind.exc;
++    // New test case for JsonAnySetter in Throwable context
++    @SuppressWarnings("serial")
++    static class Problem extends Exception {
++        @JsonAnySetter
++        protected Map<String, Object> additionalProperties = new HashMap<>();
++
++        public Problem() { }
++    }
++
++    public void testProblemDeserialization() throws IOException {
++        Problem problem = new Problem();
++        problem.additionalProperties.put("additional", "additional");
++        String json = MAPPER.writeValueAsString(problem);
++        
++        Problem result = MAPPER.readValue(json, Problem.class);
++        assertEquals("additional", result.additionalProperties.get("additional"));
++    }
+ 
+ import java.io.IOException;
+ import java.util.*;
+2024-08-23 01:12:46,676 - INFO - Grading answer for fasterxml__jackson-databind-4325...
+2024-08-23 01:12:46,676 - INFO - report: {'fasterxml__jackson-databind-4325': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.exc.ExceptionWithAnySetter4316Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-4325: resolved: False
+2024-08-23 01:12:46,676 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-4325.gpt-4o...
+2024-08-23 01:13:01,869 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-4325.gpt-4o...
+2024-08-23 01:13:01,897 - INFO - Container sweb.eval.fasterxml__jackson-databind-4325.gpt-4o removed.

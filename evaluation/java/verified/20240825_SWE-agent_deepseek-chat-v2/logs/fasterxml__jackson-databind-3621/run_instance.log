@@ -1,0 +1,61 @@
+2024-08-22 20:19:57,224 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-3621
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-3621:latest for fasterxml__jackson-databind-3621
+2024-08-22 20:19:57,225 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-3621:latest already exists, skipping build.
+2024-08-22 20:19:57,225 - INFO - Creating container for fasterxml__jackson-databind-3621...
+2024-08-22 20:19:57,272 - INFO - Container for fasterxml__jackson-databind-3621 created: f7a0a0f6feaa422838685498a6bd0d4b1badd6ec5560fb7d02249baf40e1ae73
+2024-08-22 20:19:57,463 - INFO - Container for fasterxml__jackson-databind-3621 started: f7a0a0f6feaa422838685498a6bd0d4b1badd6ec5560fb7d02249baf40e1ae73
+2024-08-22 20:19:57,463 - INFO - Intermediate patch for fasterxml__jackson-databind-3621 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3621/patch.diff, now applying to container...
+2024-08-22 20:19:57,666 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:19:57,719 - INFO - >>>>> Applied Patch:
+patching file TestArrayNesting.java
+patching file src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+
+2024-08-22 20:20:00,597 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+index aa0c70874..f8ba23122 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+@@ -413,11 +413,15 @@ public abstract class StdDeserializer<T>
+         case JsonTokenId.ID_START_ARRAY:
+             // 12-Jun-2020, tatu: For some reason calling `_deserializeFromArray()` won't work so:
+             if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
++                if (p.getParsingContext().inArray(3)) {
++                    throw ctxt.mappingException("Exceeded maximum depth for array nesting");
++                }
+                 p.nextToken();
+                 final boolean parsed = _parseBooleanPrimitive(p, ctxt);
+                 _verifyEndArrayForSingle(p, ctxt);
+                 return parsed;
+             }
++            }
+             // fall through
+         default:
+             return ((Boolean) ctxt.handleUnexpectedToken(Boolean.TYPE, p)).booleanValue();
+2024-08-22 20:20:00,597 - INFO - Eval script for fasterxml__jackson-databind-3621 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3621/patch.diff, now applying to container...
+2024-08-22 20:20:06,811 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+index aa0c70874..f8ba23122 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+@@ -413,11 +413,15 @@ public abstract class StdDeserializer<T>
+         case JsonTokenId.ID_START_ARRAY:
+             // 12-Jun-2020, tatu: For some reason calling `_deserializeFromArray()` won't work so:
+             if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
++                if (p.getParsingContext().inArray(3)) {
++                    throw ctxt.mappingException("Exceeded maximum depth for array nesting");
++                }
+                 p.nextToken();
+                 final boolean parsed = _parseBooleanPrimitive(p, ctxt);
+                 _verifyEndArrayForSingle(p, ctxt);
+                 return parsed;
+             }
++            }
+             // fall through
+         default:
+             return ((Boolean) ctxt.handleUnexpectedToken(Boolean.TYPE, p)).booleanValue();
+2024-08-22 20:20:06,867 - INFO - Grading answer for fasterxml__jackson-databind-3621...
+2024-08-22 20:20:06,867 - INFO - report: {'fasterxml__jackson-databind-3621': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.deser.dos.DeepArrayWrappingForDeser3590Test'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-3621: resolved: False
+2024-08-22 20:20:06,867 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-3621.deepseek-chat...
+2024-08-22 20:20:22,238 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-3621.deepseek-chat...
+2024-08-22 20:20:22,248 - INFO - Container sweb.eval.fasterxml__jackson-databind-3621.deepseek-chat removed.

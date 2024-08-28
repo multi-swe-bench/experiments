@@ -1,0 +1,156 @@
+2024-08-24 20:23:07,501 - INFO - Environment image sweb.env.x86_64.1db5c641f99223455aefcf:latest found for apache__dubbo-10638
+Building instance image sweb.eval.x86_64.apache__dubbo-10638:latest for apache__dubbo-10638
+2024-08-24 20:23:07,505 - INFO - Image sweb.eval.x86_64.apache__dubbo-10638:latest already exists, skipping build.
+2024-08-24 20:23:07,506 - INFO - Creating container for apache__dubbo-10638...
+2024-08-24 20:23:07,589 - INFO - Container for apache__dubbo-10638 created: 5e9f61126372dabe7b1767fa94362fdba33aec23faf2aebe8a9610d3c00f0d52
+2024-08-24 20:23:07,926 - INFO - Container for apache__dubbo-10638 started: 5e9f61126372dabe7b1767fa94362fdba33aec23faf2aebe8a9610d3c00f0d52
+2024-08-24 20:23:07,926 - INFO - Intermediate patch for apache__dubbo-10638 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/apache__dubbo-10638/patch.diff, now applying to container...
+2024-08-24 20:23:08,143 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:23:08,201 - INFO - >>>>> Applied Patch:
+patching file PojoUtilsTest.java
+patching file dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+patching file reproduce.java
+
+2024-08-24 20:23:08,542 - INFO - Git diff before:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+index c6e2eaeb7c..5029f8f83e 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+@@ -121,27 +121,15 @@ public class PojoUtils {
+     }
+ 
+     @SuppressWarnings("unchecked")
+-    private static Object generalize(Object pojo, Map<Object, Object> history) {
+-        if (pojo == null) {
+-            return null;
+-        }
+-
+-        if (pojo instanceof Enum<?>) {
+-            return ((Enum<?>) pojo).name();
+-        }
+-        if (pojo.getClass().isArray() && Enum.class.isAssignableFrom(pojo.getClass().getComponentType())) {
+-            int len = Array.getLength(pojo);
+-            String[] values = new String[len];
+-            for (int i = 0; i < len; i++) {
+-                values[i] = ((Enum<?>) Array.get(pojo, i)).name();
+-            }
+-            return values;
+-        }
+-
+-        if (ReflectUtils.isPrimitives(pojo.getClass())) {
+-            return pojo;
+-        }
+-
++    if (pojo instanceof LocalDateTime) {
++        return pojo.toString();
++    }
++    if (pojo instanceof LocalDate) {
++        return pojo.toString();
++    }
++    if (pojo instanceof LocalTime) {
++        return pojo.toString();
++    }
+         if (pojo instanceof Class) {
+             return ((Class) pojo).getName();
+         }
+@@ -321,17 +309,15 @@ public class PojoUtils {
+         if (pojo == null) {
+             return null;
+         }
+-
+-        if (type != null && type.isEnum() && pojo.getClass() == String.class) {
+-            return Enum.valueOf((Class<Enum>) type, (String) pojo);
+-        }
+-
+-        if (ReflectUtils.isPrimitives(pojo.getClass())
+-            && !(type != null && type.isArray()
+-            && type.getComponentType().isEnum()
+-            && pojo.getClass() == String[].class)) {
+-            return CompatibleTypeUtils.compatibleTypeConvert(pojo, type);
+-        }
++    if (type == LocalDateTime.class && pojo.getClass() == String.class) {
++        return LocalDateTime.parse((String) pojo);
++    }
++    if (type == LocalDate.class && pojo.getClass() == String.class) {
++        return LocalDate.parse((String) pojo);
++    }
++    if (type == LocalTime.class && pojo.getClass() == String.class) {
++        return LocalTime.parse((String) pojo);
++    }
+ 
+         Object o = history.get(pojo);
+2024-08-24 20:23:08,542 - INFO - Eval script for apache__dubbo-10638 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/apache__dubbo-10638/patch.diff, now applying to container...
+2024-08-24 20:23:23,244 - INFO - Git diff after:
+diff --git a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+index c6e2eaeb7c..5029f8f83e 100644
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+@@ -121,27 +121,15 @@ public class PojoUtils {
+     }
+ 
+     @SuppressWarnings("unchecked")
+-    private static Object generalize(Object pojo, Map<Object, Object> history) {
+-        if (pojo == null) {
+-            return null;
+-        }
+-
+-        if (pojo instanceof Enum<?>) {
+-            return ((Enum<?>) pojo).name();
+-        }
+-        if (pojo.getClass().isArray() && Enum.class.isAssignableFrom(pojo.getClass().getComponentType())) {
+-            int len = Array.getLength(pojo);
+-            String[] values = new String[len];
+-            for (int i = 0; i < len; i++) {
+-                values[i] = ((Enum<?>) Array.get(pojo, i)).name();
+-            }
+-            return values;
+-        }
+-
+-        if (ReflectUtils.isPrimitives(pojo.getClass())) {
+-            return pojo;
+-        }
+-
++    if (pojo instanceof LocalDateTime) {
++        return pojo.toString();
++    }
++    if (pojo instanceof LocalDate) {
++        return pojo.toString();
++    }
++    if (pojo instanceof LocalTime) {
++        return pojo.toString();
++    }
+         if (pojo instanceof Class) {
+             return ((Class) pojo).getName();
+         }
+@@ -321,17 +309,15 @@ public class PojoUtils {
+         if (pojo == null) {
+             return null;
+         }
+-
+-        if (type != null && type.isEnum() && pojo.getClass() == String.class) {
+-            return Enum.valueOf((Class<Enum>) type, (String) pojo);
+-        }
+-
+-        if (ReflectUtils.isPrimitives(pojo.getClass())
+-            && !(type != null && type.isArray()
+-            && type.getComponentType().isEnum()
+-            && pojo.getClass() == String[].class)) {
+-            return CompatibleTypeUtils.compatibleTypeConvert(pojo, type);
+-        }
++    if (type == LocalDateTime.class && pojo.getClass() == String.class) {
++        return LocalDateTime.parse((String) pojo);
++    }
++    if (type == LocalDate.class && pojo.getClass() == String.class) {
++        return LocalDate.parse((String) pojo);
++    }
++    if (type == LocalTime.class && pojo.getClass() == String.class) {
++        return LocalTime.parse((String) pojo);
++    }
+ 
+         Object o = history.get(pojo);
+2024-08-24 20:23:23,300 - INFO - Grading answer for apache__dubbo-10638...
+2024-08-24 20:23:23,301 - INFO - report: {'apache__dubbo-10638': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['dubbo-common:org.apache.dubbo.common.utils.PojoUtilsTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for apache__dubbo-10638: resolved: False
+2024-08-24 20:23:23,301 - INFO - Attempting to stop container sweb.eval.apache__dubbo-10638.gpt-4o-standard...
+2024-08-24 20:23:38,730 - INFO - Attempting to remove container sweb.eval.apache__dubbo-10638.gpt-4o-standard...
+2024-08-24 20:23:38,744 - INFO - Container sweb.eval.apache__dubbo-10638.gpt-4o-standard removed.

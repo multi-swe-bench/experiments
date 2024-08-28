@@ -1,0 +1,118 @@
+2024-08-22 20:14:27,946 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-core-1016
+Building instance image sweb.eval.x86_64.fasterxml__jackson-core-1016:latest for fasterxml__jackson-core-1016
+2024-08-22 20:14:27,948 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-core-1016:latest already exists, skipping build.
+2024-08-22 20:14:27,948 - INFO - Creating container for fasterxml__jackson-core-1016...
+2024-08-22 20:14:28,023 - INFO - Container for fasterxml__jackson-core-1016 created: 0c81f41a1a269cc15663b3bb1b3ae596d675a618cfb5fd00c665853fb63c1ae3
+2024-08-22 20:14:28,271 - INFO - Container for fasterxml__jackson-core-1016 started: 0c81f41a1a269cc15663b3bb1b3ae596d675a618cfb5fd00c665853fb63c1ae3
+2024-08-22 20:14:28,272 - INFO - Intermediate patch for fasterxml__jackson-core-1016 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1016/patch.diff, now applying to container...
+2024-08-22 20:14:28,530 - INFO - Failed to apply patch to container, trying again...
+2024-08-22 20:14:28,589 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+
+2024-08-22 20:14:28,692 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+index bff4efba..3305e537 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+@@ -1299,7 +1299,7 @@ public class JsonFactory
+         //   for non-JSON input:
+         _requireJSONFactory("Non-blocking source not (yet?) supported for this format (%s)");
+         IOContext ctxt = _createNonBlockingContext(null);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new NonBlockingJsonParser(ctxt, _parserFeatures, can);
+     }
+ 
+@@ -1326,7 +1326,7 @@ public class JsonFactory
+         //   for non-JSON input:
+         _requireJSONFactory("Non-blocking source not (yet?) supported for this format (%s)");
+         IOContext ctxt = _createNonBlockingContext(null);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new NonBlockingByteBufferJsonParser(ctxt, _parserFeatures, can);
+     }
+ 
+@@ -1777,7 +1777,7 @@ public class JsonFactory
+      */
+     protected JsonParser _createParser(Reader r, IOContext ctxt) throws IOException {
+         return new ReaderBasedJsonParser(ctxt, _parserFeatures, r, _objectCodec,
+-                _rootCharSymbols.makeChild(_factoryFeatures));
++                _rootCharSymbols.makeChildOrPlaceholder(_factoryFeatures)
+     }
+ 
+     /**
+@@ -1799,7 +1799,7 @@ public class JsonFactory
+     protected JsonParser _createParser(char[] data, int offset, int len, IOContext ctxt,
+             boolean recyclable) throws IOException {
+         return new ReaderBasedJsonParser(ctxt, _parserFeatures, null, _objectCodec,
+-                _rootCharSymbols.makeChild(_factoryFeatures),
++                _rootCharSymbols.makeChildOrPlaceholder(_factoryFeatures)
+                         data, offset, offset+len, recyclable);
+     }
+ 
+@@ -1849,7 +1849,7 @@ public class JsonFactory
+         // Also: while we can't do full bootstrapping (due to read-ahead limitations), should
+         // at least handle possible UTF-8 BOM
+         int firstByte = ByteSourceJsonBootstrapper.skipUTF8BOM(input);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new UTF8DataInputJsonParser(ctxt, _parserFeatures, input,
+                 _objectCodec, can, firstByte);
+     }
+2024-08-22 20:14:28,692 - INFO - Eval script for fasterxml__jackson-core-1016 written to run_instance_logs/deepseek-chat/deepseek-chat__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-core-1016/patch.diff, now applying to container...
+2024-08-22 20:14:35,773 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+index bff4efba..3305e537 100644
+--- a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+@@ -1299,7 +1299,7 @@ public class JsonFactory
+         //   for non-JSON input:
+         _requireJSONFactory("Non-blocking source not (yet?) supported for this format (%s)");
+         IOContext ctxt = _createNonBlockingContext(null);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new NonBlockingJsonParser(ctxt, _parserFeatures, can);
+     }
+ 
+@@ -1326,7 +1326,7 @@ public class JsonFactory
+         //   for non-JSON input:
+         _requireJSONFactory("Non-blocking source not (yet?) supported for this format (%s)");
+         IOContext ctxt = _createNonBlockingContext(null);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new NonBlockingByteBufferJsonParser(ctxt, _parserFeatures, can);
+     }
+ 
+@@ -1777,7 +1777,7 @@ public class JsonFactory
+      */
+     protected JsonParser _createParser(Reader r, IOContext ctxt) throws IOException {
+         return new ReaderBasedJsonParser(ctxt, _parserFeatures, r, _objectCodec,
+-                _rootCharSymbols.makeChild(_factoryFeatures));
++                _rootCharSymbols.makeChildOrPlaceholder(_factoryFeatures)
+     }
+ 
+     /**
+@@ -1799,7 +1799,7 @@ public class JsonFactory
+     protected JsonParser _createParser(char[] data, int offset, int len, IOContext ctxt,
+             boolean recyclable) throws IOException {
+         return new ReaderBasedJsonParser(ctxt, _parserFeatures, null, _objectCodec,
+-                _rootCharSymbols.makeChild(_factoryFeatures),
++                _rootCharSymbols.makeChildOrPlaceholder(_factoryFeatures)
+                         data, offset, offset+len, recyclable);
+     }
+ 
+@@ -1849,7 +1849,7 @@ public class JsonFactory
+         // Also: while we can't do full bootstrapping (due to read-ahead limitations), should
+         // at least handle possible UTF-8 BOM
+         int firstByte = ByteSourceJsonBootstrapper.skipUTF8BOM(input);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new UTF8DataInputJsonParser(ctxt, _parserFeatures, input,
+                 _objectCodec, can, firstByte);
+     }
+2024-08-22 20:14:35,832 - INFO - Grading answer for fasterxml__jackson-core-1016...
+2024-08-22 20:14:35,832 - INFO - report: {'fasterxml__jackson-core-1016': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.core.json.JsonFactoryTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-core-1016: resolved: False
+2024-08-22 20:14:35,832 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-core-1016.deepseek-chat...
+2024-08-22 20:14:51,206 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-core-1016.deepseek-chat...
+2024-08-22 20:14:51,217 - INFO - Container sweb.eval.fasterxml__jackson-core-1016.deepseek-chat removed.

@@ -1,0 +1,51 @@
+2024-08-24 20:28:51,720 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-3716
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-3716:latest for fasterxml__jackson-databind-3716
+2024-08-24 20:28:51,722 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-3716:latest already exists, skipping build.
+2024-08-24 20:28:51,722 - INFO - Creating container for fasterxml__jackson-databind-3716...
+2024-08-24 20:28:51,780 - INFO - Container for fasterxml__jackson-databind-3716 created: 7843be466295dde82d9e1b5b7ba9f44c170a3054cb05b33bf2a286f49c93c94a
+2024-08-24 20:28:52,046 - INFO - Container for fasterxml__jackson-databind-3716 started: 7843be466295dde82d9e1b5b7ba9f44c170a3054cb05b33bf2a286f49c93c94a
+2024-08-24 20:28:52,046 - INFO - Intermediate patch for fasterxml__jackson-databind-3716 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-3716/patch.diff, now applying to container...
+2024-08-24 20:28:52,318 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:28:52,376 - INFO - >>>>> Applied Patch:
+patching file reproduce.java
+patching file src/test/java/com/fasterxml/jackson/databind/jsontype/TestPolymorphicDeduction.java
+
+2024-08-24 20:28:56,479 - INFO - Git diff before:
+diff --git a/src/test/java/com/fasterxml/jackson/databind/jsontype/TestPolymorphicDeduction.java b/src/test/java/com/fasterxml/jackson/databind/jsontype/TestPolymorphicDeduction.java
+index 64b58449d..bcd60dff6 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/jsontype/TestPolymorphicDeduction.java
++++ b/src/test/java/com/fasterxml/jackson/databind/jsontype/TestPolymorphicDeduction.java
+@@ -195,7 +195,22 @@ public class TestPolymorphicDeduction extends BaseMapTest {
+   static class AnotherLiveCat extends Cat {
+     public boolean angry;
+   }
+-
++    public void testEnumPolymorphismWithDeduction() throws Exception {
++        ObjectMapper objectMapper = new ObjectMapper();
++
++        // Serialization
++        Animal animal = new Animal();
++        animal.setName("Horse");
++        animal.setType(AnimalType.FOURLEGGED);
++        String serialized = objectMapper.writeValueAsString(animal);
++        assertEquals("{\"type\":\"FOURLEGGED\",\"name\":\"Horse\"}", serialized);
++
++        // Deserialization
++        String json = "{\"type\":\"FOURLEGGED\",\"name\":\"Horse\"}";
++        Animal deserialized = objectMapper.readValue(json, Animal.class);
++        assertEquals(AnimalType.FOURLEGGED, deserialized.getType());
++        assertEquals("Horse", deserialized.getName());
++    }
+   public void testAmbiguousClasses() throws Exception {
+     try {
+       ObjectMapper mapper = JsonMapper.builder() // Don't use shared mapper!
+2024-08-24 20:28:56,479 - INFO - Eval script for fasterxml__jackson-databind-3716 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-3716/patch.diff, now applying to container...
+2024-08-24 20:29:10,769 - INFO - Git diff after:
+
+2024-08-24 20:29:10,769 - INFO - Git diff changed after running eval script
+2024-08-24 20:29:10,844 - INFO - Grading answer for fasterxml__jackson-databind-3716...
+2024-08-24 20:29:10,845 - INFO - report: {'fasterxml__jackson-databind-3716': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.jsontype.TestPolymorphicDeduction'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-3716: resolved: False
+2024-08-24 20:29:10,845 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-3716.gpt-4o-standard...
+2024-08-24 20:29:26,125 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-3716.gpt-4o-standard...
+2024-08-24 20:29:26,205 - INFO - Container sweb.eval.fasterxml__jackson-databind-3716.gpt-4o-standard removed.

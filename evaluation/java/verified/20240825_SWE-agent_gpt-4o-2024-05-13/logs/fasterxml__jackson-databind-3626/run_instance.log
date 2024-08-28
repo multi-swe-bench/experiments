@@ -1,0 +1,155 @@
+2024-08-24 20:28:25,164 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-3626
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-3626:latest for fasterxml__jackson-databind-3626
+2024-08-24 20:28:25,165 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-3626:latest already exists, skipping build.
+2024-08-24 20:28:25,165 - INFO - Creating container for fasterxml__jackson-databind-3626...
+2024-08-24 20:28:25,255 - INFO - Container for fasterxml__jackson-databind-3626 created: 5207e14de417687525f63929537c1b4bbf1bba9bec00eb244d3b66aba8476ead
+2024-08-24 20:28:25,516 - INFO - Container for fasterxml__jackson-databind-3626 started: 5207e14de417687525f63929537c1b4bbf1bba9bec00eb244d3b66aba8476ead
+2024-08-24 20:28:25,516 - INFO - Intermediate patch for fasterxml__jackson-databind-3626 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-3626/patch.diff, now applying to container...
+2024-08-24 20:28:25,767 - INFO - Failed to apply patch to container, trying again...
+2024-08-24 20:28:25,822 - INFO - >>>>> Applied Patch:
+patching file src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+patching file src/main/java/com/fasterxml/jackson/databind/ObjectMapperCopyWithTest.java
+
+2024-08-24 20:28:29,380 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+index deea44fab..ce31903b8 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+@@ -613,6 +613,41 @@ public class ObjectMapper
+         // Default serializer factory is stateless, can just assign
+         _serializerFactory = src._serializerFactory;
+ 
++        // as per [databind#922], [databind#1078] make sure to copy registered modules as appropriate
++        Set<Object> reg = src._registeredModuleTypes;
++        if (reg == null) {
++            _registeredModuleTypes = null;
++        } else {
++            _registeredModuleTypes = new LinkedHashSet<Object>(reg);
++        }
++    /**
++     * Copy-constructor that allows specifying a different {@link JsonFactory}.
++     * 
++     * @param src the source {@link ObjectMapper} to copy from
++     * @param factory the new {@link JsonFactory} to use
++     */
++    protected ObjectMapper(ObjectMapper src, JsonFactory factory) {
++        _jsonFactory = factory;
++        _jsonFactory.setCodec(this);
++        _subtypeResolver = src._subtypeResolver.copy();
++        _typeFactory = src._typeFactory;
++        _injectableValues = src._injectableValues;
++        _configOverrides = src._configOverrides.copy();
++        _coercionConfigs = src._coercionConfigs.copy();
++        _mixIns = src._mixIns.copy();
++
++        RootNameLookup rootNames = new RootNameLookup();
++        _serializationConfig = new SerializationConfig(src._serializationConfig,
++                _subtypeResolver, _mixIns, rootNames, _configOverrides);
++        _deserializationConfig = new DeserializationConfig(src._deserializationConfig,
++                _subtypeResolver, _mixIns, rootNames, _configOverrides,
++                _coercionConfigs);
++        _serializerProvider = src._serializerProvider.copy();
++        _deserializationContext = src._deserializationContext.copy();
++
++        // Default serializer factory is stateless, can just assign
++        _serializerFactory = src._serializerFactory;
++
+         // as per [databind#922], [databind#1078] make sure to copy registered modules as appropriate
+         Set<Object> reg = src._registeredModuleTypes;
+         if (reg == null) {
+@@ -714,7 +749,19 @@ public class ObjectMapper
+         _checkInvalidCopy(ObjectMapper.class);
+         return new ObjectMapper(this);
+     }
+-
++    /**
++     * Method for creating a new {@link ObjectMapper} instance that
++     * has the same configuration as this instance but uses a different
++     * {@link JsonFactory}.
++     * 
++     * @param factory the new {@link JsonFactory} to use
++     * @return a new {@link ObjectMapper} instance with the same configuration
++     *         as this instance but using the specified {@link JsonFactory}
++     */
++    public ObjectMapper copyWith(JsonFactory factory) {
++        _checkInvalidCopy(ObjectMapper.class);
++        return new ObjectMapper(this, factory);
++    }
+     /**
+      * @since 2.1
+      */
+2024-08-24 20:28:29,381 - INFO - Eval script for fasterxml__jackson-databind-3626 written to run_instance_logs/gpt-4o-standard/gpt-4o-2024-05-13__swe-bench-java__default__t-0.00__p-0.95__c-1.50__install-0__swe-bench-java/fasterxml__jackson-databind-3626/patch.diff, now applying to container...
+2024-08-24 20:28:36,368 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+index deea44fab..ce31903b8 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+@@ -613,6 +613,41 @@ public class ObjectMapper
+         // Default serializer factory is stateless, can just assign
+         _serializerFactory = src._serializerFactory;
+ 
++        // as per [databind#922], [databind#1078] make sure to copy registered modules as appropriate
++        Set<Object> reg = src._registeredModuleTypes;
++        if (reg == null) {
++            _registeredModuleTypes = null;
++        } else {
++            _registeredModuleTypes = new LinkedHashSet<Object>(reg);
++        }
++    /**
++     * Copy-constructor that allows specifying a different {@link JsonFactory}.
++     * 
++     * @param src the source {@link ObjectMapper} to copy from
++     * @param factory the new {@link JsonFactory} to use
++     */
++    protected ObjectMapper(ObjectMapper src, JsonFactory factory) {
++        _jsonFactory = factory;
++        _jsonFactory.setCodec(this);
++        _subtypeResolver = src._subtypeResolver.copy();
++        _typeFactory = src._typeFactory;
++        _injectableValues = src._injectableValues;
++        _configOverrides = src._configOverrides.copy();
++        _coercionConfigs = src._coercionConfigs.copy();
++        _mixIns = src._mixIns.copy();
++
++        RootNameLookup rootNames = new RootNameLookup();
++        _serializationConfig = new SerializationConfig(src._serializationConfig,
++                _subtypeResolver, _mixIns, rootNames, _configOverrides);
++        _deserializationConfig = new DeserializationConfig(src._deserializationConfig,
++                _subtypeResolver, _mixIns, rootNames, _configOverrides,
++                _coercionConfigs);
++        _serializerProvider = src._serializerProvider.copy();
++        _deserializationContext = src._deserializationContext.copy();
++
++        // Default serializer factory is stateless, can just assign
++        _serializerFactory = src._serializerFactory;
++
+         // as per [databind#922], [databind#1078] make sure to copy registered modules as appropriate
+         Set<Object> reg = src._registeredModuleTypes;
+         if (reg == null) {
+@@ -714,7 +749,19 @@ public class ObjectMapper
+         _checkInvalidCopy(ObjectMapper.class);
+         return new ObjectMapper(this);
+     }
+-
++    /**
++     * Method for creating a new {@link ObjectMapper} instance that
++     * has the same configuration as this instance but uses a different
++     * {@link JsonFactory}.
++     * 
++     * @param factory the new {@link JsonFactory} to use
++     * @return a new {@link ObjectMapper} instance with the same configuration
++     *         as this instance but using the specified {@link JsonFactory}
++     */
++    public ObjectMapper copyWith(JsonFactory factory) {
++        _checkInvalidCopy(ObjectMapper.class);
++        return new ObjectMapper(this, factory);
++    }
+     /**
+      * @since 2.1
+      */
+2024-08-24 20:28:36,422 - INFO - Grading answer for fasterxml__jackson-databind-3626...
+2024-08-24 20:28:36,422 - INFO - report: {'fasterxml__jackson-databind-3626': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.ObjectMapperTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-3626: resolved: False
+2024-08-24 20:28:36,422 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-3626.gpt-4o-standard...
+2024-08-24 20:28:51,706 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-3626.gpt-4o-standard...
+2024-08-24 20:28:51,717 - INFO - Container sweb.eval.fasterxml__jackson-databind-3626.gpt-4o-standard removed.

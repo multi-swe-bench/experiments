@@ -1,0 +1,82 @@
+2024-08-23 01:15:10,121 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-dataformat-xml-638
+Building instance image sweb.eval.x86_64.fasterxml__jackson-dataformat-xml-638:latest for fasterxml__jackson-dataformat-xml-638
+2024-08-23 01:15:10,122 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-dataformat-xml-638:latest already exists, skipping build.
+2024-08-23 01:15:10,123 - INFO - Creating container for fasterxml__jackson-dataformat-xml-638...
+2024-08-23 01:15:10,192 - INFO - Container for fasterxml__jackson-dataformat-xml-638 created: 6c2fe9106370cd99dd935e7c431c57a5c3a3588a55f5bedb42a65d89e91eebcc
+2024-08-23 01:15:10,449 - INFO - Container for fasterxml__jackson-dataformat-xml-638 started: 6c2fe9106370cd99dd935e7c431c57a5c3a3588a55f5bedb42a65d89e91eebcc
+2024-08-23 01:15:10,449 - INFO - Intermediate patch for fasterxml__jackson-dataformat-xml-638 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-dataformat-xml-638/patch.diff, now applying to container...
+2024-08-23 01:15:10,708 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:15:10,783 - INFO - >>>>> Applied Patch:
+patching file reproduce_namespace_issue.py
+patching file src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+patching file src/test/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospectorTest.java
+
+2024-08-23 01:15:10,872 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+index a86914fc..bf43347c 100644
+--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
++++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+@@ -115,13 +115,21 @@ public class JacksonXmlAnnotationIntrospector
+      */
+ 
+     @Override
+-    public String findNamespace(MapperConfig<?> config, Annotated ann)
+-    {
++    public String findNamespace(MapperConfig<?> config, Annotated ann) {
+         JacksonXmlProperty prop = _findAnnotation(ann, JacksonXmlProperty.class);
+         if (prop != null) {
+-            return prop.namespace();
++            String ns = prop.namespace();
++            if (ns.isEmpty()) {
++                // If JacksonXmlProperty has an empty namespace, return the JsonProperty namespace
++                JsonProperty jprop = _findAnnotation(ann, JsonProperty.class);
++                if (jprop != null) {
++                    return jprop.namespace();
++                }
++            } else {
++                return ns;
++            }
+         }
+-        // 14-Nov-2020, tatu: 2.12 adds namespace for this too
++        // Fallback to JsonProperty if JacksonXmlProperty is not present
+         JsonProperty jprop = _findAnnotation(ann, JsonProperty.class);
+         if (jprop != null) {
+             return jprop.namespace();
+2024-08-23 01:15:10,872 - INFO - Eval script for fasterxml__jackson-dataformat-xml-638 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-dataformat-xml-638/patch.diff, now applying to container...
+2024-08-23 01:15:18,496 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+index a86914fc..bf43347c 100644
+--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
++++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+@@ -115,13 +115,21 @@ public class JacksonXmlAnnotationIntrospector
+      */
+ 
+     @Override
+-    public String findNamespace(MapperConfig<?> config, Annotated ann)
+-    {
++    public String findNamespace(MapperConfig<?> config, Annotated ann) {
+         JacksonXmlProperty prop = _findAnnotation(ann, JacksonXmlProperty.class);
+         if (prop != null) {
+-            return prop.namespace();
++            String ns = prop.namespace();
++            if (ns.isEmpty()) {
++                // If JacksonXmlProperty has an empty namespace, return the JsonProperty namespace
++                JsonProperty jprop = _findAnnotation(ann, JsonProperty.class);
++                if (jprop != null) {
++                    return jprop.namespace();
++                }
++            } else {
++                return ns;
++            }
+         }
+-        // 14-Nov-2020, tatu: 2.12 adds namespace for this too
++        // Fallback to JsonProperty if JacksonXmlProperty is not present
+         JsonProperty jprop = _findAnnotation(ann, JsonProperty.class);
+         if (jprop != null) {
+             return jprop.namespace();
+2024-08-23 01:15:18,555 - INFO - Grading answer for fasterxml__jackson-dataformat-xml-638...
+2024-08-23 01:15:18,555 - INFO - report: {'fasterxml__jackson-dataformat-xml-638': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.dataformat.xml.ser.SerializationNameMergingTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-dataformat-xml-638: resolved: False
+2024-08-23 01:15:18,555 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-dataformat-xml-638.gpt-4o...
+2024-08-23 01:15:33,729 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-dataformat-xml-638.gpt-4o...
+2024-08-23 01:15:33,744 - INFO - Container sweb.eval.fasterxml__jackson-dataformat-xml-638.gpt-4o removed.

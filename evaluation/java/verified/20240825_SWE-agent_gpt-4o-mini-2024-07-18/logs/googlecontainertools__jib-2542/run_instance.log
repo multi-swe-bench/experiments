@@ -1,0 +1,109 @@
+2024-08-23 01:18:33,588 - INFO - Environment image sweb.env.x86_64.1fc51ca99796cb1af8e0b9:latest found for googlecontainertools__jib-2542
+Building instance image sweb.eval.x86_64.googlecontainertools__jib-2542:latest for googlecontainertools__jib-2542
+2024-08-23 01:18:33,589 - INFO - Image sweb.eval.x86_64.googlecontainertools__jib-2542:latest already exists, skipping build.
+2024-08-23 01:18:33,589 - INFO - Creating container for googlecontainertools__jib-2542...
+2024-08-23 01:18:33,680 - INFO - Container for googlecontainertools__jib-2542 created: 820c6520a4f7267a5c3527319919b5765b3ba8a002915b8c1d21b962fa45de05
+2024-08-23 01:18:33,966 - INFO - Container for googlecontainertools__jib-2542 started: 820c6520a4f7267a5c3527319919b5765b3ba8a002915b8c1d21b962fa45de05
+2024-08-23 01:18:33,966 - INFO - Intermediate patch for googlecontainertools__jib-2542 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/googlecontainertools__jib-2542/patch.diff, now applying to container...
+2024-08-23 01:18:34,218 - INFO - Failed to apply patch to container, trying again...
+2024-08-23 01:18:34,287 - INFO - >>>>> Applied Patch:
+patching file jib-core/src/main/java/com/google/cloud/tools/jib/json/JsonTemplateMapper.java
+patching file jib-core/src/test/java/com/google/cloud/tools/jib/json/JsonTemplateMapperTest.java
+
+2024-08-23 01:18:34,457 - INFO - Git diff before:
+diff --git a/gradle/wrapper/gradle-wrapper.properties b/gradle/wrapper/gradle-wrapper.properties
+index 44e7c4d1..7f309452 100644
+--- a/gradle/wrapper/gradle-wrapper.properties
++++ b/gradle/wrapper/gradle-wrapper.properties
+@@ -1,5 +1,5 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-5.2.1-bin.zip
++distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-5.2.1-bin.zip
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+diff --git a/jib-core/src/main/java/com/google/cloud/tools/jib/json/JsonTemplateMapper.java b/jib-core/src/main/java/com/google/cloud/tools/jib/json/JsonTemplateMapper.java
+index 7967f0bc..94e9261f 100644
+--- a/jib-core/src/main/java/com/google/cloud/tools/jib/json/JsonTemplateMapper.java
++++ b/jib-core/src/main/java/com/google/cloud/tools/jib/json/JsonTemplateMapper.java
+@@ -99,9 +99,9 @@ public class JsonTemplateMapper {
+    * @return the template filled with the values parsed from {@code jsonString}
+    * @throws IOException if an error occurred during parsing the JSON
+    */
+-  public static <T extends JsonTemplate> T readJson(InputStream jsonStream, Class<T> templateClass)
+-      throws IOException {
+-    return objectMapper.readValue(jsonStream, templateClass);
++    if (jsonStream == null) {
++        throw new IllegalArgumentException("Input JSON stream cannot be null.");
++    }
+   }
+ 
+   /**
+diff --git a/jib-core/src/test/java/com/google/cloud/tools/jib/json/JsonTemplateMapperTest.java b/jib-core/src/test/java/com/google/cloud/tools/jib/json/JsonTemplateMapperTest.java
+index a72ca64b..2fc88368 100644
+--- a/jib-core/src/test/java/com/google/cloud/tools/jib/json/JsonTemplateMapperTest.java
++++ b/jib-core/src/test/java/com/google/cloud/tools/jib/json/JsonTemplateMapperTest.java
+@@ -97,7 +97,10 @@ public class JsonTemplateMapperTest {
+ 
+     Assert.assertThat(testJson.number, CoreMatchers.is(54));
+     Assert.assertThat(testJson.text, CoreMatchers.is("crepecake"));
+-    Assert.assertThat(
++    @Test(expected = IllegalArgumentException.class)
++    public void testReadJsonWithNullString() throws IOException {
++        JsonTemplateMapper.readJson(null, TestJson.class);
++    }
+         testJson.digest,
+         CoreMatchers.is(
+             DescriptorDigest.fromDigest(
+2024-08-23 01:18:34,458 - INFO - Eval script for googlecontainertools__jib-2542 written to run_instance_logs/gpt-4o/gpt-4o-mini-2024-07-18__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/googlecontainertools__jib-2542/patch.diff, now applying to container...
+2024-08-23 01:19:25,663 - INFO - Git diff after:
+diff --git a/gradle/wrapper/gradle-wrapper.properties b/gradle/wrapper/gradle-wrapper.properties
+index 44e7c4d1..7f309452 100644
+--- a/gradle/wrapper/gradle-wrapper.properties
++++ b/gradle/wrapper/gradle-wrapper.properties
+@@ -1,5 +1,5 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-5.2.1-bin.zip
++distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-5.2.1-bin.zip
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+diff --git a/jib-core/src/main/java/com/google/cloud/tools/jib/json/JsonTemplateMapper.java b/jib-core/src/main/java/com/google/cloud/tools/jib/json/JsonTemplateMapper.java
+index 7967f0bc..94e9261f 100644
+--- a/jib-core/src/main/java/com/google/cloud/tools/jib/json/JsonTemplateMapper.java
++++ b/jib-core/src/main/java/com/google/cloud/tools/jib/json/JsonTemplateMapper.java
+@@ -99,9 +99,9 @@ public class JsonTemplateMapper {
+    * @return the template filled with the values parsed from {@code jsonString}
+    * @throws IOException if an error occurred during parsing the JSON
+    */
+-  public static <T extends JsonTemplate> T readJson(InputStream jsonStream, Class<T> templateClass)
+-      throws IOException {
+-    return objectMapper.readValue(jsonStream, templateClass);
++    if (jsonStream == null) {
++        throw new IllegalArgumentException("Input JSON stream cannot be null.");
++    }
+   }
+ 
+   /**
+diff --git a/jib-core/src/test/java/com/google/cloud/tools/jib/json/JsonTemplateMapperTest.java b/jib-core/src/test/java/com/google/cloud/tools/jib/json/JsonTemplateMapperTest.java
+index a72ca64b..2fc88368 100644
+--- a/jib-core/src/test/java/com/google/cloud/tools/jib/json/JsonTemplateMapperTest.java
++++ b/jib-core/src/test/java/com/google/cloud/tools/jib/json/JsonTemplateMapperTest.java
+@@ -97,7 +97,10 @@ public class JsonTemplateMapperTest {
+ 
+     Assert.assertThat(testJson.number, CoreMatchers.is(54));
+     Assert.assertThat(testJson.text, CoreMatchers.is("crepecake"));
+-    Assert.assertThat(
++    @Test(expected = IllegalArgumentException.class)
++    public void testReadJsonWithNullString() throws IOException {
++        JsonTemplateMapper.readJson(null, TestJson.class);
++    }
+         testJson.digest,
+         CoreMatchers.is(
+             DescriptorDigest.fromDigest(
+2024-08-23 01:19:25,723 - INFO - Grading answer for googlecontainertools__jib-2542...
+2024-08-23 01:19:25,724 - INFO - report: {'googlecontainertools__jib-2542': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['jib-core:com.google.cloud.tools.jib.registry.RegistryEndpointCallerTest'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for googlecontainertools__jib-2542: resolved: False
+2024-08-23 01:19:25,724 - INFO - Attempting to stop container sweb.eval.googlecontainertools__jib-2542.gpt-4o...
+2024-08-23 01:19:40,951 - INFO - Attempting to remove container sweb.eval.googlecontainertools__jib-2542.gpt-4o...
+2024-08-23 01:19:40,981 - INFO - Container sweb.eval.googlecontainertools__jib-2542.gpt-4o removed.

@@ -1,0 +1,104 @@
+2024-08-19 14:45:35,249 - INFO - Environment image sweb.env.x86_64.486ccd6ec0369907ef1914:latest found for fasterxml__jackson-databind-3666
+Building instance image sweb.eval.x86_64.fasterxml__jackson-databind-3666:latest for fasterxml__jackson-databind-3666
+2024-08-19 14:45:35,250 - INFO - Image sweb.eval.x86_64.fasterxml__jackson-databind-3666:latest already exists, skipping build.
+2024-08-19 14:45:35,250 - INFO - Creating container for fasterxml__jackson-databind-3666...
+2024-08-19 14:45:35,301 - INFO - Container for fasterxml__jackson-databind-3666 created: 0bbe29bc4abec32e3e5ddde25461f3036f332e8dc73d6d750eea313705311adf
+2024-08-19 14:45:35,519 - INFO - Container for fasterxml__jackson-databind-3666 started: 0bbe29bc4abec32e3e5ddde25461f3036f332e8dc73d6d750eea313705311adf
+2024-08-19 14:45:35,519 - INFO - Intermediate patch for fasterxml__jackson-databind-3666 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3666/patch.diff, now applying to container...
+2024-08-19 14:45:35,754 - INFO - Failed to apply patch to container, trying again...
+2024-08-19 14:45:35,808 - INFO - >>>>> Applied Patch:
+patching file ReproduceArrayIssue.java
+patching file src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+patching file src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumDeserializationTest.java
+
+2024-08-19 14:45:42,222 - INFO - Git diff before:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+index 2d77d9bcb..5f1ca27d8 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+@@ -2226,11 +2226,15 @@ handledType().getName());
+      */
+     protected Object handleNestedArrayForSingle(JsonParser p, DeserializationContext ctxt) throws IOException
+     {
+-        String msg = String.format(
+-"Cannot deserialize instance of %s out of %s token: nested Arrays not allowed with %s",
+-                ClassUtil.nameOf(_valueClass), JsonToken.START_ARRAY,
+-                "DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS");
+-        return ctxt.handleUnexpectedToken(getValueType(ctxt), p.currentToken(), p, msg);
++        JsonToken t = p.nextToken();
++        if (t == JsonToken.END_ARRAY) {
++            return null;
++        }
++        Object result = deserialize(p, ctxt);
++        if (p.nextToken() != JsonToken.END_ARRAY) {
++            handleMissingEndArrayForSingle(p, ctxt);
++        }
++        return result;
+     }
+ 
+     protected void _verifyEndArrayForSingle(JsonParser p, DeserializationContext ctxt) throws IOException
+diff --git a/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumDeserializationTest.java b/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumDeserializationTest.java
+index 65c5560d4..6171806ae 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumDeserializationTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumDeserializationTest.java
+@@ -654,4 +654,10 @@ public class EnumDeserializationTest
+         assertEquals(Operation3006.THREE, MAPPER.readValue("3", Operation3006.class));
+         assertEquals(Operation3006.THREE, MAPPER.readValue(q("3"), Operation3006.class));
+     }
+-}
++    public void testUnwrappedEnumFromSingleElementArray() throws Exception {
++        final ObjectMapper mapper = new ObjectMapper();
++        mapper.enable(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS);
++
++        MyEnum result = mapper.readValue("[\"FOO\"]", MyEnum.class);
++        assertSame(MyEnum.FOO, result);
++    }
+2024-08-19 14:45:42,222 - INFO - Eval script for fasterxml__jackson-databind-3666 written to run_instance_logs/pred_0819/deepseek-coder__swe-bench-java__default__t-0.00__p-0.95__c-3.00__install-0__swe-bench-java/fasterxml__jackson-databind-3666/patch.diff, now applying to container...
+2024-08-19 14:46:03,219 - INFO - Git diff after:
+diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+index 2d77d9bcb..5f1ca27d8 100644
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+@@ -2226,11 +2226,15 @@ handledType().getName());
+      */
+     protected Object handleNestedArrayForSingle(JsonParser p, DeserializationContext ctxt) throws IOException
+     {
+-        String msg = String.format(
+-"Cannot deserialize instance of %s out of %s token: nested Arrays not allowed with %s",
+-                ClassUtil.nameOf(_valueClass), JsonToken.START_ARRAY,
+-                "DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS");
+-        return ctxt.handleUnexpectedToken(getValueType(ctxt), p.currentToken(), p, msg);
++        JsonToken t = p.nextToken();
++        if (t == JsonToken.END_ARRAY) {
++            return null;
++        }
++        Object result = deserialize(p, ctxt);
++        if (p.nextToken() != JsonToken.END_ARRAY) {
++            handleMissingEndArrayForSingle(p, ctxt);
++        }
++        return result;
+     }
+ 
+     protected void _verifyEndArrayForSingle(JsonParser p, DeserializationContext ctxt) throws IOException
+diff --git a/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumDeserializationTest.java b/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumDeserializationTest.java
+index 65c5560d4..6171806ae 100644
+--- a/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumDeserializationTest.java
++++ b/src/test/java/com/fasterxml/jackson/databind/deser/enums/EnumDeserializationTest.java
+@@ -654,4 +654,10 @@ public class EnumDeserializationTest
+         assertEquals(Operation3006.THREE, MAPPER.readValue("3", Operation3006.class));
+         assertEquals(Operation3006.THREE, MAPPER.readValue(q("3"), Operation3006.class));
+     }
+-}
++    public void testUnwrappedEnumFromSingleElementArray() throws Exception {
++        final ObjectMapper mapper = new ObjectMapper();
++        mapper.enable(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS);
++
++        MyEnum result = mapper.readValue("[\"FOO\"]", MyEnum.class);
++        assertSame(MyEnum.FOO, result);
++    }
+2024-08-19 14:46:03,331 - INFO - Grading answer for fasterxml__jackson-databind-3666...
+2024-08-19 14:46:03,331 - INFO - report: {'fasterxml__jackson-databind-3666': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['src:com.fasterxml.jackson.databind.deser.creators.EnumCreatorTest', 'src:com.fasterxml.jackson.databind.deser.creators.TestCreators3'], 'skipped': []}, 'PASS_TO_PASS': {'success': [], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for fasterxml__jackson-databind-3666: resolved: False
+2024-08-19 14:46:03,331 - INFO - Attempting to stop container sweb.eval.fasterxml__jackson-databind-3666.pred_0819...
+2024-08-19 14:46:18,558 - INFO - Attempting to remove container sweb.eval.fasterxml__jackson-databind-3666.pred_0819...
+2024-08-19 14:46:18,579 - INFO - Container sweb.eval.fasterxml__jackson-databind-3666.pred_0819 removed.
