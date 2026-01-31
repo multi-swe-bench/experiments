@@ -1,0 +1,49 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -120,10 +120,10 @@
+     private ScheduledExecutorService flushScheduler;
+     private final LongAdder droppedEvents = new LongAdder();
+     private final LongAdder expiredEvents = new LongAdder();
+-    private String lastError = "no errors";
++    private volatile String lastError = "no errors";
+     private final Clock clock;
+-    private Optional<Timestamp> oldestSegmentTimestamp;
+-    private Optional<Path> oldestSegmentPath = Optional.empty();
++    private volatile Optional<Timestamp> oldestSegmentTimestamp;
++    private volatile Optional<Path> oldestSegmentPath = Optional.empty();
+     private final TemporalAmount retentionTime;
+ 
+     public static final class Builder {
+@@ -438,14 +438,16 @@
+      * Start from the end of the latest block, and going backward try to read the next event from its start.
+      * */
+     private static Optional<Timestamp> readTimestampOfLastEventInSegment(Path segmentPath) throws IOException {
+-        final int lastBlockId = (int) Math.ceil(((Files.size(segmentPath) - VERSION_SIZE) / (double) BLOCK_SIZE)) - 1;
+         byte[] eventBytes = null;
+-        try (RecordIOReader recordReader = new RecordIOReader(segmentPath)) {
+-            int blockId = lastBlockId;
+-            while (eventBytes == null && blockId >= 0) { // no event present in last block, try with the one before
+-                recordReader.seekToBlock(blockId);
+-                eventBytes = recordReader.readEvent();
+-                blockId--;
++        try {
++            final int lastBlockId = (int) Math.ceil(((Files.size(segmentPath) - VERSION_SIZE) / (double) BLOCK_SIZE)) - 1;
++            try (RecordIOReader recordReader = new RecordIOReader(segmentPath)) {
++                int blockId = lastBlockId;
++                while (eventBytes == null && blockId >= 0) { // no event present in last block, try with the one before
++                    recordReader.seekToBlock(blockId);
++                    eventBytes = recordReader.readEvent();
++                    blockId--;
++                }
+             }
+         } catch (NoSuchFileException nsfex) {
+             // the segment file may have been removed by the clean consumed feature on the reader side

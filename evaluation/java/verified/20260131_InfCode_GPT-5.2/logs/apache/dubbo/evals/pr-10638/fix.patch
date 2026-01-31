@@ -1,0 +1,49 @@
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/PojoUtils.java
+@@ -33,6 +33,9 @@
+ import java.lang.reflect.Type;
+ import java.lang.reflect.TypeVariable;
+ import java.lang.reflect.WildcardType;
++import java.time.LocalDate;
++import java.time.LocalDateTime;
++import java.time.LocalTime;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collection;
+@@ -142,6 +145,13 @@
+             return pojo;
+         }
+ 
++        // java.time types are immutable and serializable, but they don't have public no-arg constructors.
++        // Converting them to a JavaBean map and then trying to instantiate via reflection will fail on JDK 9+
++        // due to module access restrictions (java.base does not open java.time).
++        if (pojo instanceof LocalDateTime || pojo instanceof LocalDate || pojo instanceof LocalTime) {
++            return pojo.toString();
++        }
++
+         if (pojo instanceof Class) {
+             return ((Class) pojo).getName();
+         }
+@@ -326,6 +336,21 @@
+             return Enum.valueOf((Class<Enum>) type, (String) pojo);
+         }
+ 
++        // Support java.time types via String representation to avoid reflective instantiation of JDK internal classes
++        // (JDK 9+ module system does not open java.time to unnamed modules).
++        if (pojo instanceof String && type != null) {
++            String string = (String) pojo;
++            if (type == LocalDateTime.class) {
++                return LocalDateTime.parse(string);
++            }
++            if (type == LocalDate.class) {
++                return LocalDate.parse(string);
++            }
++            if (type == LocalTime.class) {
++                return LocalTime.parse(string);
++            }
++        }
++
+         if (ReflectUtils.isPrimitives(pojo.getClass())
+             && !(type != null && type.isArray()
+             && type.getComponentType().isEnum()
+

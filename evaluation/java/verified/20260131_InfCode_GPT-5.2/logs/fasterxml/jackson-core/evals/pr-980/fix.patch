@@ -1,0 +1,224 @@
+--- a/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
++++ b/src/main/java/com/fasterxml/jackson/core/base/ParserBase.java
+@@ -1215,9 +1215,66 @@
+     }
+ 
+     // @since 2.15
+-    protected BigInteger _convertBigDecimalToBigInteger(BigDecimal bigDec) throws IOException {
+-        // 04-Apr-2022, tatu: wrt [core#968] Need to limit max scale magnitude
+-        return bigDec.toBigInteger();
++    protected BigInteger _convertBigDecimalToBigInteger(final BigDecimal bigDec) throws IOException {
++        // 04-Apr-2022, tatu: wrt [core#968] Avoid slow BigDecimal->BigInteger coercion
++        // for values that use extreme exponents ("1e25000000" and such).
++        //
++        // BigDecimal#toBigInteger() must effectively apply scaling and may be very
++        // slow for large negative scales. We can do significantly better by
++        // operating on unscaled value + scale directly and computing 10^n via
++        // 10^n = (5^n) * (2^n).
++
++        final int scale = bigDec.scale();
++        final BigInteger unscaled = bigDec.unscaledValue();
++
++        // Common case: already an integer
++        if (scale == 0) {
++            return unscaled;
++        }
++
++        // For positive scale, result is (unscaled / 10^scale) truncated toward 0.
++        if (scale > 0) {
++            // Quick path: if the scale is at least as big as number of digits in the
++            // unscaled value, integer part is 0 (or -0 -> 0).
++            if (scale >= bigDec.precision()) {
++                return BigInteger.ZERO;
++            }
++            return unscaled.divide(_bigIntegerTenToThePowerOf(scale));
++        }
++
++        // Negative scale means multiplying by 10^(-scale)
++        final int pow10 = -scale;
++        if (unscaled.equals(BigInteger.ONE)) {
++            return _bigIntegerTenToThePowerOf(pow10);
++        }
++        if (unscaled.equals(BigInteger.ONE.negate())) {
++            return _bigIntegerTenToThePowerOf(pow10).negate();
++        }
++        return _multiplyByTenPow(unscaled, pow10);
++    }
++
++    private static final BigInteger BI_FIVE = BigInteger.valueOf(5L);
++
++    /**
++     * Efficiently calculate {@code 10^n} as {@code (5^n) << n}.
++     */
++    private static BigInteger _bigIntegerTenToThePowerOf(final int n) {
++        if (n == 0) {
++            return BigInteger.ONE;
++        }
++        // 10^n = (5^n) * (2^n)  and multiplying by 2^n is just shifting.
++        return BI_FIVE.pow(n).shiftLeft(n);
++    }
++
++    /**
++     * Multiply by {@code 10^pow10} with less overhead than using BigDecimal.
++     */
++    private static BigInteger _multiplyByTenPow(final BigInteger value, final int pow10) {
++        if (pow10 == 0) {
++            return value;
++        }
++        // 10^pow10 = (5^pow10) << pow10
++        return value.multiply(BI_FIVE.pow(pow10)).shiftLeft(pow10);
+     }
+ 
+     /**
+@@ -1560,4 +1617,150 @@
+ 
+     // Can't declare as deprecated, for now, but shouldn't be needed
+     protected void _finishString() throws IOException { }
++
++    /**
++     * Attempt to coerce a floating-point textual number into a {@link BigInteger}
++     * without constructing a {@link BigDecimal}.
++     * <p>
++     * Used to address performance issues like [core#968] where values like
++     * {@code "1e25000000"} would otherwise lead to very slow BigDecimal-based
++     * conversion.
++     *
++     * @return BigInteger value if conversion can be done efficiently; {@code null}
++     *   if caller should fall back to BigDecimal-based conversion.
++     */
++    protected final BigInteger _tryFastBigIntegerFromString(final String numStr) throws IOException
++    {
++        // Only handle scientific notation (case insensitive). Other cases can
++        // be handled by BigDecimal parsing.
++        final int eIx = _indexOfExponent(numStr);
++        if (eIx < 0) {
++            return null;
++        }
++
++        // Parse exponent (allow sign)
++        final int len = numStr.length();
++        int ptr = eIx + 1;
++        if (ptr >= len) {
++            return null;
++        }
++        boolean expNeg = false;
++        char c = numStr.charAt(ptr);
++        if (c == '+') {
++            ++ptr;
++        } else if (c == '-') {
++            expNeg = true;
++            ++ptr;
++        }
++        if (ptr >= len) {
++            return null;
++        }
++        long expL = 0L;
++        for (; ptr < len; ++ptr) {
++            c = numStr.charAt(ptr);
++            if (c < '0' || c > '9') {
++                return null;
++            }
++            expL = (expL * 10L) + (c - '0');
++            // must fit in int for our operations
++            if (expL > Integer.MAX_VALUE) {
++                return null;
++            }
++        }
++        final int exp = expNeg ? (int) -expL : (int) expL;
++
++        // Parse mantissa: sign + digits, optional single '.'
++        int mPtr = 0;
++        boolean neg = false;
++        c = numStr.charAt(mPtr);
++        if (c == '-') {
++            neg = true;
++            ++mPtr;
++        } else if (c == '+') {
++            ++mPtr;
++        }
++        if (mPtr >= eIx) {
++            return null;
++        }
++
++        final StringBuilder digits = new StringBuilder(eIx - mPtr);
++        int fracLen = 0;
++        boolean dotSeen = false;
++        for (; mPtr < eIx; ++mPtr) {
++            c = numStr.charAt(mPtr);
++            if (c == '.') {
++                if (dotSeen) {
++                    return null;
++                }
++                dotSeen = true;
++                continue;
++            }
++            if (c < '0' || c > '9') {
++                return null;
++            }
++            digits.append(c);
++            if (dotSeen) {
++                ++fracLen;
++            }
++        }
++        if (digits.length() == 0) {
++            return null;
++        }
++
++        // Effective decimal shift for digits after removing '.'
++        final long shiftL = (long) exp - (long) fracLen;
++
++        // Truncating (shift left beyond available integer digits)
++        if (shiftL < 0L) {
++            final int cut = (int) -shiftL;
++            final int digLen = digits.length();
++            if (digLen <= cut) {
++                return BigInteger.ZERO;
++            }
++            final String intDigits = digits.substring(0, digLen - cut);
++            try {
++                BigInteger result = NumberInput.parseBigInteger(intDigits,
++                        isEnabled(StreamReadFeature.USE_FAST_BIG_NUMBER_PARSER));
++                return neg ? result.negate() : result;
++            } catch (NumberFormatException e) {
++                return null;
++            }
++        }
++
++        // Shift right by adding trailing zeroes: potentially creates an enormous BigInteger,
++        // but this is required for correct semantics of getBigIntegerValue() when caller asks
++        // for exact value.
++        final int zeroes = (int) shiftL;
++
++        // If mantissa is just "1" or "-1", avoid parsing and just build 10^n.
++        if (digits.length() == 1 && digits.charAt(0) == '1') {
++            BigInteger result = _bigIntegerTenToThePowerOf(zeroes);
++            return neg ? result.negate() : result;
++        }
++
++        final BigInteger base;
++        try {
++            base = NumberInput.parseBigInteger(digits.toString(),
++                    isEnabled(StreamReadFeature.USE_FAST_BIG_NUMBER_PARSER));
++        } catch (NumberFormatException e) {
++            return null;
++        }
++
++        BigInteger result = (zeroes == 0) ? base : _multiplyByTenPow(base, zeroes);
++        if (neg) {
++            result = result.negate();
++        }
++        return result;
++    }
++
++    private static int _indexOfExponent(final String numStr) {
++        final int len = numStr.length();
++        for (int i = 0; i < len; ++i) {
++            final char c = numStr.charAt(i);
++            if (c == 'e' || c == 'E') {
++                return i;
++            }
++        }
++        return -1;
++    }
+ }
+

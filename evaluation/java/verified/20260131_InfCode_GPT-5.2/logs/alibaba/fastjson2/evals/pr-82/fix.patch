@@ -1,0 +1,126 @@
+--- a/core/src/main/java/com/alibaba/fastjson2/JSON.java
++++ b/core/src/main/java/com/alibaba/fastjson2/JSON.java
+@@ -602,10 +602,11 @@
+         JSONReader jsonReader = JSONReader.of(text);
+         try {
+             jsonReader.skipValue();
++            // Reject trailing non-whitespace characters.
++            return jsonReader.current() == JSONReader.EOI;
+         } catch (JSONException error) {
+             return false;
+         }
+-        return true;
+     }
+ 
+     /**
+@@ -643,10 +644,11 @@
+         JSONReader jsonReader = JSONReader.of(bytes);
+         try {
+             jsonReader.skipValue();
++            // Reject trailing non-whitespace characters.
++            return jsonReader.current() == JSONReader.EOI;
+         } catch (JSONException error) {
+             return false;
+         }
+-        return true;
+     }
+ 
+     /**
+@@ -687,10 +689,11 @@
+         JSONReader jsonReader = JSONReader.of(bytes, offset, length, charset);
+         try {
+             jsonReader.skipValue();
++            // Reject trailing non-whitespace characters.
++            return jsonReader.current() == JSONReader.EOI;
+         } catch (JSONException error) {
+             return false;
+         }
+-        return true;
+     }
+ 
+     /**
+
+--- a/core/src/main/java/com/alibaba/fastjson2/JSONReaderStr.java
++++ b/core/src/main/java/com/alibaba/fastjson2/JSONReaderStr.java
+@@ -1362,6 +1362,11 @@
+             case 'f':
+             case 'n':
+                 for (; ; ) {
++                    if (offset >= end) {
++                        ch = EOI;
++                        return;
++                    }
++
+                     ch = str.charAt(offset++);
+                     if (ch == '}' || ch == ']') {
+                         break;
+@@ -1384,6 +1389,24 @@
+                         offset++;
+                         break;
+                     }
++
++                    // scalar ends when meeting whitespace; position on next non-whitespace char
++                    if (ch <= ' ' && ((1L << ch) & SPACE) != 0) {
++                        while (offset < end) {
++                            ch = str.charAt(offset);
++                            if (ch > ' ' || ((1L << ch) & SPACE) == 0) {
++                                offset++;
++                                break;
++                            }
++                            offset++;
++                        }
++
++                        if (offset >= end && (ch <= ' ' && ((1L << ch) & SPACE) != 0)) {
++                            ch = EOI;
++                            return;
++                        }
++                        break;
++                    }
+                 }
+                 break;
+             default:
+
+--- a/core/src/main/java/com/alibaba/fastjson2/JSONReaderUTF16.java
++++ b/core/src/main/java/com/alibaba/fastjson2/JSONReaderUTF16.java
+@@ -1418,10 +1418,16 @@
+             case 'f':
+             case 'n':
+                 for (; ; ) {
++                    if (offset >= end) {
++                        ch = EOI;
++                        return;
++                    }
++
+                     ch = chars[offset++];
+                     if (ch == '}' || ch == ']') {
+                         break;
+                     }
++
+                     if (ch == ',') {
+                         if (offset >= end) {
+                             ch = EOI;
+@@ -1440,6 +1446,24 @@
+                         offset++;
+                         break;
+                     }
++
++                    // scalar ends when meeting whitespace; position on next non-whitespace char
++                    if (ch <= ' ' && ((1L << ch) & SPACE) != 0) {
++                        while (offset < end) {
++                            ch = chars[offset];
++                            if (ch > ' ' || ((1L << ch) & SPACE) == 0) {
++                                offset++;
++                                break;
++                            }
++                            offset++;
++                        }
++
++                        if (offset >= end && (ch <= ' ' && ((1L << ch) & SPACE) != 0)) {
++                            ch = EOI;
++                            return;
++                        }
++                        break;
++                    }
+                 }
+                 break;
+             default:

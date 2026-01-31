@@ -1,0 +1,261 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsDeductionTypeDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsDeductionTypeDeserializer.java
+@@ -7,6 +7,10 @@
+ import com.fasterxml.jackson.core.JsonToken;
+ 
+ import com.fasterxml.jackson.databind.*;
++import com.fasterxml.jackson.databind.introspect.AnnotatedAndMetadata;
++import com.fasterxml.jackson.databind.introspect.AnnotatedConstructor;
++import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
++import com.fasterxml.jackson.databind.introspect.AnnotatedMethod;
+ import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
+ import com.fasterxml.jackson.databind.jsontype.NamedType;
+ import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
+@@ -62,41 +66,180 @@
+     protected Map<BitSet, String> buildFingerprints(DeserializationConfig config, Collection<NamedType> subtypes) {
+         boolean ignoreCase = config.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
+ 
+-        int nextField = 0;
++        final int[] nextField = new int[1];
+         Map<BitSet, String> fingerprints = new HashMap<>();
+ 
+         for (NamedType subtype : subtypes) {
+             JavaType subtyped = config.getTypeFactory().constructType(subtype.getType());
+             List<BeanPropertyDefinition> properties = config.introspect(subtyped).findProperties();
+ 
+-            BitSet fingerprint = new BitSet(nextField + properties.size());
++            BitSet fingerprint = new BitSet();
++
++            // 20-Jan-2026, tatu (w/AI): [databind#3711] Support for scalar-valued subtypes.
++            // If subtype has no regular bean properties, try to infer scalar token kind
++            // from @JsonValue type and existence of a delegating creator.
++            if (properties.isEmpty()) {
++                String scalarKey = _findScalarDeductionKey(config, subtyped);
++                if (scalarKey != null) {
++                    fingerprint.set(_fieldBitIndex(scalarKey, nextField));
++                }
++            }
++
+             for (BeanPropertyDefinition property : properties) {
+                 String name = property.getName();
+-                if (ignoreCase) name = name.toLowerCase();
+-                Integer bitIndex = fieldBitIndex.get(name);
+-                if (bitIndex == null) {
+-                    bitIndex = nextField;
+-                    fieldBitIndex.put(name, nextField++);
++                if (ignoreCase) {
++                    name = name.toLowerCase();
+                 }
+-                fingerprint.set(bitIndex);
++                fingerprint.set(_fieldBitIndex(name, nextField));
+             }
+ 
+             String existingFingerprint = fingerprints.put(fingerprint, subtype.getType().getName());
+ 
+             // Validate uniqueness
+             if (existingFingerprint != null) {
+-                throw new IllegalStateException(
+-                        String.format("Subtypes %s and %s have the same signature and cannot be uniquely deduced.", existingFingerprint, subtype.getType().getName())
+-                        );
++                throw new IllegalStateException(String.format(
++                        "Subtypes %s and %s have the same signature and cannot be uniquely deduced.",
++                        existingFingerprint, subtype.getType().getName()));
+             }
+         }
+         return fingerprints;
+     }
+ 
++    protected int _fieldBitIndex(String name, int[] nextField) {
++        Integer bitIndex = fieldBitIndex.get(name);
++        if (bitIndex == null) {
++            bitIndex = nextField[0];
++            fieldBitIndex.put(name, bitIndex);
++            nextField[0] = bitIndex + 1;
++        }
++        return bitIndex;
++    }
++
++    /**
++     * Determine scalar token kind used for deduction (if any) for given subtype.
++     *
++     * @return Deduction key (like {@code "$scalar:int"}) or {@code null} if subtype
++     *    does not look like scalar-backed value.
++     */
++    protected String _findScalarDeductionKey(DeserializationConfig config, JavaType subtyped) {
++        // Use full introspection for @JsonValue
++        BeanDescription desc = config.introspect(subtyped);
++        AnnotatedMember valueAccessor = desc.findJsonValueAccessor();
++        if (valueAccessor == null) {
++            return null;
++        }
++
++        // Need to ensure there is a delegating creator that would accept scalar.
++        // If not, scalar deduction would not be useful (or might be harmful).
++        if (!_hasDelegatingScalarCreator(config, subtyped, valueAccessor.getRawType())) {
++            return null;
++        }
++
++        return _scalarDeductionKeyFor(valueAccessor.getRawType());
++    }
++
++    protected boolean _hasDelegatingScalarCreator(DeserializationConfig config,
++            JavaType subtyped, Class<?> valueType) {
++        BeanDescription desc = config.introspectForCreation(subtyped);
++
++        // Constructors
++        for (AnnotatedAndMetadata<AnnotatedConstructor, com.fasterxml.jackson.annotation.JsonCreator.Mode> ctorWithMode
++                : desc.getConstructorsWithMode()) {
++            AnnotatedConstructor ctor = ctorWithMode.annotated;
++            com.fasterxml.jackson.annotation.JsonCreator.Mode mode = ctorWithMode.metadata;
++            if (mode != null
++                    && mode != com.fasterxml.jackson.annotation.JsonCreator.Mode.DEFAULT
++                    && mode != com.fasterxml.jackson.annotation.JsonCreator.Mode.DELEGATING) {
++                continue;
++            }
++            if (ctor.getParameterCount() == 1) {
++                Class<?> argType = ctor.getRawParameterType(0);
++                if (_isCompatibleScalarCreatorArg(valueType, argType)) {
++                    return true;
++                }
++            }
++        }
++
++        // Factory methods
++        for (AnnotatedAndMetadata<AnnotatedMethod, com.fasterxml.jackson.annotation.JsonCreator.Mode> mWithMode
++                : desc.getFactoryMethodsWithMode()) {
++            AnnotatedMethod m = mWithMode.annotated;
++            com.fasterxml.jackson.annotation.JsonCreator.Mode mode = mWithMode.metadata;
++            if (mode != null
++                    && mode != com.fasterxml.jackson.annotation.JsonCreator.Mode.DEFAULT
++                    && mode != com.fasterxml.jackson.annotation.JsonCreator.Mode.DELEGATING) {
++                continue;
++            }
++            if (m.getParameterCount() == 1) {
++                Class<?> argType = m.getRawParameterType(0);
++                if (_isCompatibleScalarCreatorArg(valueType, argType)) {
++                    return true;
++                }
++            }
++        }
++
++        return false;
++    }
++
++    protected boolean _isCompatibleScalarCreatorArg(Class<?> valueType, Class<?> argType) {
++        // allow exact match, primitive/wrapper match, and supertype (like CharSequence)
++        if (argType.isAssignableFrom(valueType)) {
++            return true;
++        }
++        // primitive/wrapper pairs
++        if (valueType.isPrimitive()) {
++            return (ClassUtil.wrapperType(valueType) == argType);
++        }
++        if (argType.isPrimitive()) {
++            return (ClassUtil.wrapperType(argType) == valueType);
++        }
++        return false;
++    }
++
++    protected String _scalarDeductionKeyFor(Class<?> rawValueType) {
++        // Basic grouping; keep minimal to avoid false positives.
++        // boolean
++        if (rawValueType == Boolean.TYPE || rawValueType == Boolean.class) {
++            return "$scalar:boolean";
++        }
++        // string-like
++        if (rawValueType == String.class || rawValueType == CharSequence.class
++                || CharSequence.class.isAssignableFrom(rawValueType)) {
++            return "$scalar:string";
++        }
++        // integer-like
++        if (rawValueType == Integer.TYPE || rawValueType == Integer.class
++                || rawValueType == Long.TYPE || rawValueType == Long.class
++                || rawValueType == Short.TYPE || rawValueType == Short.class
++                || rawValueType == Byte.TYPE || rawValueType == Byte.class
++                || rawValueType == java.math.BigInteger.class) {
++            return "$scalar:int";
++        }
++        // floating-point / decimal-like
++        if (rawValueType == Double.TYPE || rawValueType == Double.class
++                || rawValueType == Float.TYPE || rawValueType == Float.class
++                || rawValueType == java.math.BigDecimal.class) {
++            return "$scalar:float";
++        }
++        // anything else: not supported
++        return null;
++    }
++
+     @Override
+     public Object deserializeTypedFromObject(JsonParser p, DeserializationContext ctxt) throws IOException {
+ 
+         JsonToken t = p.currentToken();
++
++        // 20-Jan-2026, tatu (w/AI): [databind#3711] For scalar values, deduction can be based
++        // on token shape.
++        if ((t != null) && t.isScalarValue()) {
++            Object v = _deserializeTypedFromScalar(p, ctxt);
++            if (v != null) {
++                return v;
++            }
++            return _deserializeTypedUsingDefaultImpl(p, ctxt, null, "Unexpected scalar input");
++        }
++
+         if (t == JsonToken.START_OBJECT) {
+             t = p.nextToken();
+         } else if (/*t == JsonToken.START_ARRAY ||*/ t != JsonToken.FIELD_NAME) {
+@@ -128,7 +271,9 @@
+ 
+         for (; t == JsonToken.FIELD_NAME; t = p.nextToken()) {
+             String name = p.currentName();
+-            if (ignoreCase) name = name.toLowerCase();
++            if (ignoreCase) {
++                name = name.toLowerCase();
++            }
+ 
+             tb.copyCurrentStructure(p);
+ 
+@@ -143,10 +288,43 @@
+         }
+ 
+         // We have zero or multiple candidates, deduction has failed
+-        String msgToReportIfDefaultImplFailsToo = String.format("Cannot deduce unique subtype of %s (%d candidates match)", ClassUtil.getTypeDescription(_baseType), candidates.size());
++        String msgToReportIfDefaultImplFailsToo = String.format(
++                "Cannot deduce unique subtype of %s (%d candidates match)",
++                ClassUtil.getTypeDescription(_baseType), candidates.size());
+         return _deserializeTypedUsingDefaultImpl(p, ctxt, tb, msgToReportIfDefaultImplFailsToo);
+     }
+ 
++    protected Object _deserializeTypedFromScalar(JsonParser p, DeserializationContext ctxt) throws IOException {
++        final String scalarKey;
++        final JsonToken t = p.currentToken();
++        if (t == JsonToken.VALUE_STRING) {
++            scalarKey = "$scalar:string";
++        } else if (t == JsonToken.VALUE_NUMBER_INT) {
++            scalarKey = "$scalar:int";
++        } else if (t == JsonToken.VALUE_NUMBER_FLOAT) {
++            scalarKey = "$scalar:float";
++        } else if (t == JsonToken.VALUE_TRUE || t == JsonToken.VALUE_FALSE) {
++            scalarKey = "$scalar:boolean";
++        } else {
++            return null;
++        }
++
++        Integer bit = fieldBitIndex.get(scalarKey);
++        if (bit == null) {
++            return null;
++        }
++
++        List<BitSet> candidates = new LinkedList<>(subtypeFingerprints.keySet());
++        prune(candidates, bit);
++
++        if (candidates.size() == 1) {
++            String typeId = subtypeFingerprints.get(candidates.get(0));
++            JsonDeserializer<Object> deser = _findDeserializer(ctxt, typeId);
++            return deser.deserialize(p, ctxt);
++        }
++        return null;
++    }
++
+     // Keep only fingerprints containing this field
+     private static void prune(List<BitSet> candidates, int bit) {
+         for (Iterator<BitSet> iter = candidates.iterator(); iter.hasNext(); ) {

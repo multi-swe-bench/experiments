@@ -1,0 +1,91 @@
+--- a/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/RecyclerPool.java
+@@ -49,7 +49,7 @@
+         /**
+          * Method to call to add link from pooled item back to pool
+          * that handles it
+-         * 
++         *
+          * @param pool Pool that "owns" pooled item
+          *
+          * @return This item (for call chaining)
+@@ -111,6 +111,25 @@
+         return false;
+     }
+ 
++    /**
++     * Diagnostic method for checking how many pooled Objects this pool
++     * currently retains for reuse.
++     *<p>
++     * Note that value returned is for diagnostics and should not be used
++     * for any logic that depends on exact results; implementations may return
++     * an approximation in presence of concurrent access.
++     *<p>
++     * Default implementation indicates "not supported" by returning {@code -1}.
++     *
++     * @return Number of pooled Objects currently retained for reuse;
++     *   or {@code -1} if pool does not expose this information.
++     *
++     * @since 2.18
++     */
++    default int pooledCount() {
++        return -1;
++    }
++
+     /*
+     /**********************************************************************
+     /* Partial/base RecyclerPool implementations
+@@ -119,7 +138,7 @@
+ 
+     /**
+      * Default {@link RecyclerPool} implementation that uses
+-     * {@link ThreadLocal} for recycling instances. 
++     * {@link ThreadLocal} for recycling instances.
+      * Instances are stored using {@link java.lang.ref.SoftReference}s so that
+      * they may be Garbage Collected as needed by JVM.
+      *<p>
+@@ -267,6 +286,12 @@
+             pool.clear();
+             return true;
+         }
++
++        @Override
++        public int pooledCount() {
++            // ConcurrentLinkedDeque.size() is O(n) but suitable for diagnostics
++            return pool.size();
++        }
+     }
+ 
+     /**
+@@ -337,6 +362,18 @@
+             head.set(null);
+             return true;
+         }
++
++        @Override
++        public int pooledCount() {
++            // Size is inherently approximate under concurrent access
++            int count = 0;
++            Node<P> n = head.get();
++            while (n != null) {
++                ++count;
++                n = n.next;
++            }
++            return count;
++        }
+     }
+ 
+     /**
+@@ -391,6 +428,12 @@
+             return true;
+         }
+ 
++        @Override
++        public int pooledCount() {
++            // ArrayBlockingQueue.size() is O(1)
++            return pool.size();
++        }
++
+         // // // Other methods
+ 
+         public int capacity() {

@@ -1,0 +1,196 @@
+--- a/pom.xml
++++ b/pom.xml
+@@ -5,15 +5,15 @@
+   <!-- is to indicate to Gradle or any Gradle module metadata file consumer  -->
+   <!-- that they should prefer consuming it instead. -->
+   <!-- do_not_remove: published-with-gradle-metadata -->
+-  <modelVersion>4.0.0</modelVersion> 
++  <modelVersion>4.0.0</modelVersion>
+   <parent>
+     <groupId>com.fasterxml.jackson</groupId>
+     <artifactId>jackson-base</artifactId>
+-    <version>2.15.0-rc3-SNAPSHOT</version>
++    <version>2.15.5-SNAPSHOT</version>
+   </parent>
+   <groupId>com.fasterxml.jackson.dataformat</groupId>
+   <artifactId>jackson-dataformat-xml</artifactId>
+-  <version>2.15.0-rc3-SNAPSHOT</version>
++  <version>2.15.5-SNAPSHOT</version>
+   <name>Jackson-dataformat-XML</name>
+   <packaging>jar</packaging>
+   <description>Data format extension for Jackson to offer
+@@ -23,7 +23,7 @@
+   <scm>
+     <connection>scm:git:git@github.com:FasterXML/jackson-dataformat-xml.git</connection>
+     <developerConnection>scm:git:git@github.com:FasterXML/jackson-dataformat-xml.git</developerConnection>
+-    <url>http://github.com/FasterXML/jackson-dataformat-xml</url>    
++    <url>http://github.com/FasterXML/jackson-dataformat-xml</url>
+     <tag>HEAD</tag>
+   </scm>
+   <properties>
+@@ -73,12 +73,12 @@
+       <version>4.2.1</version>
+       <exclusions>
+         <exclusion>
+-	  <groupId>javax.xml.stream</groupId>
+-	  <artifactId>stax-api</artifactId>
++          <groupId>javax.xml.stream</groupId>
++          <artifactId>stax-api</artifactId>
+         </exclusion>
+-      </exclusions> 
++      </exclusions>
+     </dependency>
+-    <!--  and a Stax impl is needed: SJSXP (from JDK 1.6) might work, but always   
++    <!--  and a Stax impl is needed: SJSXP (from JDK 1.6) might work, but always
+           has odd issues. Let's default to Woodstox: caller can upgrade to Aalto
+          (needs to block this dep)
+       -->
+@@ -93,10 +93,10 @@
+       <version>6.5.0</version>
+       <exclusions>
+         <exclusion>
+-	  <groupId>javax.xml.stream</groupId>
+-	  <artifactId>stax-api</artifactId>
++          <groupId>javax.xml.stream</groupId>
++          <artifactId>stax-api</artifactId>
+         </exclusion>
+-      </exclusions> 
++      </exclusions>
+     </dependency>
+ 
+     <!--  Jakarta XMLBind (nee javax/jaxb( annotation introspector is needed BUT ONLY
+@@ -105,6 +105,7 @@
+     <dependency>
+       <groupId>com.fasterxml.jackson.module</groupId>
+       <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
++      <version>2.15.5-SNAPSHOT</version>
+       <scope>test</scope>
+     </dependency>
+ 
+@@ -131,9 +132,9 @@
+   <build>
+     <plugins>
+       <plugin>
+-	<groupId>org.jacoco</groupId>
+-	<artifactId>jacoco-maven-plugin</artifactId>
+-	<executions>
++        <groupId>org.jacoco</groupId>
++        <artifactId>jacoco-maven-plugin</artifactId>
++        <executions>
+           <execution>
+             <goals>
+               <goal>prepare-agent</goal>
+@@ -178,8 +179,8 @@
+         </plugin>
+       <!-- 20-Mar-2019, tatu: use Moditect for JDK9+ module info inclusion -->
+       <plugin>
+-	<groupId>org.moditect</groupId>
+-	<artifactId>moditect-maven-plugin</artifactId>
++        <groupId>org.moditect</groupId>
++        <artifactId>moditect-maven-plugin</artifactId>
+       </plugin>
+       <!-- 05-Jul-2020, tatu: Add gradle module metadata -->
+       <plugin>
+
+--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
++++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/JacksonXmlAnnotationIntrospector.java
+@@ -1,12 +1,14 @@
+ package com.fasterxml.jackson.dataformat.xml;
+ 
+ import java.lang.annotation.Annotation;
++import java.util.List;
+ 
+ import com.fasterxml.jackson.annotation.JsonProperty;
+ import com.fasterxml.jackson.databind.PropertyName;
+ import com.fasterxml.jackson.databind.cfg.MapperConfig;
+ import com.fasterxml.jackson.databind.introspect.*;
+ import com.fasterxml.jackson.databind.jsontype.impl.StdTypeResolverBuilder;
++import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
+ import com.fasterxml.jackson.dataformat.xml.annotation.*;
+ 
+ /**
+@@ -86,7 +88,7 @@
+         }
+         return null;
+     }
+-    
++
+     @Override
+     public PropertyName findRootName(AnnotatedClass ac)
+     {
+@@ -94,7 +96,7 @@
+         if (root != null) {
+             String local = root.localName();
+             String ns = root.namespace();
+-            
++
+             if (local.length() == 0 && ns.length() == 0) {
+                 return PropertyName.USE_DEFAULT;
+             }
+@@ -139,7 +141,7 @@
+         }
+         return null;
+     }
+-    
++
+     @Override
+     public Boolean isOutputAsText(MapperConfig<?> config, Annotated ann)
+     {
+@@ -165,9 +167,29 @@
+     /**********************************************************************
+      */
+ 
++    /**
++     * NOTE: Unlike JSON, XML backend uses a custom {@link com.fasterxml.jackson.core.JsonGenerator}
++     * ({@link com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator}) which requires element/attribute
++     * name to be pre-resolved before value serialization.
++     *
++     * For "virtual" properties added by {@link com.fasterxml.jackson.databind.annotation.JsonAppend},
++     * {@link BeanPropertyWriter#serializeAsField} may call
++     * {@link com.fasterxml.jackson.core.JsonGenerator#writeFieldName(String)}.
++     * With XML generator, that call will overwrite any pre-configured name (set by
++     * {@link com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator#setNextName(javax.xml.namespace.QName)}),
++     * and may lead to duplicated output.
++     *
++     * To avoid that, we will *not* force XML-specific naming for virtual properties:
++     * they are handled by regular Jackson naming mechanisms.
++     */
+     @Override
+     public PropertyName findNameForSerialization(Annotated a)
+     {
++        // [dataformat-xml#578]: do not override naming for virtual properties (@JsonAppend)
++        if (a instanceof VirtualAnnotatedMember) {
++            return super.findNameForSerialization(a);
++        }
++
+         PropertyName name = _findXmlName(a);
+         if (name == null) {
+             name = super.findNameForSerialization(a);
+@@ -181,6 +203,18 @@
+     }
+ 
+     @Override
++    public void findAndAddVirtualProperties(MapperConfig<?> config,
++            AnnotatedClass ac, List<BeanPropertyWriter> properties)
++    {
++        // [dataformat-xml#578]: do NOT add virtual properties here.
++        //
++        // Xml module inserts this introspector in addition to the default
++        // JacksonAnnotationIntrospector, creating an AnnotationIntrospectorPair.
++        // The base implementation would add @JsonAppend virtual properties twice
++        // (once per introspector), so we leave handling to the default introspector.
++    }
++
++    @Override
+     public PropertyName findNameForDeserialization(Annotated a)
+     {
+         PropertyName name = _findXmlName(a);
+@@ -194,7 +228,7 @@
+         }
+         return name;
+     }
+-    
++
+     /*
+     /**********************************************************************
+     /* Overrides for non-public helper methods

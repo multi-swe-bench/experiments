@@ -1,0 +1,39 @@
+--- a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+@@ -276,7 +276,7 @@
+      *
+      * @since 2.15
+      */
+-    final protected StreamReadConstraints _streamReadConstraints;
++    protected StreamReadConstraints _streamReadConstraints;
+ 
+     /**
+      * Optional helper object that may decorate input sources, to do
+@@ -778,6 +778,27 @@
+         return _streamReadConstraints;
+     }
+ 
++    /**
++     * Method for overriding {@link StreamReadConstraints} to use for
++     * {@link JsonParser}s constructed using this factory.
++     * <p>
++     * NOTE: while configuration of constraints is usually done using
++     * {@link JsonFactoryBuilder} (via {@link TSFBuilder#streamReadConstraints(StreamReadConstraints)}),
++     * this setter can be used for existing {@link JsonFactory} instances.
++     *
++     * @param streamReadConstraints Constraints to use for streaming reads;
++     *   if {@code null} will be replaced with {@link StreamReadConstraints#defaults()}.
++     *
++     * @return This factory instance (to allow call chaining)
++     *
++     * @since 2.17
++     */
++    public JsonFactory setStreamReadConstraints(StreamReadConstraints streamReadConstraints) {
++        _streamReadConstraints = (streamReadConstraints == null)
++                ? StreamReadConstraints.defaults() : streamReadConstraints;
++        return this;
++    }
++
+     /*
+     /**********************************************************
+     /* Configuration, parser configuration

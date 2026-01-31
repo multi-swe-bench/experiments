@@ -1,0 +1,65 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java
+@@ -697,10 +697,50 @@
+     private JsonDeserializer<Object> _findDelegateDeserializer(DeserializationContext ctxt,
+             JavaType delegateType, AnnotatedWithParams delegateCreator) throws JsonMappingException
+     {
+-        // Need to create a temporary property to allow contextual deserializers:
++        // Need to create a temporary property to allow contextual deserializers.
++        //
++        // Important: for delegating creators, annotations on the delegating parameter
++        // must be used (not annotations on the constructor/factory method itself),
++        // as per [databind#4200].
++        AnnotatedMember delegateMember = delegateCreator;
++        if (delegateCreator != null) {
++            int ix = 0;
++            final int paramCount = delegateCreator.getParameterCount();
++            if (paramCount > 1) {
++                final AnnotationIntrospector intr = ctxt.getConfig().getAnnotationIntrospector();
++                if (intr != null) {
++                    // For explicit delegating creators with injectables, there should be exactly
++                    // one parameter without @JacksonInject; that's the delegating parameter.
++                    for (int i = 0; i < paramCount; ++i) {
++                        AnnotatedParameter p = delegateCreator.getParameter(i);
++                        if (intr.findInjectableValue(p) == null) {
++                            ix = i;
++                            break;
++                        }
++                    }
++                }
++            }
++            delegateMember = delegateCreator.getParameter(ix);
++        }
++
++        PropertyMetadata metadata = PropertyMetadata.STD_OPTIONAL;
++        if (delegateMember != null) {
++            final AnnotationIntrospector intr = ctxt.getConfig().getAnnotationIntrospector();
++            if (intr != null) {
++                final JsonSetter.Value setterInfo = intr.findSetterInfo(delegateMember);
++                if (setterInfo != null) {
++                    final Nulls valueNulls = setterInfo.nonDefaultValueNulls();
++                    final Nulls contentNulls = setterInfo.nonDefaultContentNulls();
++                    if ((valueNulls != null) || (contentNulls != null)) {
++                        metadata = metadata.withNulls(valueNulls, contentNulls);
++                    }
++                }
++            }
++        }
++
+         BeanProperty.Std property = new BeanProperty.Std(TEMP_PROPERTY_NAME,
+-                delegateType, null, delegateCreator,
+-                PropertyMetadata.STD_OPTIONAL);
++                delegateType, null, delegateMember,
++                metadata);
+         TypeDeserializer td = delegateType.getTypeHandler();
+         if (td == null) {
+             td = ctxt.getConfig().findTypeDeserializer(delegateType);
+@@ -795,7 +835,7 @@
+                 }
+                 JsonDeserializer<?> deser = ctxt.findRootValueDeserializer(idType);
+                 oir = ObjectIdReader.construct(idType, objectIdInfo.getPropertyName(),
+-                		idGen, deser, idProp, resolver);
++                                idGen, deser, idProp, resolver);
+             }
+         }
+         // either way, need to resolve serializer:

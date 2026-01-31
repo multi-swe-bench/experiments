@@ -1,0 +1,47 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java
++++ b/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java
+@@ -331,7 +331,7 @@
+     public Set<Map.Entry<String, JsonNode>> properties() {
+         return _children.entrySet();
+     }
+-    
++
+     @Override
+     public boolean equals(Comparator<JsonNode> comparator, JsonNode o)
+     {
+@@ -388,10 +388,9 @@
+                 foundSoFar = new ArrayList<>();
+             }
+             foundSoFar.add(jsonNode);
+-            return foundSoFar;
+         }
+ 
+-        // only add children if parent not added
++        // Must always traverse children to find all matches (see #4229)
+         for (JsonNode child : _children.values()) {
+             foundSoFar = child.findValues(propertyName, foundSoFar);
+         }
+@@ -407,10 +406,9 @@
+                 foundSoFar = new ArrayList<>();
+             }
+             foundSoFar.add(jsonNode.asText());
+-            return foundSoFar;
+         }
+ 
+-        // only add children if parent not added
++        // Must always traverse children to find all matches (see #4229)
+         for (JsonNode child : _children.values()) {
+             foundSoFar = child.findValuesAsText(propertyName, foundSoFar);
+         }
+@@ -442,10 +440,9 @@
+                 foundSoFar = new ArrayList<>();
+             }
+             foundSoFar.add(this);
+-            return foundSoFar;
+         }
+ 
+-        // only add children if parent not added
++        // Must always traverse children to find all matches (see #4229)
+         for (JsonNode child : _children.values()) {
+             foundSoFar = child.findParents(propertyName, foundSoFar);
+         }

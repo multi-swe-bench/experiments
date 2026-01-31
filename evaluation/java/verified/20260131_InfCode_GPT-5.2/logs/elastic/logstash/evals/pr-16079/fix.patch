@@ -1,0 +1,59 @@
+--- a/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java
++++ b/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -176,7 +176,10 @@
+             if (isDebugEnabled()) {
+                 System.err.println("Appending jvm options from environment LS_JAVA_OPTS");
+             }
+-            jvmOptionsContent.add(lsJavaOpts);
++            // LS_JAVA_OPTS may contain multiple options separated by whitespace.
++            // We split it into individual options so downstream logic (e.g., maxOrder detection)
++            // can reason about each option independently.
++            jvmOptionsContent.addAll(splitLsJavaOpts(lsJavaOpts));
+         }
+         // Set mandatory JVM options
+         jvmOptionsContent.addAll(getMandatoryJvmOptions(javaMajorVersion));
+@@ -187,6 +190,26 @@
+     }
+ 
+     /**
++     * Splits a LS_JAVA_OPTS string into individual JVM options.
++     *
++     * Historically LS_JAVA_OPTS was treated as a single JVM option string, which broke
++     * downstream logic that expects one option per element (e.g., detecting that the user
++     * has already set -Dio.netty.allocator.maxOrder).
++     *
++     * Note: this intentionally only splits on whitespace. Quoting/escaping is not supported
++     * because LS_JAVA_OPTS is intended for simple space-separated JVM options.
++     */
++    private static Collection<String> splitLsJavaOpts(final String lsJavaOpts) {
++        final String trimmed = lsJavaOpts.trim();
++        if (trimmed.isEmpty()) {
++            return Collections.emptyList();
++        }
++        return Arrays.stream(trimmed.split("\\s+"))
++                .filter(s -> !s.isBlank())
++                .collect(Collectors.toList());
++    }
++
++    /**
+      * Inplace method that verifies if Netty's maxOrder option is already set, else configure it to have
+      * the default value of 11.
+      *
+@@ -198,7 +221,7 @@
+         if (maxOrderAlreadyContained) {
+             return options;
+         }
+-        // Order is important because LS_JAVA_OPTS is added last and must take precedence 
++        // Order is important because LS_JAVA_OPTS is added last and must take precedence
+         // over settings in jvm.options
+         final Set<String> acc = new LinkedHashSet<>(options);
+         acc.add("-Dio.netty.allocator.maxOrder=11");

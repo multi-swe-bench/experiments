@@ -1,0 +1,53 @@
+--- a/gson/src/main/java/com/google/gson/internal/$Gson$Types.java
++++ b/gson/src/main/java/com/google/gson/internal/$Gson$Types.java
+@@ -334,26 +334,40 @@
+   }
+ 
+   public static Type resolve(Type context, Class<?> contextRawType, Type toResolve) {
+-    return resolve(context, contextRawType, toResolve, new HashSet<TypeVariable>());
++    return resolve(context, contextRawType, toResolve, new HashMap<TypeVariable<?>, Type>());
+   }
+ 
+   private static Type resolve(Type context, Class<?> contextRawType, Type toResolve,
+-                              Collection<TypeVariable> visitedTypeVariables) {
++      Map<TypeVariable<?>, Type> visitedTypeVariables) {
+     // this implementation is made a little more complicated in an attempt to avoid object-creation
+     while (true) {
+       if (toResolve instanceof TypeVariable) {
+         TypeVariable<?> typeVariable = (TypeVariable<?>) toResolve;
+-        if (visitedTypeVariables.contains(typeVariable)) {
+-          // cannot reduce due to infinite recursion
+-          return toResolve;
+-        } else {
+-          visitedTypeVariables.add(typeVariable);
++
++        // The same type variable can occur multiple times in the same type (e.g. Map<T, T>). Once a
++        // value has been resolved for a type variable, all further occurrences must resolve to the
++        // same type.
++        //
++        // To avoid infinite recursion (T -> ... -> T), track type variables currently being
++        // resolved by mapping them to themselves.
++        Type previouslyResolved = visitedTypeVariables.get(typeVariable);
++        if (previouslyResolved != null) {
++          return previouslyResolved;
+         }
+-        toResolve = resolveTypeVariable(context, contextRawType, typeVariable);
+-        if (toResolve == typeVariable) {
+-          return toResolve;
++
++        // Mark 'typeVariable' as being resolved.
++        visitedTypeVariables.put(typeVariable, typeVariable);
++
++        Type resolved = resolveTypeVariable(context, contextRawType, typeVariable);
++        if (resolved == typeVariable) {
++          return typeVariable;
+         }
+ 
++        // Resolve any nested type variables in the result and remember the final resolution.
++        Type result = resolve(context, contextRawType, resolved, visitedTypeVariables);
++        visitedTypeVariables.put(typeVariable, result);
++        return result;
++
+       } else if (toResolve instanceof Class && ((Class<?>) toResolve).isArray()) {
+         Class<?> original = (Class<?>) toResolve;
+         Type componentType = original.getComponentType();

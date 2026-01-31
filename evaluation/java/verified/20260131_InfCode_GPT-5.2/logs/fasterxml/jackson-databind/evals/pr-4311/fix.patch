@@ -1,0 +1,23 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java
++++ b/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java
+@@ -475,8 +475,9 @@
+         // And use custom naming strategy, if applicable...
+         // 18-Jan-2021, tatu: To be done before trimming, to resolve
+         //   [databind#3368]
++        // 30-Dec-2023, tatu: But NOT for Enum-as-POJO (Shape.OBJECT); see [databind#4302]
+         PropertyNamingStrategy naming = _findNamingStrategy();
+-        if (naming != null) {
++        if ((naming != null) && !_type.isEnumType()) {
+             _renameUsing(props, naming);
+         }
+ 
+@@ -873,7 +874,7 @@
+                 implName = _accessorNaming.findNameForMutator(m, m.getName());
+             }
+             if (implName == null) { // if not, must skip
+-            	return;
++                return;
+             }
+             visible = _visibilityChecker.isSetterVisible(m);
+         } else { // explicit indication of inclusion, but may be empty
+

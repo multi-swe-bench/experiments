@@ -1,0 +1,72 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java
+@@ -1,6 +1,8 @@
+ package com.fasterxml.jackson.databind.deser.std;
+ 
+ import java.io.IOException;
++import java.util.ArrayList;
++import java.util.List;
+ 
+ import com.fasterxml.jackson.core.*;
+ 
+@@ -8,6 +10,7 @@
+ import com.fasterxml.jackson.databind.deser.BeanDeserializer;
+ import com.fasterxml.jackson.databind.deser.SettableBeanProperty;
+ import com.fasterxml.jackson.databind.util.NameTransformer;
++import com.fasterxml.jackson.databind.util.TokenBuffer;
+ 
+ /**
+  * Deserializer that builds on basic {@link BeanDeserializer} but
+@@ -102,6 +105,7 @@
+         Object[] pending = null;
+         Throwable[] suppressed = null;
+         int pendingIx = 0;
++        List<Object> pendingAny = null;
+ 
+         for (; !p.hasToken(JsonToken.END_OBJECT); p.nextToken()) {
+             String propName = p.currentName();
+@@ -150,7 +154,20 @@
+                 continue;
+             }
+             if (_anySetter != null) {
+-                _anySetter.deserializeAndSet(p, ctxt, throwable, propName);
++                // 27-Jan-2024, tatu: If "any setter" is a field (Map/ObjectNode) it
++                //   needs actual instance. For Throwables instance may be constructed
++                //   lazily based on "message"; if so, buffer values until instance exists.
++                if (throwable != null) {
++                    _anySetter.deserializeAndSet(p, ctxt, throwable, propName);
++                    continue;
++                }
++                if (pendingAny == null) {
++                    pendingAny = new ArrayList<>();
++                }
++                TokenBuffer tb = new TokenBuffer(p, ctxt);
++                tb.copyCurrentStructure(p);
++                pendingAny.add(propName);
++                pendingAny.add(tb);
+                 continue;
+             }
+ 
+@@ -182,8 +199,20 @@
+         // any pending values?
+         if (pending != null) {
+             for (int i = 0, len = pendingIx; i < len; i += 2) {
+-                SettableBeanProperty prop = (SettableBeanProperty)pending[i];
+-                prop.set(throwable, pending[i+1]);
++                SettableBeanProperty prop = (SettableBeanProperty) pending[i];
++                prop.set(throwable, pending[i + 1]);
++            }
++        }
++
++        // any buffered any-setter values?
++        if (pendingAny != null) {
++            for (int i = 0, len = pendingAny.size(); i < len; i += 2) {
++                final String name = (String) pendingAny.get(i);
++                final TokenBuffer tb = (TokenBuffer) pendingAny.get(i + 1);
++                try (JsonParser p2 = tb.asParser(p)) {
++                    p2.nextToken();
++                    _anySetter.deserializeAndSet(p2, ctxt, throwable, name);
++                }
+             }
+         }
+ 

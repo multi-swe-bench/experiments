@@ -1,0 +1,49 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java
+@@ -190,6 +190,20 @@
+         NON_FINAL,
+ 
+         /**
++         * Variant of {@link #NON_FINAL} that also includes Enum implementation types
++         * (even though Enums are final).
++         *<p>
++         * This is useful for "untyped" use cases where Enums are passed through APIs
++         * as {@code Object} and would otherwise be serialized as simple strings, losing
++         * type information on round-trip.
++         *<p>
++         * Since 2.4, this does NOT apply to {@link TreeNode} and its subtypes.
++         *
++         * @since 2.17
++         */
++        NON_FINAL_AND_ENUMS,
++
++        /**
+          * Value that means that default typing will be used for
+          * all types, with exception of small number of
+          * "natural" types (String, Boolean, Integer, Double) that
+@@ -346,6 +360,7 @@
+                                 && !TreeNode.class.isAssignableFrom(t.getRawClass()));
+ 
+             case NON_FINAL:
++            case NON_FINAL_AND_ENUMS:
+                 while (t.isArrayType()) {
+                     t = t.getContentType();
+                 }
+@@ -354,7 +369,15 @@
+                     t = t.getReferencedType();
+                 }
+                 // [databind#88] Should not apply to JSON tree models:
+-                return !t.isFinal() && !TreeNode.class.isAssignableFrom(t.getRawClass());
++                if (TreeNode.class.isAssignableFrom(t.getRawClass())) {
++                    return false;
++                }
++                // Enums are final but are often used as untyped scalars and need type ids
++                // for round-tripping through Object.
++                if ((_appliesFor == DefaultTyping.NON_FINAL_AND_ENUMS) && t.isEnumType()) {
++                    return true;
++                }
++                return !t.isFinal();
+             case EVERYTHING:
+                 // So, excluding primitives (handled earlier) and "Natural types" (handled
+                 // before this method is called), applied to everything
+

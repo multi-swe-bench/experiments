@@ -1,0 +1,45 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -461,19 +461,27 @@
+     private void finalizeSegment(final FinalizeWhen finalizeWhen) throws IOException {
+         lock.lock();
+         try {
+-            if (!isCurrentWriterStale() && finalizeWhen == FinalizeWhen.ONLY_IF_STALE)
++            // Always enforce the age retention policy, even when the current head segment has not
++            // received any writes (and therefore cannot be considered "stale" for finalization).
++            if (finalizeWhen == FinalizeWhen.ONLY_IF_STALE && !isCurrentWriterStale()) {
++                executeAgeRetentionPolicy();
+                 return;
++            }
+ 
++            boolean segmentFinalized = false;
+             if (currentWriter != null && currentWriter.hasWritten()) {
+                 currentWriter.close();
+                 Files.move(queuePath.resolve(String.format(TEMP_FILE_PATTERN, currentSegmentIndex)),
+                         queuePath.resolve(String.format(SEGMENT_FILE_PATTERN, currentSegmentIndex)),
+                         StandardCopyOption.ATOMIC_MOVE);
+                 updateOldestSegmentReference();
+-                executeAgeRetentionPolicy();
+-                if (isOpen()) {
+-                    nextWriter();
+-                }
++                segmentFinalized = true;
++            }
++
++            executeAgeRetentionPolicy();
++
++            if (segmentFinalized && isOpen()) {
++                nextWriter();
+             }
+         } finally {
+             lock.unlock();
+

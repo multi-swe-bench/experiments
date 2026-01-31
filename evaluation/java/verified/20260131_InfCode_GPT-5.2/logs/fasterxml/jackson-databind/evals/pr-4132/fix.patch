@@ -1,0 +1,79 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/JsonNode.java
++++ b/src/main/java/com/fasterxml/jackson/databind/JsonNode.java
+@@ -1024,7 +1024,7 @@
+ 
+     /**
+      * Accessor that will return properties of {@code ObjectNode}
+-     * similar to how {@link Map#entrySet()} works; 
++     * similar to how {@link Map#entrySet()} works;
+      * for other node types will return empty {@link java.util.Set}.
+      *
+      * @return Set of properties, if this node is an {@code ObjectNode}
+@@ -1151,8 +1151,14 @@
+      *
+      * @since 2.14
+      */
+-    public final ObjectNode withObject(String expr) {
+-        return withObject(JsonPointer.compile(expr));
++    public final ObjectNode withObject(String exprOrProperty) {
++        // 13-Jul-2023, tatu: For backward-compatibility (pre-2.14 `with(String)` behavior),
++        // allow non-JSON-Pointer input to mean "simple property name".
++        // Only expressions that are empty (root) or start with '/' are considered pointers.
++        if (exprOrProperty.isEmpty() || (exprOrProperty.charAt(0) == '/')) {
++            return withObject(JsonPointer.compile(exprOrProperty));
++        }
++        return withObjectProperty(exprOrProperty);
+     }
+ 
+     /**
+@@ -1163,9 +1169,39 @@
+      *
+      * @since 2.14
+      */
+-    public final ObjectNode withObject(String expr,
++    public final ObjectNode withObject(String exprOrProperty,
+             OverwriteMode overwriteMode, boolean preferIndex) {
+-        return withObject(JsonPointer.compile(expr), overwriteMode, preferIndex);
++        if (exprOrProperty.isEmpty() || (exprOrProperty.charAt(0) == '/')) {
++            return withObject(JsonPointer.compile(exprOrProperty), overwriteMode, preferIndex);
++        }
++        // Property-name case.
++        //
++        // For ObjectNodes we want to honor overwrite semantics, which are implemented
++        // by pointer-based traversal, so we construct a single-segment pointer.
++        // For other container types (ArrayNode) a property name is not meaningful;
++        // route through `withObjectProperty()` for consistent failure.
++        if (this instanceof ObjectNode) {
++            return withObject(_jsonPointerForProperty(exprOrProperty), overwriteMode, preferIndex);
++        }
++        return withObjectProperty(exprOrProperty);
++    }
++
++    private static JsonPointer _jsonPointerForProperty(String propName) {
++        // RFC-6901: escape "~" as "~0" and "/" as "~1" within a segment
++        final int len = propName.length();
++        StringBuilder sb = new StringBuilder(len + 1);
++        sb.append('/');
++        for (int i = 0; i < len; ++i) {
++            char c = propName.charAt(i);
++            if (c == '/') {
++                sb.append("~1");
++            } else if (c == '~') {
++                sb.append("~0");
++            } else {
++                sb.append(c);
++            }
++        }
++        return JsonPointer.compile(sb.toString());
+     }
+ 
+     /**
+@@ -1468,7 +1504,7 @@
+         throw new UnsupportedOperationException("`JsonNode` not of type `ObjectNode` (but `"
+                 +getClass().getName()+")`, cannot call `withArrayProperty(String)` on it");
+     }
+-    
++
+     /*
+     /**********************************************************
+     /* Public API, comparison

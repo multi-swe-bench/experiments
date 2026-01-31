@@ -1,0 +1,87 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -117,6 +117,7 @@
+         private QueueStorageType storageType = QueueStorageType.DROP_NEWER;
+         private Duration retentionTime = null;
+         private Clock clock = Clock.systemDefaultZone();
++        private boolean flushSchedulerEnabled = true;
+ 
+         private Builder(Path queuePath, long maxSegmentSize, long maxQueueSize, Duration flushInterval) {
+             this.queuePath = queuePath;
+@@ -141,8 +142,14 @@
+             return this;
+         }
+ 
++        @VisibleForTesting
++        Builder flushSchedulerEnabled(boolean enabled) {
++            this.flushSchedulerEnabled = enabled;
++            return this;
++        }
++
+         public DeadLetterQueueWriter build() throws IOException {
+-            return new DeadLetterQueueWriter(queuePath, maxSegmentSize, maxQueueSize, flushInterval, storageType, retentionTime, clock);
++            return new DeadLetterQueueWriter(queuePath, maxSegmentSize, maxQueueSize, flushInterval, storageType, retentionTime, clock, flushSchedulerEnabled);
+         }
+     }
+ 
+@@ -153,7 +160,7 @@
+ 
+     private DeadLetterQueueWriter(final Path queuePath, final long maxSegmentSize, final long maxQueueSize,
+                           final Duration flushInterval, final QueueStorageType storageType, final Duration retentionTime,
+-                          final Clock clock) throws IOException {
++                          final Clock clock, final boolean flushSchedulerEnabled) throws IOException {
+         this.clock = clock;
+ 
+         this.fileLock = FileLockFactory.obtainLock(queuePath, LOCK_FILE);
+@@ -173,7 +180,9 @@
+                 .max().orElse(0);
+         nextWriter();
+         this.lastEntryTimestamp = Timestamp.now();
+-        createFlushScheduler();
++        if (flushSchedulerEnabled) {
++            createFlushScheduler();
++        }
+     }
+ 
+     public boolean isOpen() {
+@@ -222,10 +231,12 @@
+                 logger.warn("Unable to release fileLock, ignoring", e);
+             }
+ 
+-            try {
+-                flushScheduler.shutdown();
+-            } catch (Exception e) {
+-                logger.warn("Unable shutdown flush scheduler, ignoring", e);
++            if (flushScheduler != null) {
++                try {
++                    flushScheduler.shutdown();
++                } catch (Exception e) {
++                    logger.warn("Unable shutdown flush scheduler, ignoring", e);
++                }
+             }
+         }
+     }
+@@ -442,9 +453,11 @@
+     }
+ 
+     private void flushCheck() {
+-        try{
++        try {
++            // ensure retention policy is evaluated even when head segment has never received any write
++            executeAgeRetentionPolicy();
+             finalizeSegment(FinalizeWhen.ONLY_IF_STALE);
+-        } catch (Exception e){
++        } catch (Exception e) {
+             logger.warn("unable to finalize segment", e);
+         }
+     }
+

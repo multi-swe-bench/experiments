@@ -1,0 +1,223 @@
+--- a/src/main/java/com/fasterxml/jackson/core/JsonGenerator.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonGenerator.java
+@@ -171,7 +171,7 @@
+     /**
+      * Bulk access method for getting state of all standard (non-dataformat-specific)
+      * {@link StreamWriteFeature}s.
+-     * 
++     *
+      * @return Bit mask that defines current states of all standard {@link StreamWriteFeature}s.
+      *
+      * @since 3.0
+@@ -181,7 +181,7 @@
+     /**
+      * Bulk access method for getting state of all {@link FormatFeature}s, format-specific
+      * on/off configuration settings.
+-     * 
++     *
+      * @return Bit mask that defines current states of all standard {@link FormatFeature}s.
+      *
+      * @since 3.0
+@@ -204,9 +204,9 @@
+      *<p>
+      * If generator does not support specified schema, {@link UnsupportedOperationException}
+      * is thrown.
+-     * 
++     *
+      * @param schema Schema to use
+-     * 
++     *
+      * @throws UnsupportedOperationException if generator does not support schema
+      */
+     /*
+@@ -245,7 +245,7 @@
+      *<p>
+      * Default implementation does nothing; sub-classes need to redefine
+      * it according to rules of supported data format.
+-     * 
++     *
+      * @param charCode Either -1 to indicate that no additional escaping
+      *   is to be done; or highest code point not to escape (meaning higher
+      *   ones will be), if positive value.
+@@ -260,7 +260,7 @@
+      * Some generators may not support additional escaping: for example,
+      * generators for binary formats that do not use escaping should
+      * simply return 0.
+-     * 
++     *
+      * @return Currently active limitation for highest non-escaped character,
+      *   if defined; or 0 to indicate no additional escaping is performed.
+      */
+@@ -281,7 +281,7 @@
+      * Default implementation does nothing and simply returns this instance.
+      */
+     public JsonGenerator setCharacterEscapes(CharacterEscapes esc) { return this; }
+-    
++
+     /*
+     /**********************************************************************
+     /* Public API, capability introspection methods
+@@ -291,13 +291,13 @@
+     /**
+      * Method that can be used to verify that given schema can be used with
+      * this generator.
+-     * 
++     *
+      * @param schema Schema to check
+-     * 
++     *
+      * @return True if this generator can use given schema; false if not
+      */
+     public boolean canUseSchema(FormatSchema schema) { return false; }
+-    
++
+     /**
+      * Introspection method that may be called to see if the underlying
+      * data format supports some kind of Object Ids natively (many do not;
+@@ -335,7 +335,7 @@
+      * that do support native binary content.
+      */
+     public boolean canWriteBinaryNatively() { return false; }
+-    
++
+     /**
+      * Introspection method to call to check whether it is ok to omit
+      * writing of Object fields or not. Most formats do allow omission,
+@@ -391,7 +391,7 @@
+      * Java object that the Array Object being written represents (if any)
+      * and how many elements will be written for the array before calling
+      * {@link #writeEndArray()}.
+-     * 
++     *
+      * @param currentValue Java Object that Array being written represents, if any
+      *    (or {@code null} if not known or not applicable)
+      * @param size Number of elements this array will have: actual
+@@ -794,7 +794,7 @@
+ 
+     /**
+      * Similar to {@link #writeBinary(Base64Variant,byte[],int,int)},
+-     * but default to using the Jackson default Base64 variant 
++     * but default to using the Jackson default Base64 variant
+      * (which is {@link Base64Variants#MIME_NO_LINEFEEDS}).
+      */
+     public void writeBinary(byte[] data, int offset, int len) throws IOException {
+@@ -803,7 +803,7 @@
+ 
+     /**
+      * Similar to {@link #writeBinary(Base64Variant,byte[],int,int)},
+-     * but assumes default to using the Jackson default Base64 variant 
++     * but assumes default to using the Jackson default Base64 variant
+      * (which is {@link Base64Variants#MIME_NO_LINEFEEDS}). Also
+      * assumes that whole byte array is to be output.
+      */
+@@ -813,9 +813,9 @@
+ 
+     /**
+      * Similar to {@link #writeBinary(Base64Variant,InputStream,int)},
+-     * but assumes default to using the Jackson default Base64 variant 
++     * but assumes default to using the Jackson default Base64 variant
+      * (which is {@link Base64Variants#MIME_NO_LINEFEEDS}).
+-     * 
++     *
+      * @param data InputStream to use for reading binary data to write.
+      *    Will not be closed after successful write operation
+      * @param dataLength (optional) number of bytes that will be available;
+@@ -828,12 +828,12 @@
+         throws IOException {
+         return writeBinary(Base64Variants.getDefaultVariant(), data, dataLength);
+     }
+-    
++
+     /**
+      * Method similar to {@link #writeBinary(Base64Variant,byte[],int,int)},
+      * but where input is provided through a stream, allowing for incremental
+      * writes without holding the whole input in memory.
+-     * 
++     *
+      * @param bv Base64 variant to use
+      * @param data InputStream to use for reading binary data to write.
+      *    Will not be closed after successful write operation
+@@ -845,7 +845,7 @@
+      *    need not support cases where length is not known in advance; this
+      *    depends on underlying data format: JSON output does NOT require length,
+      *    other formats may.
+-     * 
++     *
+      * @return Number of bytes read from <code>data</code> and written as binary payload
+      */
+     public abstract int writeBinary(Base64Variant bv,
+@@ -949,7 +949,7 @@
+      * for generator-wrappers around Java objects or JSON nodes.
+      * If implementation does not implement this method,
+      * it needs to throw {@link UnsupportedOperationException}.
+-     * 
++     *
+      * @throws UnsupportedOperationException If underlying data format does not
+      *   support numbers serialized textually AND if generator is not allowed
+      *   to just output a String instead (Schema-based formats may require actual
+@@ -962,7 +962,7 @@
+     /* Public API, write methods, other value types
+     /**********************************************************************
+      */
+-    
++
+     /**
+      * Method for outputting literal JSON boolean value (one of
+      * Strings 'true' and 'false').
+@@ -1032,7 +1032,7 @@
+     public void writeObjectRef(Object id) throws IOException {
+         throw new JsonGenerationException("No native support for writing Object Ids", this);
+     }
+-    
++
+     /**
+      * Method that can be called to output so-called native Type Id.
+      * Note that it may only be called after ensuring this is legal
+@@ -1079,7 +1079,7 @@
+                     && incl.requiresObjectContext()) {
+                 typeIdDef.include = incl = WritableTypeId.Inclusion.WRAPPER_ARRAY;
+             }
+-            
++
+             switch (incl) {
+             case PARENT_PROPERTY:
+                 // nothing to do here, as it has to be written in suffix...
+@@ -1289,6 +1289,37 @@
+     }
+ 
+     /**
++     * Convenience method for outputting a field entry ("member")
++     * that has the specified numeric value.
++     * Equivalent to:
++     *<pre>
++     *  writeFieldName(fieldName);
++     *  writeNumber(value);
++     *</pre>
++     */
++    public void writeNumberField(String fieldName, BigInteger value) throws IOException {
++        writeFieldName(fieldName);
++        writeNumber(value);
++    }
++
++    /**
++     * Convenience method for outputting a field entry ("member")
++     * with a numeric value, serialized from given (trusted) textual representation.
++     * Equivalent to:
++     *<pre>
++     *  writeFieldName(fieldName);
++     *  writeNumber(encodedValue);
++     *</pre>
++     *
++     * @param encodedValue Textual representation of a number to write; must be a valid
++     *   JSON number value.
++     */
++    public void writeNumberField(String fieldName, String encodedValue) throws IOException {
++        writeFieldName(fieldName);
++        writeNumber(encodedValue);
++    }
++
++    /**
+      * Convenience method for outputting a field entry ("member")
+      * that contains specified data in base64-encoded form.
+      * Equivalent to:
+

@@ -1,0 +1,60 @@
+--- a/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java
++++ b/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -107,19 +107,39 @@
+         try {
+             Files.move(tmpPath, dirPath.resolve(fileName), StandardCopyOption.ATOMIC_MOVE);
+         } catch (IOException ex) {
+-            if (retry) {
++            if (!retry) {
++                logger.error("Error writing checkpoint: " + ex);
++                throw ex;
++            }
++
++            // On some platforms (notably Windows), transient failures can occur when a file is temporarily locked
++            // by antivirus scanners or file explorers. A single fixed-delay retry is not always sufficient.
++            final int maxRetries = 10;
++            long backoffMillis = 250L;
++            IOException lastIOException = ex;
++
++            for (int attempt = 1; attempt <= maxRetries; attempt++) {
++                logger.error("Retrying after exception writing checkpoint (attempt " + attempt + " of " + maxRetries + ") after " + backoffMillis + "ms: " + lastIOException);
++                try {
++                    Thread.sleep(backoffMillis);
++                } catch (InterruptedException ie) {
++                    Thread.currentThread().interrupt();
++                    logger.error("Aborting after interruption while retrying checkpoint write: " + ie);
++                    throw lastIOException;
++                }
++
+                 try {
+-                    logger.error("Retrying after exception writing checkpoint: " + ex);
+-                    Thread.sleep(500);
+                     Files.move(tmpPath, dirPath.resolve(fileName), StandardCopyOption.ATOMIC_MOVE);
+-                } catch (IOException | InterruptedException ex2) {
+-                    logger.error("Aborting after second exception writing checkpoint: " + ex2);
+-                    throw ex;
++                    return;
++                } catch (IOException moveEx) {
++                    lastIOException = moveEx;
++                    // exponential backoff with an upper bound
++                    backoffMillis = Math.min(backoffMillis * 2L, 5000L);
+                 }
+-            } else {
+-                logger.error("Error writing checkpoint: " + ex);
+-                throw ex;
+             }
++
++            logger.error("Aborting after " + maxRetries + " retries writing checkpoint: " + lastIOException);
++            throw lastIOException;
+         }
+     }
+ 

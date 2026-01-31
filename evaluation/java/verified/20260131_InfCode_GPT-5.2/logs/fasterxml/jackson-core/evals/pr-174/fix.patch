@@ -1,0 +1,181 @@
+--- a/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonPointer.java
+@@ -12,9 +12,9 @@
+  * as well (not implemented yet for 2.3).
+  *<p>
+  * Instances are fully immutable and can be shared, cached.
+- * 
++ *
+  * @author Tatu Saloranta
+- * 
++ *
+  * @since 2.3
+  */
+ public class JsonPointer
+@@ -26,7 +26,7 @@
+      * node or position.
+      */
+     protected final static JsonPointer EMPTY = new JsonPointer();
+-    
++
+     /**
+      * Reference to rest of the pointer beyond currently matching
+      * segment (if any); null if this pointer refers to a matching
+@@ -45,7 +45,7 @@
+      * so that {@link #toString} should be as efficient as possible.
+      */
+     protected final String _asString;
+-    
++
+     protected final String _matchingPropertyName;
+ 
+     protected final int _matchingElementIndex;
+@@ -55,7 +55,7 @@
+     /* Cosntruction
+     /**********************************************************
+      */
+-    
++
+     /**
+      * Constructor used for creating "empty" instance, used to represent
+      * state that matches current node.
+@@ -79,18 +79,18 @@
+         _matchingPropertyName = segment;
+         _matchingElementIndex = _parseIndex(segment);
+     }
+-    
++
+     /*
+     /**********************************************************
+     /* Factory methods
+     /**********************************************************
+      */
+-    
++
+     /**
+      * Factory method that parses given input and construct matching pointer
+      * instance, if it represents a valid JSON Pointer: if not, a
+      * {@link IllegalArgumentException} is thrown.
+-     * 
++     *
+      * @throws IllegalArgumentException Thrown if the input does not present a valid JSON Pointer
+      *   expression: currently the only such expression is one that does NOT start with
+      *   a slash ('/').
+@@ -117,9 +117,9 @@
+     /* Factory method that composes a pointer instance, given a set
+      * of 'raw' segments: raw meaning that no processing will be done,
+      * no escaping may is present.
+-     * 
++     *
+      * @param segments
+-     * 
++     *
+      * @return Constructed path instance
+      */
+     /* TODO!
+@@ -129,13 +129,13 @@
+             return EMPTY;
+         }
+         JsonPointer prev = null;
+-                
++
+         for (String segment : segments) {
+             JsonPointer next = new JsonPointer()
+         }
+     }
+     */
+-    
++
+     /*
+     /**********************************************************
+     /* Public API
+@@ -151,13 +151,13 @@
+     /**
+      * Method that may be called to see if the pointer would match property
+      * (of a JSON Object) with given name.
+-     * 
++     *
+      * @since 2.5
+      */
+     public boolean matchesProperty(String name) {
+         return (_nextSegment != null) && _matchingPropertyName.equals(name);
+     }
+-    
++
+     public JsonPointer matchProperty(String name) {
+         if (_nextSegment == null || !_matchingPropertyName.equals(name)) {
+             return null;
+@@ -168,7 +168,7 @@
+     /**
+      * Method that may be called to see if the pointer would match
+      * array element (of a JSON Array) with given index.
+-     * 
++     *
+      * @since 2.5
+      */
+     public boolean matchesElement(int index) {
+@@ -194,6 +194,28 @@
+         return _headSegment;
+     }
+ 
++    /**
++     * Accessor for getting a pointer for the last segment of this pointer
++     * expression (i.e. the leaf segment).
++     * <p>
++     * For "empty" pointer (one that matches the current node), returns the
++     * same "empty" instance.
++     *
++     * @since 2.?? (added for issue #172)
++     */
++    public JsonPointer last() {
++        JsonPointer current = this;
++        // Empty pointer (or otherwise unusual case)
++        if (current._nextSegment == null) {
++            return current;
++        }
++        // Traverse until we reach the segment whose tail is the "empty" pointer
++        while (current._nextSegment != null && !current._nextSegment.matches()) {
++            current = current._nextSegment;
++        }
++        return current;
++    }
++
+     /*
+     /**********************************************************
+     /* Standard method overrides
+@@ -209,7 +231,7 @@
+         if (!(o instanceof JsonPointer)) return false;
+         return _asString.equals(((JsonPointer) o)._asString);
+     }
+-    
++
+     /*
+     /**********************************************************
+     /* Internal methods
+@@ -237,7 +259,7 @@
+         }
+         return NumberInput.parseInt(str);
+     }
+-    
++
+     protected static JsonPointer _parseTailAndHead(String input) {
+         final int end = input.length();
+ 
+@@ -269,7 +291,7 @@
+     /**
+      * Method called to parse tail of pointer path, when a potentially
+      * escaped character has been seen.
+-     * 
++     *
+      * @param input Full input for the tail being parsed
+      * @param i Offset to character after tilde
+      */
+@@ -304,7 +326,7 @@
+         // end of the road, last segment
+         return new JsonPointer(input, sb.toString(), EMPTY, EMPTY);
+     }
+-    
++
+     private static void _appendEscape(StringBuilder sb, char c) {
+         if (c == '0') {
+             c = '~';

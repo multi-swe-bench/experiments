@@ -1,0 +1,40 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java
++++ b/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java
+@@ -607,13 +607,24 @@
+             if (f.isTransient()) {
+                 // 20-May-2016, tatu: as per [databind#1184] explicit annotation should override
+                 //    "default" `transient`
++                // 25-Nov-2022, tatu: [databind#3682] Drop transient Fields early;
++                //     only retain if also have ignoral annotations (for name or ignoral)
++                //
++                // [databind#3948]: ensure explicit ignoral annotations (like @JsonIgnore)
++                // on transient fields can still be used to mark the logical property as
++                // ignored (and thus affect other accessors).
+                 if (!hasName) {
+-                    // 25-Nov-2022, tatu: [databind#3682] Drop transient Fields early;
+-                    //     only retain if also have ignoral annotations (for name or ignoral)
+                     if (transientAsIgnoral) {
++                        // When propagating transient marker, keep field (even if not visible)
++                        // so we can mark property as ignorable.
+                         ignored = true;
+                     } else {
+-                        continue;
++                        // Otherwise drop transient fields unless there is an explicit ignore
++                        // marker AND field itself is visible (so that behavior for non-visible
++                        // transient fields remains unchanged).
++                        if (!ignored || !visible) {
++                            continue;
++                        }
+                     }
+                 }
+             }
+@@ -870,7 +881,7 @@
+                 implName = _accessorNaming.findNameForMutator(m, m.getName());
+             }
+             if (implName == null) { // if not, must skip
+-            	return;
++                return;
+             }
+             visible = _visibilityChecker.isSetterVisible(m);
+         } else { // explicit indication of inclusion, but may be empty
+

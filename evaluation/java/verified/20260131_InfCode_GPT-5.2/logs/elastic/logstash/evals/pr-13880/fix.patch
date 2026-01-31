@@ -1,0 +1,29 @@
+--- a/bin/logstash.lib.sh
++++ b/bin/logstash.lib.sh
+@@ -101,6 +101,12 @@
+         JAVACMD="$LS_JAVA_HOME/bin/java"
+         if [ -d "${LOGSTASH_HOME}/${BUNDLED_JDK_PART}" -a -x "${LOGSTASH_HOME}/${BUNDLED_JDK_PART}/bin/java" ]; then
+           echo "WARNING: Using LS_JAVA_HOME while Logstash distribution comes with a bundled JDK."
++          if [ -f "${LOGSTASH_HOME}/${BUNDLED_JDK_PART}/JDK_VERSION" ]; then
++            BUNDLED_JDK_VERSION="$(head -n 1 "${LOGSTASH_HOME}/${BUNDLED_JDK_PART}/JDK_VERSION" 2>/dev/null | tr -d '\r')"
++            if [ -n "${BUNDLED_JDK_VERSION}" ]; then
++              echo "Bundled JDK version: ${BUNDLED_JDK_VERSION}"
++            fi
++          fi
+         fi
+       else
+         echo "Invalid LS_JAVA_HOME, doesn't contain bin/java executable."
+
+--- a/bin/setup.bat
++++ b/bin/setup.bat
+@@ -25,6 +25,10 @@
+   echo Using LS_JAVA_HOME defined java: %LS_JAVA_HOME%
+   if exist "%LS_HOME%\jdk" (
+     echo WARNING: Using LS_JAVA_HOME while Logstash distribution comes with a bundled JDK.
++    if exist "%LS_HOME%\jdk\JDK_VERSION" (
++      set /p BUNDLED_JDK_VERSION=<"%LS_HOME%\jdk\JDK_VERSION"
++      echo Bundled JDK version: !BUNDLED_JDK_VERSION!
++    )
+   )
+ ) else (
+   if exist "%LS_HOME%\jdk" (

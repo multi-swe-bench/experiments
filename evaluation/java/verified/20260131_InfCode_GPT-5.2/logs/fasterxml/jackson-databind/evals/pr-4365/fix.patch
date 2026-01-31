@@ -1,0 +1,124 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
++++ b/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
+@@ -578,16 +578,15 @@
+     @Override
+     public PropertyName findNameForSerialization(Annotated a) {
+         PropertyName n = _primary.findNameForSerialization(a);
+-        // note: "use default" should not block explicit answer, so:
++        PropertyName n2 = _secondary.findNameForSerialization(a);
+         if (n == null) {
+-            n = _secondary.findNameForSerialization(a);
+-        } else if (n == PropertyName.USE_DEFAULT) {
+-            PropertyName n2 = _secondary.findNameForSerialization(a);
+-            if (n2 != null) {
+-                n = n2;
+-            }
++            return n2;
+         }
+-        return n;
++        if (n2 == null) {
++            return n;
++        }
++        // Merge simple name / namespace so neither is lost (databind#4364)
++        return n.merge(n2);
+     }
+ 
+     @Override
+@@ -657,7 +656,7 @@
+         Enum<?> en = _primary.findDefaultEnumValue(enumCls);
+         return (en == null) ? _secondary.findDefaultEnumValue(enumCls) : en;
+     }
+-    
++
+     @Override // since 2.16
+     public Enum<?> findDefaultEnumValue(AnnotatedClass annotatedClass, Enum<?>[] enumValues) {
+         Enum<?> en = _primary.findDefaultEnumValue(annotatedClass, enumValues);
+@@ -764,17 +763,16 @@
+     @Override
+     public PropertyName findNameForDeserialization(Annotated a)
+     {
+-        // note: "use default" should not block explicit answer, so:
+         PropertyName n = _primary.findNameForDeserialization(a);
++        PropertyName n2 = _secondary.findNameForDeserialization(a);
+         if (n == null) {
+-            n = _secondary.findNameForDeserialization(a);
+-        } else if (n == PropertyName.USE_DEFAULT) {
+-            PropertyName n2 = _secondary.findNameForDeserialization(a);
+-            if (n2 != null) {
+-                n = n2;
+-            }
++            return n2;
++        }
++        if (n2 == null) {
++            return n;
+         }
+-        return n;
++        // Merge simple name / namespace so neither is lost (databind#4364)
++        return n.merge(n2);
+     }
+ 
+     @Override
+
+--- a/src/main/java/com/fasterxml/jackson/databind/PropertyName.java
++++ b/src/main/java/com/fasterxml/jackson/databind/PropertyName.java
+@@ -213,6 +213,60 @@
+ 
+     /*
+     /**********************************************************
++    /* Merging
++    /**********************************************************
++     */
++
++    /**
++     * Helper method for merging this {@link PropertyName} with another one, typically
++     * from different configuration/annotation source.
++     * <p>
++     * Merging is done by using the first explicit value found for each component
++     * (simple name and namespace) when values are missing from either instance.
++     *
++     * @param other PropertyName to merge in (usually with lower precedence)
++     *
++     * @return Result of merge; may be {@code this}, {@code other}, or a new instance.
++     *
++     * @since 2.18
++     */
++    public PropertyName merge(PropertyName other)
++    {
++        if (other == null || other == this) {
++            return this;
++        }
++        // Explicit "no name" should remain as-is
++        if (this == NO_NAME || other == NO_NAME) {
++            return this;
++        }
++        // Explicit defaulting should not prevent use of actual explicit value
++        if (this == USE_DEFAULT) {
++            return other;
++        }
++        if (other == USE_DEFAULT) {
++            return this;
++        }
++
++        final String simple = this.hasSimpleName() ? _simpleName
++                : (other.hasSimpleName() ? other._simpleName : _simpleName);
++        final String ns = this.hasNamespace() ? _namespace
++                : (other.hasNamespace() ? other._namespace : _namespace);
++
++        if (simple.equals(_simpleName) && Objects.equals(ns, _namespace)) {
++            return this;
++        }
++        if (simple.equals(other._simpleName) && Objects.equals(ns, other._namespace)) {
++            return other;
++        }
++        // Avoid constructing new instance for "use default" case
++        if (ns == null && simple.isEmpty()) {
++            return USE_DEFAULT;
++        }
++        return new PropertyName(simple, ns);
++    }
++
++    /*
++    /**********************************************************
+     /* Std method overrides
+     /**********************************************************
+      */

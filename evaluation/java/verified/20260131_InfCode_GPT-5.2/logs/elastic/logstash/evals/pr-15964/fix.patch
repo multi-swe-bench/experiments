@@ -1,0 +1,64 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -132,8 +132,15 @@
+ 
+         /**
+          * Register the callback action to invoke on every clock tick.
+-         * */
++         */
+         void repeatedAction(Runnable action);
++
++        /**
++         * Shutdown any scheduler/executor resources so that no further scheduled actions are executed.
++         */
++        default void shutdown() {
++            // Noop
++        }
+     }
+ 
+     private static class FixedRateScheduler implements SchedulerService {
+@@ -155,6 +162,11 @@
+         public void repeatedAction(Runnable action) {
+             scheduledExecutor.scheduleAtFixedRate(action, 1L, 1L, TimeUnit.SECONDS);
+         }
++
++        @Override
++        public void shutdown() {
++            scheduledExecutor.shutdownNow();
++        }
+     }
+ 
+     private static class NoopScheduler implements SchedulerService {
+@@ -300,6 +312,13 @@
+     @Override
+     public void close() {
+         if (open.compareAndSet(true, false)) {
++            // ensure no further scheduled flush checks are executed while we are closing
++            try {
++                flusherService.shutdown();
++            } catch (Exception e) {
++                logger.warn("Unable shutdown dlq flusher service, ignoring", e);
++            }
++
+             try {
+                 finalizeSegment(FinalizeWhen.ALWAYS, SealReason.DLQ_CLOSE);
+             } catch (Exception e) {
+@@ -549,6 +568,9 @@
+     }
+ 
+     private void scheduledFlushCheck() {
++        if (!isOpen()) {
++            return;
++        }
+         logger.trace("Running scheduled check");
+         lock.lock();
+         try {

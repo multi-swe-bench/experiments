@@ -1,0 +1,42 @@
+--- a/logstash-core/src/main/java/org/logstash/instrument/metrics/FlowMetric.java
++++ b/logstash-core/src/main/java/org/logstash/instrument/metrics/FlowMetric.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -20,6 +20,7 @@
+ package org.logstash.instrument.metrics;
+ 
+ import java.math.BigDecimal;
++import java.math.MathContext;
+ import java.math.RoundingMode;
+ import java.time.Duration;
+ import java.util.HashMap;
+@@ -133,10 +134,17 @@
+             // divide-by-zero safeguard
+             if (deltaDenominator == 0.0) { return OptionalDouble.empty(); }
+ 
+-            // To prevent the appearance of false-precision, we round to 3 decimal places.
+-            return OptionalDouble.of(BigDecimal.valueOf(deltaNumerator)
+-                                               .divide(BigDecimal.valueOf(deltaDenominator), 3, RoundingMode.HALF_UP)
+-                                               .doubleValue());
++            // To prevent the appearance of false-precision, we round using precision (significant figures),
++            // not scale (fixed number of digits after the decimal point).
++            //
++            // We currently aim for "3ish" significant figures, which keeps the rates readable while avoiding
++            // false precision.
++            final BigDecimal unroundedRate = BigDecimal.valueOf(deltaNumerator)
++                                                      .divide(BigDecimal.valueOf(deltaDenominator), MathContext.DECIMAL64);
++
++            final BigDecimal roundedRate = unroundedRate.round(new MathContext(3, RoundingMode.HALF_UP));
++
++            return OptionalDouble.of(roundedRate.doubleValue());
+         }
+ 
+         /**
+

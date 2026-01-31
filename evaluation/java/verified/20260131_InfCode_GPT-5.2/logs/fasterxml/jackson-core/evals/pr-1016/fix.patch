@@ -1,0 +1,36 @@
+--- a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+@@ -1299,7 +1299,7 @@
+         //   for non-JSON input:
+         _requireJSONFactory("Non-blocking source not (yet?) supported for this format (%s)");
+         IOContext ctxt = _createNonBlockingContext(null);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new NonBlockingJsonParser(ctxt, _parserFeatures, can);
+     }
+ 
+@@ -1326,7 +1326,7 @@
+         //   for non-JSON input:
+         _requireJSONFactory("Non-blocking source not (yet?) supported for this format (%s)");
+         IOContext ctxt = _createNonBlockingContext(null);
+-        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
++        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+         return new NonBlockingByteBufferJsonParser(ctxt, _parserFeatures, can);
+     }
+ 
+
+--- a/src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingJsonParserBase.java
++++ b/src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingJsonParserBase.java
+@@ -794,6 +794,12 @@
+         if (lastQuadBytes < 4) {
+             quads[qlen-1] = lastQuad;
+         }
++        // [core#1015]: if factory has disabled CANONICALIZE_FIELD_NAMES, we may be
++        // using a placeholder symbol table that does not support additions.
++        // In such case we must simply return the decoded name as-is.
++        if (!_symbols.isCanonicalizing()) {
++            return baseName;
++        }
+         return _symbols.addName(baseName, quads, qlen);
+     }
+ 

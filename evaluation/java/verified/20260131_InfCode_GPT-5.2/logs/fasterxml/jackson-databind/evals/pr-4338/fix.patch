@@ -1,0 +1,22 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/ser/std/ReferenceTypeSerializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ser/std/ReferenceTypeSerializer.java
+@@ -204,6 +204,11 @@
+         }
+         // First: do we have an annotation override from property?
+         JsonSerializer<?> ser = findAnnotatedContentSerializer(provider, property);
++
++        // [databind#4337]: allow using `@JsonSerialize(contentConverter=...)`
++        // for referential types (like `AtomicReference`)
++        ser = findContextualConvertingSerializer(provider, property, ser);
++
+         if (ser == null) {
+             // If not, use whatever was configured by type
+             ser = _valueSerializer;
+@@ -216,6 +221,7 @@
+                 ser = provider.handlePrimaryContextualization(ser, property);
+             }
+         }
++
+         // First, resolve wrt property, resolved serializers
+         ReferenceTypeSerializer<?> refSer;
+         if ((_property == property)

@@ -1,0 +1,194 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/util/EnumValues.java
++++ b/src/main/java/com/fasterxml/jackson/databind/util/EnumValues.java
+@@ -75,7 +75,7 @@
+     /**
+      * @since 2.16
+      */
+-    public static EnumValues constructFromName(MapperConfig<?> config, AnnotatedClass annotatedClass) 
++    public static EnumValues constructFromName(MapperConfig<?> config, AnnotatedClass annotatedClass)
+     {
+         // prepare data
+         final AnnotationIntrospector ai = config.getAnnotationIntrospector();
+@@ -85,7 +85,7 @@
+         final Enum<?>[] enumConstants = _enumConstants(enumCls0);
+ 
+         // introspect
+-        String[] names = ai.findEnumValues(config, annotatedClass, 
++        String[] names = ai.findEnumValues(config, annotatedClass,
+                 enumConstants, new String[enumConstants.length]);
+ 
+         // build
+@@ -129,6 +129,11 @@
+             if (name == null) {
+                 Enum<?> en = enumConstants[i];
+                 name = en.toString();
++                // [databind#4355]: in case of a broken Enum with `toString()` returning null,
++                // fall back to `name()` to avoid failures during Enum serializer construction.
++                if (name == null) {
++                    name = en.name();
++                }
+             }
+             if (useLowerCase) {
+                 name = name.toLowerCase();
+@@ -151,7 +156,12 @@
+         }
+         ArrayList<String> external = new ArrayList<>(values.length);
+         for (Enum<?> en : values) {
+-            external.add(en.toString());
++            String name = en.toString();
++            // [databind#4355]: see comment in {@link #constructFromToString(MapperConfig, AnnotatedClass)}
++            if (name == null) {
++                name = en.name();
++            }
++            external.add(name);
+         }
+         return construct(config, enumClass, external);
+     }
+@@ -240,7 +250,7 @@
+         return new EnumValues(enumClass, externalValues);
+     }
+ 
+-    /* 
++    /*
+     /**********************************************************************
+     /* Internal Helpers
+     /**********************************************************************
+@@ -262,7 +272,7 @@
+         }
+         return enumValues;
+     }
+-    
++
+     /*
+     /**********************************************************************
+     /* Public API
+
+--- a/src/main/java/com/fasterxml/jackson/databind/util/EnumResolver.java
++++ b/src/main/java/com/fasterxml/jackson/databind/util/EnumResolver.java
+@@ -182,7 +182,7 @@
+             ai.findEnumValues(config, annotatedClass, enumConstants, names);
+             ai.findEnumAliases(config, annotatedClass, enumConstants, allAliases);
+         }
+-        
++
+         // finally, build
+         // from last to first, so that in case of duplicate values, first wins
+         HashMap<String, Enum<?>> map = new HashMap<String, Enum<?>>();
+@@ -191,6 +191,11 @@
+             String name = names[i];
+             if (name == null) {
+                 name = enumValue.toString();
++                // [databind#4355]: in case of a broken Enum with `toString()` returning null,
++                // fall back to `name()` to avoid NPEs when building lookup Maps.
++                if (name == null) {
++                    name = enumValue.name();
++                }
+             }
+             map.put(name, enumValue);
+             String[] aliases = allAliases[i];
+@@ -230,7 +235,13 @@
+         // from last to first, so that in case of duplicate values, first wins
+         for (int i = enumConstants.length; --i >= 0; ) {
+             Enum<?> enumValue = enumConstants[i];
+-            map.put(enumValue.toString(), enumValue);
++            String name = enumValue.toString();
++            // [databind#4355]: in case of a broken Enum with `toString()` returning null,
++            // fall back to `name()` to avoid NPEs when building lookup Maps.
++            if (name == null) {
++                name = enumValue.name();
++            }
++            map.put(name, enumValue);
+             String[] aliases = allAliases[i];
+             if (aliases != null) {
+                 for (String alias : aliases) {
+@@ -251,7 +262,7 @@
+      * @since 2.16
+      */
+     public static EnumResolver constructUsingIndex(DeserializationConfig config,
+-            AnnotatedClass annotatedClass) 
++            AnnotatedClass annotatedClass)
+     {
+         // prepare data
+         final AnnotationIntrospector ai = config.getAnnotationIntrospector();
+@@ -306,7 +317,7 @@
+      * The output {@link EnumResolver} should contain values that are symmetric to
+      * {@link EnumValues#constructUsingEnumNamingStrategy(MapperConfig, Class, EnumNamingStrategy)}.
+      * @since 2.15
+-     * @deprecated Since 2.16. Use 
++     * @deprecated Since 2.16. Use
+      * {@link #constructUsingEnumNamingStrategy(DeserializationConfig, AnnotatedClass, EnumNamingStrategy)}.
+      */
+     @Deprecated
+@@ -355,7 +366,7 @@
+      * @since 2.16
+      */
+     public static EnumResolver constructUsingEnumNamingStrategy(DeserializationConfig config,
+-        AnnotatedClass annotatedClass, EnumNamingStrategy enumNamingStrategy) 
++        AnnotatedClass annotatedClass, EnumNamingStrategy enumNamingStrategy)
+     {
+         // prepare data
+         final AnnotationIntrospector ai = config.getAnnotationIntrospector();
+@@ -363,7 +374,7 @@
+         final Class<?> enumCls0 = annotatedClass.getRawType();
+         final Class<Enum<?>> enumCls = _enumClass(enumCls0);
+         final Enum<?>[] enumConstants = _enumConstants(enumCls0);
+-        
++
+         // introspect
+         final String[] names = new String[enumConstants.length];
+         final String[][] allAliases = new String[enumConstants.length][];
+@@ -401,7 +412,7 @@
+      * on a method in Enum class.
+      *
+      * @since 2.12
+-     * @deprecated Since 2.16. 
++     * @deprecated Since 2.16.
+      * Use {@link #constructUsingMethod(DeserializationConfig, AnnotatedClass, AnnotatedMember)} instead.
+      */
+     @Deprecated
+@@ -448,7 +459,7 @@
+         final Class<?> enumCls0 = annotatedClass.getRawType();
+         final Class<Enum<?>> enumCls = _enumClass(enumCls0);
+         final Enum<?>[] enumConstants = _enumConstants(enumCls0);
+-        
++
+         // build
+         HashMap<String, Enum<?>> map = new HashMap<String, Enum<?>>();
+         // from last to first, so that in case of duplicate values, first wins
+@@ -490,9 +501,9 @@
+ 
+     /**
+      * Internal helper method used to resolve Enum default value to use (if any).
+-     * 
++     *
+      * @since 2.16
+-     * @see AnnotationIntrospector#findDefaultEnumValue(AnnotatedClass, Enum[]) 
++     * @see AnnotationIntrospector#findDefaultEnumValue(AnnotatedClass, Enum[])
+      */
+     protected static Enum<?> _enumDefault(AnnotationIntrospector intr, AnnotatedClass annotatedClass, Enum<?>[] enums) {
+         return (intr != null) ? intr.findDefaultEnumValue(annotatedClass, enums) : null;
+
+--- a/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java
++++ b/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java
+@@ -248,7 +248,19 @@
+         _processor = processor;
+         // 31-Jan-2020: [databind#2482] Retain original location
+         if (problem instanceof JacksonException) {
+-            _location = ((JacksonException) problem).getLocation();
++            JsonLocation loc = ((JacksonException) problem).getLocation();
++            // [databind#2128]: normalize column numbering for low-level stream read
++            // exceptions (some versions of core report column after the offending
++            // character, whereas databind expects the start position).
++            if ((loc != null) && (loc != JsonLocation.NA)
++                    && (problem instanceof com.fasterxml.jackson.core.exc.StreamReadException)) {
++                int col = loc.getColumnNr();
++                if (col > 1) {
++                    loc = new JsonLocation(loc.contentReference(), loc.getByteOffset(), loc.getCharOffset(),
++                            loc.getLineNr(), col - 1);
++                }
++            }
++            _location = loc;
+         } else if (processor instanceof JsonParser) {
+             _location = ((JsonParser) processor).getTokenLocation();
+         }
+

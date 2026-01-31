@@ -1,0 +1,39 @@
+--- a/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineBusV2.java
++++ b/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineBusV2.java
+@@ -134,6 +134,8 @@
+ 
+         public AddressState.ReadOnly mutate(final String address,
+                                             final Consumer<AddressState> consumer) {
++            final PipelineInput[] inputToNotify = new PipelineInput[1];
++
+             final AddressState result = mapping.compute(address, (a, addressState) -> {
+                 if (addressState == null) {
+                     addressState = new AddressState(address);
+@@ -142,14 +144,22 @@
+                 consumer.accept(addressState);
+ 
+                 // If this addressState has a listener, ensure that any waiting
+-                // threads get notified so that they can resume immediately
+-                final PipelineInput currentInput = addressState.getInput();
+-                if (currentInput != null) {
+-                    synchronized (currentInput) { currentInput.notifyAll(); }
+-                }
++                // threads get notified so that they can resume immediately.
++                //
++                // IMPORTANT: do not take the listener's monitor while holding the
++                // ConcurrentHashMap's internal locks, or we risk deadlock with code
++                // paths that already hold the listener monitor and attempt to mutate
++                // the mapping (e.g., `unlistenBlocking`).
++                inputToNotify[0] = addressState.getInput();
+ 
+                 return addressState.isEmpty() ? null : addressState;
+             });
++
++            final PipelineInput currentInput = inputToNotify[0];
++            if (currentInput != null) {
++                synchronized (currentInput) { currentInput.notifyAll(); }
++            }
++
+             return result == null ? null : result.getReadOnlyView();
+         }
+ 

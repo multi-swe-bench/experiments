@@ -1,0 +1,464 @@
+--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java
++++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/ToXmlGenerator.java
+@@ -131,13 +131,13 @@
+     protected final XMLStreamWriter2 _xmlWriter;
+ 
+     protected final XMLStreamWriter _originalXmlWriter;
+-    
++
+     /**
+      * Marker flag set if the underlying stream writer has to emulate
+      * Stax2 API: this is problematic if trying to use {@link #writeRaw} calls.
+      */
+     protected final boolean _stax2Emulation;
+-    
++
+     protected final IOContext _ioContext;
+ 
+     /**
+@@ -160,7 +160,7 @@
+ 
+     /**
+      * Marker set when {@link #initGenerator()} has been called or not.
+-     * 
++     *
+      * @since 2.2
+      */
+     protected boolean _initialized;
+@@ -194,7 +194,7 @@
+ 
+     /**
+      * To support proper serialization of arrays it is necessary to keep
+-     * stack of element names, so that we can "revert" to earlier 
++     * stack of element names, so that we can "revert" to earlier
+      */
+     protected LinkedList<QName> _elementNameStack = new LinkedList<QName>();
+ 
+@@ -214,7 +214,7 @@
+         _xmlWriter = Stax2WriterAdapter.wrapIfNecessary(sw);
+         _stax2Emulation = (_xmlWriter != sw);
+         _xmlPrettyPrinter = (_cfgPrettyPrinter instanceof XmlPrettyPrinter) ?
+-        		(XmlPrettyPrinter) _cfgPrettyPrinter : null;
++                        (XmlPrettyPrinter) _cfgPrettyPrinter : null;
+     }
+ 
+     /**
+@@ -360,7 +360,7 @@
+     public XMLStreamWriter getStaxWriter() {
+         return _xmlWriter;
+     }
+-    
++
+     /*
+     /**********************************************************
+     /* Extended API, passing XML specific settings
+@@ -381,7 +381,7 @@
+     {
+         _nextIsCData = isCData;
+     }
+-    
++
+     public final void setNextName(QName name)
+     {
+         _nextName = name;
+@@ -390,7 +390,7 @@
+     /**
+      * Method that does same as {@link #setNextName}, unless
+      * a name has already been set.
+-     * 
++     *
+      * @since 2.1.2
+      */
+     public final boolean setNextNameIfMissing(QName name)
+@@ -401,11 +401,11 @@
+         }
+         return false;
+     }
+-    
++
+     /**
+      * Methdod called when a structured (collection, array, map) is being
+      * output.
+-     * 
++     *
+      * @param wrapperName Element used as wrapper around elements, if any (null if none)
+      * @param wrappedName Element used around individual content items (can not
+      *   be null)
+@@ -448,7 +448,7 @@
+ 
+     /**
+      * Trivial helper method called when to add a replicated wrapper name
+-     * 
++     *
+      * @since 2.2
+      */
+     public void writeRepeatedFieldName() throws IOException
+@@ -457,13 +457,13 @@
+             _reportError("Can not write a field name, expecting a value");
+         }
+     }
+-    
++
+     /*
+     /**********************************************************
+     /* JsonGenerator method overrides
+     /**********************************************************
+      */
+-    
++
+     /* Most overrides in this section are just to make methods final,
+      * to allow better inlining...
+      */
+@@ -478,7 +478,7 @@
+         String ns = (_nextName == null) ? "" : _nextName.getNamespaceURI();
+         setNextName(new QName(ns, name));
+     }
+-    
++
+     @Override
+     public final void writeStringField(String fieldName, String value) throws IOException
+     {
+@@ -492,7 +492,7 @@
+     //    handling...
+     //
+     //    See [dataformat-xml#4] for more context.
+-    
++
+     /*
+     // @since 2.9
+     public WritableTypeId writeTypePrefix(WritableTypeId typeIdDef) throws IOException
+@@ -523,7 +523,7 @@
+             // nothing to do here; no-operation
+         }
+     }
+-    
++
+     @Override
+     public final void writeEndArray() throws IOException
+     {
+@@ -580,7 +580,7 @@
+             StaxUtil.throwAsGenerationException(e, this);
+         }
+     }
+-    
++
+     // note: public just because pretty printer needs to make a callback
+     public final void _handleEndObject() throws IOException
+     {
+@@ -604,7 +604,7 @@
+             StaxUtil.throwAsGenerationException(e, this);
+         }
+     }
+-    
++
+     /*
+     /**********************************************************
+     /* Output method implementations, textual
+@@ -652,12 +652,12 @@
+                     _xmlWriter.writeCharacters(text);
+                 }
+                 _xmlWriter.writeEndElement();
+-            } 
++            }
+         } catch (XMLStreamException e) {
+             StaxUtil.throwAsGenerationException(e, this);
+         }
+-    }    
+-    
++    }
++
+     @Override
+     public void writeString(char[] text, int offset, int len) throws IOException
+     {
+@@ -669,7 +669,7 @@
+             if (_nextIsAttribute) {
+                 _xmlWriter.writeAttribute(_nextName.getNamespaceURI(), _nextName.getLocalPart(), new String(text, offset, len));
+             } else if (checkNextIsUnwrapped()) {
+-            	// should we consider pretty-printing or not?
++                // should we consider pretty-printing or not?
+                 if(_nextIsCData) {
+                     _xmlWriter.writeCData(text, offset, len);
+                 } else {
+@@ -697,7 +697,7 @@
+     public void writeString(SerializableString text) throws IOException {
+         writeString(text.getValue());
+     }
+-    
++
+     @Override
+     public void writeRawUTF8String(byte[] text, int offset, int length) throws IOException
+     {
+@@ -732,6 +732,10 @@
+ 
+             if (_nextIsAttribute) {
+                 _xmlWriter.writeAttribute(_nextName.getNamespaceURI(), _nextName.getLocalPart(), text);
++            } else if (checkNextIsUnwrapped()) {
++                // [dataformat-xml#545]: when used with @JacksonXmlText, raw value should be
++                // written as mixed content of the containing element
++                _xmlWriter.writeRaw(text);
+             } else {
+                 _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
+                 _xmlWriter.writeRaw(text);
+@@ -756,6 +760,9 @@
+ 
+             if (_nextIsAttribute) {
+                 _xmlWriter.writeAttribute(_nextName.getNamespaceURI(), _nextName.getLocalPart(), text.substring(offset, offset + len));
++            } else if (checkNextIsUnwrapped()) {
++                // [dataformat-xml#545]
++                _xmlWriter.writeRaw(text, offset, len);
+             } else {
+                 _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
+                 _xmlWriter.writeRaw(text, offset, len);
+@@ -779,6 +786,9 @@
+         try {
+             if (_nextIsAttribute) {
+                 _xmlWriter.writeAttribute(_nextName.getNamespaceURI(), _nextName.getLocalPart(), new String(text, offset, len));
++            } else if (checkNextIsUnwrapped()) {
++                // [dataformat-xml#545]
++                _xmlWriter.writeRaw(text, offset, len);
+             } else {
+                 _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
+                 _xmlWriter.writeRaw(text, offset, len);
+@@ -841,7 +851,7 @@
+     {
+         writeRaw(String.valueOf(c));
+     }
+-    
++
+     /*
+     /**********************************************************
+     /* Output method implementations, base64-encoded binary
+@@ -850,7 +860,7 @@
+ 
+     @Override
+     public void writeBinary(Base64Variant b64variant,
+-    		byte[] data, int offset, int len) throws IOException
++                byte[] data, int offset, int len) throws IOException
+     {
+         if (data == null) {
+             writeNull();
+@@ -868,7 +878,7 @@
+                 _xmlWriter.writeBinaryAttribute(stax2base64v,
+                         "", _nextName.getNamespaceURI(), _nextName.getLocalPart(), fullBuffer);
+             } else if (checkNextIsUnwrapped()) {
+-            	// should we consider pretty-printing or not?
++                // should we consider pretty-printing or not?
+                 _xmlWriter.writeBinary(stax2base64v, data, offset, len);
+             } else {
+                 if (_xmlPrettyPrinter != null) {
+@@ -927,7 +937,7 @@
+     }
+ 
+     private void writeStreamAsBinary(org.codehaus.stax2.typed.Base64Variant stax2base64v,
+-            InputStream data, int len) throws IOException, XMLStreamException 
++            InputStream data, int len) throws IOException, XMLStreamException
+     {
+         // base64 encodes up to 3 bytes into a 4 bytes string
+         byte[] tmp = new byte[3];
+@@ -964,7 +974,7 @@
+         return result;
+     }
+ 
+-    private byte[] toFullBuffer(InputStream data, final int len) throws IOException 
++    private byte[] toFullBuffer(InputStream data, final int len) throws IOException
+     {
+         byte[] result = new byte[len];
+         int offset = 0;
+@@ -996,17 +1006,17 @@
+             if (_nextIsAttribute) {
+                 _xmlWriter.writeBooleanAttribute(null, _nextName.getNamespaceURI(), _nextName.getLocalPart(), value);
+             } else if (checkNextIsUnwrapped()) {
+-            	// should we consider pretty-printing or not?
++                // should we consider pretty-printing or not?
+                 _xmlWriter.writeBoolean(value);
+             } else {
+                 if (_xmlPrettyPrinter != null) {
+-                	_xmlPrettyPrinter.writeLeafElement(_xmlWriter,
+-                			_nextName.getNamespaceURI(), _nextName.getLocalPart(),
+-                			value);
++                        _xmlPrettyPrinter.writeLeafElement(_xmlWriter,
++                                        _nextName.getNamespaceURI(), _nextName.getLocalPart(),
++                                        value);
+                 } else {
+-	                _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
+-	                _xmlWriter.writeBoolean(value);
+-	                _xmlWriter.writeEndElement();
++                        _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
++                        _xmlWriter.writeBoolean(value);
++                        _xmlWriter.writeEndElement();
+                 }
+             }
+         } catch (XMLStreamException e) {
+@@ -1026,7 +1036,7 @@
+                 // With attributes, best just leave it out, right? (since there's no way
+                 // to use 'xsi:nil')
+             } else if (checkNextIsUnwrapped()) {
+-            	// as with above, best left unwritten?
++                // as with above, best left unwritten?
+             } else {
+                 final boolean asXsiNil = isEnabled(Feature.WRITE_NULLS_AS_XSI_NIL);
+                 if (_xmlPrettyPrinter != null) {
+@@ -1065,17 +1075,17 @@
+             if (_nextIsAttribute) {
+                 _xmlWriter.writeIntAttribute(null, _nextName.getNamespaceURI(), _nextName.getLocalPart(), i);
+             } else if (checkNextIsUnwrapped()) {
+-            	// should we consider pretty-printing or not?
++                // should we consider pretty-printing or not?
+                 _xmlWriter.writeInt(i);
+             } else {
+                 if (_xmlPrettyPrinter != null) {
+-                	_xmlPrettyPrinter.writeLeafElement(_xmlWriter,
+-                			_nextName.getNamespaceURI(), _nextName.getLocalPart(),
+-                			i);
++                        _xmlPrettyPrinter.writeLeafElement(_xmlWriter,
++                                        _nextName.getNamespaceURI(), _nextName.getLocalPart(),
++                                        i);
+                 } else {
+-	                _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
+-	                _xmlWriter.writeInt(i);
+-	                _xmlWriter.writeEndElement();
++                        _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
++                        _xmlWriter.writeInt(i);
++                        _xmlWriter.writeEndElement();
+                 }
+             }
+         } catch (XMLStreamException e) {
+@@ -1097,13 +1107,13 @@
+                 _xmlWriter.writeLong(l);
+             } else {
+                 if (_xmlPrettyPrinter != null) {
+-                	_xmlPrettyPrinter.writeLeafElement(_xmlWriter,
+-                			_nextName.getNamespaceURI(), _nextName.getLocalPart(),
+-                			l);
++                        _xmlPrettyPrinter.writeLeafElement(_xmlWriter,
++                                        _nextName.getNamespaceURI(), _nextName.getLocalPart(),
++                                        l);
+                 } else {
+-	                _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
+-	                _xmlWriter.writeLong(l);
+-	                _xmlWriter.writeEndElement();
++                        _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
++                        _xmlWriter.writeLong(l);
++                        _xmlWriter.writeEndElement();
+                 }
+             }
+         } catch (XMLStreamException e) {
+@@ -1125,13 +1135,13 @@
+                 _xmlWriter.writeDouble(d);
+             } else {
+                 if (_xmlPrettyPrinter != null) {
+-                	_xmlPrettyPrinter.writeLeafElement(_xmlWriter,
+-                			_nextName.getNamespaceURI(), _nextName.getLocalPart(),
+-                			d);
++                        _xmlPrettyPrinter.writeLeafElement(_xmlWriter,
++                                        _nextName.getNamespaceURI(), _nextName.getLocalPart(),
++                                        d);
+                 } else {
+-	                _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
+-	                _xmlWriter.writeDouble(d);
+-	                _xmlWriter.writeEndElement();
++                        _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
++                        _xmlWriter.writeDouble(d);
++                        _xmlWriter.writeEndElement();
+                 }
+             }
+         } catch (XMLStreamException e) {
+@@ -1153,13 +1163,13 @@
+                 _xmlWriter.writeFloat(f);
+             } else {
+                 if (_xmlPrettyPrinter != null) {
+-                	_xmlPrettyPrinter.writeLeafElement(_xmlWriter,
+-                			_nextName.getNamespaceURI(), _nextName.getLocalPart(),
+-                			f);
++                        _xmlPrettyPrinter.writeLeafElement(_xmlWriter,
++                                        _nextName.getNamespaceURI(), _nextName.getLocalPart(),
++                                        f);
+                 } else {
+-	                _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
+-	                _xmlWriter.writeFloat(f);
+-	                _xmlWriter.writeEndElement();
++                        _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
++                        _xmlWriter.writeFloat(f);
++                        _xmlWriter.writeEndElement();
+                 }
+             }
+         } catch (XMLStreamException e) {
+@@ -1205,13 +1215,13 @@
+                                 dec);
+                     }
+                 } else {
+-	                _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
+-	                if (usePlain) {
++                        _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
++                        if (usePlain) {
+                          _xmlWriter.writeCharacters(dec.toPlainString());
+-	                } else {
++                        } else {
+                          _xmlWriter.writeDecimal(dec);
+-	                }
+-	                _xmlWriter.writeEndElement();
++                        }
++                        _xmlWriter.writeEndElement();
+                 }
+             }
+         } catch (XMLStreamException e) {
+@@ -1233,18 +1243,18 @@
+         try {
+             if (_nextIsAttribute) {
+                 _xmlWriter.writeIntegerAttribute("",
+-                		_nextName.getNamespaceURI(), _nextName.getLocalPart(), value);
++                                _nextName.getNamespaceURI(), _nextName.getLocalPart(), value);
+             } else if (checkNextIsUnwrapped()) {
+                 _xmlWriter.writeInteger(value);
+             } else {
+                 if (_xmlPrettyPrinter != null) {
+-                	_xmlPrettyPrinter.writeLeafElement(_xmlWriter,
+-                			_nextName.getNamespaceURI(), _nextName.getLocalPart(),
+-                			value);
++                        _xmlPrettyPrinter.writeLeafElement(_xmlWriter,
++                                        _nextName.getNamespaceURI(), _nextName.getLocalPart(),
++                                        value);
+                 } else {
+-	                _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
+-	                _xmlWriter.writeInteger(value);
+-	                _xmlWriter.writeEndElement();
++                        _xmlWriter.writeStartElement(_nextName.getNamespaceURI(), _nextName.getLocalPart());
++                        _xmlWriter.writeInteger(value);
++                        _xmlWriter.writeEndElement();
+                 }
+             }
+         } catch (XMLStreamException e) {
+@@ -1301,12 +1311,12 @@
+         if (isEnabled(JsonGenerator.Feature.AUTO_CLOSE_JSON_CONTENT)) {
+             try {
+                 while (true) {
+-		    /* 28-May-2016, tatu: To work around incompatibility introduced by
+-		     *     `jackson-core` 2.8 where return type of `getOutputContext()`
+-		     *     changed, let's do direct access here.
+-		     */
++                    /* 28-May-2016, tatu: To work around incompatibility introduced by
++                     *     `jackson-core` 2.8 where return type of `getOutputContext()`
++                     *     changed, let's do direct access here.
++                     */
+ //                    JsonStreamContext ctxt = getOutputContext();
+-		    JsonStreamContext ctxt = _writeContext;
++                    JsonStreamContext ctxt = _writeContext;
+                     if (ctxt.inArray()) {
+                         writeEndArray();
+                     } else if (ctxt.inObject()) {
+@@ -1352,12 +1362,12 @@
+     protected boolean checkNextIsUnwrapped()
+     {
+         if (_nextIsUnwrapped) {
+-    		    _nextIsUnwrapped = false;
+-    		    return true;
++                    _nextIsUnwrapped = false;
++                    return true;
+         }
+         return false;
+     }
+-    
++
+     protected void handleMissingName() {
+         throw new IllegalStateException("No element/attribute name specified when trying to output element");
+     }

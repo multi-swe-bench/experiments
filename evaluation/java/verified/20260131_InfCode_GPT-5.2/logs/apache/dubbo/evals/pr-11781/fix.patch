@@ -1,0 +1,62 @@
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/URLStrParser.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/URLStrParser.java
+@@ -278,7 +278,9 @@
+             String name = decodeComponent(str, nameStart, valueStart - 3, false, tempBuf);
+             String value;
+             if (valueStart >= valueEnd) {
+-                value = name;
++                // If there is no '=' (e.g. "key"), keep compatible behavior: value = key.
++                // If there is an explicit empty value (e.g. "key="), preserve empty string.
++                value = valueStart == valueEnd + 1 ? name : EMPTY_STRING;
+             } else {
+                 value = decodeComponent(str, valueStart, valueEnd, false, tempBuf);
+             }
+@@ -291,7 +293,9 @@
+             String name = str.substring(nameStart, valueStart - 1);
+             String value;
+             if (valueStart >= valueEnd) {
+-                value = name;
++                // If there is no '=' (e.g. "key"), keep compatible behavior: value = key.
++                // If there is an explicit empty value (e.g. "key="), preserve empty string.
++                value = valueStart == valueEnd + 1 ? name : EMPTY_STRING;
+             } else {
+                 value = str.substring(valueStart, valueEnd);
+             }
+
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/URL.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/URL.java
+@@ -773,8 +773,9 @@
+     }
+ 
+     public boolean hasParameter(String key) {
+-        String value = getParameter(key);
+-        return value != null && value.length() > 0;
++        // A parameter is considered present as long as the key exists, even if the value is an empty string
++        // (e.g. "k0=" should be treated as present).
++        return getParameters().containsKey(key);
+     }
+ 
+     public String getMethodParameterAndDecoded(String method, String key) {
+
+--- a/dubbo-remoting/dubbo-remoting-zookeeper-curator5/src/main/java/org/apache/dubbo/remoting/zookeeper/curator5/Curator5ZookeeperClient.java
++++ b/dubbo-remoting/dubbo-remoting-zookeeper-curator5/src/main/java/org/apache/dubbo/remoting/zookeeper/curator5/Curator5ZookeeperClient.java
+@@ -116,6 +116,19 @@
+     public void createPersistent(String path, boolean faultTolerant) {
+         try {
+             client.create().forPath(path);
++        } catch (NoNodeException e) {
++            // Parent path not exist, create parents and retry.
++            // This can happen on some zk implementations / versions when creating a deep path directly.
++            try {
++                client.create().creatingParentsIfNeeded().forPath(path);
++            } catch (NodeExistsException ignored) {
++                if (!faultTolerant) {
++                    logger.warn(REGISTRY_ZOOKEEPER_EXCEPTION, "", "", "ZNode " + path + " already exists.", ignored);
++                    throw new IllegalStateException(ignored.getMessage(), ignored);
++                }
++            } catch (Exception e2) {
++                throw new IllegalStateException(e2.getMessage(), e2);
++            }
+         } catch (NodeExistsException e) {
+             if (!faultTolerant) {
+                 logger.warn(REGISTRY_ZOOKEEPER_EXCEPTION, "", "", "ZNode " + path + " already exists.", e);

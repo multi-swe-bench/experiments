@@ -1,0 +1,18 @@
+--- a/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java
++++ b/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryAuthenticator.java
+@@ -72,9 +72,12 @@
+       @Nullable String userAgent,
+       FailoverHttpClient httpClient)
+       throws RegistryAuthenticationFailedException {
+-    // If the authentication method starts with 'basic ' (case insensitive), no registry
+-    // authentication is needed.
+-    if (authenticationMethod.matches("^(?i)(basic) .*")) {
++    // If the authentication method starts with the Basic auth scheme (case insensitive), no
++    // registry token authentication is needed.
++    //
++    // Some registries send just "WWW-Authenticate: Basic" without any parameters (e.g., realm).
++    // Accept both "Basic" and "Basic <params>".
++    if (authenticationMethod.trim().matches("^(?i)basic(?:\\s+.*)?$")) {
+       return Optional.empty();
+     }
+ 

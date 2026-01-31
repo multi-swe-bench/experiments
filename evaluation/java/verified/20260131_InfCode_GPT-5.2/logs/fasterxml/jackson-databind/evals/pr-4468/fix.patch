@@ -1,0 +1,19 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/ext/CoreXMLDeserializers.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ext/CoreXMLDeserializers.java
+@@ -125,6 +125,16 @@
+             throw new IllegalStateException();
+         }
+ 
++        @Override
++        protected Object _deserializeFromEmptyString(DeserializationContext ctxt) throws IOException
++        {
++            // [databind#4450]: empty String should deserialize as empty QName, not null
++            if (_kind == TYPE_QNAME) {
++                return new QName("", "");
++            }
++            return super._deserializeFromEmptyString(ctxt);
++        }
++
+         protected XMLGregorianCalendar _gregorianFromDate(DeserializationContext ctxt,
+                 Date d)
+         {

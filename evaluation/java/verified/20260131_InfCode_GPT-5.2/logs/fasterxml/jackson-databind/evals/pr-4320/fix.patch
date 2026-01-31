@@ -1,0 +1,114 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/CollectionDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/CollectionDeserializer.java
+@@ -362,7 +362,23 @@
+                 } else {
+                     value = valueDes.deserializeWithType(p, ctxt, typeDeser);
+                 }
++
++                // [databind#4309]: Also apply configured content-null handling for
++                // "coerced nulls" (that is, cases where value deserializer returns null
++                // for non-null tokens).
+                 if (value == null) {
++                    if (_skipNullValues) {
++                        continue;
++                    }
++                    // For explicit `null` tokens, null provider already applied above.
++                    // For coerced nulls, we need to apply null handling here as well.
++                    if (t != JsonToken.VALUE_NULL) {
++                        value = _nullProvider.getNullValue(ctxt);
++                        if (value != null) {
++                            result.add(value);
++                            continue;
++                        }
++                    }
+                     _tryToAddNull(p, ctxt, result);
+                     continue;
+                 }
+@@ -407,7 +423,8 @@
+         Object value;
+ 
+         try {
+-            if (p.hasToken(JsonToken.VALUE_NULL)) {
++            JsonToken t = p.currentToken();
++            if (t == JsonToken.VALUE_NULL) {
+                 // 03-Feb-2017, tatu: Hmmh. I wonder... let's try skipping here, too
+                 if (_skipNullValues) {
+                     return result;
+@@ -422,6 +439,23 @@
+             } else {
+                 value = valueDes.deserializeWithType(p, ctxt, typeDeser);
+             }
++
++            // [databind#4309] apply content null handling for coerced nulls too
++            if (value == null) {
++                if (_skipNullValues) {
++                    return result;
++                }
++                // For explicit `null` token, null provider already applied above.
++                if (t != JsonToken.VALUE_NULL) {
++                    value = _nullProvider.getNullValue(ctxt);
++                    if (value != null) {
++                        result.add(value);
++                        return result;
++                    }
++                }
++                _tryToAddNull(p, ctxt, result);
++                return result;
++            }
+         } catch (Exception e) {
+             boolean wrap = ctxt.isEnabled(DeserializationFeature.WRAP_EXCEPTIONS);
+             if (!wrap) {
+@@ -464,6 +498,34 @@
+                 } else {
+                     value = valueDes.deserializeWithType(p, ctxt, typeDeser);
+                 }
++
++                // [databind#4309]: Also apply configured content-null handling for
++                // "coerced nulls" (that is, cases where value deserializer returns null
++                // for non-null tokens).
++                if (value == null) {
++                    if (_skipNullValues) {
++                        continue;
++                    }
++                    if (t != JsonToken.VALUE_NULL) {
++                        value = _nullProvider.getNullValue(ctxt);
++                        if (value != null) {
++                            referringAccumulator.add(value);
++                            continue;
++                        }
++                    }
++                    // Need to add explicit null (or report) while preserving ordering,
++                    // but cannot call `_tryToAddNull()` since that would add directly
++                    // to `result` and bypass `referringAccumulator`.
++                    try {
++                        referringAccumulator.add(null);
++                    } catch (NullPointerException e) {
++                        ctxt.handleUnexpectedToken(_valueType, JsonToken.VALUE_NULL, p,
++                                "`java.util.Collection` of type %s does not accept `null` values",
++                                ClassUtil.getTypeDescription(getValueType(ctxt)));
++                    }
++                    continue;
++                }
++
+                 referringAccumulator.add(value);
+             } catch (UnresolvedForwardReference reference) {
+                 Referring ref = referringAccumulator.handleUnresolvedReference(reference);
+@@ -497,7 +559,7 @@
+                     "`java.util.Collection` of type %s does not accept `null` values",
+                     ClassUtil.getTypeDescription(getValueType(ctxt)));
+         }
+-    }    
++    }
+     /**
+      * Helper class for dealing with Object Id references for values contained in
+      * collections being deserialized.
+@@ -558,7 +620,7 @@
+ 
+     /**
+      * Helper class to maintain processing order of value. The resolved
+-     * object associated with {@code #id} parameter from {@link #handleResolvedForwardReference(Object, Object)} 
++     * object associated with {@code #id} parameter from {@link #handleResolvedForwardReference(Object, Object)}
+      * comes before the values in {@link #next}.
+      */
+     private final static class CollectionReferring extends Referring {
+

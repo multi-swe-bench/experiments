@@ -1,0 +1,226 @@
+--- a/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java
++++ b/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -39,11 +39,27 @@
+     private static final RubyString NEW_LINE = (RubyString) RubyUtil.RUBY.newString("\n").
+                                                                 freeze(RubyUtil.RUBY.getCurrentContext());
+ 
+-    private @SuppressWarnings("rawtypes") RubyArray input = RubyUtil.RUBY.newArray();
+     private RubyString delimiter = NEW_LINE;
+     private int sizeLimit;
+     private boolean hasSizeLimit;
+-    private int inputSize;
++
++    /**
++     * Accumulated token fragment across calls.
++     */
++    private final StringBuilder tokenBuffer = new StringBuilder();
++
++    /**
++     * When true, we previously exceeded {@link #sizeLimit} and are discarding input
++     * until we reach the next delimiter.
++     */
++    private boolean discardUntilDelimiter;
++
++    /**
++     * Token fragments that were already read from the input but could not be processed
++     * because an exception was raised. These fragments will be processed first on the
++     * next {@link #extract(ThreadContext, IRubyObject)} call.
++     */
++    private @SuppressWarnings("rawtypes") RubyArray pendingFragments = RubyUtil.RUBY.newArray();
+ 
+     public BufferedTokenizerExt(final Ruby runtime, final RubyClass metaClass) {
+         super(runtime, metaClass);
+@@ -58,7 +74,9 @@
+             this.sizeLimit = args[1].convertToInteger().getIntValue();
+             this.hasSizeLimit = true;
+         }
+-        this.inputSize = 0;
++        tokenBuffer.setLength(0);
++        pendingFragments.clear();
++        discardUntilDelimiter = false;
+         return this;
+     }
+ 
+@@ -76,23 +94,89 @@
+     @JRubyMethod
+     @SuppressWarnings("rawtypes")
+     public RubyArray extract(final ThreadContext context, IRubyObject data) {
++        final Ruby runtime = context.runtime;
++
++        // Split current segment.
+         final RubyArray entities = data.convertToString().split(delimiter, -1);
+-        if (hasSizeLimit) {
+-            final int entitiesSize = ((RubyString) entities.first()).size();
+-            if (inputSize + entitiesSize > sizeLimit) {
+-                throw new IllegalStateException("input buffer full");
++
++        // If we had leftover fragments from a previous call (because we raised),
++        // prepend them so we can continue processing seamlessly.
++        if (!pendingFragments.isEmpty()) {
++            // RubyArray#unshift in JRuby 9.4 does not have a ThreadContext overload.
++            // We prepend in reverse order to preserve the original fragment order.
++            for (int i = pendingFragments.size() - 1; i >= 0; i--) {
++                entities.unshift(pendingFragments.eltInternal(i));
++            }
++            pendingFragments.clear();
++        }
++
++        // If we previously exceeded the buffer size, we need to keep consuming input until
++        // we encounter a delimiter, then resume tokenization from the next fragment.
++        if (discardUntilDelimiter) {
++            if (entities.size() == 1) {
++                // No delimiter in this segment: keep discarding.
++                return runtime.newArray();
+             }
+-            this.inputSize = inputSize + entitiesSize;
++            // Found a delimiter: discard everything up to it, and reset state.
++            entities.shift(context); // drop prefix before the delimiter
++            discardUntilDelimiter = false;
++            tokenBuffer.setLength(0);
+         }
+-        input.append(entities.shift(context));
++
++        if (entities.isEmpty()) {
++            return runtime.newArray();
++        }
++
++        // First fragment always belongs to the token currently being accumulated.
++        final RubyString head = (RubyString) entities.shift(context);
++
++        // Enforce size limit before accumulating this fragment; if this would overflow,
++        // raise but keep the remaining fragments for the next call.
++        if (hasSizeLimit && tokenBuffer.length() + head.size() > sizeLimit) {
++            discardUntilDelimiter = true;
++            // Discard any buffered token fragments.
++            tokenBuffer.setLength(0);
++            // Preserve any remaining fragments and the current head so we can discard them
++            // (up to the next delimiter) on the next call.
++            pendingFragments.clear();
++            pendingFragments.append(head);
++            if (!entities.isEmpty()) {
++                pendingFragments.concat(entities);
++            }
++            throw new IllegalStateException("input buffer full");
++        }
++
++        tokenBuffer.append(head.asJavaString());
++
++        // If we did not encounter a delimiter, just keep accumulating.
+         if (entities.isEmpty()) {
+-            return RubyUtil.RUBY.newArray();
++            return runtime.newArray();
++        }
++
++        // We have at least one delimiter in this segment.
++        // tokenBuffer + (next fragments until delimiter) make the first complete token.
++        final RubyArray results = runtime.newArray();
++
++        results.append(runtime.newString(tokenBuffer.toString()));
++
++        // Middle fragments correspond to complete tokens.
++        while (entities.size() > 1) {
++            results.append(entities.shift(context));
+         }
+-        entities.unshift(input.join(context));
+-        input.clear();
+-        input.append(entities.pop(context));
+-        inputSize = ((RubyString) input.first()).size();
+-        return entities;
++
++        // Last fragment becomes the head of the next token.
++        final RubyString tail = (RubyString) entities.shift(context);
++        tokenBuffer.setLength(0);
++        tokenBuffer.append(tail.asJavaString());
++
++        if (hasSizeLimit && tokenBuffer.length() > sizeLimit) {
++            // Buffer is already too large; enter discard mode and raise.
++            discardUntilDelimiter = true;
++            tokenBuffer.setLength(0);
++            throw new IllegalStateException("input buffer full");
++        }
++
++        return results;
+     }
+ 
+     /**
+@@ -104,14 +188,16 @@
+      */
+     @JRubyMethod
+     public IRubyObject flush(final ThreadContext context) {
+-        final IRubyObject buffer = input.join(context);
+-        input.clear();
++        final Ruby runtime = context.runtime;
++        final IRubyObject buffer = runtime.newString(tokenBuffer.toString());
++        tokenBuffer.setLength(0);
++        discardUntilDelimiter = false;
+         return buffer;
+     }
+ 
+     @JRubyMethod(name = "empty?")
+     public IRubyObject isEmpty(final ThreadContext context) {
+-        return input.empty_p();
++        return RubyUtil.RUBY.newBoolean(tokenBuffer.length() == 0);
+     }
+ 
+ }
+
+--- a/gradlew
++++ b/gradlew
+@@ -159,6 +159,48 @@
+     esac
+ fi
+ 
++# Some callers (including certain CI wrappers) may provide the --console option more than once,
++# which causes Gradle to fail fast with:
++#   "Multiple arguments were provided for command-line option '--console'."
++# To be robust, we de-duplicate --console options here, keeping only the last provided value.
++if [ $# -gt 0 ] ; then
++    console_value=
++    expect_console_value=false
++    cleared=false
++
++    for arg do
++        if [ "$cleared" = false ] ; then
++            # Clear positional parameters so we can rebuild them while iterating over
++            # the originally-captured argument list.
++            set --
++            cleared=true
++        fi
++
++        if [ "$expect_console_value" = true ] ; then
++            console_value=$arg
++            expect_console_value=false
++            continue
++        fi
++
++        case $arg in
++          --console)
++            expect_console_value=true
++            ;;
++          --console=*)
++            console_value=${arg#--console=}
++            ;;
++          *)
++            set -- "$@" "$arg"
++            ;;
++        esac
++    done
++
++    # If we saw a --console option (either form), re-append it once.
++    if [ -n "$console_value" ] ; then
++        set -- "$@" "--console=$console_value"
++    fi
++fi
++
+ # Collect all arguments for the java command, stacking in reverse order:
+ #   * args from the command line
+ #   * the main class name

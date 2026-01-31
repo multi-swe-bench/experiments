@@ -1,0 +1,127 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/JsonNode.java
++++ b/src/main/java/com/fasterxml/jackson/databind/JsonNode.java
+@@ -1024,7 +1024,7 @@
+ 
+     /**
+      * Accessor that will return properties of {@code ObjectNode}
+-     * similar to how {@link Map#entrySet()} works; 
++     * similar to how {@link Map#entrySet()} works;
+      * for other node types will return empty {@link java.util.Set}.
+      *
+      * @return Set of properties, if this node is an {@code ObjectNode}
+@@ -1186,6 +1186,56 @@
+         return withObject(ptr, OverwriteMode.NULLS, true);
+     }
+ 
++    /*
++    /**********************************************************
++    /* Public API, Object/Array properties
++    /**********************************************************
++     */
++
++    /**
++     * Convenience method that will access an {@link ObjectNode} value of an immediate
++     * property of this node, creating one if missing.
++     * <p>
++     * This method is similar to {@link ObjectNode#with(String)} / {@link #withObject(String)}
++     * but differs in that the given value is always treated as a plain Object property name
++     * (and not as a potential {@link JsonPointer} expression).
++     *
++     * @param propertyName Name of the Object property to access (and create as necessary)
++     *
++     * @return {@link ObjectNode} value for given property (existing or newly created)
++     *
++     * @throws UnsupportedOperationException if this node is not an {@link ObjectNode},
++     *   or if the property exists but is not an {@link ObjectNode}
++     *
++     * @since 2.18
++     */
++    public ObjectNode withObjectProperty(String propertyName) {
++        throw new UnsupportedOperationException("`JsonNode` not of type `ObjectNode` (but `"
++                +getClass().getName()+")`, cannot call `withObjectProperty()` on it");
++    }
++
++    /**
++     * Convenience method that will access an {@link ArrayNode} value of an immediate
++     * property of this node, creating one if missing.
++     * <p>
++     * This method differs from {@link #withArray(String)} in that {@code propertyName}
++     * is always treated as a plain Object property name (and not as a potential
++     * {@link JsonPointer} expression).
++     *
++     * @param propertyName Name of the Array property to access (and create as necessary)
++     *
++     * @return {@link ArrayNode} value for given property (existing or newly created)
++     *
++     * @throws UnsupportedOperationException if this node is not an {@link ObjectNode},
++     *   or if the property exists but is not an {@link ArrayNode}
++     *
++     * @since 2.18
++     */
++    public ArrayNode withArrayProperty(String propertyName) {
++        throw new UnsupportedOperationException("`JsonNode` not of type `ObjectNode` (but `"
++                +getClass().getName()+")`, cannot call `withArrayProperty()` on it");
++    }
++
+     /**
+      * Method that can be called on Object or Array nodes, to access a Object-valued
+      * node pointed to by given {@link JsonPointer}, if such a node exists:
+
+--- a/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java
++++ b/src/main/java/com/fasterxml/jackson/databind/node/ObjectNode.java
+@@ -111,6 +111,46 @@
+         return result;
+     }
+ 
++    /*
++    /**********************************************************
++    /* Support for withObjectProperty()/withArrayProperty()
++    /**********************************************************
++     */
++
++    @Override
++    public ObjectNode withObjectProperty(String propertyName)
++    {
++        JsonNode n = _children.get(propertyName);
++        if (n != null) {
++            if (n instanceof ObjectNode) {
++                return (ObjectNode) n;
++            }
++            throw new UnsupportedOperationException("Property '" + propertyName
++                + "' has value that is not of type `ObjectNode` (but `" + n
++                .getClass().getName() + "`)");
++        }
++        ObjectNode result = objectNode();
++        _children.put(propertyName, result);
++        return result;
++    }
++
++    @Override
++    public ArrayNode withArrayProperty(String propertyName)
++    {
++        JsonNode n = _children.get(propertyName);
++        if (n != null) {
++            if (n instanceof ArrayNode) {
++                return (ArrayNode) n;
++            }
++            throw new UnsupportedOperationException("Property '" + propertyName
++                + "' has value that is not of type `ArrayNode` (but `" + n
++                .getClass().getName() + "`)");
++        }
++        ArrayNode result = arrayNode();
++        _children.put(propertyName, result);
++        return result;
++    }
++
+     @Override
+     protected ObjectNode _withObject(JsonPointer origPtr,
+             JsonPointer currentPtr,
+@@ -293,7 +333,7 @@
+     public Set<Map.Entry<String, JsonNode>> properties() {
+         return _children.entrySet();
+     }
+-    
++
+     @Override
+     public boolean equals(Comparator<JsonNode> comparator, JsonNode o)
+     {

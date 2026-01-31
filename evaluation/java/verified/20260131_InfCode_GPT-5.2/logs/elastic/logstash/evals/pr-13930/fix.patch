@@ -1,0 +1,86 @@
+--- a/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java
++++ b/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -104,22 +104,42 @@
+             out.getFD().sync();
+         }
+ 
++        final Path destinationPath = dirPath.resolve(fileName);
+         try {
+-            Files.move(tmpPath, dirPath.resolve(fileName), StandardCopyOption.ATOMIC_MOVE);
++            Files.move(tmpPath, destinationPath, StandardCopyOption.ATOMIC_MOVE);
+         } catch (IOException ex) {
+-            if (retry) {
++            if (!retry) {
++                logger.error("Error writing checkpoint: " + ex);
++                throw ex;
++            }
++
++            // While this can happen on any filesystem, it has been seen on Windows as AccessDeniedException.
++            // Retrying (with backoff) mitigates transient filesystem conditions triggered by antivirus or File Explorer.
++            final int maxRetries = 5;
++            long backoffMillis = 500;
++
++            IOException lastException = ex;
++            for (int retryAttempt = 1; retryAttempt <= maxRetries; retryAttempt++) {
++                logger.error("Retrying (attempt " + retryAttempt + ") after exception writing checkpoint: " + lastException);
+                 try {
+-                    logger.error("Retrying after exception writing checkpoint: " + ex);
+-                    Thread.sleep(500);
+-                    Files.move(tmpPath, dirPath.resolve(fileName), StandardCopyOption.ATOMIC_MOVE);
+-                } catch (IOException | InterruptedException ex2) {
+-                    logger.error("Aborting after second exception writing checkpoint: " + ex2);
++                    Thread.sleep(backoffMillis);
++                } catch (InterruptedException interrupted) {
++                    Thread.currentThread().interrupt();
++                    // Preserve previous behavior of throwing the original move failure.
+                     throw ex;
+                 }
+-            } else {
+-                logger.error("Error writing checkpoint: " + ex);
+-                throw ex;
++
++                try {
++                    Files.move(tmpPath, destinationPath, StandardCopyOption.ATOMIC_MOVE);
++                    return;
++                } catch (IOException retryException) {
++                    lastException = retryException;
++                    backoffMillis = backoffMillis * 2;
++                }
+             }
++
++            logger.error("Aborting after " + maxRetries + " retries writing checkpoint: " + lastException);
++            throw ex;
+         }
+     }
+ 
+
+--- a/logstash-core/src/main/java/org/logstash/ackedqueue/SettingsImpl.java
++++ b/logstash-core/src/main/java/org/logstash/ackedqueue/SettingsImpl.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -148,7 +148,7 @@
+ 
+         private BuilderImpl(final String dirForFiles) {
+             this(dirForFiles, null, DEFAULT_CAPACITY, DEFAULT_MAX_QUEUE_BYTES,
+-                DEFAULT_MAX_UNREAD, DEFAULT_CHECKPOINT_MAX_ACKS, DEFAULT_CHECKPOINT_MAX_WRITES, false
++                DEFAULT_MAX_UNREAD, DEFAULT_CHECKPOINT_MAX_ACKS, DEFAULT_CHECKPOINT_MAX_WRITES, true
+             );
+         }
+ 
+

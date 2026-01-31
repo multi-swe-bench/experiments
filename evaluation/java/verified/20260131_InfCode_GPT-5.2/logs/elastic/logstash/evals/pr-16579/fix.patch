@@ -1,0 +1,118 @@
+--- a/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java
++++ b/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -45,6 +45,15 @@
+     private boolean hasSizeLimit;
+     private int inputSize;
+ 
++    /**
++     * Tracks whether we previously hit a sizeLimit condition and need to skip/consume
++     * until the next delimiter before resuming normal tokenization.
++     */
++    private boolean bufferFull;
++
++    // retained for backport compatibility with upstream implementation; not used in this branch
++    private StringBuilder head;
++
+     public BufferedTokenizerExt(final Ruby runtime, final RubyClass metaClass) {
+         super(runtime, metaClass);
+     }
+@@ -59,6 +68,8 @@
+             this.hasSizeLimit = true;
+         }
+         this.inputSize = 0;
++        this.bufferFull = false;
++        this.head = null;
+         return this;
+     }
+ 
+@@ -74,16 +85,53 @@
+      * @return Extracted tokens
+      */
+     @JRubyMethod
+-    @SuppressWarnings("rawtypes")
++    @SuppressWarnings({"rawtypes", "unchecked"})
+     public RubyArray extract(final ThreadContext context, IRubyObject data) {
++        // If we previously hit a "buffer full" condition, we must continue consuming input until we see
++        // the next delimiter, discarding the over-long token.
++        if (bufferFull) {
++            final RubyArray entities = data.convertToString().split(delimiter, -1);
++            if (entities.size() <= 1) {
++                // Still no delimiter: keep discarding.
++                return RubyUtil.RUBY.newArray();
++            }
++
++            // We found a delimiter, which closes the over-long token. Discard it and resume processing
++            // whatever comes after the delimiter.
++            bufferFull = false;
++            head = null;
++
++            final RubyString remainder = joinFragments(context, entities, 1);
++            return extract(context, remainder);
++        }
++
+         final RubyArray entities = data.convertToString().split(delimiter, -1);
++
+         if (hasSizeLimit) {
+-            final int entitiesSize = ((RubyString) entities.first()).size();
+-            if (inputSize + entitiesSize > sizeLimit) {
++            final int firstFragmentSize = ((RubyString) entities.first()).size();
++            if (inputSize + firstFragmentSize > sizeLimit) {
++                // The current buffered token grew beyond sizeLimit. We need to discard it, but continue
++                // consuming input up to the next delimiter so we can recover.
++
++                // discard any buffered fragments that contributed to the over-long token
++                input.clear();
++                inputSize = 0;
++
++                if (entities.size() > 1) {
++                    // A delimiter is present in the current segment. Preserve everything after the first
++                    // delimiter so it can be tokenized on the next call.
++                    this.input.append(joinFragments(context, entities, 1));
++                    this.inputSize = ((RubyString) this.input.first()).size();
++                } else {
++                    // No delimiter in this segment; enter recovery mode and keep consuming until we find one.
++                    bufferFull = true;
++                }
++
+                 throw new IllegalStateException("input buffer full");
+             }
+-            this.inputSize = inputSize + entitiesSize;
++            this.inputSize = inputSize + firstFragmentSize;
+         }
++
+         input.append(entities.shift(context));
+         if (entities.isEmpty()) {
+             return RubyUtil.RUBY.newArray();
+@@ -114,4 +162,23 @@
+         return input.empty_p();
+     }
+ 
++    /**
++     * Joins all fragments from the provided split-result starting at {@code startIndex}, re-inserting
++     * the delimiter between fragments.
++     */
++    private RubyString joinFragments(final ThreadContext context, final RubyArray<IRubyObject> entities, final int startIndex) {
++        if (startIndex >= entities.size()) {
++            return RubyUtil.RUBY.newString("");
++        }
++        final String delim = delimiter.asJavaString();
++        final StringBuilder sb = new StringBuilder();
++        for (int i = startIndex; i < entities.size(); i++) {
++            if (i > startIndex) {
++                sb.append(delim);
++            }
++            sb.append(((RubyString) entities.entry(i)).asJavaString());
++        }
++        return RubyUtil.RUBY.newString(sb.toString());
++    }
++
+ }

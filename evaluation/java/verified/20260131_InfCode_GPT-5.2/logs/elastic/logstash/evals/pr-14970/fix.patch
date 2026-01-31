@@ -1,0 +1,112 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -236,7 +236,9 @@
+             }
+ 
+             try {
+-                flushScheduler.shutdown();
++                if (flushScheduler != null) {
++                    flushScheduler.shutdown();
++                }
+             } catch (Exception e) {
+                 logger.warn("Unable shutdown flush scheduler, ignoring", e);
+             }
+@@ -388,19 +390,34 @@
+     }
+ 
+     private void updateOldestSegmentReference() throws IOException {
+-        oldestSegmentPath = listSegmentPaths(this.queuePath).sorted().findFirst();
+-        if (!oldestSegmentPath.isPresent()) {
+-            oldestSegmentTimestamp = Optional.empty();
+-            return;
+-        }
+-        // extract the newest timestamp from the oldest segment
+-        Optional<Timestamp> foundTimestamp = readTimestampOfLastEventInSegment(oldestSegmentPath.get());
+-        if (!foundTimestamp.isPresent()) {
+-            // clean also the last segment, because doesn't contain a timestamp (corrupted maybe)
+-            // or is not present anymore
+-            oldestSegmentPath = Optional.empty();
++        oldestSegmentTimestamp = Optional.empty();
++        oldestSegmentPath = Optional.empty();
++
++        // Find the oldest segment that contains at least one complete DLQEntry.
++        // A segment with only the VERSION byte (1 byte) can be present after an unclean shutdown; it has no events.
++        try (java.util.stream.Stream<Path> segments = listSegmentPaths(this.queuePath).sorted()) {
++            for (Path candidate : (Iterable<Path>) segments::iterator) {
++                final long size;
++                try {
++                    size = Files.size(candidate);
++                } catch (NoSuchFileException nsfex) {
++                    // the segment file may have been removed by the reader pipeline (clean consumed)
++                    continue;
++                }
++
++                if (size <= VERSION_SIZE) {
++                    // segment has only the version byte (or is empty) and cannot contain a DLQEntry
++                    continue;
++                }
++
++                Optional<Timestamp> foundTimestamp = readTimestampOfLastEventInSegment(candidate);
++                if (foundTimestamp.isPresent()) {
++                    oldestSegmentPath = Optional.of(candidate);
++                    oldestSegmentTimestamp = foundTimestamp;
++                    return;
++                }
++            }
+         }
+-        oldestSegmentTimestamp = foundTimestamp;
+     }
+ 
+     /**
+@@ -408,19 +425,37 @@
+      * Start from the end of the latest block, and going backward try to read the next event from its start.
+      * */
+     private static Optional<Timestamp> readTimestampOfLastEventInSegment(Path segmentPath) throws IOException {
+-        final int lastBlockId = (int) Math.ceil(((Files.size(segmentPath) - VERSION_SIZE) / (double) BLOCK_SIZE)) - 1;
+-        byte[] eventBytes;
++        final long segmentSize;
++        try {
++            segmentSize = Files.size(segmentPath);
++        } catch (NoSuchFileException nsfex) {
++            // the segment file may have been removed by the clean consumed feature on the reader side
++            return Optional.empty();
++        }
++
++        if (segmentSize <= VERSION_SIZE) {
++            // the segment contains only the version byte and has no events
++            return Optional.empty();
++        }
++
++        final int lastBlockId = (int) Math.ceil(((segmentSize - VERSION_SIZE) / (double) BLOCK_SIZE)) - 1;
++        if (lastBlockId < 0) {
++            return Optional.empty();
++        }
++
++        byte[] eventBytes = null;
+         try (RecordIOReader recordReader = new RecordIOReader(segmentPath)) {
+             int blockId = lastBlockId;
+             do {
++                if (blockId < 0) {
++                    break;
++                }
+                 recordReader.seekToBlock(blockId);
+                 eventBytes = recordReader.readEvent();
+                 blockId--;
+             } while (eventBytes == null && blockId >= 0); // no event present in last block, try with the one before
+-        } catch (NoSuchFileException nsfex) {
+-            // the segment file may have been removed by the clean consumed feature on the reader side
+-            return Optional.empty();
+         }
++
+         if (eventBytes == null) {
+             logger.warn("Cannot find a complete event into the segment file [{}], this is a DLQ segment corruption", segmentPath);
+             return Optional.empty();

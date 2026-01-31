@@ -1,0 +1,36 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializer.java
+@@ -292,12 +292,16 @@
+      * features are enabled.
+      */
+     private final Object vanillaDeserialize(JsonParser p,
+-    		DeserializationContext ctxt, JsonToken t)
++                DeserializationContext ctxt, JsonToken t)
+         throws IOException
+     {
+         final Object bean = _valueInstantiator.createUsingDefault(ctxt);
+-        // [databind#631]: Assign current value, to be accessible by custom serializers
+-        p.setCurrentValue(bean);
++        // [databind#631]: Assign current value, to be accessible by custom serializers.
++        // But for empty Objects parser may already be at END_OBJECT, at which point
++        // setting current value would affect parent context (see #4184)
++        if (!p.hasTokenId(JsonTokenId.ID_END_OBJECT)) {
++            p.setCurrentValue(bean);
++        }
+         if (p.hasTokenId(JsonTokenId.ID_FIELD_NAME)) {
+             String propName = p.currentName();
+             do {
+@@ -361,7 +365,11 @@
+         }
+         final Object bean = _valueInstantiator.createUsingDefault(ctxt);
+         // [databind#631]: Assign current value, to be accessible by custom deserializers
+-        p.setCurrentValue(bean);
++        // but ONLY if parser is still within Object context: for empty Objects parser
++        // may already be at END_OBJECT and have returned to parent context (see #4184)
++        if (!p.hasTokenId(JsonTokenId.ID_END_OBJECT)) {
++            p.setCurrentValue(bean);
++        }
+         if (p.canReadObjectId()) {
+             Object id = p.getObjectId();
+             if (id != null) {
+

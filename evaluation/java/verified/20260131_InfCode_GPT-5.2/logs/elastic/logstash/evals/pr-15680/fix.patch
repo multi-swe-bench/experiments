@@ -1,0 +1,252 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -51,8 +51,6 @@
+ import java.time.temporal.TemporalAmount;
+ import java.util.Locale;
+ import java.util.Optional;
+-import java.util.concurrent.Executors;
+-import java.util.concurrent.ScheduledExecutorService;
+ import java.util.concurrent.TimeUnit;
+ import java.util.concurrent.atomic.AtomicBoolean;
+ import java.util.concurrent.atomic.AtomicLong;
+@@ -117,7 +115,7 @@
+     private final Duration flushInterval;
+     private Instant lastWrite;
+     private final AtomicBoolean open = new AtomicBoolean(true);
+-    private ScheduledExecutorService flushScheduler;
++    private SchedulerService flushScheduler;
+     private final LongAdder droppedEvents = new LongAdder();
+     private final LongAdder expiredEvents = new LongAdder();
+     private volatile String lastError = "no errors";
+@@ -136,6 +134,7 @@
+         private QueueStorageType storageType = QueueStorageType.DROP_NEWER;
+         private Duration retentionTime = null;
+         private Clock clock = Clock.systemDefaultZone();
++        private SchedulerService schedulerService = null;
+ 
+         private Builder(Path queuePath, long maxSegmentSize, long maxQueueSize, Duration flushInterval) {
+             this(queuePath, maxSegmentSize, maxQueueSize, flushInterval, true);
+@@ -165,8 +164,14 @@
+             return this;
+         }
+ 
++        @VisibleForTesting
++        Builder schedulerService(final SchedulerService schedulerService) {
++            this.schedulerService = schedulerService;
++            return this;
++        }
++
+         public DeadLetterQueueWriter build() throws IOException {
+-            return new DeadLetterQueueWriter(queuePath, maxSegmentSize, maxQueueSize, flushInterval, storageType, retentionTime, clock, startScheduledFlusher);
++            return new DeadLetterQueueWriter(queuePath, maxSegmentSize, maxQueueSize, flushInterval, storageType, retentionTime, clock, schedulerService, startScheduledFlusher);
+         }
+     }
+ 
+@@ -182,7 +187,8 @@
+ 
+     private DeadLetterQueueWriter(final Path queuePath, final long maxSegmentSize, final long maxQueueSize,
+                                   final Duration flushInterval, final QueueStorageType storageType, final Duration retentionTime,
+-                                  final Clock clock, boolean startScheduledFlusher) throws IOException {
++                                  final Clock clock, final SchedulerService schedulerService,
++                                  boolean startScheduledFlusher) throws IOException {
+         this.clock = clock;
+ 
+         this.fileLock = FileLockFactory.obtainLock(queuePath, LOCK_FILE);
+@@ -203,7 +209,12 @@
+         nextWriter();
+         this.lastEntryTimestamp = Timestamp.now();
+         if (startScheduledFlusher) {
+-            createFlushScheduler();
++            if (schedulerService != null) {
++                this.flushScheduler = schedulerService;
++                this.flushScheduler.scheduleAtFixedRate(this::scheduledFlushCheck, 1L, 1L, TimeUnit.SECONDS);
++            } else {
++                createFlushScheduler();
++            }
+         }
+     }
+ 
+@@ -299,7 +310,7 @@
+         }
+         long writtenBytes = currentWriter.writeEvent(record);
+         currentQueueSize.getAndAdd(writtenBytes);
+-        lastWrite = Instant.now();
++        lastWrite = clock.instant();
+     }
+ 
+     private boolean exceedSegmentSize(int eventPayloadSize) throws IOException {
+@@ -544,7 +555,7 @@
+     }
+ 
+     private void createFlushScheduler() {
+-        flushScheduler = Executors.newScheduledThreadPool(1, r -> {
++        flushScheduler = new ScheduledExecutorServiceSchedulerService(r -> {
+             Thread t = new Thread(r);
+             //Allow this thread to die when the JVM dies
+             t.setDaemon(true);
+@@ -585,7 +596,7 @@
+ 
+     private void nextWriter() throws IOException {
+         Path nextSegmentPath = queuePath.resolve(String.format(TEMP_FILE_PATTERN, ++currentSegmentIndex));
+-        currentWriter = new RecordIOWriter(nextSegmentPath);
++        currentWriter = new RecordIOWriter(nextSegmentPath, clock);
+         currentQueueSize.incrementAndGet();
+         logger.debug("Created new head segment {}", nextSegmentPath);
+     }
+
+--- a/logstash-core/src/main/java/org/logstash/common/io/RecordIOWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/RecordIOWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -44,6 +44,7 @@
+ import java.nio.channels.FileChannel;
+ import java.nio.file.Path;
+ import java.nio.file.StandardOpenOption;
++import java.time.Clock;
+ import java.time.Duration;
+ import java.time.Instant;
+ import java.util.OptionalInt;
+@@ -98,11 +99,17 @@
+     static final int VERSION_SIZE = 1;
+     static final char VERSION = '1';
+ 
+-    private Path recordsFile;
++    private final Path recordsFile;
++    private final Clock clock;
+     private Instant lastWrite = null;
+ 
+-    public RecordIOWriter(Path recordsFile) throws IOException {
++    public RecordIOWriter(final Path recordsFile) throws IOException {
++        this(recordsFile, Clock.systemUTC());
++    }
++
++    RecordIOWriter(final Path recordsFile, final Clock clock) throws IOException {
+         this.recordsFile = recordsFile;
++        this.clock = clock;
+         this.posInBlock = 0;
+         this.currentBlockIdx = 0;
+         recordsFile.toFile().createNewFile();
+@@ -140,7 +147,7 @@
+     }
+ 
+     public long writeEvent(byte[] eventArray) throws IOException {
+-        lastWrite = Instant.now();
++        lastWrite = clock.instant();
+         ByteBuffer eventBuffer = ByteBuffer.wrap(eventArray);
+         RecordType nextType = null;
+         ByteBuffer slice = eventBuffer.slice();
+@@ -173,8 +180,8 @@
+         return lastWrite != null;
+     }
+ 
+-    public boolean isStale(Duration flushPeriod){
+-        return hasWritten() && Instant.now().minus(flushPeriod).isAfter(lastWrite);
++    public boolean isStale(final Duration flushPeriod){
++        return hasWritten() && clock.instant().minus(flushPeriod).isAfter(lastWrite);
+     }
+ 
+     public Path getPath(){
+
+--- /dev/null
++++ b/logstash-core/src/main/java/org/logstash/common/io/SchedulerService.java
+@@ -0,0 +1,33 @@
++/*
++ * Licensed to Elasticsearch B.V. under one or more contributor
++ * license agreements. See the NOTICE file distributed with
++ * this work for additional information regarding copyright
++ * ownership. Elasticsearch B.V. licenses this file to you under
++ * the Apache License, Version 2.0 (the "License"); you may
++ * not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * 	http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.logstash.common.io;
++
++import java.util.concurrent.TimeUnit;
++
++/**
++ * Abstraction over time-based scheduling.
++ *
++ * <p>This interface exists primarily to make time-based tasks testable without relying on wall-clock time.
++ */
++public interface SchedulerService {
++
++    void scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit);
++
++    void shutdown();
++}
+
+--- /dev/null
++++ b/logstash-core/src/main/java/org/logstash/common/io/ScheduledExecutorServiceSchedulerService.java
+@@ -0,0 +1,46 @@
++/*
++ * Licensed to Elasticsearch B.V. under one or more contributor
++ * license agreements. See the NOTICE file distributed with
++ * this work for additional information regarding copyright
++ * ownership. Elasticsearch B.V. licenses this file to you under
++ * the Apache License, Version 2.0 (the "License"); you may
++ * not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * 	http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.logstash.common.io;
++
++import java.util.concurrent.Executors;
++import java.util.concurrent.ScheduledExecutorService;
++import java.util.concurrent.ThreadFactory;
++import java.util.concurrent.TimeUnit;
++
++/**
++ * Production implementation of {@link SchedulerService} backed by a {@link ScheduledExecutorService}.
++ */
++public final class ScheduledExecutorServiceSchedulerService implements SchedulerService {
++
++    private final ScheduledExecutorService scheduledExecutorService;
++
++    public ScheduledExecutorServiceSchedulerService(final ThreadFactory threadFactory) {
++        this.scheduledExecutorService = Executors.newScheduledThreadPool(1, threadFactory);
++    }
++
++    @Override
++    public void scheduleAtFixedRate(final Runnable command, final long initialDelay, final long period, final TimeUnit unit) {
++        scheduledExecutorService.scheduleAtFixedRate(command, initialDelay, period, unit);
++    }
++
++    @Override
++    public void shutdown() {
++        scheduledExecutorService.shutdown();
++    }
++}
+

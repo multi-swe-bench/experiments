@@ -1,0 +1,163 @@
+--- a/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java
++++ b/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -40,6 +40,13 @@
+                                                                 freeze(RubyUtil.RUBY.getCurrentContext());
+ 
+     private @SuppressWarnings("rawtypes") RubyArray input = RubyUtil.RUBY.newArray();
++
++    /**
++     * Accumulates extracted tokens that couldn't be returned because a previous call to
++     * {@link #extract(ThreadContext, IRubyObject)} raised an "input buffer full" exception.
++     */
++    private @SuppressWarnings("rawtypes") RubyArray pendingTokens = RubyUtil.RUBY.newArray();
++
+     private RubyString delimiter = NEW_LINE;
+     private int sizeLimit;
+     private boolean hasSizeLimit;
+@@ -80,23 +87,102 @@
+     @JRubyMethod
+     @SuppressWarnings("rawtypes")
+     public RubyArray extract(final ThreadContext context, IRubyObject data) {
+-        final RubyArray entities = data.convertToString().split(delimiter, -1);
+-        if (hasSizeLimit) {
+-            final int entitiesSize = ((RubyString) entities.first()).size();
+-            if (inputSize + entitiesSize > sizeLimit) {
+-                throw new IllegalStateException("input buffer full");
++        // Accumulate tokens that were produced in a previous invocation but couldn't be returned
++        // because that invocation raised an "input buffer full" exception.
++        final RubyArray tokens = RubyUtil.RUBY.newArray();
++        if (!pendingTokens.isEmpty()) {
++            tokens.concat(context, pendingTokens);
++            pendingTokens.clear();
++        }
++
++        final RubyString dataString = data.convertToString();
++        final RubyArray entities = dataString.split(delimiter, -1);
++
++        // Fast-path: no delimiter encountered.
++        if (entities.size() == 1) {
++            final RubyString fragment = (RubyString) entities.first();
++            if (hasSizeLimit) {
++                if (inputSize + fragment.size() > sizeLimit) {
++                    // Discard currently accumulated input; caller will provide further data, and
++                    // we must be able to resume tokenization from the next delimiter.
++                    input.clear();
++                    inputSize = 0;
++                    throw new IllegalStateException("input buffer full");
++                }
++                inputSize += fragment.size();
+             }
+-            this.inputSize = inputSize + entitiesSize;
++            input.append(fragment);
++            return tokens;
+         }
+-        input.append(entities.shift(context));
+-        if (entities.isEmpty()) {
+-            return RubyUtil.RUBY.newArray();
++
++        // There is at least one delimiter in this fragment.
++        // The first entity continues the current head, remaining middle entities are complete tokens,
++        // and the last entity becomes the new tail.
++
++        // append head fragment to our input buffer
++        final RubyString headFragment = (RubyString) entities.shift(context);
++
++        // check size limit for head fragment before mutating state
++        if (hasSizeLimit && inputSize + headFragment.size() > sizeLimit) {
++            // we have exceeded the buffer on the head; discard everything up to the delimiter that
++            // produced headFragment, and continue processing remaining entities.
++            // reset state to represent "we are after delimiter".
++            input.clear();
++            inputSize = 0;
++
++            // any middle entities are complete tokens
++            while (entities.size() > 1) {
++                tokens.append(entities.shift(context));
++            }
++
++            // last entity is tail
++            input.append(entities.shift(context));
++            inputSize = ((RubyString) input.first()).size();
++
++            // Ruby split(delimiter, -1) returns a trailing empty string when input ends with delimiter.
++            // This is a tail fragment and should not be emitted as a token.
++            if (tokens.size() > 0 && (tokens.last() instanceof RubyString) && ((RubyString) tokens.last()).isEmpty()) {
++                tokens.pop(context);
++            }
++
++            // store tokens so they can be returned on the next invocation (this call raised)
++            pendingTokens.concat(context, tokens);
++            throw new IllegalStateException("input buffer full");
+         }
+-        entities.unshift(input.join(context));
++
++        // build the head token preserving RubyString encoding
++        RubyString head = null;
++        if (input.isEmpty()) {
++            head = headFragment;
++        } else {
++            // join fragments from input and append headFragment without coercion to Java String
++            head = (RubyString) input.join(context);
++            head = (RubyString) head.callMethod(context, "concat", headFragment);
++        }
++
++        if (hasSizeLimit) {
++            inputSize += headFragment.size();
++        }
++
++        tokens.append(head);
++
++        // any middle entities are complete tokens
++        while (entities.size() > 1) {
++            tokens.append(entities.shift(context));
++        }
++
++        // last entity becomes new tail
+         input.clear();
+-        input.append(entities.pop(context));
++        input.append(entities.shift(context));
+         inputSize = ((RubyString) input.first()).size();
+-        return entities;
++
++        // Ruby split(delimiter, -1) returns a trailing empty string when input ends with delimiter.
++        // This is a tail fragment and should not be emitted as a token.
++        if (tokens.size() > 0 && (tokens.last() instanceof RubyString) && ((RubyString) tokens.last()).isEmpty()) {
++            tokens.pop(context);
++        }
++
++        return tokens;
+     }
+ 
+     /**
+@@ -108,8 +194,21 @@
+      */
+     @JRubyMethod
+     public IRubyObject flush(final ThreadContext context) {
+-        final IRubyObject buffer = input.join(context);
++        // When flushing, include any pending tokens that could not be returned due to buffer-full.
++        // This mirrors Ruby behaviour where flush returns whatever is buffered.
++        RubyString buffer = (RubyString) input.join(context);
++
++        if (!pendingTokens.isEmpty()) {
++            // Prepend pending tokens (which are complete tokens without delimiters)
++            // preserving the encoding of the buffered string.
++            final RubyArray<?> all = RubyUtil.RUBY.newArray();
++            all.concat(context, pendingTokens);
++            all.append(buffer);
++            buffer = (RubyString) all.join(context);
++        }
++
+         input.clear();
++        pendingTokens.clear();
+         inputSize = 0;
+         return buffer;
+     }

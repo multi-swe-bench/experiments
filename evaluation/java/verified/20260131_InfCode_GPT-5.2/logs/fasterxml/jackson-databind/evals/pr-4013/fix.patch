@@ -1,0 +1,89 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
++++ b/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java
+@@ -14,6 +14,24 @@
+ {
+     private static final long serialVersionUID = 1L;
+ 
++    /**
++     * Default maximum length of canonical type string accepted by
++     * {@link TypeFactory#constructFromCanonical(String)}.
++     *
++     * This is mainly to prevent excessive CPU/memory usage and to avoid
++     * JVM-level failures when given malicious input.
++     */
++    protected final static int DEFAULT_MAX_CANONICAL_LENGTH = 64_000;
++
++    /**
++     * Default maximum generic nesting depth of canonical type string accepted by
++     * {@link TypeFactory#constructFromCanonical(String)}.
++     *
++     * This is mainly to prevent unbounded recursion that can result in
++     * {@link StackOverflowError}.
++     */
++    protected final static int DEFAULT_MAX_TYPE_NESTING = 200;
++
+     protected final TypeFactory _factory;
+ 
+     public TypeParser(TypeFactory f) {
+@@ -29,8 +47,19 @@
+ 
+     public JavaType parse(String canonical) throws IllegalArgumentException
+     {
+-        MyTokenizer tokens = new MyTokenizer(canonical.trim());
+-        JavaType type = parseType(tokens);
++        final String input = canonical.trim();
++        final int len = input.length();
++        if (len > DEFAULT_MAX_CANONICAL_LENGTH) {
++            final int shown = Math.min(200, len);
++            final String prefix = input.substring(0, shown);
++            final String desc = (shown == len) ? prefix : (prefix + "...");
++            throw new IllegalArgumentException(String.format(
++                    "Failed to parse type %s: length (%d) exceeds maximum allowed (%d)",
++                    ClassUtil.quotedOr(desc, "<null>"), len, DEFAULT_MAX_CANONICAL_LENGTH));
++        }
++
++        MyTokenizer tokens = new MyTokenizer(input);
++        JavaType type = parseType(tokens, 0);
+         // must be end, now
+         if (tokens.hasMoreTokens()) {
+             throw _problem(tokens, "Unexpected tokens after complete type");
+@@ -38,7 +67,7 @@
+         return type;
+     }
+ 
+-    protected JavaType parseType(MyTokenizer tokens)
++    protected JavaType parseType(MyTokenizer tokens, int nesting)
+         throws IllegalArgumentException
+     {
+         if (!tokens.hasMoreTokens()) {
+@@ -50,7 +79,13 @@
+         if (tokens.hasMoreTokens()) {
+             String token = tokens.nextToken();
+             if ("<".equals(token)) {
+-                List<JavaType> parameterTypes = parseTypes(tokens);
++                final int newNesting = nesting + 1;
++                if (newNesting > DEFAULT_MAX_TYPE_NESTING) {
++                    throw _problem(tokens, String.format(
++                            "Type nesting depth (%d) exceeds maximum allowed (%d)",
++                            newNesting, DEFAULT_MAX_TYPE_NESTING));
++                }
++                List<JavaType> parameterTypes = parseTypes(tokens, newNesting);
+                 TypeBindings b = TypeBindings.create(base, parameterTypes);
+                 return _factory._fromClass(null, base, b);
+             }
+@@ -60,12 +95,12 @@
+         return _factory._fromClass(null, base, TypeBindings.emptyBindings());
+     }
+ 
+-    protected List<JavaType> parseTypes(MyTokenizer tokens)
++    protected List<JavaType> parseTypes(MyTokenizer tokens, int nesting)
+         throws IllegalArgumentException
+     {
+         ArrayList<JavaType> types = new ArrayList<JavaType>();
+         while (tokens.hasMoreTokens()) {
+-            types.add(parseType(tokens));
++            types.add(parseType(tokens, nesting));
+             if (!tokens.hasMoreTokens()) break;
+             String token = tokens.nextToken();
+             if (">".equals(token)) return types;
+

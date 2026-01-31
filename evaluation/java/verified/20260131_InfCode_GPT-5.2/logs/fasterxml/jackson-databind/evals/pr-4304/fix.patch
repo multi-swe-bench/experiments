@@ -1,0 +1,19 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/jsontype/TypeIdResolver.java
++++ b/src/main/java/com/fasterxml/jackson/databind/jsontype/TypeIdResolver.java
+@@ -1,6 +1,7 @@
+ package com.fasterxml.jackson.databind.jsontype;
+ 
+ import java.io.IOException;
++import java.io.Serializable;
+ 
+ import com.fasterxml.jackson.annotation.JsonTypeInfo;
+ import com.fasterxml.jackson.databind.DatabindContext;
+@@ -20,7 +21,7 @@
+  * breakage in case new methds need to be added in this interface (something
+  * we try to avoid doing; but which may be necessary in some cases).
+  */
+-public interface TypeIdResolver
++public interface TypeIdResolver extends Serializable
+ {
+     /*
+     /**********************************************************

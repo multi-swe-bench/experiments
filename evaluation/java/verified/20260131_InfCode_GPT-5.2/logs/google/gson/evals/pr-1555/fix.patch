@@ -1,0 +1,92 @@
+--- a/gson/src/main/java/com/google/gson/internal/bind/JsonAdapterAnnotationTypeAdapterFactory.java
++++ b/gson/src/main/java/com/google/gson/internal/bind/JsonAdapterAnnotationTypeAdapterFactory.java
+@@ -66,7 +66,8 @@
+       JsonDeserializer<?> deserializer = instance instanceof JsonDeserializer
+           ? (JsonDeserializer) instance
+           : null;
+-      typeAdapter = new TreeTypeAdapter(serializer, deserializer, gson, type, null);
++      boolean allowNull = !annotation.nullSafe();
++      typeAdapter = new TreeTypeAdapter(serializer, deserializer, gson, type, null, allowNull);
+     } else {
+       throw new IllegalArgumentException("Invalid attempt to bind an instance of "
+           + instance.getClass().getName() + " as a @JsonAdapter for " + type.toString()
+
+--- a/gson/src/main/java/com/google/gson/internal/bind/TreeTypeAdapter.java
++++ b/gson/src/main/java/com/google/gson/internal/bind/TreeTypeAdapter.java
+@@ -44,6 +44,7 @@
+   final Gson gson;
+   private final TypeToken<T> typeToken;
+   private final TypeAdapterFactory skipPast;
++  private final boolean allowNull;
+   private final GsonContextImpl context = new GsonContextImpl();
+ 
+   /** The delegate is lazily created because it may not be needed, and creating it may fail. */
+@@ -51,11 +52,17 @@
+ 
+   public TreeTypeAdapter(JsonSerializer<T> serializer, JsonDeserializer<T> deserializer,
+       Gson gson, TypeToken<T> typeToken, TypeAdapterFactory skipPast) {
++    this(serializer, deserializer, gson, typeToken, skipPast, false);
++  }
++
++  TreeTypeAdapter(JsonSerializer<T> serializer, JsonDeserializer<T> deserializer,
++      Gson gson, TypeToken<T> typeToken, TypeAdapterFactory skipPast, boolean allowNull) {
+     this.serializer = serializer;
+     this.deserializer = deserializer;
+     this.gson = gson;
+     this.typeToken = typeToken;
+     this.skipPast = skipPast;
++    this.allowNull = allowNull;
+   }
+ 
+   @Override public T read(JsonReader in) throws IOException {
+@@ -63,7 +70,7 @@
+       return delegate().read(in);
+     }
+     JsonElement value = Streams.parse(in);
+-    if (value.isJsonNull()) {
++    if (value.isJsonNull() && !allowNull) {
+       return null;
+     }
+     return deserializer.deserialize(value, typeToken.getType(), context);
+@@ -74,12 +81,17 @@
+       delegate().write(out, value);
+       return;
+     }
+-    if (value == null) {
++    if (value == null && !allowNull) {
+       out.nullValue();
+       return;
+     }
++
+     JsonElement tree = serializer.serialize(value, typeToken.getType(), context);
+-    Streams.write(tree, out);
++    if (tree == null || tree.isJsonNull()) {
++      out.nullValue();
++    } else {
++      Streams.write(tree, out);
++    }
+   }
+ 
+   private TypeAdapter<T> delegate() {
+
+--- a/gson/src/main/java/com/google/gson/DefaultDateTypeAdapter.java
++++ b/gson/src/main/java/com/google/gson/DefaultDateTypeAdapter.java
+@@ -145,6 +145,18 @@
+           return dateFormat.parse(s);
+         } catch (ParseException ignored) {}
+       }
++
++      // On Java 9+ the long name for the UTC timezone may be "Coordinated Universal Time".
++      // Some locales cannot parse that name, but can parse the "UTC" abbreviation.
++      if (JavaVersion.isJava9OrLater() && s.contains("Coordinated Universal Time")) {
++        String withUtc = s.replace("Coordinated Universal Time", "UTC");
++        for (DateFormat dateFormat : dateFormats) {
++          try {
++            return dateFormat.parse(withUtc);
++          } catch (ParseException ignored) {}
++        }
++      }
++
+       try {
+         return ISO8601Utils.parse(s, new ParsePosition(0));
+       } catch (ParseException e) {

@@ -1,0 +1,37 @@
+--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/XmlBeanSerializerModifier.java
++++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/ser/XmlBeanSerializerModifier.java
+@@ -46,7 +46,7 @@
+             Boolean isText = AnnotationUtil.findIsTextAnnotation(config, intr, member);
+             Boolean isCData = AnnotationUtil.findIsCDataAnnotation(config, intr, member);
+             bpw.setInternalSetting(XmlBeanSerializerBase.KEY_XML_INFO,
+-            		new XmlInfo(isAttribute, ns, isText, isCData));
++                        new XmlInfo(isAttribute, ns, isText, isCData));
+ 
+             // Actually: if we have a Collection type, easiest place to add wrapping would be here...
+             //  or: let's also allow wrapping of "untyped" (Object): assuming it is a dynamically
+@@ -65,12 +65,23 @@
+             String localName = wrapperName.getSimpleName();
+             if (localName == null || localName.length() == 0) {
+                 wrapperName = wrappedName;
++            } else {
++                /*
++                 * [dataformat-xml#637]: If wrapper element has explicitly defined local name
++                 * but no explicit namespace (default marker in @JacksonXmlElementWrapper),
++                 * we must merge namespace from the property itself.
++                 */
++                String wrapperNs = wrapperName.getNamespace();
++                if ((wrapperNs == null || wrapperNs.isEmpty())
++                        && (ns != null && !ns.isEmpty())) {
++                    wrapperName = PropertyName.construct(localName, ns);
++                }
+             }
+             beanProperties.set(i, new XmlBeanPropertyWriter(bpw, wrapperName, wrappedName));
+         }
+         return beanProperties;
+     }
+-    
++
+     @Override
+     public JsonSerializer<?> modifySerializer(SerializationConfig config,
+             BeanDescription beanDesc, JsonSerializer<?> serializer)
+

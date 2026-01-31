@@ -1,0 +1,91 @@
+--- a/jib-plugins-common/src/main/java/com/google/cloud/tools/jib/plugins/common/PluginConfigurationProcessor.java
++++ b/jib-plugins-common/src/main/java/com/google/cloud/tools/jib/plugins/common/PluginConfigurationProcessor.java
+@@ -530,6 +530,9 @@
+     if (isKnownJava17Image(prefixRemoved) && javaVersion > 17) {
+       throw new IncompatibleBaseImageJavaVersionException(17, javaVersion);
+     }
++    if (isKnownJava21Image(prefixRemoved) && javaVersion > 21) {
++      throw new IncompatibleBaseImageJavaVersionException(21, javaVersion);
++    }
+ 
+     ImageReference baseImageReference = ImageReference.parse(prefixRemoved);
+     if (baseImageConfig.startsWith(Jib.DOCKER_DAEMON_IMAGE_PREFIX)) {
+@@ -752,7 +755,7 @@
+ 
+   /**
+    * Gets the suitable value for the base image. If the raw base image parameter is null, returns
+-   * {@code "jetty"} for WAR projects, or {@code "eclipse-temurin:{8|11|17}-jre"} for non-WAR.
++   * {@code "jetty"} for WAR projects, or {@code "eclipse-temurin:{8|11|17|21}-jre"} for non-WAR.
+    *
+    * @param projectProperties used for providing additional information
+    * @return the base image
+@@ -772,8 +775,10 @@
+       return "eclipse-temurin:11-jre";
+     } else if (javaVersion <= 17) {
+       return "eclipse-temurin:17-jre";
++    } else if (javaVersion <= 21) {
++      return "eclipse-temurin:21-jre";
+     }
+-    throw new IncompatibleBaseImageJavaVersionException(17, javaVersion);
++    throw new IncompatibleBaseImageJavaVersionException(21, javaVersion);
+   }
+ 
+   /**
+@@ -1097,4 +1102,14 @@
+   private static boolean isKnownJava17Image(String imageReference) {
+     return imageReference.startsWith("eclipse-temurin:17");
+   }
++
++  /**
++   * Checks if the given image is a known Java 21 image. May return false negative.
++   *
++   * @param imageReference the image reference
++   * @return {@code true} if the image is a known Java 21 image
++   */
++  private static boolean isKnownJava21Image(String imageReference) {
++    return imageReference.startsWith("eclipse-temurin:21");
++  }
+ }
+
+--- a/jib-cli/src/main/java/com/google/cloud/tools/jib/cli/jar/JarFiles.java
++++ b/jib-cli/src/main/java/com/google/cloud/tools/jib/cli/jar/JarFiles.java
+@@ -89,6 +89,9 @@
+     if (processor.getJavaVersion() <= 11) {
+       return "eclipse-temurin:11-jre";
+     }
+-    return "eclipse-temurin:17-jre";
++    if (processor.getJavaVersion() <= 17) {
++      return "eclipse-temurin:17-jre";
++    }
++    return "eclipse-temurin:21-jre";
+   }
+ }
+
+--- a/jib-cli/src/main/java/com/google/cloud/tools/jib/cli/ArtifactProcessors.java
++++ b/jib-cli/src/main/java/com/google/cloud/tools/jib/cli/ArtifactProcessors.java
+@@ -64,11 +64,11 @@
+       CommonContainerConfigCliOptions commonContainerConfigCliOptions)
+       throws IOException {
+     Integer jarJavaVersion = determineJavaMajorVersion(jarPath);
+-    if (jarJavaVersion > 17 && !commonContainerConfigCliOptions.getFrom().isPresent()) {
++    if (jarJavaVersion > 21 && !commonContainerConfigCliOptions.getFrom().isPresent()) {
+       throw new IllegalStateException(
+           String.format(
+               "The input JAR (%s) is compiled with Java %d, but the default base image only "
+-                  + "supports versions up to Java 17. Specify a custom base image with --from.",
++                  + "supports versions up to Java 21. Specify a custom base image with --from.",
+               jarPath, jarJavaVersion));
+     }
+     String jarType = determineJarType(jarPath);
+@@ -156,7 +156,9 @@
+             classFile.skipBytes(2);
+ 
+             int majorVersion = classFile.readUnsignedShort();
+-            int javaVersion = (majorVersion - 45) + 1;
++            // Java class file major versions start at 45 (Java 1.1). Jib CLI historically mapped
++            // major->java via (major - 45) + 1, which is off by +1. Fix mapping to (major - 44).
++            int javaVersion = majorVersion - 44;
+             return javaVersion;
+           } catch (EOFException ex) {
+             throw new IllegalArgumentException(
+

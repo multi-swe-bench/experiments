@@ -1,0 +1,64 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdNodeBasedDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdNodeBasedDeserializer.java
+@@ -59,8 +59,31 @@
+     /**********************************************************
+      */
+ 
++    /**
++     * Method called to convert from intermediate tree representation into
++     * value type this deserializer handles.
++     */
+     public abstract T convert(JsonNode root, DeserializationContext ctxt) throws IOException;
+ 
++    /**
++     * Alternate conversion method that may be called for "update" operations
++     * (such as when using {@link com.fasterxml.jackson.databind.ObjectMapper#readerForUpdating(Object)}).
++     *
++     * @param root Tree representation of JSON content to convert
++     * @param ctxt Deserialization context
++     * @param intoValue Existing value to update (if update is supported)
++     *
++     * @return Updated value (usually {@code intoValue})
++     *
++     * @since 2.17
++     */
++    public T convert(JsonNode root, DeserializationContext ctxt, T intoValue) throws IOException {
++        // Default behavior: indicate that update is not supported (unless configured
++        // to ignore), and fall back to regular conversion.
++        ctxt.handleBadMerge(this);
++        return convert(root, ctxt);
++    }
++
+     /*
+     /**********************************************************
+     /* JsonDeserializer impl
+@@ -74,6 +97,12 @@
+     }
+ 
+     @Override
++    public T deserialize(JsonParser jp, DeserializationContext ctxt, T intoValue) throws IOException {
++        JsonNode n = (JsonNode) _treeDeserializer.deserialize(jp, ctxt);
++        return convert(n, ctxt, intoValue);
++    }
++
++    @Override
+     public Object deserializeWithType(JsonParser jp, DeserializationContext ctxt,
+             TypeDeserializer td)
+         throws IOException
+@@ -83,4 +112,15 @@
+         JsonNode n = (JsonNode) _treeDeserializer.deserializeWithType(jp, ctxt, td);
+         return convert(n, ctxt);
+     }
++
++    @Override
++    public Object deserializeWithType(JsonParser jp, DeserializationContext ctxt,
++            TypeDeserializer td, T intoValue)
++        throws IOException
++    {
++        // for updates: need to read tree using type deserializer, then allow
++        // possible in-place update.
++        JsonNode n = (JsonNode) _treeDeserializer.deserializeWithType(jp, ctxt, td);
++        return convert(n, ctxt, intoValue);
++    }
+ }
+

@@ -1,0 +1,118 @@
+--- a/logstash-core/src/main/java/org/logstash/ackedqueue/SettingsImpl.java
++++ b/logstash-core/src/main/java/org/logstash/ackedqueue/SettingsImpl.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -148,7 +148,7 @@
+ 
+         private BuilderImpl(final String dirForFiles) {
+             this(dirForFiles, null, DEFAULT_CAPACITY, DEFAULT_MAX_QUEUE_BYTES,
+-                DEFAULT_MAX_UNREAD, DEFAULT_CHECKPOINT_MAX_ACKS, DEFAULT_CHECKPOINT_MAX_WRITES, false
++                DEFAULT_MAX_UNREAD, DEFAULT_CHECKPOINT_MAX_ACKS, DEFAULT_CHECKPOINT_MAX_WRITES, true
+             );
+         }
+ 
+
+--- a/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java
++++ b/logstash-core/src/main/java/org/logstash/ackedqueue/io/FileCheckpointIO.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -104,22 +104,43 @@
+             out.getFD().sync();
+         }
+ 
++        final Path destinationPath = dirPath.resolve(fileName);
+         try {
+-            Files.move(tmpPath, dirPath.resolve(fileName), StandardCopyOption.ATOMIC_MOVE);
++            Files.move(tmpPath, destinationPath, StandardCopyOption.ATOMIC_MOVE);
+         } catch (IOException ex) {
+-            if (retry) {
+-                try {
+-                    logger.error("Retrying after exception writing checkpoint: " + ex);
+-                    Thread.sleep(500);
+-                    Files.move(tmpPath, dirPath.resolve(fileName), StandardCopyOption.ATOMIC_MOVE);
+-                } catch (IOException | InterruptedException ex2) {
+-                    logger.error("Aborting after second exception writing checkpoint: " + ex2);
+-                    throw ex;
+-                }
+-            } else {
++            if (!retry) {
+                 logger.error("Error writing checkpoint: " + ex);
+                 throw ex;
+             }
++
++            // NOTE: On Windows, atomic move can fail transiently with AccessDeniedException when
++            // external processes (e.g., antivirus, explorer) briefly hold the destination path.
++            // Use exponential backoff to increase the chance of success.
++            final int maxAttempts = 6;
++            long backoffMillis = 250L;
++            IOException lastException = ex;
++
++            for (int attempt = 1; attempt <= maxAttempts; attempt++) {
++                logger.error("Retrying after exception writing checkpoint (attempt " + attempt + "/" + maxAttempts + "): " + lastException);
++                try {
++                    Thread.sleep(backoffMillis);
++                } catch (InterruptedException interrupted) {
++                    Thread.currentThread().interrupt();
++                    throw lastException;
++                }
++
++                try {
++                    Files.move(tmpPath, destinationPath, StandardCopyOption.ATOMIC_MOVE);
++                    return;
++                } catch (IOException moveException) {
++                    lastException = moveException;
++                    // cap the backoff so a single failure doesn't block too long
++                    backoffMillis = Math.min(backoffMillis * 2L, 2000L);
++                }
++            }
++
++            logger.error("Aborting after " + maxAttempts + " retries writing checkpoint: " + lastException);
++            throw lastException;
+         }
+     }
+ 
+
+--- a/logstash-core/src/main/java/org/logstash/ackedqueue/ext/JRubyWrappedAckedQueueExt.java
++++ b/logstash-core/src/main/java/org/logstash/ackedqueue/ext/JRubyWrappedAckedQueueExt.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -57,7 +57,17 @@
+         int maxEvents = RubyFixnum.num2int(args[2]);
+         int checkpointMaxWrites = RubyFixnum.num2int(args[3]);
+         int checkpointMaxAcks = RubyFixnum.num2int(args[4]);
+-        boolean checkpointRetry = !((RubyBoolean)args[6]).isFalse();
++
++        // NOTE: queue.checkpoint.retry is deprecated and will be removed in a future version.
++        // We enable retry-by-default in SettingsImpl; this boolean is only kept for backwards
++        // compatibility with existing Ruby/Java wiring.
++        boolean checkpointRetry = !((RubyBoolean) args[6]).isFalse();
++        if (!checkpointRetry) {
++            context.runtime.getWarnings().warn(
++                "Setting 'queue.checkpoint.retry' is deprecated and will be removed in a future release"
++            );
++        }
++
+         long queueMaxBytes = RubyFixnum.num2long(args[7]);
+ 
+         this.queue = JRubyAckedQueueExt.create(args[0].asJavaString(), capacity, maxEvents,

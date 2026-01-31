@@ -1,0 +1,67 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java
+@@ -313,7 +313,7 @@
+      */
+     @SuppressWarnings("unchecked")
+     protected JsonDeserializer<Object> buildBuilderBasedDeserializer(
+-    		DeserializationContext ctxt, JavaType valueType, BeanDescription builderDesc)
++                DeserializationContext ctxt, JavaType valueType, BeanDescription builderDesc)
+         throws JsonMappingException
+     {
+         // Creators, anyone? (to create builder itself)
+@@ -349,7 +349,7 @@
+         AnnotatedMethod buildMethod = builderDesc.findMethod(buildMethodName, null);
+         if (buildMethod != null) { // note: can't yet throw error; may be given build method
+             if (config.canOverrideAccessModifiers()) {
+-            	ClassUtil.checkAndFixAccess(buildMethod.getMember(), config.isEnabled(MapperFeature.OVERRIDE_PUBLIC_ACCESS_MODIFIERS));
++                ClassUtil.checkAndFixAccess(buildMethod.getMember(), config.isEnabled(MapperFeature.OVERRIDE_PUBLIC_ACCESS_MODIFIERS));
+             }
+         }
+         builder.setPOJOBuilder(buildMethod, builderConfig);
+@@ -360,7 +360,7 @@
+             }
+         }
+         JsonDeserializer<?> deserializer = builder.buildBuilderBased(
+-        		valueType, buildMethodName);
++                        valueType, buildMethodName);
+ 
+         // [JACKSON-440]: may have modifier(s) that wants to modify or replace serializer we just built:
+         if (_factoryConfig.hasDeserializerModifiers()) {
+@@ -666,20 +666,29 @@
+               BeanDescription beanDesc, SettableBeanProperty[] creatorProps)
+             throws JsonMappingException
+     {
+-        // Find the regular method/field level any-setter
+-        AnnotatedMember anySetter = beanDesc.findAnySetterAccessor();
+-        if (anySetter != null) {
+-            return constructAnySetter(ctxt, beanDesc, anySetter);
+-        }
+-        // else look for any-setter via @JsonCreator
++        /*
++         * [databind#4634]: if both a regular any-setter (method/field) and a
++         * creator parameter are annotated with `@JsonAnySetter`, creator parameter
++         * should take priority.
++         */
++
++        // First: look for any-setter via @JsonCreator
+         if (creatorProps != null) {
+             for (SettableBeanProperty prop : creatorProps) {
+                 AnnotatedMember member = prop.getMember();
+-                if (member != null && Boolean.TRUE.equals(ctxt.getAnnotationIntrospector().hasAnySetter(member))) {
++                if (member != null
++                        && Boolean.TRUE.equals(ctxt.getAnnotationIntrospector().hasAnySetter(member))) {
+                     return constructAnySetter(ctxt, beanDesc, member);
+                 }
+             }
+         }
++
++        // Otherwise fall back to regular method/field level any-setter
++        AnnotatedMember anySetter = beanDesc.findAnySetterAccessor();
++        if (anySetter != null) {
++            return constructAnySetter(ctxt, beanDesc, anySetter);
++        }
++
+         // not found, that's fine, too
+         return null;
+     }
+

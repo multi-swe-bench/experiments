@@ -1,0 +1,51 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java
+@@ -288,6 +288,7 @@
+ 
+         _nonStandardCreation = src._nonStandardCreation;
+         _unwrappedPropertyHandler = src._unwrappedPropertyHandler;
++        _externalTypeIdHandler = src._externalTypeIdHandler;
+         _needViewProcesing = src._needViewProcesing;
+         _serializationShape = src._serializationShape;
+ 
+@@ -314,6 +315,7 @@
+         _objectIdReader = src._objectIdReader;
+ 
+         _nonStandardCreation = src._nonStandardCreation;
++        _externalTypeIdHandler = src._externalTypeIdHandler;
+         UnwrappedPropertyHandler uph = src._unwrappedPropertyHandler;
+ 
+         if (unwrapper != null) {
+@@ -353,6 +355,7 @@
+ 
+         _nonStandardCreation = src._nonStandardCreation;
+         _unwrappedPropertyHandler = src._unwrappedPropertyHandler;
++        _externalTypeIdHandler = src._externalTypeIdHandler;
+         _needViewProcesing = src._needViewProcesing;
+         _serializationShape = src._serializationShape;
+ 
+@@ -396,6 +399,7 @@
+ 
+         _nonStandardCreation = src._nonStandardCreation;
+         _unwrappedPropertyHandler = src._unwrappedPropertyHandler;
++        _externalTypeIdHandler = src._externalTypeIdHandler;
+         _needViewProcesing = src._needViewProcesing;
+         _serializationShape = src._serializationShape;
+ 
+@@ -431,6 +435,7 @@
+ 
+         _nonStandardCreation = src._nonStandardCreation;
+         _unwrappedPropertyHandler = src._unwrappedPropertyHandler;
++        _externalTypeIdHandler = src._externalTypeIdHandler;
+         _needViewProcesing = src._needViewProcesing;
+         _serializationShape = src._serializationShape;
+ 
+@@ -785,7 +790,7 @@
+                 }
+                 JsonDeserializer<?> deser = ctxt.findRootValueDeserializer(idType);
+                 oir = ObjectIdReader.construct(idType, objectIdInfo.getPropertyName(),
+-                		idGen, deser, idProp, resolver);
++                                idGen, deser, idProp, resolver);
+             }
+         }
+         // either way, need to resolve serializer:

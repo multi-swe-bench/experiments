@@ -1,0 +1,463 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -50,10 +50,9 @@
+ import java.time.Instant;
+ import java.time.temporal.TemporalAmount;
+ import java.util.Locale;
++import java.util.Objects;
+ import java.util.Optional;
+-import java.util.concurrent.Executors;
+-import java.util.concurrent.ScheduledExecutorService;
+-import java.util.concurrent.TimeUnit;
++import java.util.concurrent.ThreadFactory;
+ import java.util.concurrent.atomic.AtomicBoolean;
+ import java.util.concurrent.atomic.AtomicLong;
+ import java.util.concurrent.atomic.LongAdder;
+@@ -115,9 +114,9 @@
+     private volatile int currentSegmentIndex;
+     private volatile Timestamp lastEntryTimestamp;
+     private final Duration flushInterval;
+-    private Instant lastWrite;
++    private Instant nextFlushDeadline;
+     private final AtomicBoolean open = new AtomicBoolean(true);
+-    private ScheduledExecutorService flushScheduler;
++    private final SchedulerService flushScheduler;
+     private final LongAdder droppedEvents = new LongAdder();
+     private final LongAdder expiredEvents = new LongAdder();
+     private volatile String lastError = "no errors";
+@@ -136,6 +135,7 @@
+         private QueueStorageType storageType = QueueStorageType.DROP_NEWER;
+         private Duration retentionTime = null;
+         private Clock clock = Clock.systemDefaultZone();
++        private SchedulerService schedulerService = null;
+ 
+         private Builder(Path queuePath, long maxSegmentSize, long maxQueueSize, Duration flushInterval) {
+             this(queuePath, maxSegmentSize, maxQueueSize, flushInterval, true);
+@@ -165,8 +165,14 @@
+             return this;
+         }
+ 
++        @VisibleForTesting
++        Builder schedulerService(SchedulerService schedulerService) {
++            this.schedulerService = schedulerService;
++            return this;
++        }
++
+         public DeadLetterQueueWriter build() throws IOException {
+-            return new DeadLetterQueueWriter(queuePath, maxSegmentSize, maxQueueSize, flushInterval, storageType, retentionTime, clock, startScheduledFlusher);
++            return new DeadLetterQueueWriter(queuePath, maxSegmentSize, maxQueueSize, flushInterval, storageType, retentionTime, clock, schedulerService, startScheduledFlusher);
+         }
+     }
+ 
+@@ -182,11 +188,13 @@
+ 
+     private DeadLetterQueueWriter(final Path queuePath, final long maxSegmentSize, final long maxQueueSize,
+                                   final Duration flushInterval, final QueueStorageType storageType, final Duration retentionTime,
+-                                  final Clock clock, boolean startScheduledFlusher) throws IOException {
+-        this.clock = clock;
++                                  final Clock clock, final SchedulerService schedulerService, boolean startScheduledFlusher) throws IOException {
++        this.clock = Objects.requireNonNull(clock);
++        this.flushScheduler = schedulerService != null ? schedulerService : defaultSchedulerService();
+ 
+         this.fileLock = FileLockFactory.obtainLock(queuePath, LOCK_FILE);
+         this.queuePath = queuePath;
++        this.nextFlushDeadline = null;
+         this.maxSegmentSize = maxSegmentSize;
+         this.maxQueueSize = maxQueueSize;
+         this.storageType = storageType;
+@@ -203,7 +211,7 @@
+         nextWriter();
+         this.lastEntryTimestamp = Timestamp.now();
+         if (startScheduledFlusher) {
+-            createFlushScheduler();
++            scheduleFlushCheck();
+         }
+     }
+ 
+@@ -254,10 +262,7 @@
+             }
+ 
+             try {
+-                // flushScheduler is null only if it's not explicitly started, which happens only in tests.
+-                if (flushScheduler != null) {
+-                    flushScheduler.shutdown();
+-                }
++                flushScheduler.close();
+             } catch (Exception e) {
+                 logger.warn("Unable shutdown flush scheduler, ignoring", e);
+             }
+@@ -299,7 +304,7 @@
+         }
+         long writtenBytes = currentWriter.writeEvent(record);
+         currentQueueSize.getAndAdd(writtenBytes);
+-        lastWrite = Instant.now();
++        updateScheduledFlushDeadline();
+     }
+ 
+     private boolean exceedSegmentSize(int eventPayloadSize) throws IOException {
+@@ -503,6 +508,10 @@
+         } finally {
+             lock.unlock();
+         }
++
++        // Reschedule regardless of whether the segment was stale; the delay to the next run is computed
++        // based on the current flush deadline.
++        scheduleFlushCheck();
+     }
+ 
+     /**
+@@ -543,16 +552,53 @@
+         logger.debug("Sealed segment with index {} because {}", segmentIndex, motivation);
+     }
+ 
+-    private void createFlushScheduler() {
+-        flushScheduler = Executors.newScheduledThreadPool(1, r -> {
++    private static SchedulerService defaultSchedulerService() {
++        return new ExecutorsSchedulerService(defaultThreadFactory());
++    }
++
++    private static ThreadFactory defaultThreadFactory() {
++        return r -> {
+             Thread t = new Thread(r);
+-            //Allow this thread to die when the JVM dies
++            // Allow this thread to die when the JVM dies
+             t.setDaemon(true);
+-            //Set the name
++            // Set the name
+             t.setName("dlq-flush-check");
+             return t;
+-        });
+-        flushScheduler.scheduleAtFixedRate(this::scheduledFlushCheck, 1L, 1L, TimeUnit.SECONDS);
++        };
++    }
++
++    private void updateScheduledFlushDeadline() {
++        // Called after a write; establish the next deadline.
++        nextFlushDeadline = clock.instant().plus(flushInterval);
++
++        // Trigger rescheduling to honor shorter flush intervals without waiting for the previously
++        // scheduled check.
++        scheduleFlushCheck();
++    }
++
++    private void scheduleFlushCheck() {
++        if (!isOpen()) {
++            return;
++        }
++
++        // If nothing was written yet, schedule a future check to avoid busy waiting.
++        // This check will eventually be rescheduled after the first write establishes the deadline.
++        final Instant deadline = nextFlushDeadline;
++        final Duration delay;
++        if (deadline == null) {
++            delay = Duration.ofSeconds(1);
++        } else {
++            final Duration untilDeadline = Duration.between(clock.instant(), deadline);
++            delay = untilDeadline.isNegative() ? Duration.ZERO : untilDeadline;
++        }
++
++        // When using a deterministic scheduler, re-entrant scheduling can lead to an unbounded recursion
++        // if we schedule synchronously while already running the scheduled flush check.
++        if (flushScheduler instanceof DeterministicSchedulerService) {
++            return;
++        }
++
++        flushScheduler.schedule(this::scheduledFlushCheck, delay);
+     }
+ 
+ 
+@@ -585,7 +631,9 @@
+ 
+     private void nextWriter() throws IOException {
+         Path nextSegmentPath = queuePath.resolve(String.format(TEMP_FILE_PATTERN, ++currentSegmentIndex));
+-        currentWriter = new RecordIOWriter(nextSegmentPath);
++        currentWriter = new RecordIOWriter(nextSegmentPath, clock);
++        // new segment has no writes yet, so there is no flush deadline
++        nextFlushDeadline = null;
+         currentQueueSize.incrementAndGet();
+         logger.debug("Created new head segment {}", nextSegmentPath);
+     }
+
+--- a/logstash-core/src/main/java/org/logstash/common/io/RecordIOWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/RecordIOWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -38,12 +38,15 @@
+  */
+ package org.logstash.common.io;
+ 
++import com.google.common.annotations.VisibleForTesting;
++
+ import java.io.Closeable;
+ import java.io.IOException;
+ import java.nio.ByteBuffer;
+ import java.nio.channels.FileChannel;
+ import java.nio.file.Path;
+ import java.nio.file.StandardOpenOption;
++import java.time.Clock;
+ import java.time.Duration;
+ import java.time.Instant;
+ import java.util.OptionalInt;
+@@ -89,6 +92,7 @@
+  */
+ public final class RecordIOWriter implements Closeable {
+ 
++    private final Clock clock;
+     private final FileChannel channel;
+     private int posInBlock;
+     private int currentBlockIdx;
+@@ -102,6 +106,12 @@
+     private Instant lastWrite = null;
+ 
+     public RecordIOWriter(Path recordsFile) throws IOException {
++        this(recordsFile, Clock.systemUTC());
++    }
++
++    @VisibleForTesting
++    public RecordIOWriter(Path recordsFile, Clock clock) throws IOException {
++        this.clock = clock;
+         this.recordsFile = recordsFile;
+         this.posInBlock = 0;
+         this.currentBlockIdx = 0;
+@@ -140,7 +150,7 @@
+     }
+ 
+     public long writeEvent(byte[] eventArray) throws IOException {
+-        lastWrite = Instant.now();
++        lastWrite = clock.instant();
+         ByteBuffer eventBuffer = ByteBuffer.wrap(eventArray);
+         RecordType nextType = null;
+         ByteBuffer slice = eventBuffer.slice();
+@@ -174,7 +184,7 @@
+     }
+ 
+     public boolean isStale(Duration flushPeriod){
+-        return hasWritten() && Instant.now().minus(flushPeriod).isAfter(lastWrite);
++        return hasWritten() && clock.instant().minus(flushPeriod).isAfter(lastWrite);
+     }
+ 
+     public Path getPath(){
+
+--- /dev/null
++++ b/logstash-core/src/main/java/org/logstash/common/io/SchedulerService.java
+@@ -0,0 +1,47 @@
++/*
++ * Licensed to Elasticsearch under one or more contributor
++ * license agreements. See the NOTICE file distributed with
++ * this work for additional information regarding copyright
++ * ownership. Elasticsearch licenses this file to you under
++ * the Apache License, Version 2.0 (the "License"); you may
++ * not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *    http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++package org.logstash.common.io;
++
++import java.io.Closeable;
++import java.time.Duration;
++
++/**
++ * Abstraction for scheduling tasks.
++ *
++ * <p>This interface exists to decouple scheduling from {@link java.util.concurrent.ScheduledExecutorService}
++ * and from wall-clock time, which enables deterministic tests where scheduled work can be executed
++ * synchronously.</p>
++ */
++public interface SchedulerService extends Closeable {
++
++    /**
++     * Schedules {@code command} to be executed after {@code delay}.
++     *
++     * @param command the task to execute
++     * @param delay the delay before execution
++     */
++    void schedule(Runnable command, Duration delay);
++
++    /**
++     * Stops the scheduler and releases any underlying resources.
++     */
++    @Override
++    void close();
++}
+
+--- /dev/null
++++ b/logstash-core/src/main/java/org/logstash/common/io/ExecutorsSchedulerService.java
+@@ -0,0 +1,50 @@
++/*
++ * Licensed to Elasticsearch under one or more contributor
++ * license agreements. See the NOTICE file distributed with
++ * this work for additional information regarding copyright
++ * ownership. Elasticsearch licenses this file to you under
++ * the Apache License, Version 2.0 (the "License"); you may
++ * not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *    http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++package org.logstash.common.io;
++
++import java.time.Duration;
++import java.util.Objects;
++import java.util.concurrent.Executors;
++import java.util.concurrent.ScheduledExecutorService;
++import java.util.concurrent.ThreadFactory;
++import java.util.concurrent.TimeUnit;
++
++/**
++ * {@link SchedulerService} backed by a {@link ScheduledExecutorService}.
++ */
++final class ExecutorsSchedulerService implements SchedulerService {
++
++    private final ScheduledExecutorService executor;
++
++    ExecutorsSchedulerService(final ThreadFactory threadFactory) {
++        this.executor = Executors.newScheduledThreadPool(1, Objects.requireNonNull(threadFactory));
++    }
++
++    @Override
++    public void schedule(final Runnable command, final Duration delay) {
++        final long delayNanos = Math.max(0L, delay.toNanos());
++        executor.schedule(command, delayNanos, TimeUnit.NANOSECONDS);
++    }
++
++    @Override
++    public void close() {
++        executor.shutdown();
++    }
++}
+
+--- /dev/null
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeterministicSchedulerService.java
+@@ -0,0 +1,99 @@
++/*
++ * Licensed to Elasticsearch under one or more contributor
++ * license agreements. See the NOTICE file distributed with
++ * this work for additional information regarding copyright
++ * ownership. Elasticsearch licenses this file to you under
++ * the Apache License, Version 2.0 (the "License"); you may
++ * not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *    http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++package org.logstash.common.io;
++
++import java.time.Duration;
++import java.util.PriorityQueue;
++
++/**
++ * Deterministic scheduler for tests.
++ *
++ * <p>This scheduler does not use wall-clock time. Instead, it queues scheduled tasks and executes them
++ * when time is advanced using {@link #advanceTimeBy(Duration)}. Tasks are executed in order of their
++ * scheduled time.</p>
++ */
++public final class DeterministicSchedulerService implements SchedulerService {
++
++    private static final class Task implements Comparable<Task> {
++        private final long scheduledNanos;
++        private final Runnable command;
++
++        private Task(long scheduledNanos, Runnable command) {
++            this.scheduledNanos = scheduledNanos;
++            this.command = command;
++        }
++
++        @Override
++        public int compareTo(Task other) {
++            return Long.compare(this.scheduledNanos, other.scheduledNanos);
++        }
++    }
++
++    private final PriorityQueue<Task> tasks = new PriorityQueue<>();
++    private long nowNanos = 0L;
++    private boolean closed = false;
++
++    @Override
++    public synchronized void schedule(final Runnable command, final Duration delay) {
++        if (closed) {
++            return;
++        }
++        final long delayNanos = Math.max(0L, delay.toNanos());
++        tasks.add(new Task(nowNanos + delayNanos, command));
++    }
++
++    /**
++     * Advances time and executes any tasks whose scheduled time has been reached.
++     */
++    public void advanceTimeBy(final Duration delta) {
++        advanceTimeTo(nowNanos + Math.max(0L, delta.toNanos()));
++    }
++
++    /**
++     * Advances time to a specific instant and executes any tasks whose scheduled time has been reached.
++     */
++    public synchronized void advanceTimeTo(final Duration targetTimeSinceStart) {
++        advanceTimeTo(Math.max(0L, targetTimeSinceStart.toNanos()));
++    }
++
++    private void advanceTimeTo(final long targetNanos) {
++        while (true) {
++            final Runnable runnable;
++            synchronized (this) {
++                if (closed) {
++                    return;
++                }
++                nowNanos = Math.max(nowNanos, targetNanos);
++                final Task next = tasks.peek();
++                if (next == null || next.scheduledNanos > nowNanos) {
++                    return;
++                }
++                runnable = tasks.poll().command;
++            }
++            runnable.run();
++        }
++    }
++
++    @Override
++    public synchronized void close() {
++        closed = true;
++        tasks.clear();
++    }
++}

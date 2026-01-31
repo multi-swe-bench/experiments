@@ -1,0 +1,49 @@
+--- a/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java
++++ b/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -177,6 +177,10 @@
+             }
+             jvmOptionsContent.add(lsJavaOpts);
+         }
++
++        // Ensure Netty's allocator maxOrder uses a proven default unless explicitly set by the user.
++        applyNettyAllocatorMaxOrderDefault(jvmOptionsContent);
++
+         // Set mandatory JVM options
+         jvmOptionsContent.addAll(getMandatoryJvmOptions(javaMajorVersion));
+ 
+@@ -390,4 +394,25 @@
+         }
+         return Integer.parseInt(specVersionMatcher.group("javaMajorVersion"));
+     }
++
++    private static final String NETTY_ALLOCATOR_MAX_ORDER_PROPERTY = "io.netty.allocator.maxOrder";
++    private static final String NETTY_ALLOCATOR_MAX_ORDER_DEFAULT_VALUE = "11";
++
++    /**
++     * Applies a default value for Netty's allocator maxOrder unless the user has already customized it.
++     *
++     * We intentionally keep this logic narrowly-scoped and string-based because LS_JAVA_OPTS may contain
++     * multiple flags in a single entry.
++     */
++    static void applyNettyAllocatorMaxOrderDefault(final Set<String> jvmOptionsContent) {
++        if (jvmOptionsContent == null) {
++            return;
++        }
++
++        final String needle = "-D" + NETTY_ALLOCATOR_MAX_ORDER_PROPERTY + "=";
++        final boolean userSpecified = jvmOptionsContent.stream().anyMatch(opt -> opt != null && opt.contains(needle));
++        if (!userSpecified) {
++            jvmOptionsContent.add(needle + NETTY_ALLOCATOR_MAX_ORDER_DEFAULT_VALUE);
++        }
++    }
+ }
+

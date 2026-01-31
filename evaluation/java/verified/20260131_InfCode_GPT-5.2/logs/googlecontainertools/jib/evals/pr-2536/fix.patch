@@ -1,0 +1,118 @@
+--- a/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfig.java
++++ b/jib-core/src/main/java/com/google/cloud/tools/jib/registry/credentials/DockerConfig.java
+@@ -16,8 +16,15 @@
+ 
+ package com.google.cloud.tools.jib.registry.credentials;
+ 
++import com.fasterxml.jackson.databind.MapperFeature;
++import com.fasterxml.jackson.databind.ObjectMapper;
+ import com.google.cloud.tools.jib.registry.credentials.json.DockerConfigTemplate;
+ import com.google.cloud.tools.jib.registry.credentials.json.DockerConfigTemplate.AuthTemplate;
++import com.google.common.annotations.VisibleForTesting;
++import java.io.IOException;
++import java.io.InputStream;
++import java.nio.file.Files;
++import java.nio.file.Path;
+ import java.nio.file.Paths;
+ import java.util.Arrays;
+ import java.util.List;
+@@ -35,7 +42,11 @@
+    */
+   @Nullable
+   private static <K, T> Map.Entry<K, T> findFirstInMapByKey(
+-      Map<K, T> map, List<Predicate<K>> keyMatches) {
++      @Nullable Map<K, T> map, List<Predicate<K>> keyMatches) {
++    if (map == null) {
++      return null;
++    }
++
+     return keyMatches
+         .stream()
+         .map(keyMatch -> findFirstInMapByKey(map, keyMatch))
+@@ -46,7 +57,12 @@
+ 
+   /** Returns the first entry matching the given key predicate. */
+   @Nullable
+-  private static <K, T> Map.Entry<K, T> findFirstInMapByKey(Map<K, T> map, Predicate<K> keyMatch) {
++  private static <K, T> Map.Entry<K, T> findFirstInMapByKey(
++      @Nullable Map<K, T> map, Predicate<K> keyMatch) {
++    if (map == null) {
++      return null;
++    }
++
+     return map.entrySet()
+         .stream()
+         .filter(entry -> keyMatch.test(entry.getKey()))
+@@ -137,4 +153,18 @@
+     Predicate<String> withHttpsAndSuffix = name -> name.startsWith("https://" + registry + "/");
+     return Arrays.asList(exactMatch, withHttps, withSuffix, withHttpsAndSuffix);
+   }
++
++  /**
++   * Reads a Docker config file into a {@link DockerConfig}.
++   *
++   * <p>This is only intended for tests.
++   */
++  @VisibleForTesting
++  static DockerConfig fromDockerConfigFile(Path dockerConfigFile) throws IOException {
++    ObjectMapper objectMapper =
++        new ObjectMapper().configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
++    try (InputStream fileIn = Files.newInputStream(dockerConfigFile)) {
++      return new DockerConfig(objectMapper.readValue(fileIn, DockerConfigTemplate.class));
++    }
++  }
+ }
+
+--- a/gradlew
++++ b/gradlew
+@@ -154,6 +154,50 @@
+     esac
+ fi
+ 
++# Gradle fails if --console is provided multiple times. Some environments may add it more than once.
++# Filter out duplicates to make the wrapper script more robust.
++CONSOLE_OPTION_SEEN=false
++FILTERED_APP_ARGS=""
++quote_arg () {
++    printf %s\\n "$1" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/'/"
++}
++while [ "$#" -gt 0 ]; do
++    case "$1" in
++        --console)
++            if $CONSOLE_OPTION_SEEN; then
++                shift
++                # Drop the console value too (if present).
++                if [ "$#" -gt 0 ]; then
++                    shift
++                fi
++                continue
++            fi
++            CONSOLE_OPTION_SEEN=true
++            FILTERED_APP_ARGS="$FILTERED_APP_ARGS $(quote_arg "$1")"
++            shift
++            if [ "$#" -gt 0 ]; then
++                FILTERED_APP_ARGS="$FILTERED_APP_ARGS $(quote_arg "$1")"
++                shift
++            fi
++            ;;
++        --console=*)
++            if $CONSOLE_OPTION_SEEN; then
++                shift
++                continue
++            fi
++            CONSOLE_OPTION_SEEN=true
++            FILTERED_APP_ARGS="$FILTERED_APP_ARGS $(quote_arg "$1")"
++            shift
++            ;;
++        *)
++            FILTERED_APP_ARGS="$FILTERED_APP_ARGS $(quote_arg "$1")"
++            shift
++            ;;
++    esac
++done
++# Restore filtered arguments.
++eval set -- $FILTERED_APP_ARGS
++
+ # Escape application args
+ save () {
+     for i do printf %s\\n "$i" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/' \\\\/" ; done

@@ -1,0 +1,195 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueReader.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueReader.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -50,10 +50,12 @@
+ 
+ import java.io.IOException;
+ import java.nio.channels.FileLock;
++import java.nio.charset.StandardCharsets;
+ import java.nio.file.FileSystems;
+ import java.nio.file.Files;
+ import java.nio.file.NoSuchFileException;
+ import java.nio.file.Path;
++import java.nio.file.StandardOpenOption;
+ import java.nio.file.StandardWatchEventKinds;
+ import java.nio.file.WatchEvent;
+ import java.nio.file.WatchKey;
+@@ -76,6 +78,13 @@
+ public final class DeadLetterQueueReader implements Closeable {
+     private static final Logger logger = LogManager.getLogger(DeadLetterQueueReader.class);
+ 
++    /**
++     * Filesystem marker created by the reader when it deletes one or more segment files in consequence of
++     * {@code clean_consumed => true}. It is used to signal the DLQ writer that it should refresh its
++     * {@code queue_size_in_bytes} metric.
++     */
++    static final String DELETED_SEGMENT_NOTIFICATION_FILE = ".deleted_segment";
++
+     private RecordIOReader currentReader;
+     private final Path queuePath;
+     private final SegmentListener segmentCallback;
+@@ -406,6 +415,10 @@
+             long eventsInSegment = DeadLetterQueueUtils.countEventsInSegment(segment);
+             Files.delete(segment);
+             logger.debug("Deleted segment {}", segment);
++
++            // Signal the writer that the filesystem size has changed due to clean_consumed purging.
++            touchDeletedSegmentNotification();
++
+             return Optional.of(eventsInSegment);
+         } catch (IOException ex) {
+             logger.warn("Problem occurred in cleaning the segment {} after a repositioning", segment, ex);
+@@ -413,6 +426,20 @@
+         }
+     }
+ 
++    private void touchDeletedSegmentNotification() {
++        try {
++            final Path marker = queuePath.resolve(DELETED_SEGMENT_NOTIFICATION_FILE);
++            // Use CREATE+TRUNCATE to ensure a write always occurs so watchers reliably get ENTRY_MODIFY.
++            Files.write(marker,
++                    Long.toString(System.currentTimeMillis()).getBytes(StandardCharsets.UTF_8),
++                    StandardOpenOption.CREATE,
++                    StandardOpenOption.TRUNCATE_EXISTING);
++        } catch (IOException e) {
++            // best-effort; failure to signal should not prevent segment cleanup
++            logger.debug("Unable to create DLQ deletion notification file", e);
++        }
++    }
++
+     private Optional<RecordIOReader> openNextExistingReader(Path segmentPath) throws IOException {
+         Path next;
+         while ( (next = nextExistingSegmentFile(segmentPath)) != null ) {
+
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -41,10 +41,15 @@
+ import java.io.Closeable;
+ import java.io.IOException;
+ import java.nio.channels.FileLock;
++import java.nio.file.FileSystems;
+ import java.nio.file.Files;
+ import java.nio.file.NoSuchFileException;
+ import java.nio.file.Path;
+ import java.nio.file.StandardCopyOption;
++import java.nio.file.StandardWatchEventKinds;
++import java.nio.file.WatchEvent;
++import java.nio.file.WatchKey;
++import java.nio.file.WatchService;
+ import java.time.Clock;
+ import java.time.Duration;
+ import java.time.Instant;
+@@ -126,6 +131,14 @@
+ 
+     private final SchedulerService flusherService;
+ 
++    /**
++     * Filesystem watcher used to refresh {@link #currentQueueSize} when a DLQ reader purges segments with
++     * {@code clean_consumed => true}.
++     */
++    private final WatchService watchService;
++
++    private final AtomicBoolean watcherRunning = new AtomicBoolean(false);
++
+     interface SchedulerService {
+ 
+         /**
+@@ -273,6 +286,17 @@
+         this.lastEntryTimestamp = Timestamp.now();
+         this.flusherService = flusherService;
+         this.flusherService.repeatedAction(this::scheduledFlushCheck);
++
++        // Watch for the reader's clean_consumed deletion marker so that queue size metric can be refreshed.
++        this.watchService = FileSystems.getDefault().newWatchService();
++        this.queuePath.register(this.watchService,
++                StandardWatchEventKinds.ENTRY_CREATE,
++                StandardWatchEventKinds.ENTRY_MODIFY);
++        this.watcherRunning.set(true);
++        Thread watcherThread = new Thread(this::watchForDeletedSegments);
++        watcherThread.setDaemon(true);
++        watcherThread.setName("dlq-size-watcher");
++        watcherThread.start();
+     }
+ 
+     public boolean isOpen() {
+@@ -310,6 +334,12 @@
+     @Override
+     public void close() {
+         if (open.compareAndSet(true, false)) {
++            watcherRunning.set(false);
++            try {
++                watchService.close();
++            } catch (Exception e) {
++                logger.debug("Unable to close DLQ watcher service", e);
++            }
+             try {
+                 finalizeSegment(FinalizeWhen.ALWAYS, SealReason.DLQ_CLOSE);
+             } catch (Exception e) {
+@@ -706,3 +736,50 @@
+         return System.getProperty("os.name").startsWith("Windows");
+     }
+ }
++
++
++    private void watchForDeletedSegments() {
++        while (watcherRunning.get()) {
++            final WatchKey key;
++            try {
++                key = watchService.take();
++            } catch (InterruptedException e) {
++                Thread.currentThread().interrupt();
++                return;
++            } catch (Exception e) {
++                // WatchService is closed
++                return;
++            }
++
++            boolean shouldReload = false;
++            for (WatchEvent<?> event : key.pollEvents()) {
++                final WatchEvent.Kind<?> kind = event.kind();
++                if (kind == StandardWatchEventKinds.OVERFLOW) {
++                    shouldReload = true;
++                    continue;
++                }
++                final Object ctx = event.context();
++                if (!(ctx instanceof Path)) {
++                    continue;
++                }
++                final Path filename = (Path) ctx;
++                if (DeadLetterQueueReader.DELETED_SEGMENT_NOTIFICATION_FILE.equals(filename.toString())) {
++                    shouldReload = true;
++                }
++            }
++
++            try {
++                key.reset();
++            } catch (Exception e) {
++                // ignore
++            }
++
++            if (shouldReload) {
++                try {
++                    currentQueueSize.set(computeQueueSize());
++                } catch (IOException e) {
++                    logger.debug("Unable to refresh DLQ queue size after clean_consumed notification", e);
++                }
++            }
++        }
++    }

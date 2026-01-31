@@ -1,0 +1,33 @@
+--- a/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryEndpointCaller.java
++++ b/jib-core/src/main/java/com/google/cloud/tools/jib/registry/RegistryEndpointCaller.java
+@@ -189,9 +189,19 @@
+         new RegistryErrorExceptionBuilder(
+             registryEndpointProvider.getActionDescription(), responseException);
+ 
++    String content = responseException.getContent();
++    if (content == null) {
++      registryErrorExceptionBuilder.addReason(
++          "registry returned error code "
++              + responseException.getStatusCode()
++              + "; possible causes include invalid or wrong reference. Actual error output follows:\n"
++              + "(no content)\n");
++      return registryErrorExceptionBuilder.build();
++    }
++
+     try {
+       ErrorResponseTemplate errorResponse =
+-          JsonTemplateMapper.readJson(responseException.getContent(), ErrorResponseTemplate.class);
++          JsonTemplateMapper.readJson(content, ErrorResponseTemplate.class);
+       for (ErrorEntryTemplate errorEntry : errorResponse.getErrors()) {
+         registryErrorExceptionBuilder.addReason(errorEntry);
+       }
+@@ -200,7 +210,7 @@
+           "registry returned error code "
+               + responseException.getStatusCode()
+               + "; possible causes include invalid or wrong reference. Actual error output follows:\n"
+-              + responseException.getContent()
++              + content
+               + "\n");
+     }
+ 
+

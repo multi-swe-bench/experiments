@@ -1,0 +1,56 @@
+--- a/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java
++++ b/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java
+@@ -220,6 +220,17 @@
+ 
+     private final ThreadLocal<Boolean> mockitoConstruction = ThreadLocal.withInitial(() -> false);
+ 
++    /**
++     * During Mockito-internal instantiation (see {@link #newInstance(Class)}), we need to treat the
++     * constructor chain of the currently created mock type as a "mocked construction" so that the
++     * original constructors are not executed.
++     *
++     * <p>However, other instrumented types might be constructed as a side-effect (e.g. via
++     * MethodHandles). In that case, we must not treat these constructions as Mockito constructions
++     * as this would interfere with unrelated object creation.
++     */
++    private final ThreadLocal<Class<?>> currentMockedType = new ThreadLocal<>();
++
+     private final ThreadLocal<Object> currentSpied = new ThreadLocal<>();
+ 
+     InlineDelegateByteBuddyMockMaker() {
+@@ -272,7 +283,22 @@
+                 type -> {
+                     if (isSuspended.get()) {
+                         return false;
+-                    } else if (mockitoConstruction.get() || currentConstruction.get() != null) {
++                    }
++
++                    // If we are in Mockito-internal instantiation of a mock type, only treat
++                    // constructions of that specific type as constructor-mocked. Other
++                    // instrumented types can be constructed as a side effect (e.g. collections
++                    // created by MethodHandle implementations) and must not interfere.
++                    Class<?> mockedType = currentMockedType.get();
++                    if (mockedType != null) {
++                        // We need to short-circuit the constructor chain for the entire hierarchy
++                        // of the currently created mock type (including super classes). At the
++                        // same time, we must not treat unrelated (but instrumented) types that are
++                        // instantiated as a side effect as mocked constructions.
++                        return type.isAssignableFrom(mockedType);
++                    }
++
++                    if (mockitoConstruction.get() || currentConstruction.get() != null) {
+                         return true;
+                     }
+                     Map<Class<?>, ?> interceptors = mockedConstruction.get();
+@@ -648,9 +674,11 @@
+                             selected,
+                             callback -> {
+                                 mockitoConstruction.set(true);
++                                currentMockedType.set(cls);
+                                 try {
+                                     return callback.newInstance();
+                                 } finally {
++                                    currentMockedType.remove();
+                                     mockitoConstruction.set(false);
+                                 }
+                             },

@@ -1,0 +1,13 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java
+@@ -1637,7 +1637,9 @@
+         //    detected, related to difficulties in propagating type upwards (Iterable, for
+         //    example, is a weak, tag-on type). They may be detectable in future.
+         // 23-May-2023, tatu: As of 2.16 we do, however, recognized certain `IterationType`s.
+-        if (rawType == Iterator.class || rawType == Stream.class) {
++        // 24-Jan-2026, tatu: As of 2.19(?) also recognize `Iterable` itself as `IterationType`
++        //    (see databind#4443)
++        if (rawType == Iterator.class || rawType == Iterable.class || rawType == Stream.class) {
+             return _iterationType(rawType, bindings, superClass, superInterfaces);
+         }
+         if (BaseStream.class.isAssignableFrom(rawType)) {

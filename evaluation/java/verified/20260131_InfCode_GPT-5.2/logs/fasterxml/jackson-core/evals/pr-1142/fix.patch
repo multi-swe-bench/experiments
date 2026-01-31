@@ -1,0 +1,31 @@
+--- a/src/main/java/com/fasterxml/jackson/core/Version.java
++++ b/src/main/java/com/fasterxml/jackson/core/Version.java
+@@ -5,6 +5,8 @@
+ 
+ package com.fasterxml.jackson.core;
+ 
++import java.util.Objects;
++
+ /**
+  * Object that encapsulates versioning information of a component.
+  * Version information includes not just version number but also
+@@ -113,7 +115,8 @@
+     }
+ 
+     @Override public int hashCode() {
+-        return _artifactId.hashCode() ^ _groupId.hashCode() ^ _snapshotInfo.hashCode()
++        // _snapshotInfo can be null for legacy instances (deprecated constructor)
++        return _artifactId.hashCode() ^ _groupId.hashCode() ^ Objects.hashCode(_snapshotInfo)
+             + _majorVersion - _minorVersion + _patchLevel;
+     }
+ 
+@@ -127,7 +130,7 @@
+         return (other._majorVersion == _majorVersion)
+             && (other._minorVersion == _minorVersion)
+             && (other._patchLevel == _patchLevel)
+-            && other._snapshotInfo.equals(_snapshotInfo)
++            && Objects.equals(other._snapshotInfo, _snapshotInfo)
+             && other._artifactId.equals(_artifactId)
+             && other._groupId.equals(_groupId)
+             ;
+

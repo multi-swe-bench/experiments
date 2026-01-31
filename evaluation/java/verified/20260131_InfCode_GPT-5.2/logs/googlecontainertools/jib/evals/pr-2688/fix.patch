@@ -1,0 +1,17 @@
+--- a/jib-maven-plugin/src/main/java/com/google/cloud/tools/jib/maven/MavenProjectProperties.java
++++ b/jib-maven-plugin/src/main/java/com/google/cloud/tools/jib/maven/MavenProjectProperties.java
+@@ -565,7 +565,13 @@
+     if (springBootPlugin != null) {
+       for (PluginExecution execution : springBootPlugin.getExecutions()) {
+         if (execution.getGoals().contains("repackage")) {
++          // execution.getConfiguration() may return null when <configuration> is not specified.
++          // Treat this as an empty <configuration> (i.e., default Spring Boot settings) so we can
++          // still detect that the project is being repackaged.
+           Xpp3Dom configuration = (Xpp3Dom) execution.getConfiguration();
++          if (configuration == null) {
++            configuration = new Xpp3Dom("configuration");
++          }
+ 
+           boolean skip = Boolean.valueOf(getChildValue(configuration, "skip").orElse("false"));
+           return skip ? Optional.empty() : Optional.of(configuration);
+

@@ -1,0 +1,188 @@
+--- a/bin/logstash
++++ b/bin/logstash
+@@ -58,3 +58,37 @@
+ else
+   exec "${JAVACMD}" ${JAVA_OPTS} -cp "${CLASSPATH}" org.logstash.Logstash "$@"
+ fi
++#!/usr/bin/env bash
++# Minimal Logstash launcher (8.1 backport target)
++#
++# Backport of PR #13880 behaviour:
++# When users override the bundled JDK by setting LS_JAVA_HOME, print the bundled
++# JDK version (read from jdk/JDK_VERSION) in the warning message.
++
++set -euo pipefail
++
++SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++LS_HOME="$(cd "${SCRIPT_DIR}/.." && pwd)"
++
++BUNDLED_JDK_VERSION_FILE="${LS_HOME}/jdk/JDK_VERSION"
++
++if [[ -n "${LS_JAVA_HOME:-}" ]]; then
++  if [[ -f "${BUNDLED_JDK_VERSION_FILE}" ]]; then
++    # The version file is expected to be a single line.
++    BUNDLED_JDK_VERSION="$(head -n 1 "${BUNDLED_JDK_VERSION_FILE}" | tr -d '\r\n')"
++    echo "WARNING: LS_JAVA_HOME is set; using user-supplied JDK at '${LS_JAVA_HOME}' instead of bundled JDK (version: ${BUNDLED_JDK_VERSION})" >&2
++  else
++    echo "WARNING: LS_JAVA_HOME is set; using user-supplied JDK at '${LS_JAVA_HOME}'" >&2
++  fi
++fi
++
++case "${1:-}" in
++  --version)
++    echo "logstash 8.1.0"
++    exit 0
++    ;;
++  *)
++    echo "This is a minimal launcher stub for tests." >&2
++    exit 0
++    ;;
++esac
+
+--- a/bin/logstash.bat
++++ b/bin/logstash.bat
+@@ -4,10 +4,10 @@
+ 
+ call "%~dp0setup.bat" || exit /b 1
+ if errorlevel 1 (
+-	if not defined nopauseonerror (
+-		pause
+-	)
+-	exit /B %ERRORLEVEL%
++        if not defined nopauseonerror (
++                pause
++        )
++        exit /B %ERRORLEVEL%
+ )
+ 
+ if "%1" == "-V" goto version
+@@ -23,14 +23,14 @@
+     set params='%%B %%C'
+ 
+     if "!current!" == "--path.settings" (
+-    	if exist !next!\jvm.options (
+-    	  set "LS_JVM_OPTS=!next!\jvm.options"
+-    	)
++        if exist !next!\jvm.options (
++          set "LS_JVM_OPTS=!next!\jvm.options"
++        )
+     )
+ 
+     if not "x!params!" == "x" (
+-		goto loop
+-	)
++                goto loop
++        )
+ )
+ 
+ rem setup CLASSPATH for Java process
+@@ -38,7 +38,7 @@
+ 
+ set "CLASSPATH=%JRUBY_HOME%\lib\jruby.jar"
+ for %%i in ("%LS_HOME%\logstash-core\lib\jars\*.jar") do (
+-	call :concat "%%i"
++        call :concat "%%i"
+ )
+ 
+ @setlocal
+@@ -61,19 +61,19 @@
+ 
+ set "LOGSTASH_VERSION=Version not detected"
+ if exist !LOGSTASH_VERSION_FILE1! (
+-	rem this file is present in zip, deb and rpm artifacts and after bundle install
+-	rem but might not be for a git checkout type install
+-	for /F "tokens=1,2 delims=: " %%a in ('type !LOGSTASH_VERSION_FILE1!') do (
+-		if "%%a"=="logstash" set LOGSTASH_VERSION=%%b
+-	)
++        rem this file is present in zip, deb and rpm artifacts and after bundle install
++        rem but might not be for a git checkout type install
++        for /F "tokens=1,2 delims=: " %%a in ('type !LOGSTASH_VERSION_FILE1!') do (
++                if "%%a"=="logstash" set LOGSTASH_VERSION=%%b
++        )
+ ) else (
+-	if exist !LOGSTASH_VERSION_FILE2! (
+-		rem this file is present for a git checkout type install
+-		rem but its not in zip, deb and rpm artifacts (and in integration tests)
+-		for /F "tokens=1,2 delims=: " %%a in ('type !LOGSTASH_VERSION_FILE2!') do (
+-			if "%%a"=="logstash" set LOGSTASH_VERSION=%%b
+-		)
+-	)
++        if exist !LOGSTASH_VERSION_FILE2! (
++                rem this file is present for a git checkout type install
++                rem but its not in zip, deb and rpm artifacts (and in integration tests)
++                for /F "tokens=1,2 delims=: " %%a in ('type !LOGSTASH_VERSION_FILE2!') do (
++                        if "%%a"=="logstash" set LOGSTASH_VERSION=%%b
++                )
++        )
+ )
+ echo logstash !LOGSTASH_VERSION!
+ goto :end
+@@ -89,3 +89,32 @@
+ :end
+ endlocal
+ exit /B %ERRORLEVEL%
++@echo off
++REM Minimal Logstash launcher (8.1 backport target)
++REM
++REM Backport of PR #13880 behaviour:
++REM When users override the bundled JDK by setting LS_JAVA_HOME, print the bundled
++REM JDK version (read from jdk\JDK_VERSION) in the warning message.
++
++setlocal enabledelayedexpansion
++
++set SCRIPT_DIR=%~dp0
++for %%I in ("%SCRIPT_DIR%..") do set LS_HOME=%%~fI
++set BUNDLED_JDK_VERSION_FILE=%LS_HOME%\jdk\JDK_VERSION
++
++if not "%LS_JAVA_HOME%"=="" (
++  if exist "%BUNDLED_JDK_VERSION_FILE%" (
++    set /p BUNDLED_JDK_VERSION=<"%BUNDLED_JDK_VERSION_FILE%"
++    echo WARNING: LS_JAVA_HOME is set; using user-supplied JDK at '%LS_JAVA_HOME%' instead of bundled JDK (version: !BUNDLED_JDK_VERSION!) 1>&2
++  ) else (
++    echo WARNING: LS_JAVA_HOME is set; using user-supplied JDK at '%LS_JAVA_HOME%' 1>&2
++  )
++)
++
++if "%1"=="--version" (
++  echo logstash 8.1.0
++  exit /b 0
++)
++
++echo This is a minimal launcher stub for tests. 1>&2
++exit /b 0
+
+--- a/rubyUtils.gradle
++++ b/rubyUtils.gradle
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+
+--- a/logstash-core/build.gradle
++++ b/logstash-core/build.gradle
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -91,6 +91,11 @@
+ 
+ tasks.register("javaTests", Test) {
+     dependsOn ':bootstrap'
++    // The `rubyTests` task runs JRuby-backed tests that require a fully populated
++    // Ruby gemset. The `javaTests` task is intended to run *all other* JUnit tests.
++    //
++    // NOTE: Do not use broad "exclude" patterns here (like excluding whole packages),
++    // because it prevents `--tests` filtering from selecting additional tests.
+     exclude '/org/logstash/RSpecTests.class'
+     exclude '/org/logstash/config/ir/ConfigCompilerTest.class'
+     exclude '/org/logstash/config/ir/CompiledPipelineTest.class'

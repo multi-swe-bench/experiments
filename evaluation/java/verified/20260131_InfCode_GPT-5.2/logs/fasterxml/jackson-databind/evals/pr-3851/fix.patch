@@ -1,0 +1,131 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/FactoryBasedEnumDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/FactoryBasedEnumDeserializer.java
+@@ -2,6 +2,8 @@
+ 
+ import java.io.IOException;
+ 
++import com.fasterxml.jackson.annotation.JsonCreator;
++
+ import com.fasterxml.jackson.core.JacksonException;
+ import com.fasterxml.jackson.core.JsonParser;
+ import com.fasterxml.jackson.core.JsonToken;
+@@ -36,6 +38,18 @@
+     protected final ValueInstantiator _valueInstantiator;
+     protected final SettableBeanProperty[] _creatorProps;
+ 
++    /**
++     * Marker to indicate that {@link #_factory} represents a properties-based
++     * creator (expects JSON Object input).
++     *
++     * This is needed for cases where an Enum may have both properties-based and
++     * delegating creators (via {@link JsonCreator.Mode#PROPERTIES} and
++     * {@link JsonCreator.Mode#DELEGATING}). In such cases, scalar inputs should
++     * use the delegating creator, and only object inputs should use the
++     * properties-based creator.
++     */
++    protected final boolean _propertiesBased;
++
+     protected final boolean _hasArgs;
+ 
+     /**
+@@ -57,6 +71,12 @@
+         _deser = null;
+         _valueInstantiator = valueInstantiator;
+         _creatorProps = creatorProps;
++        // Whether factory is to be used in properties-based mode depends on
++        // creator mode, NOT on existence of possible properties-based creator
++        // (which may come from different @JsonCreator).
++        final JsonCreator ann = _factory.getAnnotation(JsonCreator.class);
++        _propertiesBased = (creatorProps != null)
++                && ((ann == null) || (ann.mode() == JsonCreator.Mode.PROPERTIES));
+     }
+ 
+     /**
+@@ -71,6 +91,7 @@
+         _deser = null;
+         _valueInstantiator = null;
+         _creatorProps = null;
++        _propertiesBased = false;
+     }
+ 
+     protected FactoryBasedEnumDeserializer(FactoryBasedEnumDeserializer base,
+@@ -81,6 +102,7 @@
+         _hasArgs = base._hasArgs;
+         _valueInstantiator = base._valueInstantiator;
+         _creatorProps = base._creatorProps;
++        _propertiesBased = base._propertiesBased;
+ 
+         _deser = deser;
+     }
+@@ -131,19 +153,53 @@
+         } else if (_hasArgs) {
+             // 30-Mar-2020, tatu: For properties-based one, MUST get JSON Object (before
+             //   2.11, was just assuming match)
++            //
++            // 24-Jan-2026, tatu: For [databind#3566], Enum may have BOTH delegating
++            //   and properties-based creators; in that case, scalar inputs must NOT
++            //   be forced through properties-based creator.
+             if (_creatorProps != null) {
+-                if (!p.isExpectedStartObjectToken()) {
++                // Only use properties-based creator if actual input is an Object
++                // (or a single-element array wrapper around it).
++                JsonToken t = p.currentToken();
++                boolean unwrapping = (t == JsonToken.START_ARRAY)
++                        && ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS);
++                if (unwrapping) {
++                    t = p.nextToken();
++                }
++
++                if (t == JsonToken.START_OBJECT) {
++                    if (_propCreator == null) {
++                        _propCreator = PropertyBasedCreator.construct(ctxt, _valueInstantiator, _creatorProps,
++                                ctxt.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES));
++                    }
++                    p.nextToken();
++                    Object result = deserializeEnumUsingPropertyBased(p, ctxt, _propCreator);
++                    if (unwrapping) {
++                        if (p.nextToken() != JsonToken.END_ARRAY) {
++                            handleMissingEndArrayForSingle(p, ctxt);
++                        }
++                    }
++                    return result;
++                }
++
++                // If this deserializer ONLY supports properties-based input, report mismatch
++                // as before. But if we have a delegating creator as well, allow scalar
++                // handling to proceed.
++                if (_propertiesBased) {
++                    if (unwrapping) {
++                        // move parser back to wrapper end for error reporting consistency
++                        p.skipChildren();
++                        if (p.nextToken() != JsonToken.END_ARRAY) {
++                            handleMissingEndArrayForSingle(p, ctxt);
++                        }
++                    }
+                     final JavaType targetType = getValueType(ctxt);
+                     ctxt.reportInputMismatch(targetType,
+ "Input mismatch reading Enum %s: properties-based `@JsonCreator` (%s) expects JSON Object (JsonToken.START_OBJECT), got JsonToken.%s",
+-ClassUtil.getTypeDescription(targetType), _factory, p.currentToken());
++ClassUtil.getTypeDescription(targetType), _factory, t);
+                 }
+-                if (_propCreator == null) {
+-                    _propCreator = PropertyBasedCreator.construct(ctxt, _valueInstantiator, _creatorProps,
+-                            ctxt.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES));
+-                }
+-                p.nextToken();
+-                return deserializeEnumUsingPropertyBased(p, ctxt, _propCreator);
++
++                // else: fall through to scalar handling below (delegating)
+             }
+ 
+             // 12-Oct-2021, tatu: We really should only get here if and when String
+@@ -205,7 +261,7 @@
+ 
+     // Method to deserialize the Enum using property based methodology
+     protected Object deserializeEnumUsingPropertyBased(final JsonParser p, final DeserializationContext ctxt,
+-    		final PropertyBasedCreator creator) throws IOException
++                final PropertyBasedCreator creator) throws IOException
+     {
+         PropertyValueBuffer buffer = creator.startBuilding(p, ctxt, null);
+ 
+

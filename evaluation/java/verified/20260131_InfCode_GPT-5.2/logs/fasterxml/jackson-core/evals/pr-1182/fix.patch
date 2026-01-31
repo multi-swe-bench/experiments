@@ -1,0 +1,68 @@
+--- a/src/main/java/com/fasterxml/jackson/core/JsonParser.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonParser.java
+@@ -43,6 +43,16 @@
+     };
+ 
+     /**
++     * Enumeration of possible "native" (optimal) types that can be
++     * used for floating point numbers.
++     *
++     * @since 2.18
++     */
++    public enum NumberTypeFP {
++        FLOAT, DOUBLE, BIG_DECIMAL
++    };
++
++    /**
+      * Default set of {@link StreamReadCapability}ies that may be used as
+      * basis for format-specific readers (or as bogus instance if non-null
+      * set needs to be passed).
+@@ -1725,6 +1735,34 @@
+     public abstract NumberType getNumberType() throws IOException;
+ 
+     /**
++     * Method similar to {@link #getNumberType()} but only used for
++     * floating-point numbers (current token must be {@link JsonToken#VALUE_NUMBER_FLOAT});
++     * returns one of {@link NumberTypeFP} constants.
++     *
++     * @return Type of current floating point number
++     *
++     * @throws IOException for low-level read issues, or
++     *   {@link JsonParseException} for decoding problems
++     *
++     * @since 2.18
++     */
++    public NumberTypeFP getNumberTypeFP() throws IOException {
++        final NumberType t = getNumberType();
++        if (t == NumberType.BIG_DECIMAL) {
++            return NumberTypeFP.BIG_DECIMAL;
++        }
++        if (t == NumberType.FLOAT) {
++            return NumberTypeFP.FLOAT;
++        }
++        if (t == NumberType.DOUBLE) {
++            return NumberTypeFP.DOUBLE;
++        }
++        // Should not occur for non-floating point numbers; return null to match
++        // behavior of {@link #getNumberType()} for non-numeric tokens.
++        return null;
++    }
++
++    /**
+      * Numeric accessor that can be called when the current
+      * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
+      * it can be expressed as a value of Java byte primitive type.
+
+--- a/src/main/java/com/fasterxml/jackson/core/util/JsonParserDelegate.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/JsonParserDelegate.java
+@@ -245,6 +245,9 @@
+     public NumberType getNumberType() throws IOException { return delegate.getNumberType(); }
+ 
+     @Override
++    public NumberTypeFP getNumberTypeFP() throws IOException { return delegate.getNumberTypeFP(); }
++
++    @Override
+     public Number getNumberValue() throws IOException { return delegate.getNumberValue(); }
+ 
+     @Override
+

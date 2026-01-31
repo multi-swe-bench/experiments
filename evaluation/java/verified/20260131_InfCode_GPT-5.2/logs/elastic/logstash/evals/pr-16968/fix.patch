@@ -1,0 +1,134 @@
+--- a/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java
++++ b/logstash-core/src/main/java/org/logstash/common/BufferedTokenizerExt.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -39,7 +39,17 @@
+     private static final RubyString NEW_LINE = (RubyString) RubyUtil.RUBY.newString("\n").
+                                                                 freeze(RubyUtil.RUBY.getCurrentContext());
+ 
++    /**
++     * Buffered fragments for the current token (the token that has not yet hit a delimiter).
++     */
+     private @SuppressWarnings("rawtypes") RubyArray input = RubyUtil.RUBY.newArray();
++
++    /**
++     * Tokens that were successfully extracted, but could not be returned because an
++     * "input buffer full" exception was raised for a previous token in the same fragment.
++     */
++    private @SuppressWarnings("rawtypes") RubyArray pendingTokens = RubyUtil.RUBY.newArray();
++
+     private RubyString delimiter = NEW_LINE;
+     private int sizeLimit;
+     private boolean hasSizeLimit;
+@@ -63,6 +73,8 @@
+             this.hasSizeLimit = true;
+         }
+         this.inputSize = 0;
++        this.input.clear();
++        this.pendingTokens.clear();
+         return this;
+     }
+ 
+@@ -80,23 +92,85 @@
+     @JRubyMethod
+     @SuppressWarnings("rawtypes")
+     public RubyArray extract(final ThreadContext context, IRubyObject data) {
+-        final RubyArray entities = data.convertToString().split(delimiter, -1);
++        // If a previous call raised "input buffer full" after successfully extracting
++        // some tokens from the same fragment, return them first (preserving order).
++        if (!pendingTokens.isEmpty()) {
++            final RubyArray out = pendingTokens;
++            pendingTokens = RubyUtil.RUBY.newArray();
++            return out;
++        }
++
++        final RubyString dataString = data.convertToString();
++        final RubyArray parts = dataString.split(delimiter, -1);
++
++        // First element is the fragment to append to the currently buffered token.
++        final RubyString head = (RubyString) parts.shift(context);
++
+         if (hasSizeLimit) {
+-            final int entitiesSize = ((RubyString) entities.first()).size();
+-            if (inputSize + entitiesSize > sizeLimit) {
++            // Check if adding this fragment would overflow the current buffered token.
++            final int newSize = inputSize + head.size();
++            if (newSize > sizeLimit) {
++                // Drop the offending buffered token and reset, but keep any *subsequent*
++                // complete tokens that were present in this fragment for later delivery.
++                if (!parts.isEmpty()) {
++                    // parts currently contains: [token_after_first_delim, ..., trailing_partial]
++                    // The last element is the trailing partial (possibly empty) which should become
++                    // the new buffer after we discard the offending token.
++                    final int lastIndex = parts.size() - 1;
++
++                    // Queue all complete tokens (everything except the last trailing part).
++                    if (lastIndex > 0) {
++                        pendingTokens = RubyUtil.RUBY.newArray();
++                        for (int i = 0; i < lastIndex; i++) {
++                            pendingTokens.append(parts.eltInternal(i));
++                        }
++                    } else {
++                        pendingTokens = RubyUtil.RUBY.newArray();
++                    }
++
++                    // Reset the buffer to the trailing part.
++                    input.clear();
++                    final RubyString trailing = (RubyString) parts.eltInternal(lastIndex);
++                    input.append(trailing);
++                    inputSize = trailing.size();
++                } else {
++                    // No delimiter found in this fragment; simply reset the buffer.
++                    input.clear();
++                    inputSize = 0;
++                }
++
+                 throw new IllegalStateException("input buffer full");
+             }
+-            this.inputSize = inputSize + entitiesSize;
++            inputSize = newSize;
+         }
+-        input.append(entities.shift(context));
+-        if (entities.isEmpty()) {
++
++        // Append head fragment to buffer.
++        input.append(head);
++
++        // If we don't have a delimiter in the input fragment, simply buffer and return.
++        if (parts.isEmpty()) {
+             return RubyUtil.RUBY.newArray();
+         }
+-        entities.unshift(input.join(context));
++
++        // We have at least one delimiter: the buffer now constitutes a complete token.
++        final RubyString firstToken = (RubyString) input.join(context);
++
++        final RubyArray result = RubyUtil.RUBY.newArray();
++        result.append(firstToken);
++
++        // Add all complete tokens from this fragment except for the trailing partial.
++        final int lastIndex = parts.size() - 1;
++        for (int i = 0; i < lastIndex; i++) {
++            result.append(parts.eltInternal(i));
++        }
++
++        // Keep trailing partial buffered for next call.
+         input.clear();
+-        input.append(entities.pop(context));
+-        inputSize = ((RubyString) input.first()).size();
+-        return entities;
++        final RubyString trailing = (RubyString) parts.eltInternal(lastIndex);
++        input.append(trailing);
++        inputSize = trailing.size();
++
++        return result;
+     }
+ 
+     /**

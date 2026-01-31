@@ -1,0 +1,171 @@
+--- a/src/main/java/org/mockito/MockitoFramework.java
++++ b/src/main/java/org/mockito/MockitoFramework.java
+@@ -128,6 +128,24 @@
+     void clearInlineMocks();
+ 
+     /**
++     * Disables all existing inline mocks by making them fail fast when used.
++     *
++     * <p>This method is only meaningful if inline mock maker is in use.
++     * For all other intents and purposes, this method is a no-op and need not be used.
++     *
++     * <p>This method is similar in intent to {@link #clearInlineMocks()} but does not clear the
++     * internal references kept by the inline mock maker. Instead, mocks are marked as disabled and
++     * will throw a {@link org.mockito.exceptions.base.MockitoException} with the supplied
++     * {@code message} when interacted with.
++     *
++     * @param message the message to include when a disabled mock is used.
++     * @since 5.12.1
++     */
++    default void disableInlineMocks(String message) {
++        // Default implementation is a no-op for custom framework implementations.
++    }
++
++    /**
+      * Clears up internal state of specific inline mock.
+      * This method is a single-mock variant of {@link #clearInlineMocks()}.
+      * Please read javadoc for {@link #clearInlineMocks()}.
+
+--- a/src/main/java/org/mockito/plugins/InlineMockMaker.java
++++ b/src/main/java/org/mockito/plugins/InlineMockMaker.java
+@@ -43,4 +43,19 @@
+      * @since 2.25.0
+      */
+     void clearAllMocks();
++
++    /**
++     * Disables all existing inline mocks by making them fail fast when used.
++     *
++     * <p>This method is an alternative to {@link #clearAllMocks()} when you want to avoid clearing
++     * Mockito's internal references but still want to detect when a mock leaks out of its creating test.
++     *
++     * <p>The supplied {@code message} will be included in the resulting exception message.
++     *
++     * @param message Custom message explaining why the mocks are disabled.
++     * @since 5.12.1
++     */
++    default void disableAllMocks(String message) {
++        clearAllMocks();
++    }
+ }
+
+--- a/src/main/java/org/mockito/internal/framework/DefaultMockitoFramework.java
++++ b/src/main/java/org/mockito/internal/framework/DefaultMockitoFramework.java
+@@ -56,6 +56,14 @@
+     }
+ 
+     @Override
++    public void disableInlineMocks(String message) {
++        InlineMockMaker mockMaker = getInlineMockMaker();
++        if (mockMaker != null) {
++            mockMaker.disableAllMocks(message);
++        }
++    }
++
++    @Override
+     public void clearInlineMock(Object mock) {
+         InlineMockMaker mockMaker = getInlineMockMaker();
+         if (mockMaker != null) {
+
+--- a/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java
++++ b/src/main/java/org/mockito/internal/creation/bytebuddy/InlineDelegateByteBuddyMockMaker.java
+@@ -549,6 +549,19 @@
+     }
+ 
+     @Override
++    public void disableAllMocks(String message) {
++        // Do not clear internal references, just mark existing mocks as disabled.
++        // Note: WeakConcurrentMap stores weak wrapper keys internally, so we need to iterate using
++        // its public iterator that exposes the live keys.
++        for (Map.Entry<Object, MockMethodInterceptor> entry : mocks) {
++            InlineMockDisabler.disable(entry.getKey(), message);
++        }
++        // Note: static mocks and construction mocks are thread-local. This API is intended to help
++        // detect leaked instance mocks across tests. Users of static/constructor mocks are expected
++        // to close their scopes.
++    }
++
++    @Override
+     public TypeMockability isTypeMockable(final Class<?> type) {
+         return new TypeMockability() {
+             @Override
+
+--- a/src/main/java/org/mockito/internal/creation/bytebuddy/InlineByteBuddyMockMaker.java
++++ b/src/main/java/org/mockito/internal/creation/bytebuddy/InlineByteBuddyMockMaker.java
+@@ -52,6 +52,11 @@
+     }
+ 
+     @Override
++    public void disableAllMocks(String message) {
++        inlineDelegateByteBuddyMockMaker.disableAllMocks(message);
++    }
++
++    @Override
+     public <T> T createMock(MockCreationSettings<T> settings, MockHandler handler) {
+         return inlineDelegateByteBuddyMockMaker.createMock(settings, handler);
+     }
+
+--- a/src/main/java/org/mockito/internal/creation/bytebuddy/MockMethodInterceptor.java
++++ b/src/main/java/org/mockito/internal/creation/bytebuddy/MockMethodInterceptor.java
+@@ -22,6 +22,7 @@
+ import net.bytebuddy.implementation.bind.annotation.StubValue;
+ import net.bytebuddy.implementation.bind.annotation.SuperCall;
+ import net.bytebuddy.implementation.bind.annotation.This;
++import org.mockito.exceptions.base.MockitoException;
+ import org.mockito.internal.debugging.LocationFactory;
+ import org.mockito.internal.invocation.RealMethod;
+ import org.mockito.invocation.Location;
+@@ -63,6 +64,11 @@
+             RealMethod realMethod,
+             Location location)
+             throws Throwable {
++        String disableMessage = InlineMockDisabler.disabledMessage(mock);
++        if (disableMessage != null) {
++            throw new MockitoException(disableMessage);
++        }
++
+         // If the currently dispatched method is used in a hot path, typically a tight loop and if
+         // the mock is not used after the currently dispatched method, the JVM might attempt a
+         // garbage collection of the mock instance even before the execution of the current
+
+--- /dev/null
++++ b/src/main/java/org/mockito/internal/creation/bytebuddy/InlineMockDisabler.java
+@@ -0,0 +1,38 @@
++/*
++ * Copyright (c) 2026 Mockito contributors
++ * This program is made available under the terms of the MIT License.
++ */
++package org.mockito.internal.creation.bytebuddy;
++
++import org.mockito.internal.util.concurrent.WeakConcurrentMap;
++
++/**
++ * Internal registry for disabling inline mocks.
++ *
++ * <p>When a mock is disabled, any further interaction with it should fail fast with the stored
++ * message. This is primarily intended for leak detection across tests.
++ */
++final class InlineMockDisabler {
++
++    private static final WeakConcurrentMap<Object, String> DISABLED_MOCKS =
++            new WeakConcurrentMap.WithInlinedExpunction<>();
++
++    private InlineMockDisabler() {}
++
++    static void disable(Object mock, String message) {
++        if (mock == null) {
++            return;
++        }
++        if (message == null) {
++            message = "Mock is disabled";
++        }
++        DISABLED_MOCKS.put(mock, message);
++    }
++
++    static String disabledMessage(Object mock) {
++        if (mock == null) {
++            return null;
++        }
++        return DISABLED_MOCKS.get(mock);
++    }
++}

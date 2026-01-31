@@ -1,0 +1,45 @@
+--- a/config/jvm.options
++++ b/config/jvm.options
+@@ -80,3 +80,9 @@
+ 11-:--add-opens=java.base/java.nio.channels=ALL-UNNAMED
+ 11-:--add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+ 11-:--add-opens=java.management/sun.management=ALL-UNNAMED
++# Required for google-java-format on JDK 11+ (including JDK17)
++11-:--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
++11-:--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
++11-:--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
++11-:--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
++11-:--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+
+--- a/logstash-core/build.gradle
++++ b/logstash-core/build.gradle
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -91,6 +91,20 @@
+ 
+ tasks.register("javaTests", Test) {
+     dependsOn ':bootstrap'
++
++    // google-java-format requires access to internal javac APIs on JDK 11+.
++    // Without these flags, tests (and runtime codepaths that use Formatter) can fail on JDK17
++    // with IllegalAccessError (module jdk.compiler does not export com.sun.tools.javac.*).
++    if (JavaVersion.current().isJava11Compatible()) {
++        jvmArgs(
++            "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
++            "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
++            "--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
++            "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
++            "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
++        )
++    }
++
+     exclude '/org/logstash/RSpecTests.class'
+     exclude '/org/logstash/config/ir/ConfigCompilerTest.class'
+     exclude '/org/logstash/config/ir/CompiledPipelineTest.class'

@@ -1,0 +1,61 @@
+--- a/gson/src/main/java/com/google/gson/stream/JsonWriter.java
++++ b/gson/src/main/java/com/google/gson/stream/JsonWriter.java
+@@ -486,12 +486,12 @@
+   /**
+    * Encodes {@code value}.
+    *
+-   * @param value a finite value. May not be {@link Double#isNaN() NaNs} or
+-   *     {@link Double#isInfinite() infinities}.
++   * @param value a value. When not {@linkplain #isLenient() lenient} this must be a finite value
++   *     and may not be {@link Double#isNaN() NaN} or {@link Double#isInfinite() infinite}.
+    * @return this writer.
+    */
+   public JsonWriter value(double value) throws IOException {
+-    if (Double.isNaN(value) || Double.isInfinite(value)) {
++    if (!lenient && (Double.isNaN(value) || Double.isInfinite(value))) {
+       throw new IllegalArgumentException("Numeric values must be finite, but was " + value);
+     }
+     writeDeferredName();
+
+--- a/gson/src/main/java/com/google/gson/DefaultDateTypeAdapter.java
++++ b/gson/src/main/java/com/google/gson/DefaultDateTypeAdapter.java
+@@ -44,7 +44,7 @@
+   private final Class<? extends Date> dateType;
+   private final DateFormat enUsFormat;
+   private final DateFormat localFormat;
+-  
++
+   DefaultDateTypeAdapter(Class<? extends Date> dateType) {
+     this(dateType,
+         DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US),
+@@ -116,6 +116,8 @@
+       try {
+         return enUsFormat.parse(s);
+       } catch (ParseException ignored) {}
++
++
+       try {
+         return ISO8601Utils.parse(s, new ParsePosition(0));
+       } catch (ParseException e) {
+
+--- a/pom.xml
++++ b/pom.xml
+@@ -76,6 +76,18 @@
+         </plugin>
+         <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
++          <artifactId>maven-surefire-plugin</artifactId>
++          <version>2.12.4</version>
++          <configuration>
++            <!--
++              Ensure stable DateFormat / Locale formatting across JDK versions.
++              Gson 2.x tests were written against the JDK 6 "COMPAT" locale data.
++            -->
++            <argLine>-Djava.locale.providers=COMPAT</argLine>
++          </configuration>
++        </plugin>
++        <plugin>
++          <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-jar-plugin</artifactId>
+         </plugin>
+         <plugin>

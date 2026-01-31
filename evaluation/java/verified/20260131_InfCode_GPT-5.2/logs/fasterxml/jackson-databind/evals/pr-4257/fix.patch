@@ -1,0 +1,81 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertyBuilder.java
++++ b/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertyBuilder.java
+@@ -178,7 +178,7 @@
+         AnnotatedMember member = getPrimaryMember();
+         return (member == null || _annotationIntrospector == null) ? null
+                 : _annotationIntrospector.findWrapperName(member);
+-    	/*
++        /*
+         return fromMemberAnnotations(new WithMember<PropertyName>() {
+             @Override
+             public PropertyName withMember(AnnotatedMember member) {
+@@ -397,6 +397,20 @@
+         return (_ctorParameters != null) || (_setters != null) || (_fields != null);
+     }
+ 
++    /**
++     * Variant of {@link #couldDeserialize()} that only considers mutators that are
++     * visible (or explicitly included) according to introspection rules.
++     * <p>
++     * This is needed for features like {@link MapperFeature#REQUIRE_SETTERS_FOR_GETTERS}
++     * where existence of an "inferred" (non-visible) field or setter should not be
++     * enough to retain a getter for serialization.
++     *
++     * @since 2.16
++     */
++    public boolean couldDeserializeWithVisibleMutator() {
++        return _anyVisible(_ctorParameters) || _anyVisible(_setters) || _anyVisible(_fields);
++    }
++
+     @Override
+     public boolean couldSerialize() {
+         return (_getters != null) || (_fields != null);
+
+--- a/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java
++++ b/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java
+@@ -802,9 +802,20 @@
+     protected void removeSetterlessGetters(SerializationConfig config, BeanDescription beanDesc,
+             List<BeanPropertyDefinition> properties)
+     {
+-        // one caveat: only remove implicit properties;
+-        // explicitly annotated ones should remain
+-        properties.removeIf(property -> !property.couldDeserialize() && !property.isExplicitlyIncluded());
++        // One caveat: only remove implicit properties; explicitly annotated ones should remain.
++        //
++        // Also: need to consider only *visible* mutators, since during serialization
++        // collection phase non-visible mutators may still be linked via
++        // `MapperFeature.INFER_PROPERTY_MUTATORS`.
++        properties.removeIf(property -> {
++            if (property.isExplicitlyIncluded()) {
++                return false;
++            }
++            if (property instanceof POJOPropertyBuilder) {
++                return !((POJOPropertyBuilder) property).couldDeserializeWithVisibleMutator();
++            }
++            return !property.couldDeserialize();
++        });
+     }
+ 
+     /**
+
+--- a/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java
++++ b/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java
+@@ -248,7 +248,17 @@
+         _processor = processor;
+         // 31-Jan-2020: [databind#2482] Retain original location
+         if (problem instanceof JacksonException) {
+-            _location = ((JacksonException) problem).getLocation();
++            JsonLocation loc = ((JacksonException) problem).getLocation();
++            // For low-level parsing problems, prefer parser's current location
++            // (points to actual offending token/character) over exception's stored
++            // location which may be based on last fully processed token.
++            if ((processor instanceof JsonParser) && (problem instanceof JsonParseException)) {
++                JsonLocation curr = ((JsonParser) processor).currentLocation();
++                if ((curr != null) && (curr != JsonLocation.NA)) {
++                    loc = curr;
++                }
++            }
++            _location = loc;
+         } else if (processor instanceof JsonParser) {
+             _location = ((JsonParser) processor).currentTokenLocation();
+         }

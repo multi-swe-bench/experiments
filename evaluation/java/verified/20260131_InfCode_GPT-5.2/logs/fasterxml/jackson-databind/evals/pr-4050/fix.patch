@@ -1,0 +1,15 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java
++++ b/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java
+@@ -87,9 +87,8 @@
+ 
+         public Reference(Object from, String fieldName) {
+             _from = from;
+-            if (fieldName == null) {
+-                throw new NullPointerException("Cannot pass null fieldName");
+-            }
++            // NOTE: `fieldName` may be null (for example, for Map types when key is
++            // not available); in such cases reference description will use "?"
+             _fieldName = fieldName;
+         }
+ 
+

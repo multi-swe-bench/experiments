@@ -1,0 +1,92 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java
++++ b/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java
+@@ -91,6 +91,21 @@
+     protected LinkedList<POJOPropertyBuilder> _creatorProperties;
+ 
+     /**
++     * Marker that indicates that there is an explicitly annotated DELEGATING
++     * creator (constructor/factory method) for this type; in that case bean-style
++     * properties should not be considered for deserialization.
++     *
++     * @since 2.18 (was present implicitly, fixed for [databind#2543])
++     */
++    protected boolean _hasExplicitDelegatingCreator;
++
++    /**
++     * Marker that indicates that there is an explicitly annotated PROPERTIES-based
++     * creator (constructor/factory method) for this type.
++     */
++    protected boolean _hasExplicitPropertiesBasedCreator;
++
++    /**
+      * A set of "field renamings" that have been discovered, indicating
+      * intended renaming of other accessors: key is the implicit original
+      * name and value intended name to use instead.
+@@ -485,6 +500,13 @@
+             _addCreators(props);
+         }
+ 
++        // [databind#2543]: If we have an explicitly DELEGATING creator (and no
++        // explicitly PROPERTIES-based creator), JSON shape is scalar/array and we
++        // should not expose regular bean properties for deserialization.
++        if (!_forSerialization && _hasExplicitDelegatingCreator && !_hasExplicitPropertiesBasedCreator) {
++            props.clear();
++        }
++
+         // Remove ignored properties, first; this MUST precede annotation merging
+         // since logic relies on knowing exactly which accessor has which annotation
+         _removeUnwantedProperties(props);
+@@ -677,6 +699,12 @@
+                 if (_creatorProperties == null) {
+                     _creatorProperties = new LinkedList<POJOPropertyBuilder>();
+                 }
++                JsonCreator.Mode cm = _annotationIntrospector.findCreatorAnnotation(_config, ctor);
++                if (cm == JsonCreator.Mode.DELEGATING) {
++                    _hasExplicitDelegatingCreator = true;
++                } else if (cm == JsonCreator.Mode.PROPERTIES) {
++                    _hasExplicitPropertiesBasedCreator = true;
++                }
+                 for (int i = 0, len = ctor.getParameterCount(); i < len; ++i) {
+                     _addCreatorParam(props, ctor.getParameter(i));
+                 }
+@@ -685,6 +713,12 @@
+                 if (_creatorProperties == null) {
+                     _creatorProperties = new LinkedList<POJOPropertyBuilder>();
+                 }
++                JsonCreator.Mode cm = _annotationIntrospector.findCreatorAnnotation(_config, factory);
++                if (cm == JsonCreator.Mode.DELEGATING) {
++                    _hasExplicitDelegatingCreator = true;
++                } else if (cm == JsonCreator.Mode.PROPERTIES) {
++                    _hasExplicitPropertiesBasedCreator = true;
++                }
+                 for (int i = 0, len = factory.getParameterCount(); i < len; ++i) {
+                     _addCreatorParam(props, factory.getParameter(i));
+                 }
+@@ -746,6 +780,18 @@
+             }
+         }
+ 
++        // 20-Jan-2026, tatu: [databind#2543] Creator parameter of an explicitly
++        // DELEGATING creator must not be exposed as a logical property.
++        //
++        // Note: record canonical constructor parameters are handled separately
++        // and always considered properties.
++        if (recordComponentName == null) {
++            JsonCreator.Mode cm = _annotationIntrospector.findCreatorAnnotation(_config, param.getOwner());
++            if (cm == JsonCreator.Mode.DELEGATING) {
++                return;
++            }
++        }
++
+         PropertyName pn = _annotationIntrospector.findNameForDeserialization(param);
+         boolean expl = (pn != null && !pn.isEmpty());
+         if (!expl) {
+@@ -906,7 +952,7 @@
+                 implName = _accessorNaming.findNameForMutator(m, m.getName());
+             }
+             if (implName == null) { // if not, must skip
+-            	return;
++                return;
+             }
+             visible = _visibilityChecker.isSetterVisible(m);
+         } else { // explicit indication of inclusion, but may be empty

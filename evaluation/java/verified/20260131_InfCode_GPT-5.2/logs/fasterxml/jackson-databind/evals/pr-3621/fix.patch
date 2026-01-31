@@ -1,0 +1,153 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdDeserializer.java
+@@ -125,7 +125,7 @@
+      *   }
+      *   return ctxt.constructType(handledType());
+      *</pre>
+-     * 
++     *
+      * @since 2.10
+      */
+     public JavaType getValueType(DeserializationContext ctxt) {
+@@ -157,7 +157,7 @@
+ 
+     /*
+     /**********************************************************
+-    /* Partial JsonDeserializer implementation 
++    /* Partial JsonDeserializer implementation
+     /**********************************************************
+      */
+ 
+@@ -368,6 +368,22 @@
+         return (T) deserialize(p, ctxt);
+     }
+ 
++    /**
++     * Helper method called to prevent unbounded recursion when
++     * {@link DeserializationFeature#UNWRAP_SINGLE_VALUE_ARRAYS} is enabled and
++     * input contains deeply nested wrapper arrays (for example: {@code [[[1]]]}).
++     *
++     * @since 2.13.4.1
++     */
++    protected void _reportNestedArrayForSingle(JsonParser p, DeserializationContext ctxt,
++            Class<?> rawTargetType) throws IOException
++    {
++        ctxt.reportInputMismatch(this,
++"Cannot deserialize value of type %s from deeply-nested JSON Array: only single wrapper allowed with `%s`",
++                ClassUtil.getTypeDescription(ctxt.constructType(rawTargetType)),
++                "DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS");
++    }
++
+     /*
+     /**********************************************************
+     /* Helper methods for sub-classes, parsing: while mostly
+@@ -413,7 +429,11 @@
+         case JsonTokenId.ID_START_ARRAY:
+             // 12-Jun-2020, tatu: For some reason calling `_deserializeFromArray()` won't work so:
+             if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
+-                p.nextToken();
++                // 23-Aug-2022, tatu: To prevent unbounded nested arrays, we better
++                //   check there is NOT another START_ARRAY lurking there..
++                if (p.nextToken() == JsonToken.START_ARRAY) {
++                    _reportNestedArrayForSingle(p, ctxt, Boolean.TYPE);
++                }
+                 final boolean parsed = _parseBooleanPrimitive(p, ctxt);
+                 _verifyEndArrayForSingle(p, ctxt);
+                 return parsed;
+@@ -477,7 +497,7 @@
+         }
+         return false;
+     }
+- 
++
+     /**
+      * Helper method called for cases where non-primitive, boolean-based value
+      * is to be deserialized: result of this method will be {@link java.lang.Boolean},
+@@ -582,7 +602,11 @@
+         case JsonTokenId.ID_START_ARRAY: // unwrapping / from-empty-array coercion?
+             // 12-Jun-2020, tatu: For some reason calling `_deserializeFromArray()` won't work so:
+             if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
+-                p.nextToken();
++                // 23-Aug-2022, tatu: To prevent unbounded nested arrays, we better
++                //   check there is NOT another START_ARRAY lurking there..
++                if (p.nextToken() == JsonToken.START_ARRAY) {
++                    _reportNestedArrayForSingle(p, ctxt, Byte.TYPE);
++                }
+                 final byte parsed = _parseBytePrimitive(p, ctxt);
+                 _verifyEndArrayForSingle(p, ctxt);
+                 return parsed;
+@@ -652,7 +676,11 @@
+         case JsonTokenId.ID_START_ARRAY:
+             // 12-Jun-2020, tatu: For some reason calling `_deserializeFromArray()` won't work so:
+             if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
+-                p.nextToken();
++                // 23-Aug-2022, tatu: To prevent unbounded nested arrays, we better
++                //   check there is NOT another START_ARRAY lurking there..
++                if (p.nextToken() == JsonToken.START_ARRAY) {
++                    _reportNestedArrayForSingle(p, ctxt, Short.TYPE);
++                }
+                 final short parsed = _parseShortPrimitive(p, ctxt);
+                 _verifyEndArrayForSingle(p, ctxt);
+                 return parsed;
+@@ -719,7 +747,11 @@
+             break;
+         case JsonTokenId.ID_START_ARRAY:
+             if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
+-                p.nextToken();
++                // 23-Aug-2022, tatu: To prevent unbounded nested arrays, we better
++                //   check there is NOT another START_ARRAY lurking there..
++                if (p.nextToken() == JsonToken.START_ARRAY) {
++                    _reportNestedArrayForSingle(p, ctxt, Integer.TYPE);
++                }
+                 final int parsed = _parseIntPrimitive(p, ctxt);
+                 _verifyEndArrayForSingle(p, ctxt);
+                 return parsed;
+@@ -870,7 +902,11 @@
+             break;
+         case JsonTokenId.ID_START_ARRAY:
+             if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
+-                p.nextToken();
++                // 23-Aug-2022, tatu: To prevent unbounded nested arrays, we better
++                //   check there is NOT another START_ARRAY lurking there..
++                if (p.nextToken() == JsonToken.START_ARRAY) {
++                    _reportNestedArrayForSingle(p, ctxt, Long.TYPE);
++                }
+                 final long parsed = _parseLongPrimitive(p, ctxt);
+                 _verifyEndArrayForSingle(p, ctxt);
+                 return parsed;
+@@ -885,7 +921,7 @@
+         if (act == CoercionAction.AsNull) {
+             // 03-May-2021, tatu: Might not be allowed (should we do "empty" check?)
+             _verifyNullForPrimitive(ctxt);
+-            return 0L; 
++            return 0L;
+         }
+         if (act == CoercionAction.AsEmpty) {
+             return 0L;
+@@ -995,7 +1031,11 @@
+             break;
+         case JsonTokenId.ID_START_ARRAY:
+             if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
+-                p.nextToken();
++                // 23-Aug-2022, tatu: To prevent unbounded nested arrays, we better
++                //   check there is NOT another START_ARRAY lurking there..
++                if (p.nextToken() == JsonToken.START_ARRAY) {
++                    _reportNestedArrayForSingle(p, ctxt, Float.TYPE);
++                }
+                 final float parsed = _parseFloatPrimitive(p, ctxt);
+                 _verifyEndArrayForSingle(p, ctxt);
+                 return parsed;
+@@ -1102,7 +1142,11 @@
+             break;
+         case JsonTokenId.ID_START_ARRAY:
+             if (ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
+-                p.nextToken();
++                // 23-Aug-2022, tatu: To prevent unbounded nested arrays, we better
++                //   check there is NOT another START_ARRAY lurking there..
++                if (p.nextToken() == JsonToken.START_ARRAY) {
++                    _reportNestedArrayForSingle(p, ctxt, Double.TYPE);
++                }
+                 final double parsed = _parseDoublePrimitive(p, ctxt);
+                 _verifyEndArrayForSingle(p, ctxt);
+                 return parsed;
+

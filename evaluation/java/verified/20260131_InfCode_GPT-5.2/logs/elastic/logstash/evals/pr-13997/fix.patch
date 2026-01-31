@@ -1,0 +1,295 @@
+--- a/logstash-core/src/main/java/org/logstash/plugins/ConfigVariableExpander.java
++++ b/logstash-core/src/main/java/org/logstash/plugins/ConfigVariableExpander.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -21,10 +21,10 @@
+ package org.logstash.plugins;
+ 
+ import org.logstash.common.EnvironmentVariableProvider;
++import org.logstash.config.ir.expression.SecretVariable;
+ import org.logstash.secret.SecretIdentifier;
+ import org.logstash.secret.store.SecretStore;
+ 
+-import java.nio.charset.StandardCharsets;
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
+ 
+@@ -85,14 +85,16 @@
+             String variableName = m.group("name");
+ 
+             if (secretStore != null) {
+-                byte[] ssValue = secretStore.retrieveSecret(new SecretIdentifier(variableName));
++                final byte[] ssValue = secretStore.retrieveSecret(new SecretIdentifier(variableName));
+                 if (ssValue != null) {
+-                    return new String(ssValue, StandardCharsets.UTF_8);
++                    // Secret-store substitutions are wrapped in a SecretVariable so the value is not
++                    // accidentally leaked in debug logs when conditions are stringified.
++                    return new SecretVariable(variableName, ssValue);
+                 }
+             }
+ 
+             if (envVarProvider != null) {
+-                String evValue = envVarProvider.get(variableName);
++                final String evValue = envVarProvider.get(variableName);
+                 if (evValue != null) {
+                     return evValue;
+                 }
+
+--- a/logstash-core/src/main/java/org/logstash/config/ir/compiler/EventCondition.java
++++ b/logstash-core/src/main/java/org/logstash/config/ir/compiler/EventCondition.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -43,6 +43,7 @@
+ import org.logstash.config.ir.expression.EventValueExpression;
+ import org.logstash.config.ir.expression.Expression;
+ import org.logstash.config.ir.expression.RegexValueExpression;
++import org.logstash.config.ir.expression.SecretVariable;
+ import org.logstash.config.ir.expression.ValueExpression;
+ import org.logstash.config.ir.expression.binary.And;
+ import org.logstash.config.ir.expression.binary.Eq;
+@@ -293,20 +294,27 @@
+             final Expression right = in.getRight();
+             final EventCondition condition;
+             if (eAndV(in) && isScalar((ValueExpression) in.getRight())) {
++                final Object constant = ((ValueExpression) right).get();
++                final Object revealed = constant instanceof SecretVariable
++                        ? ((SecretVariable) constant).reveal()
++                        : constant;
+                 condition = new EventCondition.Compiler.FieldInConstantScalar(
+                         FieldReference.from(((EventValueExpression) left).getFieldName()),
+-                        ((ValueExpression) right).get().toString()
++                        revealed.toString()
+                 );
+             } else if (vAndE(in) && isScalar((ValueExpression) in.getLeft())) {
+-                final Object leftv = ((ValueExpression) left).get();
++                final Object constant = ((ValueExpression) left).get();
++                final Object revealed = constant instanceof SecretVariable
++                        ? ((SecretVariable) constant).reveal()
++                        : constant;
+                 final FieldReference rfield =
+                         FieldReference.from(((EventValueExpression) right).getFieldName());
+-                if (leftv instanceof String) {
++                if (revealed instanceof String) {
+                     condition = new EventCondition.Compiler.ConstantStringInField(
+-                            rfield, (String) leftv
++                            rfield, (String) revealed
+                     );
+                 } else {
+-                    condition = new EventCondition.Compiler.ConstantScalarInField(rfield, leftv);
++                    condition = new EventCondition.Compiler.ConstantScalarInField(rfield, revealed);
+                 }
+             } else if (eAndV(in) && listValueRight(in)) {
+                 condition = in(
+@@ -337,8 +345,12 @@
+          * @return Constant {@link EventCondition}
+          */
+         private static EventCondition in(final ValueExpression left, final ValueExpression right) {
+-            final Object found = right.get();
+-            final Object other = left.get();
++            final Object found = right.get() instanceof SecretVariable
++                    ? ((SecretVariable) right.get()).reveal()
++                    : right.get();
++            final Object other = left.get() instanceof SecretVariable
++                    ? ((SecretVariable) left.get()).reveal()
++                    : left.get();
+             final boolean res;
+             if (found instanceof ConvertedList && other instanceof RubyString) {
+                 res = ((ConvertedList) found).stream().anyMatch(item -> item.toString()
+@@ -373,8 +385,12 @@
+         @SuppressWarnings("unchecked")
+         private static EventCondition eq(final EventValueExpression evalE,
+                                          final ValueExpression valE) {
++            final Object constant = valE.get();
++            final Object revealed = constant instanceof SecretVariable
++                    ? ((SecretVariable) constant).reveal()
++                    : constant;
+             return rubyFieldEquals(
+-                    (Comparable<IRubyObject>) Rubyfier.deep(RubyUtil.RUBY, valE.get()),
++                    (Comparable<IRubyObject>) Rubyfier.deep(RubyUtil.RUBY, revealed),
+                     evalE.getFieldName()
+             );
+         }
+@@ -419,7 +435,9 @@
+ 
+         private static EventCondition compareConstants(final ValueExpression left,
+                                                        final ValueExpression right, final Predicate<Integer> operator) {
+-            return constant(operator.test(compare(left.get(), right.get())));
++            final Object leftv = left.get() instanceof SecretVariable ? ((SecretVariable) left.get()).reveal() : left.get();
++            final Object rightv = right.get() instanceof SecretVariable ? ((SecretVariable) right.get()).reveal() : right.get();
++            return constant(operator.test(compare(leftv, rightv)));
+         }
+ 
+         private static EventCondition compareFields(final EventValueExpression left,
+@@ -440,8 +458,12 @@
+         private static EventCondition compareFieldToConstant(final EventValueExpression left,
+                                                              final ValueExpression right, final Predicate<Integer> operator) {
+             final FieldReference one = FieldReference.from(left.getFieldName());
++            final Object constant = right.get();
++            final Object revealed = constant instanceof SecretVariable
++                    ? ((SecretVariable) constant).reveal()
++                    : constant;
+             final Comparable<IRubyObject> other =
+-                    (Comparable<IRubyObject>) Rubyfier.deep(RubyUtil.RUBY, right.get());
++                    (Comparable<IRubyObject>) Rubyfier.deep(RubyUtil.RUBY, revealed);
+             return event -> {
+                 final Event javaEvent = event.getEvent();
+                 return operator.test(compare(javaEvent.getUnconvertedField(one), other));
+
+--- a/logstash-core/src/main/java/org/logstash/config/ir/expression/ValueExpression.java
++++ b/logstash-core/src/main/java/org/logstash/config/ir/expression/ValueExpression.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -28,6 +28,7 @@
+ import org.logstash.config.ir.InvalidIRException;
+ import org.logstash.config.ir.SourceComponent;
+ 
++
+ public class ValueExpression extends Expression {
+     protected final Object value;
+ 
+@@ -42,6 +43,7 @@
+                 value instanceof Double ||
+                 value instanceof BigDecimal ||
+                 value instanceof String ||
++                value instanceof SecretVariable ||
+                 value instanceof List ||
+                 value instanceof RubyHash ||
+                 value instanceof Instant
+@@ -78,6 +80,10 @@
+         if (value == null) {
+             return "null";
+         }
++        // SecretVariable is responsible for masking itself in logs.
++        if (value instanceof SecretVariable) {
++            return "'" + value.toString() + "'";
++        }
+         if (value instanceof String) {
+             return "'" + get() + "'";
+         }
+@@ -87,6 +93,10 @@
+ 
+     @Override
+     public String hashSource() {
++        // Avoid including secret plaintext in the hash source.
++        if (value instanceof SecretVariable) {
++            return this.getClass().getCanonicalName() + "|" + ((SecretVariable) value).getName();
++        }
+         return this.getClass().getCanonicalName() + "|" + value;
+     }
+ }
+
+--- /dev/null
++++ b/logstash-core/src/main/java/org/logstash/config/ir/expression/SecretVariable.java
+@@ -0,0 +1,91 @@
++/*
++ * Licensed to Elasticsearch B.V. under one or more contributor
++ * license agreements. See the NOTICE file distributed with
++ * this work for additional information regarding copyright
++ * ownership. Elasticsearch B.V. licenses this file to you under
++ * the Apache License, Version 2.0 (the "License"); you may
++ * not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * 	http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++package org.logstash.config.ir.expression;
++
++import java.nio.charset.StandardCharsets;
++import java.util.Arrays;
++import java.util.Objects;
++
++/**
++ * Wrapper for a secret-store resolved substitution variable.
++ *
++ * This class is used to prevent leaking a resolved secret value into debug logs
++ * when pipeline IR (especially {@code if} conditions) are stringified.
++ *
++ * The secret value can be retrieved via {@link #reveal()} by the compiler when it
++ * needs the plaintext for runtime comparison.
++ */
++public final class SecretVariable {
++
++    private final String name;
++
++    /**
++     * Secret bytes as stored in the secret store.
++     *
++     * Intentionally stored as a mutable byte-array so it can be zeroed out if needed.
++     */
++    private final byte[] secretBytes;
++
++    public SecretVariable(final String name, final byte[] secretBytes) {
++        this.name = Objects.requireNonNull(name, "name");
++        this.secretBytes = Objects.requireNonNull(secretBytes, "secretBytes");
++    }
++
++    public String getName() {
++        return name;
++    }
++
++    /**
++     * @return secret plaintext value.
++     */
++    public String reveal() {
++        return new String(secretBytes, StandardCharsets.UTF_8);
++    }
++
++    /**
++     * Clears the in-memory copy of this secret.
++     */
++    public void clear() {
++        Arrays.fill(secretBytes, (byte) 0);
++    }
++
++    /**
++     * String representation that is safe to log.
++     */
++    @Override
++    public String toString() {
++        return "${" + name + "}";
++    }
++
++    @Override
++    public boolean equals(final Object o) {
++        if (this == o) return true;
++        if (!(o instanceof SecretVariable)) return false;
++        final SecretVariable that = (SecretVariable) o;
++        // Equality is based on the variable name only to avoid accidentally
++        // exposing secret material through equality/hash computations.
++        return Objects.equals(name, that.name);
++    }
++
++    @Override
++    public int hashCode() {
++        return Objects.hash(name);
++    }
++}

@@ -1,0 +1,24 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/util/BeanUtil.java
++++ b/src/main/java/com/fasterxml/jackson/databind/util/BeanUtil.java
+@@ -309,6 +309,9 @@
+         } else if (isJodaTimeClass(className)) {
+             typeName =  "Joda date/time";
+             moduleName = "com.fasterxml.jackson.datatype:jackson-datatype-joda";
++        } else if (isJava8OptionalClass(className)) {
++            typeName = "Java 8 Optional";
++            moduleName = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8";
+         } else {
+             return null;
+         }
+@@ -316,6 +319,11 @@
+                 typeName, ClassUtil.getTypeDescription(type), moduleName);
+     }
+ 
++    private static boolean isJava8OptionalClass(String className) {
++        // Includes java.util.Optional and primitive specializations (OptionalInt/Long/Double)
++        return className.startsWith("java.util.Optional");
++    }
++
+     /**
+      * @since 2.12
+      */

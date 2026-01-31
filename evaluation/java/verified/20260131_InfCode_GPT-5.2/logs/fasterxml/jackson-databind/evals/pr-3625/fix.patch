@@ -1,0 +1,27 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/cfg/CoercionConfigs.java
++++ b/src/main/java/com/fasterxml/jackson/databind/cfg/CoercionConfigs.java
+@@ -28,7 +28,7 @@
+      * by logical or physical type.
+      */
+     protected final MutableCoercionConfig _defaultCoercions;
+-    
++
+     /**
+      * Coercion definitions by logical type ({@link LogicalType})
+      */
+@@ -204,6 +204,15 @@
+             }
+             break;
+         case Integer:
++            // 13-Oct-2022, tatu: [databind#3624] JSON has a single numeric scalar type;
++            //   so integral tokens are a valid representation for floating-point targets
++            //   ("1" and "1.0" both represent the same numeric value).
++            //
++            //   As such, coercion from Integer-shaped input into Float-shaped target should
++            //   not be gated by legacy `MapperFeature.ALLOW_COERCION_OF_SCALARS`.
++            if (targetType == LogicalType.Float) {
++                return CoercionAction.TryConvert;
++            }
+             if (targetType == LogicalType.Enum) {
+                 if (config.isEnabled(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS)) {
+                     return CoercionAction.Fail;

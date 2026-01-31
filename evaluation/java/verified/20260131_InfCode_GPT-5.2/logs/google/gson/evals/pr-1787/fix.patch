@@ -1,0 +1,130 @@
+--- a/gson/src/main/java/com/google/gson/internal/bind/TypeAdapterRuntimeTypeWrapper.java
++++ b/gson/src/main/java/com/google/gson/internal/bind/TypeAdapterRuntimeTypeWrapper.java
+@@ -53,11 +53,15 @@
+     if (runtimeType != type) {
+       @SuppressWarnings("unchecked")
+       TypeAdapter<T> runtimeTypeAdapter = (TypeAdapter<T>) context.getAdapter(TypeToken.get(runtimeType));
+-      if (!(runtimeTypeAdapter instanceof ReflectiveTypeAdapterFactory.Adapter)) {
++
++      boolean runtimeIsReflective = isReflectiveTypeAdapter(runtimeTypeAdapter);
++      boolean delegateIsReflective = isReflectiveTypeAdapter(delegate);
++
++      if (!runtimeIsReflective) {
+         // The user registered a type adapter for the runtime type, so we will use that
+         chosen = runtimeTypeAdapter;
+-      } else if (!(delegate instanceof ReflectiveTypeAdapterFactory.Adapter)) {
+-        // The user registered a type adapter for Base class, so we prefer it over the
++      } else if (!delegateIsReflective) {
++        // The user registered a type adapter for the declared type, so we prefer it over the
+         // reflective type adapter for the runtime type
+         chosen = delegate;
+       } else {
+@@ -68,6 +72,21 @@
+     chosen.write(out, value);
+   }
+ 
++  private static boolean isReflectiveTypeAdapter(TypeAdapter<?> typeAdapter) {
++    // Unwrap adapters which delegate for serialization (e.g. TreeTypeAdapter when only a
++    // deserializer is registered, or Gson's FutureTypeAdapter used for recursive types)
++    while (typeAdapter instanceof SerializationDelegatingTypeAdapter) {
++      TypeAdapter<?> serializationDelegate =
++          ((SerializationDelegatingTypeAdapter) typeAdapter).getSerializationDelegate();
++      if (serializationDelegate == null) {
++        break;
++      }
++      typeAdapter = serializationDelegate;
++    }
++    return typeAdapter instanceof ReflectiveTypeAdapterFactory.Adapter;
++  }
++
++
+   /**
+    * Finds a compatible runtime type if it is more specific
+    */
+
+--- a/gson/src/main/java/com/google/gson/internal/bind/TreeTypeAdapter.java
++++ b/gson/src/main/java/com/google/gson/internal/bind/TreeTypeAdapter.java
+@@ -38,7 +38,7 @@
+  * tree adapter may be serialization-only or deserialization-only, this class
+  * has a facility to lookup a delegate type adapter on demand.
+  */
+-public final class TreeTypeAdapter<T> extends TypeAdapter<T> {
++public final class TreeTypeAdapter<T> extends TypeAdapter<T> implements SerializationDelegatingTypeAdapter {
+   private final JsonSerializer<T> serializer;
+   private final JsonDeserializer<T> deserializer;
+   final Gson gson;
+@@ -89,6 +89,12 @@
+     Streams.write(tree, out);
+   }
+ 
++  /** Returns the adapter used for serialization when no custom serializer is present. */
++  @Override
++  public TypeAdapter<T> getSerializationDelegate() {
++    return serializer == null ? delegate() : null;
++  }
++
+   private TypeAdapter<T> delegate() {
+     // A race might lead to `delegate` being assigned by multiple threads but the last assignment will stick
+     TypeAdapter<T> d = delegate;
+
+--- a/gson/src/main/java/com/google/gson/Gson.java
++++ b/gson/src/main/java/com/google/gson/Gson.java
+@@ -1315,7 +1315,8 @@
+     return fromJson(new JsonTreeReader(json), typeOfT);
+   }
+ 
+-  static class FutureTypeAdapter<T> extends TypeAdapter<T> {
++  static class FutureTypeAdapter<T> extends TypeAdapter<T>
++      implements com.google.gson.internal.bind.SerializationDelegatingTypeAdapter {
+     private TypeAdapter<T> delegate;
+ 
+     public void setDelegate(TypeAdapter<T> typeAdapter) {
+@@ -1325,6 +1326,11 @@
+       delegate = typeAdapter;
+     }
+ 
++    @Override
++    public com.google.gson.TypeAdapter<?> getSerializationDelegate() {
++      return delegate;
++    }
++
+     @Override public T read(JsonReader in) throws IOException {
+       if (delegate == null) {
+         throw new IllegalStateException();
+
+--- /dev/null
++++ b/gson/src/main/java/com/google/gson/internal/bind/SerializationDelegatingTypeAdapter.java
+@@ -0,0 +1,33 @@
++/*
++ * Copyright (C) 2026 The Gson authors
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.google.gson.internal.bind;
++
++import com.google.gson.TypeAdapter;
++
++/**
++ * Implemented by {@link TypeAdapter} wrappers which might only delegate for serialization.
++ *
++ * <p>This allows code to detect whether a {@link TypeAdapter} is effectively reflective for
++ * serialization even when it is wrapped (e.g. by {@code TreeTypeAdapter} or a recursion
++ * {@code FutureTypeAdapter}).
++ */
++public interface SerializationDelegatingTypeAdapter {
++  /**
++   * Returns the delegate {@link TypeAdapter} which will be used for serialization, or {@code null}
++   * if this adapter does not delegate for serialization.
++   */
++  TypeAdapter<?> getSerializationDelegate();
++}

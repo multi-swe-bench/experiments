@@ -1,0 +1,130 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/SettableAnyProperty.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/SettableAnyProperty.java
+@@ -1,7 +1,18 @@
+ package com.fasterxml.jackson.databind.deser;
+ 
+ import java.io.IOException;
++import java.util.AbstractMap;
++import java.util.HashMap;
++import java.util.Hashtable;
++import java.util.LinkedHashMap;
+ import java.util.Map;
++import java.util.NavigableMap;
++import java.util.SortedMap;
++import java.util.TreeMap;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ConcurrentMap;
++import java.util.concurrent.ConcurrentNavigableMap;
++import java.util.concurrent.ConcurrentSkipListMap;
+ 
+ import com.fasterxml.jackson.core.*;
+ import com.fasterxml.jackson.databind.*;
+@@ -24,7 +35,7 @@
+     implements java.io.Serializable
+ {
+     private static final long serialVersionUID = 1L;
+-    
++
+     /**
+      * Method used for setting "any" properties, along with annotation
+      * information. Retained to allow contextualization of any properties.
+@@ -37,7 +48,7 @@
+     final protected AnnotatedMember _setter;
+ 
+     final boolean _setterIsField;
+-    
++
+     protected final JavaType _type;
+ 
+     protected JsonDeserializer<Object> _valueDeserializer;
+@@ -101,7 +112,7 @@
+         }
+         return this;
+     }
+-    
++
+     /*
+     /**********************************************************
+     /* Public API, accessors
+@@ -109,7 +120,7 @@
+      */
+ 
+     public BeanProperty getProperty() { return _property; }
+-    
++
+     public boolean hasValueDeserializer() { return (_valueDeserializer != null); }
+ 
+     public JavaType getType() { return _type; }
+@@ -119,7 +130,7 @@
+     /* Public API, deserialization
+     /**********************************************************
+      */
+-    
++
+     /**
+      * Method called to deserialize appropriate value, given parser (and
+      * context), and set it using appropriate method (a setter method).
+@@ -153,19 +164,25 @@
+         return _valueDeserializer.deserialize(p, ctxt);
+     }
+ 
+-    @SuppressWarnings("unchecked")
++    @SuppressWarnings({"unchecked","rawtypes"})
+     public void set(Object instance, Object propName, Object value) throws IOException
+     {
+         try {
+             // if annotation in the field (only map is supported now)
+             if (_setterIsField) {
+-                AnnotatedField field = (AnnotatedField) _setter;
++                final AnnotatedField field = (AnnotatedField) _setter;
+                 Map<Object,Object> val = (Map<Object,Object>) field.getValue(instance);
+-                /* 01-Jun-2016, tatu: At this point it is not quite clear what to do if
+-                 *    field is `null` -- we cannot necessarily count on zero-args
+-                 *    constructor except for a small set of types, so for now just
+-                 *    ignore if null. May need to figure out something better in future.
+-                 */
++
++                // 01-Jun-2016, tatu: Historically we ignored `null` because we cannot necessarily
++                // count on default (no-args) constructors. But for common JDK Map types we can
++                // safely materialize an empty Map instance.
++                if (val == null) {
++                    val = (Map<Object,Object>) _createEmptyMapFor(field.getRawType());
++                    if (val != null) {
++                        field.setValue(instance, val);
++                    }
++                }
++
+                 if (val != null) {
+                     // add the property key and value
+                     val.put(propName, value);
+@@ -179,6 +196,30 @@
+         }
+     }
+ 
++    /**
++     * Helper method used for #3559: when {@code @JsonAnySetter} is placed on a
++     * Map-valued FIELD and the field is initially {@code null}, attempt to
++     * materialize a Map instance for basic JDK {@link java.util.Map} types.
++     */
++    protected Map<?,?> _createEmptyMapFor(Class<?> rawType)
++    {
++        // Only handle well-known JDK *interface/abstract* types (issue #3559): for concrete
++        // implementations we do not want to guess whether it is safe to instantiate.
++        if (rawType == Map.class) {
++            return new LinkedHashMap<>();
++        }
++        if ((rawType == SortedMap.class) || (rawType == NavigableMap.class)) {
++            return new TreeMap<>();
++        }
++        if (rawType == ConcurrentMap.class) {
++            return new ConcurrentHashMap<>();
++        }
++        if (rawType == ConcurrentNavigableMap.class) {
++            return new ConcurrentSkipListMap<>();
++        }
++        return null;
++    }
++
+     /*
+     /**********************************************************
+     /* Helper methods

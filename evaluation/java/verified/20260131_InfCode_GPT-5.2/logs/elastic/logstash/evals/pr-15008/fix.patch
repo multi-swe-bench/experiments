@@ -1,0 +1,58 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -236,7 +236,9 @@
+             }
+ 
+             try {
+-                flushScheduler.shutdown();
++                if (flushScheduler != null) {
++                    flushScheduler.shutdown();
++                }
+             } catch (Exception e) {
+                 logger.warn("Unable shutdown flush scheduler, ignoring", e);
+             }
+@@ -477,19 +479,24 @@
+     private void finalizeSegment(final FinalizeWhen finalizeWhen) throws IOException {
+         lock.lock();
+         try {
+-            if (!isCurrentWriterStale() && finalizeWhen == FinalizeWhen.ONLY_IF_STALE)
++            if (currentWriter == null) {
+                 return;
++            }
+ 
+-            if (currentWriter != null) {
+-                if (currentWriter.hasWritten()) {
+-                    currentWriter.close();
+-                    sealSegment(currentSegmentIndex);
+-                }
+-                updateOldestSegmentReference();
+-                executeAgeRetentionPolicy();
+-                if (isOpen() && currentWriter.hasWritten()) {
+-                    nextWriter();
+-                }
++            final boolean shouldFinalize = finalizeWhen == FinalizeWhen.ALWAYS || isCurrentWriterStale();
++
++            if (shouldFinalize && currentWriter.hasWritten()) {
++                currentWriter.close();
++                sealSegment(currentSegmentIndex);
++            }
++
++            // Always enforce retention, even when the head segment has never been written
++            // (in this case it is not stale, but sealed segments may still have expired).
++            updateOldestSegmentReference();
++            executeAgeRetentionPolicy();
++
++            if (shouldFinalize && isOpen() && currentWriter.hasWritten()) {
++                nextWriter();
+             }
+         } finally {
+             lock.unlock();

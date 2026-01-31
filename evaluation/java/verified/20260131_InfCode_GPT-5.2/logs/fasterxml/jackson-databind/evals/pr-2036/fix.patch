@@ -1,0 +1,304 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/DeserializationFeature.java
++++ b/src/main/java/com/fasterxml/jackson/databind/DeserializationFeature.java
+@@ -77,11 +77,11 @@
+      * Feature is disabled by default, meaning that "untyped" integral
+      * numbers will by default be deserialized using {@link java.lang.Integer}
+      * if value fits.
+-     * 
++     *
+      * @since 2.6
+      */
+     USE_LONG_FOR_INTS(false),
+-    
++
+     /**
+      * Feature that determines whether JSON Array is mapped to
+      * <code>Object[]</code> or <code>List&lt;Object></code> when binding
+@@ -148,7 +148,7 @@
+      *<p>
+      * Feature is enabled by default so that exception is thrown for missing or invalid
+      * type information.
+-     * 
++     *
+      * @since 2.2
+      */
+     FAIL_ON_INVALID_SUBTYPE(true),
+@@ -165,7 +165,7 @@
+      * keys. New features may be added to control additional cases.
+      *<p>
+      * Feature is disabled by default so that no exception is thrown.
+-     * 
++     *
+      * @since 2.3
+      */
+     FAIL_ON_READING_DUP_TREE_KEY(false),
+@@ -192,7 +192,7 @@
+      *<p>
+      * Feature is enabled by default, so that unknown Object Ids will result in an
+      * exception being thrown, at the end of deserialization.
+-     * 
++     *
+      * @since 2.5
+      */
+     FAIL_ON_UNRESOLVED_OBJECT_IDS(true),
+@@ -213,7 +213,7 @@
+      *<p>
+      * Feature is disabled by default, so that no exception is thrown for missing creator
+      * property values, unless they are explicitly marked as `required`.
+-     * 
++     *
+      * @since 2.6
+      */
+     FAIL_ON_MISSING_CREATOR_PROPERTIES(false),
+@@ -264,7 +264,7 @@
+      * @since 2.9
+      */
+     FAIL_ON_TRAILING_TOKENS(false),
+-    
++
+     /**
+      * Feature that determines whether Jackson code should catch
+      * and wrap {@link Exception}s (but never {@link Error}s!)
+@@ -300,13 +300,13 @@
+      * Feature is disabled by default.
+      */
+     ACCEPT_SINGLE_VALUE_AS_ARRAY(false),
+-    
++
+     /**
+      * Feature that determines whether it is acceptable to coerce single value array (in JSON)
+      * values to the corresponding value type.  This is basically the opposite of the {@link #ACCEPT_SINGLE_VALUE_AS_ARRAY}
+      * feature.  If more than one value is found in the array, a JsonMappingException is thrown.
+      * <p>
+-     * 
++     *
+      * Feature is disabled by default
+      * @since 2.4
+      */
+@@ -329,7 +329,7 @@
+     /* Value conversion features
+     /******************************************************
+      */
+-    
++
+     /**
+      * Feature that can be enabled to allow JSON empty String
+      * value ("") to be bound as `null` for POJOs and other structured
+@@ -359,7 +359,7 @@
+      * to be equivalent of JSON null.
+      *<p>
+      * Feature is disabled by default.
+-     * 
++     *
+      * @since 2.5
+      */
+     ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT(false),
+@@ -373,7 +373,7 @@
+      * will be thrown.
+      *<p>
+      * Feature is enabled by default.
+-     * 
++     *
+      * @since 2.6
+      */
+     ACCEPT_FLOAT_AS_INT(true),
+@@ -392,7 +392,7 @@
+     READ_ENUMS_USING_TO_STRING(false),
+ 
+     /**
+-     * Feature that allows unknown Enum values to be parsed as null values. 
++     * Feature that allows unknown Enum values to be parsed as null values.
+      * If disabled, unknown Enum values will throw exceptions.
+      *<p>
+      * Note that in some cases this will basically ignore unknown Enum values;
+@@ -401,7 +401,7 @@
+      * cases).
+      *<p>
+      * Feature is disabled by default.
+-     * 
++     *
+      * @since 2.0
+      */
+     READ_UNKNOWN_ENUM_VALUES_AS_NULL(false),
+@@ -430,7 +430,7 @@
+      * This is the counterpart to {@link SerializationFeature#WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS}.
+      *<p>
+      * Feature is enabled by default, to support most accurate time values possible.
+-     * 
++     *
+      * @since 2.2
+      */
+     READ_DATE_TIMESTAMPS_AS_NANOSECONDS(true),
+@@ -454,7 +454,7 @@
+      *<p>
+      * Taking above into account, this feature is supported only by extension modules for
+      * Joda and Java 8 date/tyime datatypes.
+-     * 
++     *
+      * @since 2.2
+      */
+     ADJUST_DATES_TO_CONTEXT_TIME_ZONE(true),
+@@ -476,16 +476,30 @@
+      * feature: only consider that if there are actual perceived problems.
+      *<p>
+      * Feature is enabled by default.
+-     * 
++     *
+      * @since 2.1
+      */
+-    EAGER_DESERIALIZER_FETCH(true)
+-    
++    EAGER_DESERIALIZER_FETCH(true),
++
++    /**
++     * Feature that allows using the declared base type as the default implementation
++     * for polymorphic deserialization in cases where type id is missing.
++     *<p>
++     * If enabled and the base type is a concrete class (not an abstract class and
++     * not an interface), missing type id will be handled by deserializing content as
++     * the base type itself.
++     *<p>
++     * Feature is disabled by default.
++     *
++     * @since 2.9
++     */
++    USE_BASE_TYPE_AS_DEFAULT(false)
++
+     ;
+ 
+     private final boolean _defaultState;
+     private final int _mask;
+-    
++
+     private DeserializationFeature(boolean defaultState) {
+         _defaultState = defaultState;
+         _mask = (1 << ordinal());
+
+--- a/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java
++++ b/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java
+@@ -24,9 +24,9 @@
+     implements java.io.Serializable
+ {
+     private static final long serialVersionUID = 1;
+-    
++
+     protected final TypeIdResolver _idResolver;
+-    
++
+     protected final JavaType _baseType;
+ 
+     /**
+@@ -49,9 +49,9 @@
+      * in cases where type id is to be exposed as part of JSON.
+      */
+     protected final String _typePropertyName;
+-    
++
+     protected final boolean _typeIdVisible;
+-    
++
+     /**
+      * For efficient operation we will lazily build mappings from type ids
+      * to actual deserializers, once needed.
+@@ -102,7 +102,7 @@
+     /* Accessors
+     /**********************************************************
+      */
+-    
++
+     @Override
+     public abstract JsonTypeInfo.As getTypeInclusion();
+ 
+@@ -110,11 +110,11 @@
+ 
+     @Override
+     public final String getPropertyName() { return _typePropertyName; }
+-    
+-    @Override    
++
++    @Override
+     public TypeIdResolver getTypeIdResolver() { return _idResolver; }
+ 
+-    @Override    
++    @Override
+     public Class<?> getDefaultImpl() {
+         return ClassUtil.rawClass(_defaultImpl);
+     }
+@@ -133,10 +133,10 @@
+         sb.append('[').append(getClass().getName());
+         sb.append("; base-type:").append(_baseType);
+         sb.append("; id-resolver: ").append(_idResolver);
+-    	    sb.append(']');
+-    	    return sb.toString();
++            sb.append(']');
++            return sb.toString();
+     }
+-    
++
+     /*
+     /**********************************************************
+     /* Helper methods for sub-classes
+@@ -204,21 +204,31 @@
+          *   {@link java.lang.Void} to mean "serialize as null"; as well as DeserializationFeature
+          *   to do swift mapping to null
+          */
+-        if (_defaultImpl == null) {
++        JavaType defaultImpl = _defaultImpl;
++
++        // [databind#955]: allow using base type as the default implementation (if concrete)
++        if (defaultImpl == null
++                && ctxt.isEnabled(DeserializationFeature.USE_BASE_TYPE_AS_DEFAULT)
++                && (_baseType != null)
++                && ClassUtil.isConcrete(_baseType.getRawClass())) {
++            defaultImpl = _baseType;
++        }
++
++        if (defaultImpl == null) {
+             if (!ctxt.isEnabled(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE)) {
+                 return NullifyingDeserializer.instance;
+             }
+             return null;
+         }
+-        Class<?> raw = _defaultImpl.getRawClass();
++        Class<?> raw = defaultImpl.getRawClass();
+         if (ClassUtil.isBogusClass(raw)) {
+             return NullifyingDeserializer.instance;
+         }
+-        
+-        synchronized (_defaultImpl) {
++
++        synchronized (defaultImpl) {
+             if (_defaultImplDeserializer == null) {
+                 _defaultImplDeserializer = ctxt.findContextualValueDeserializer(
+-                        _defaultImpl, _property);
++                        defaultImpl, _property);
+             }
+             return _defaultImplDeserializer;
+         }
+@@ -228,7 +238,7 @@
+      * Helper method called when {@link JsonParser} indicates that it can use
+      * so-called native type ids. Assumption from there is that only native
+      * type ids are to be used.
+-     * 
++     *
+      * @since 2.3
+      */
+     @Deprecated
+@@ -239,7 +249,7 @@
+     /**
+      * Helper method called when {@link JsonParser} indicates that it can use
+      * so-called native type ids, and such type id has been found.
+-     * 
++     *
+      * @since 2.4
+      */
+     protected Object _deserializeWithNativeTypeId(JsonParser jp, DeserializationContext ctxt, Object typeId)
+@@ -263,7 +273,7 @@
+     }
+ 
+     /**
+-     * Helper method called when given type id cannot be resolved into 
++     * Helper method called when given type id cannot be resolved into
+      * concrete deserializer either directly (using given {@link  TypeIdResolver}),
+      * or using default type.
+      * Default implementation simply throws a {@link com.fasterxml.jackson.databind.JsonMappingException} to

@@ -1,0 +1,105 @@
+--- a/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineInput.java
++++ b/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineInput.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -29,12 +29,21 @@
+  * */
+ public interface PipelineInput {
+     /**
+-     * Accepts an event. It might be rejected if the input is stopping.
++     * Receives a stream of events.
+      *
+-     * @param events a collection of events
+-     * @return true if the event was successfully received
++     * Implementations should consume events from the provided stream in-order.
++     * If an error occurs part-way through the stream (for example an IO error
++     * while writing to the downstream persistent queue), implementations should
++     * catch the exception and return the number of events that were successfully
++     * received before the failure.
++     *
++     * <p>This return value enables the sender to retry from the point of
++     * interruption without duplicating already-received events.</p>
++     *
++     * @param events stream of events to receive
++     * @return the number of events successfully received (0..N)
+      */
+-    boolean internalReceive(Stream<JrubyEventExtLibrary.RubyEvent> events);
++    int internalReceive(Stream<JrubyEventExtLibrary.RubyEvent> events);
+ 
+     /**
+      * @return true if the input is running
+
+--- a/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineBus.java
++++ b/logstash-core/src/main/java/org/logstash/plugins/pipeline/PipelineBus.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -58,24 +58,46 @@
+             final ConcurrentHashMap<String, AddressState> addressesToInputs = outputsToAddressStates.get(sender);
+ 
+             addressesToInputs.forEach((address, addressState) -> {
+-                final Stream<JrubyEventExtLibrary.RubyEvent> clones = events.stream().map(e -> e.rubyClone(RubyUtil.RUBY));
++                int offset = 0;
+ 
+                 PipelineInput input = addressState.getInput(); // Save on calls to getInput since it's volatile
+-                boolean sendWasSuccess = input != null && input.internalReceive(clones);
++                while (true) {
++                    // create a fresh stream each time; streams are single-use
++                    final Stream<JrubyEventExtLibrary.RubyEvent> clones = events.stream()
++                            .skip(offset)
++                            .map(e -> e.rubyClone(RubyUtil.RUBY));
++
++                    final int accepted = input == null ? 0 : input.internalReceive(clones);
++                    if (accepted > 0) {
++                        offset += accepted;
++                    }
++
++                    // When we've sent everything, we're done.
++                    if (offset >= events.size()) {
++                        break;
++                    }
+ 
+-                // Retry send if the initial one failed
+-                while (ensureDelivery && !sendWasSuccess) {
+-                    // We need to refresh the input in case the mapping has updated between loops
+-                    String message = String.format("Attempted to send event to '%s' but that address was unavailable. " +
+-                            "Maybe the destination pipeline is down or stopping? Will Retry.", address);
++                    // If delivery isn't ensured, we don't retry partial sends.
++                    if (!ensureDelivery) {
++                        break;
++                    }
++
++                    // We need to refresh the input in case the mapping has updated between loops.
++                    final String message = String.format(
++                            "Attempted to send event to '%s' but that address was unavailable or error occurred. " +
++                                    "Maybe the destination pipeline is down or stopping? Will Retry.",
++                            address
++                    );
+                     logger.warn(message);
++
+                     input = addressState.getInput();
+-                    sendWasSuccess = input != null && input.internalReceive(clones);
++
+                     try {
+                         Thread.sleep(1000);
+                     } catch (InterruptedException e) {
+                         Thread.currentThread().interrupt();
+                         logger.error("Sleep unexpectedly interrupted in bus retry loop", e);
++                        break;
+                     }
+                 }
+             });
+

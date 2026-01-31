@@ -1,0 +1,411 @@
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/utils/ReflectUtils.java
+@@ -31,6 +31,8 @@
+ import java.lang.reflect.Modifier;
+ import java.lang.reflect.ParameterizedType;
+ import java.lang.reflect.Type;
++import java.lang.reflect.TypeVariable;
++import java.lang.reflect.WildcardType;
+ import java.net.URL;
+ import java.security.CodeSource;
+ import java.security.ProtectionDomain;
+@@ -1203,7 +1205,8 @@
+                     returnType = (Class<?>) ((ParameterizedType) actualArgType).getRawType();
+                     genericReturnType = actualArgType;
+                 } else {
+-                    returnType = (Class<?>) actualArgType;
++                    // actualArgType may be Class/TypeVariable/WildcardType/GenericArrayType...
++                    returnType = getRawClass(actualArgType);
+                     genericReturnType = returnType;
+                 }
+             } else {
+@@ -1215,6 +1218,353 @@
+     }
+ 
+     /**
++     * Resolve a method's generic return type.
++     * <p>
++     * When the return type contains {@link TypeVariable} (e.g. {@code CompletableFuture<T>}), this method tries
++     * to resolve it from the {@code implClass}'s generic signature.
++     *
++     * @param method    the method declared on an interface or super class
++     * @param implClass the concrete implementation class
++     * @return the resolved return {@link Type}
++     */
++    public static Type getGenericReturnType(Method method, Class<?> implClass) {
++        if (method == null) {
++            return null;
++        }
++        Type returnType = method.getGenericReturnType();
++        if (implClass == null) {
++            return returnType;
++        }
++
++        Class<?> declaringClass = method.getDeclaringClass();
++        Map<TypeVariable<?>, Type> typeVariableMap = new HashMap<>();
++
++        // Collect all parameterized types from the whole type hierarchy of implClass
++        for (ParameterizedType parameterizedType : findAllParameterizedTypes(implClass)) {
++            Type rawType = parameterizedType.getRawType();
++            if (rawType instanceof Class && rawType.equals(declaringClass)) {
++                TypeVariable<?>[] typeVariables = ((Class<?>) rawType).getTypeParameters();
++                Type[] actualTypes = parameterizedType.getActualTypeArguments();
++                for (int i = 0; i < typeVariables.length && i < actualTypes.length; i++) {
++                    typeVariableMap.put(typeVariables[i], actualTypes[i]);
++                }
++            }
++        }
++
++        if (typeVariableMap.isEmpty()) {
++            return returnType;
++        }
++
++        return resolveType(returnType, typeVariableMap);
++    }
++
++    /**
++     * @see #getGenericReturnType(Method, Class)
++     */
++    public static Type getGenericReturnType(Method method) {
++        if (method == null) {
++            return null;
++        }
++        return method.getGenericReturnType();
++    }
++
++    private static Class<?> getRawClass(Type type) {
++        if (type instanceof Class) {
++            return (Class<?>) type;
++        }
++        if (type instanceof ParameterizedType) {
++            Type rawType = ((ParameterizedType) type).getRawType();
++            return rawType instanceof Class ? (Class<?>) rawType : null;
++        }
++        if (type instanceof GenericArrayType) {
++            Type component = ((GenericArrayType) type).getGenericComponentType();
++            Class<?> componentClass = getRawClass(component);
++            if (componentClass == null) {
++                return null;
++            }
++            return Array.newInstance(componentClass, 0).getClass();
++        }
++        if (type instanceof TypeVariable) {
++            TypeVariable<?> typeVariable = (TypeVariable<?>) type;
++            Type[] bounds = typeVariable.getBounds();
++            if (bounds != null && bounds.length > 0) {
++                return getRawClass(bounds[0]);
++            }
++            return Object.class;
++        }
++        if (type instanceof WildcardType) {
++            WildcardType wildcardType = (WildcardType) type;
++            Type[] upperBounds = wildcardType.getUpperBounds();
++            if (upperBounds != null && upperBounds.length > 0) {
++                return getRawClass(upperBounds[0]);
++            }
++            return Object.class;
++        }
++        return null;
++    }
++
++    private static Type resolveType(Type type, Map<TypeVariable<?>, Type> typeVariableMap) {
++        if (type instanceof TypeVariable) {
++            Type mapped = typeVariableMap.get(type);
++            if (mapped == null) {
++                return type;
++            }
++            return resolveType(mapped, typeVariableMap);
++        }
++
++        if (type instanceof ParameterizedType) {
++            ParameterizedType parameterizedType = (ParameterizedType) type;
++            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
++            boolean changed = false;
++            Type[] resolvedActualTypeArguments = new Type[actualTypeArguments.length];
++            for (int i = 0; i < actualTypeArguments.length; i++) {
++                Type actualTypeArgument = actualTypeArguments[i];
++                Type resolved = resolveType(actualTypeArgument, typeVariableMap);
++                resolvedActualTypeArguments[i] = resolved;
++                changed = changed || resolved != actualTypeArgument;
++            }
++
++            if (!changed) {
++                return type;
++            }
++
++            return new ParameterizedTypeImpl(parameterizedType.getOwnerType(), parameterizedType.getRawType(),
++                    resolvedActualTypeArguments);
++        }
++
++        if (type instanceof GenericArrayType) {
++            GenericArrayType arrayType = (GenericArrayType) type;
++            Type componentType = arrayType.getGenericComponentType();
++            Type resolvedComponentType = resolveType(componentType, typeVariableMap);
++            if (resolvedComponentType == componentType) {
++                return type;
++            }
++            return new GenericArrayTypeImpl(resolvedComponentType);
++        }
++
++        if (type instanceof WildcardType) {
++            WildcardType wildcardType = (WildcardType) type;
++            Type[] upperBounds = wildcardType.getUpperBounds();
++            Type[] lowerBounds = wildcardType.getLowerBounds();
++
++            boolean changed = false;
++
++            Type[] resolvedUpperBounds = new Type[upperBounds.length];
++            for (int i = 0; i < upperBounds.length; i++) {
++                Type resolved = resolveType(upperBounds[i], typeVariableMap);
++                resolvedUpperBounds[i] = resolved;
++                changed = changed || resolved != upperBounds[i];
++            }
++
++            Type[] resolvedLowerBounds = new Type[lowerBounds.length];
++            for (int i = 0; i < lowerBounds.length; i++) {
++                Type resolved = resolveType(lowerBounds[i], typeVariableMap);
++                resolvedLowerBounds[i] = resolved;
++                changed = changed || resolved != lowerBounds[i];
++            }
++
++            if (!changed) {
++                return type;
++            }
++
++            return new WildcardTypeImpl(resolvedUpperBounds, resolvedLowerBounds);
++        }
++
++        return type;
++    }
++
++    private static Set<ParameterizedType> findAllParameterizedTypes(Class<?> sourceClass) {
++        if (sourceClass == null || Object.class.equals(sourceClass)) {
++            return Collections.emptySet();
++        }
++        Set<ParameterizedType> parameterizedTypes = new LinkedHashSet<>();
++        Set<Class<?>> visited = new HashSet<>();
++        findAllParameterizedTypes(sourceClass, parameterizedTypes, visited);
++        return parameterizedTypes;
++    }
++
++    private static void findAllParameterizedTypes(Class<?> sourceClass, Set<ParameterizedType> types, Set<Class<?>> visited) {
++        if (sourceClass == null || Object.class.equals(sourceClass) || !visited.add(sourceClass)) {
++            return;
++        }
++
++        List<Type> genericTypes = new LinkedList<>(asList(sourceClass.getGenericInterfaces()));
++        genericTypes.add(sourceClass.getGenericSuperclass());
++
++        for (Type t : genericTypes) {
++            if (t instanceof ParameterizedType) {
++                ParameterizedType pt = (ParameterizedType) t;
++                types.add(pt);
++                Type raw = pt.getRawType();
++                if (raw instanceof Class) {
++                    findAllParameterizedTypes((Class<?>) raw, types, visited);
++                }
++            } else if (t instanceof Class) {
++                findAllParameterizedTypes((Class<?>) t, types, visited);
++            }
++        }
++    }
++
++    private static final class ParameterizedTypeImpl implements ParameterizedType {
++
++        private final Type ownerType;
++        private final Type rawType;
++        private final Type[] actualTypeArguments;
++
++        private ParameterizedTypeImpl(Type ownerType, Type rawType, Type[] actualTypeArguments) {
++            this.ownerType = ownerType;
++            this.rawType = rawType;
++            this.actualTypeArguments = actualTypeArguments == null ? new Type[0] : actualTypeArguments.clone();
++        }
++
++        @Override
++        public Type[] getActualTypeArguments() {
++            return actualTypeArguments.clone();
++        }
++
++        @Override
++        public Type getRawType() {
++            return rawType;
++        }
++
++        @Override
++        public Type getOwnerType() {
++            return ownerType;
++        }
++
++        @Override
++        public boolean equals(Object other) {
++            if (this == other) {
++                return true;
++            }
++            if (!(other instanceof ParameterizedType)) {
++                return false;
++            }
++            ParameterizedType that = (ParameterizedType) other;
++            return java.util.Objects.equals(ownerType, that.getOwnerType())
++                    && java.util.Objects.equals(rawType, that.getRawType())
++                    && java.util.Arrays.equals(actualTypeArguments, that.getActualTypeArguments());
++        }
++
++        @Override
++        public int hashCode() {
++            return java.util.Arrays.hashCode(actualTypeArguments)
++                    ^ java.util.Objects.hashCode(ownerType)
++                    ^ java.util.Objects.hashCode(rawType);
++        }
++
++        @Override
++        public String toString() {
++            StringBuilder sb = new StringBuilder();
++            if (rawType instanceof Class) {
++                sb.append(((Class<?>) rawType).getName());
++            } else {
++                sb.append(String.valueOf(rawType));
++            }
++
++            if (actualTypeArguments.length > 0) {
++                sb.append("<");
++                for (int i = 0; i < actualTypeArguments.length; i++) {
++                    if (i > 0) {
++                        sb.append(", ");
++                    }
++                    sb.append(actualTypeArguments[i].getTypeName());
++                }
++                sb.append("> ");
++                // remove the extra space before returning
++                sb.setLength(sb.length() - 1);
++            }
++            return sb.toString();
++        }
++    }
++
++    private static final class GenericArrayTypeImpl implements GenericArrayType {
++
++        private final Type genericComponentType;
++
++        private GenericArrayTypeImpl(Type genericComponentType) {
++            this.genericComponentType = genericComponentType;
++        }
++
++        @Override
++        public Type getGenericComponentType() {
++            return genericComponentType;
++        }
++
++        @Override
++        public boolean equals(Object other) {
++            if (this == other) {
++                return true;
++            }
++            if (!(other instanceof GenericArrayType)) {
++                return false;
++            }
++            GenericArrayType that = (GenericArrayType) other;
++            return java.util.Objects.equals(genericComponentType, that.getGenericComponentType());
++        }
++
++        @Override
++        public int hashCode() {
++            return java.util.Objects.hashCode(genericComponentType);
++        }
++
++        @Override
++        public String toString() {
++            return genericComponentType.getTypeName() + "[]";
++        }
++    }
++
++    private static final class WildcardTypeImpl implements WildcardType {
++
++        private final Type[] upperBounds;
++        private final Type[] lowerBounds;
++
++        private WildcardTypeImpl(Type[] upperBounds, Type[] lowerBounds) {
++            this.upperBounds = upperBounds == null ? new Type[0] : upperBounds.clone();
++            this.lowerBounds = lowerBounds == null ? new Type[0] : lowerBounds.clone();
++        }
++
++        @Override
++        public Type[] getUpperBounds() {
++            return upperBounds.clone();
++        }
++
++        @Override
++        public Type[] getLowerBounds() {
++            return lowerBounds.clone();
++        }
++
++        @Override
++        public boolean equals(Object other) {
++            if (this == other) {
++                return true;
++            }
++            if (!(other instanceof WildcardType)) {
++                return false;
++            }
++            WildcardType that = (WildcardType) other;
++            return java.util.Arrays.equals(upperBounds, that.getUpperBounds())
++                    && java.util.Arrays.equals(lowerBounds, that.getLowerBounds());
++        }
++
++        @Override
++        public int hashCode() {
++            return java.util.Arrays.hashCode(upperBounds) ^ java.util.Arrays.hashCode(lowerBounds);
++        }
++
++        @Override
++        public String toString() {
++            if (lowerBounds.length > 0) {
++                return "? super " + lowerBounds[0].getTypeName();
++            }
++            if (upperBounds.length == 0 || Object.class.equals(upperBounds[0])) {
++                return "?";
++            }
++            return "? extends " + upperBounds[0].getTypeName();
++        }
++    }
++
++    /**
+      * Find the {@link Set} of {@link ParameterizedType}
+      *
+      * @param sourceClass the source {@link Class class}
+
+--- a/dubbo-common/src/main/java/org/apache/dubbo/common/compiler/support/JdkCompiler.java
++++ b/dubbo-common/src/main/java/org/apache/dubbo/common/compiler/support/JdkCompiler.java
+@@ -65,10 +65,30 @@
+ 
+     public JdkCompiler() {
+         options = new ArrayList<String>();
++
++        // JDK9+ no longer supports "-source 1.6" / "-target 1.6".
++        // Use 1.8 as a baseline for modern JDKs to keep the in-JVM compiler working.
++        String javaVersion = System.getProperty("java.specification.version", "1.8");
++        String baseline = "1.6";
++        try {
++            int major;
++            if (javaVersion.startsWith("1.")) {
++                major = Integer.parseInt(javaVersion.substring(2));
++            } else {
++                major = Integer.parseInt(javaVersion);
++            }
++            if (major >= 9) {
++                baseline = "1.8";
++            }
++        } catch (Throwable ignore) {
++            baseline = "1.8";
++        }
++
+         options.add("-source");
+-        options.add("1.6");
++        options.add(baseline);
+         options.add("-target");
+-        options.add("1.6");
++        options.add(baseline);
++
+         StandardJavaFileManager manager = compiler.getStandardFileManager(diagnosticCollector, null, null);
+         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+         if (loader instanceof URLClassLoader

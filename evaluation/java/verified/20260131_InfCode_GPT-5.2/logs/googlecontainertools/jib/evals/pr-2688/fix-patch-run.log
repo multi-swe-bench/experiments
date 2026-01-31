@@ -1,0 +1,61 @@
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8 -Duser.timezone=Asia/Shanghai
+Starting a Gradle Daemon, 1 incompatible and 1 stopped Daemons could not be reused, use --status for details
+> Task :jib-core:ensureTransitiveDependencyOverrides
+> Task :jib-core:compileJava UP-TO-DATE
+> Task :jib-core:processResources UP-TO-DATE
+> Task :jib-core:classes UP-TO-DATE
+> Task :jib-maven-plugin:ensureTransitiveDependencyOverrides
+> Task :jib-plugins-common:ensureTransitiveDependencyOverrides
+> Task :jib-plugins-common:compileJava UP-TO-DATE
+> Task :jib-plugins-common:processResources NO-SOURCE
+> Task :jib-plugins-common:classes UP-TO-DATE
+> Task :jib-plugins-common:jar
+> Task :jib-maven-plugin:compileJava
+> Task :jib-maven-plugin:generatePomFileForMavenJavaPublication
+> Task :jib-maven-plugin:generateMavenPluginDescriptor
+> Task :jib-maven-plugin:processResources UP-TO-DATE
+> Task :jib-maven-plugin:classes
+> Task :jib-maven-plugin:jar
+> Task :jib-maven-plugin:publishMavenJavaPublicationToMavenLocal
+> Task :jib-maven-plugin:publishToMavenLocal
+> Task :jib-core:compileTestJava UP-TO-DATE
+> Task :jib-core:processTestResources UP-TO-DATE
+> Task :jib-core:testClasses UP-TO-DATE
+> Task :jib-core:testJar UP-TO-DATE
+> Task :jib-plugins-common:compileTestJava UP-TO-DATE
+> Task :jib-plugins-common:processTestResources UP-TO-DATE
+> Task :jib-plugins-common:testClasses UP-TO-DATE
+> Task :jib-plugins-common:testJar UP-TO-DATE
+> Task :jib-maven-plugin:compileTestJava
+> Task :jib-maven-plugin:processTestResources UP-TO-DATE
+> Task :jib-maven-plugin:testClasses
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8 -Duser.timezone=Asia/Shanghai
+
+> Task :jib-maven-plugin:test
+
+com.google.cloud.tools.jib.maven.MavenProjectPropertiesTest > testGetSpringBootRepackageConfiguration_noConfigurationBlock FAILED
+    java.lang.AssertionError: expected:<Optional.empty> but was:<Optional[<?xml version="1.0" encoding="UTF-8"?>
+    <configuration/>]>
+        at org.junit.Assert.fail(Assert.java:89)
+        at org.junit.Assert.failNotEquals(Assert.java:835)
+        at org.junit.Assert.assertEquals(Assert.java:120)
+        at org.junit.Assert.assertEquals(Assert.java:146)
+        at com.google.cloud.tools.jib.maven.MavenProjectPropertiesTest.testGetSpringBootRepackageConfiguration_noConfigurationBlock(MavenProjectPropertiesTest.java:790)
+
+55 tests completed, 1 failed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':jib-maven-plugin:test'.
+> There were failing tests. See the report at: file:///home/jib/jib-maven-plugin/build/reports/test/index.html
+
+* Try:
+Run with --stacktrace option to get the stack trace. Run with --info or --debug option to get more log output. Run with --scan to get full insights.
+
+* Get more help at https://help.gradle.org
+
+BUILD FAILED in 28s
+
+> Task :jib-maven-plugin:test FAILED
+22 actionable tasks: 11 executed, 11 up-to-date

@@ -1,0 +1,81 @@
+--- a/src/main/java/com/fasterxml/jackson/core/sym/CharsToNameCanonicalizer.java
++++ b/src/main/java/com/fasterxml/jackson/core/sym/CharsToNameCanonicalizer.java
+@@ -122,7 +122,7 @@
+      *
+      * @since 2.16
+      */
+-    protected final StreamReadConstraints _streamReadConstraints;
++    protected volatile StreamReadConstraints _streamReadConstraints;
+ 
+     /**
+      * Seed value we use as the base to make hash codes non-static between
+@@ -347,7 +347,7 @@
+ 
+         StreamReadConstraints src;
+         int factoryFeatures;
+-        
++
+         if (owner == null) {
+             src = StreamReadConstraints.defaults();
+             factoryFeatures = 0;
+@@ -378,6 +378,20 @@
+     }
+ 
+     /**
++     * Since 2.16, constraints used by parsers are typically obtained from owning
++     * {@link TokenStreamFactory} at construction time.
++     * <p>
++     * However, if legacy {@link com.fasterxml.jackson.core.JsonFactory#setStreamReadConstraints}
++     * is called after {@link CharsToNameCanonicalizer} root has been created,
++     * we need a way to update constraints for the already-existing symbol table.
++     *
++     * @since 2.17
++     */
++    public void setStreamReadConstraints(StreamReadConstraints src) {
++        _streamReadConstraints = src;
++    }
++
++    /**
+      * @param flags Configuration flags (ignored)
+      *
+      * @return Actual canonicalizer instance that can be used by a parser
+@@ -388,7 +402,7 @@
+     public CharsToNameCanonicalizer makeChild(int flags) {
+         return makeChild();
+     }
+-    
++
+     /**
+      * Method called by the using code to indicate it is done with this instance.
+      * This lets instance merge accumulated changes into parent (if need be),
+
+--- a/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
++++ b/src/main/java/com/fasterxml/jackson/core/JsonFactory.java
+@@ -292,7 +292,7 @@
+     protected StreamReadConstraints _streamReadConstraints;
+ 
+     /**
+-     * Container for configuration values used when handling erroneous token inputs. 
++     * Container for configuration values used when handling erroneous token inputs.
+      *
+      * @since 2.16
+      */
+@@ -325,7 +325,7 @@
+      * @since 2.16
+      */
+     protected final List<JsonGeneratorDecorator> _generatorDecorators;
+-    
++
+     /**
+      * Separator used between root-level values, if any; null indicates
+      * "do not add separator".
+@@ -871,6 +871,9 @@
+      */
+     public JsonFactory setStreamReadConstraints(StreamReadConstraints src) {
+         _streamReadConstraints = Objects.requireNonNull(src);
++        // Also keep root symbol table in sync since it caches constraints
++        // (root is created during factory construction).
++        _rootCharSymbols.setStreamReadConstraints(_streamReadConstraints);
+         return this;
+     }
+ 

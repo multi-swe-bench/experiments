@@ -1,0 +1,95 @@
+--- a/src/main/java/org/mockito/internal/MockitoCore.java
++++ b/src/main/java/org/mockito/internal/MockitoCore.java
+@@ -73,6 +73,8 @@
+     private static final DoNotMockEnforcer DO_NOT_MOCK_ENFORCER = Plugins.getDoNotMockEnforcer();
+     private static final Set<Class<?>> MOCKABLE_CLASSES =
+             Collections.synchronizedSet(new HashSet<>());
++    private static final Set<Class<?>> STATIC_MOCKABLE_CLASSES =
++            Collections.synchronizedSet(new HashSet<>());
+ 
+     public <T> T mock(Class<T> typeToMock, MockSettings settings) {
+         if (!(settings instanceof MockSettingsImpl)) {
+@@ -131,12 +133,41 @@
+         }
+         MockSettingsImpl impl = MockSettingsImpl.class.cast(settings);
+         MockCreationSettings<T> creationSettings = impl.buildStatic(classToMock);
++
++        checkDoNotMockAnnotationForStaticMock(classToMock);
++        for (Class<?> aClass : creationSettings.getExtraInterfaces()) {
++            checkDoNotMockAnnotationForStaticMock(aClass);
++        }
++
+         MockMaker.StaticMockControl<T> control = createStaticMock(classToMock, creationSettings);
+         control.enable();
+         mockingProgress().mockingStarted(classToMock, creationSettings);
+         return new MockedStaticImpl<>(control);
+     }
+ 
++    private static void checkDoNotMockAnnotationForStaticMock(Class<?> type) {
++        // Object and interfaces do not have a super class
++        if (type == null) {
++            return;
++        }
++
++        if (STATIC_MOCKABLE_CLASSES.contains(type)) {
++            return;
++        }
++
++        String warning = DO_NOT_MOCK_ENFORCER.checkTypeForDoNotMockViolationOnStaticMock(type);
++        if (warning != null) {
++            throw new DoNotMockException(warning);
++        }
++
++        checkDoNotMockAnnotationForStaticMock(type.getSuperclass());
++        for (Class<?> aClass : type.getInterfaces()) {
++            checkDoNotMockAnnotationForStaticMock(aClass);
++        }
++
++        STATIC_MOCKABLE_CLASSES.add(type);
++    }
++
+     public <T> MockedConstruction<T> mockConstruction(
+             Class<T> typeToMock,
+             Function<MockedConstruction.Context, ? extends MockSettings> settingsFactory,
+
+--- a/src/main/java/org/mockito/plugins/DoNotMockEnforcer.java
++++ b/src/main/java/org/mockito/plugins/DoNotMockEnforcer.java
+@@ -10,14 +10,33 @@
+ public interface DoNotMockEnforcer {
+ 
+     /**
+-     * If this type is allowed to be mocked. Return an empty optional if the enforcer allows
+-     * this type to be mocked. Return a message if there is a reason this type can not be mocked.
++     * Checks if the supplied type is allowed to be mocked.
+      *
+-     * Note that Mockito performs traversal of the type hierarchy. Implementations of this class
++     * <p>Return {@code null} if the enforcer allows this type to be mocked. Return a message if
++     * there is a reason this type can not be mocked.
++     *
++     * <p>Note that Mockito performs traversal of the type hierarchy. Implementations of this class
+      * should therefore not perform type traversal themselves but rely on Mockito.
+      *
+      * @param type The type to check
+-     * @return Optional message if this type can not be mocked, or an empty optional if type can be mocked
++     * @return Message if this type can not be mocked, or {@code null} if type can be mocked
+      */
+     String checkTypeForDoNotMockViolation(Class<?> type);
++
++    /**
++     * Checks if the supplied type is allowed to be mocked statically via {@code Mockito.mockStatic}.
++     *
++     * <p>This method is optional: the default implementation delegates to
++     * {@link #checkTypeForDoNotMockViolation(Class)}.
++     *
++     * <p>Plugins may override this method to implement stricter/different rules for static mocks
++     * than for regular mocks.
++     *
++     * @param type The type to check
++     * @return Message if this type can not be mocked statically, or {@code null} if it can be
++     *     mocked statically
++     */
++    default String checkTypeForDoNotMockViolationOnStaticMock(Class<?> type) {
++        return checkTypeForDoNotMockViolation(type);
++    }
+ }
+

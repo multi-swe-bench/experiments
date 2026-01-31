@@ -1,0 +1,19 @@
+--- a/src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsDeepStubs.java
++++ b/src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsDeepStubs.java
+@@ -58,6 +58,16 @@
+         if (emptyValue != null) {
+             return emptyValue;
+         }
++
++        // Deep stubs should not attempt to create mocks for enums.
++        // In particular, enums with constant-specific class bodies (e.g. enums declaring abstract methods)
++        // are effectively sealed on Java 15+ and cannot be subclass-mocked.
++        // Returning the first enum literal is consistent with Mockito's "empty value" semantics for enums.
++        if (rawType.isEnum()) {
++            Object[] enumConstants = rawType.getEnumConstants();
++            return enumConstants != null && enumConstants.length > 0 ? enumConstants[0] : null;
++        }
++
+         if (!typeMockabilityOf(rawType, mockSettings.getMockMaker()).mockable()) {
+             if (invocation.getMethod().getReturnType().equals(rawType)) {
+                 return delegate().answer(invocation);

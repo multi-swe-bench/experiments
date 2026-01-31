@@ -1,0 +1,107 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -141,8 +141,16 @@
+             return this;
+         }
+ 
++        private boolean flushSchedulerEnabled = true;
++
+         public DeadLetterQueueWriter build() throws IOException {
+-            return new DeadLetterQueueWriter(queuePath, maxSegmentSize, maxQueueSize, flushInterval, storageType, retentionTime, clock);
++            return new DeadLetterQueueWriter(queuePath, maxSegmentSize, maxQueueSize, flushInterval, storageType, retentionTime, clock, flushSchedulerEnabled);
++        }
++
++        @VisibleForTesting
++        Builder flushSchedulerEnabled(final boolean enabled) {
++            this.flushSchedulerEnabled = enabled;
++            return this;
+         }
+     }
+ 
+@@ -153,7 +161,7 @@
+ 
+     private DeadLetterQueueWriter(final Path queuePath, final long maxSegmentSize, final long maxQueueSize,
+                           final Duration flushInterval, final QueueStorageType storageType, final Duration retentionTime,
+-                          final Clock clock) throws IOException {
++                          final Clock clock, final boolean flushSchedulerEnabled) throws IOException {
+         this.clock = clock;
+ 
+         this.fileLock = FileLockFactory.obtainLock(queuePath, LOCK_FILE);
+@@ -173,7 +181,9 @@
+                 .max().orElse(0);
+         nextWriter();
+         this.lastEntryTimestamp = Timestamp.now();
+-        createFlushScheduler();
++        if (flushSchedulerEnabled) {
++            createFlushScheduler();
++        }
+     }
+ 
+     public boolean isOpen() {
+@@ -222,10 +232,12 @@
+                 logger.warn("Unable to release fileLock, ignoring", e);
+             }
+ 
+-            try {
+-                flushScheduler.shutdown();
+-            } catch (Exception e) {
+-                logger.warn("Unable shutdown flush scheduler, ignoring", e);
++            if (flushScheduler != null) {
++                try {
++                    flushScheduler.shutdown();
++                } catch (Exception e) {
++                    logger.warn("Unable shutdown flush scheduler, ignoring", e);
++                }
+             }
+         }
+     }
+@@ -461,6 +473,9 @@
+     private void finalizeSegment(final FinalizeWhen finalizeWhen) throws IOException {
+         lock.lock();
+         try {
++            // Age retention must be applied even when the head segment is untouched.
++            executeAgeRetentionPolicy();
++
+             if (!isCurrentWriterStale() && finalizeWhen == FinalizeWhen.ONLY_IF_STALE)
+                 return;
+ 
+@@ -470,10 +485,10 @@
+                         queuePath.resolve(String.format(SEGMENT_FILE_PATTERN, currentSegmentIndex)),
+                         StandardCopyOption.ATOMIC_MOVE);
+                 updateOldestSegmentReference();
+-                executeAgeRetentionPolicy();
+                 if (isOpen()) {
+                     nextWriter();
+                 }
++                executeAgeRetentionPolicy();
+             }
+         } finally {
+             lock.unlock();
+@@ -494,9 +509,16 @@
+ 
+ 
+     private long computeQueueSize() throws IOException {
+-        return listSegmentPaths(this.queuePath)
++        // Queue size includes both sealed segments (.log) and the current head segment (.log.tmp).
++        // This is important for both max-bytes enforcement and for keeping currentQueueSize consistent
++        // when it is recomputed during retention cleanup.
++        long size = listSegmentPaths(this.queuePath)
++                .mapToLong(DeadLetterQueueWriter::safeFileSize)
++                .sum();
++        size += listFiles(this.queuePath, ".log.tmp")
+                 .mapToLong(DeadLetterQueueWriter::safeFileSize)
+                 .sum();
++        return size;
+     }
+ 
+     private static long safeFileSize(Path p) {
+

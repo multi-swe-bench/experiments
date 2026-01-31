@@ -1,0 +1,22 @@
+--- a/src/main/java/org/mockito/plugins/MockitoPlugins.java
++++ b/src/main/java/org/mockito/plugins/MockitoPlugins.java
+@@ -32,6 +32,19 @@
+     <T> T getDefaultPlugin(Class<T> pluginType);
+ 
+     /**
++     * Returns the {@link MockMaker} currently used by Mockito.
++     *
++     * <p>This is the public API equivalent of internal access via {@code MockUtil.getMockMaker()}.
++     * It can be useful for framework integrations that need to delegate to the active mock maker.
++     *
++     * @return the currently used mock maker
++     * @since 5.12.0
++     */
++    default MockMaker getMockMaker() {
++        return org.mockito.internal.configuration.plugins.Plugins.getMockMaker();
++    }
++
++    /**
+      * Returns inline mock maker, an optional mock maker that is bundled with Mockito distribution.
+      * This method is needed because {@link #getDefaultPlugin(Class)} does not provide an instance of inline mock maker.
+      * Creates new instance each time is called so it is recommended to keep hold of the resulting object for future invocations.

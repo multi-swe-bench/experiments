@@ -1,0 +1,309 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -85,6 +85,21 @@
+     private final long maxQueueSize;
+     private final QueueStorageType storageType;
+     private LongAdder currentQueueSize;
++
++    /**
++     * Counts the number of events dropped due to queue-full conditions when
++     * {@link QueueStorageType#DROP_NEWER} storage policy is enabled.
++     *
++     * This counter is reset on Logstash restart (it is not persisted).
++     */
++    private final LongAdder droppedEvents = new LongAdder();
++
++    /**
++     * Holds the last error message encountered when dropping events due to queue-full
++     * conditions under {@link QueueStorageType#DROP_NEWER}.
++     */
++    private volatile String lastError;
++
+     private final Path queuePath;
+     private final FileLock fileLock;
+     private volatile RecordIOWriter currentWriter;
+@@ -133,6 +148,27 @@
+         return currentQueueSize.longValue();
+     }
+ 
++    /**
++     * @return maximum size (in bytes) that the DLQ can reach.
++     */
++    public long getMaxQueueSize() {
++        return maxQueueSize;
++    }
++
++    /**
++     * @return number of events dropped due to queue-full condition under DROP_NEWER.
++     */
++    public long getDroppedEvents() {
++        return droppedEvents.longValue();
++    }
++
++    /**
++     * @return the last error string registered for DLQ dropping condition, or null if none.
++     */
++    public String getLastError() {
++        return lastError;
++    }
++
+     public String getStoragePolicy() {
+         return storageType.name().toLowerCase(Locale.ROOT);
+     }
+@@ -193,7 +229,10 @@
+         int eventPayloadSize = RECORD_HEADER_SIZE + record.length;
+         if (currentQueueSize.longValue() + eventPayloadSize > maxQueueSize) {
+             if (storageType == QueueStorageType.DROP_NEWER) {
+-                logger.error("cannot write event to DLQ(path: " + this.queuePath + "): reached maxQueueSize of " + maxQueueSize);
++                final String message = "cannot write event to DLQ(path: " + this.queuePath + "): reached maxQueueSize of " + maxQueueSize;
++                lastError = message;
++                droppedEvents.increment();
++                logger.error(message);
+                 return;
+             } else {
+                 do {
+
+--- a/logstash-core/src/main/java/org/logstash/execution/AbstractPipelineExt.java
++++ b/logstash-core/src/main/java/org/logstash/execution/AbstractPipelineExt.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -112,6 +112,15 @@
+     private static final RubySymbol STORAGE_POLICY =
+             RubyUtil.RUBY.newSymbol("storage_policy");
+ 
++    private static final RubySymbol DLQ_DROPPED_EVENTS =
++            RubyUtil.RUBY.newSymbol("dropped_events");
++
++    private static final RubySymbol DLQ_LAST_ERROR =
++            RubyUtil.RUBY.newSymbol("last_error");
++
++    private static final RubySymbol DLQ_MAX_QUEUE_SIZE_IN_BYTES =
++            RubyUtil.RUBY.newSymbol("max_queue_size_in_bytes");
++
+     private static final @SuppressWarnings("rawtypes") RubyArray EVENTS_METRIC_NAMESPACE = RubyArray.newArray(
+         RubyUtil.RUBY, new IRubyObject[]{MetricKeys.STATS_KEY, MetricKeys.EVENTS_KEY}
+     );
+@@ -330,6 +339,18 @@
+                     context, STORAGE_POLICY,
+                     dlqWriter(context).callMethod(context, "get_storage_policy")
+             );
++            getDlqMetric(context).gauge(
++                    context, DLQ_MAX_QUEUE_SIZE_IN_BYTES,
++                    dlqWriter(context).callMethod(context, "get_max_queue_size")
++            );
++            getDlqMetric(context).gauge(
++                    context, DLQ_DROPPED_EVENTS,
++                    dlqWriter(context).callMethod(context, "get_dropped_events")
++            );
++            getDlqMetric(context).gauge(
++                    context, DLQ_LAST_ERROR,
++                    dlqWriter(context).callMethod(context, "get_last_error")
++            );
+         }
+         return context.nil;
+     }
+
+--- a/logstash-core/src/main/java/org/logstash/common/DLQWriterAdapter.java
++++ b/logstash-core/src/main/java/org/logstash/common/DLQWriterAdapter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -49,4 +49,25 @@
+     public long getCurrentQueueSize() {
+         return dlqWriter != null ? dlqWriter.getCurrentQueueSize() : 0;
+     }
++
++    /**
++     * @return maximum size (in bytes) that the DLQ can reach.
++     */
++    public long getMaxQueueSize() {
++        return dlqWriter != null ? dlqWriter.getMaxQueueSize() : 0;
++    }
++
++    /**
++     * @return number of events dropped due to queue-full condition under DROP_NEWER.
++     */
++    public long getDroppedEvents() {
++        return dlqWriter != null ? dlqWriter.getDroppedEvents() : 0;
++    }
++
++    /**
++     * @return the last error string registered for DLQ dropping condition, or null if none.
++     */
++    public String getLastError() {
++        return dlqWriter != null ? dlqWriter.getLastError() : null;
++    }
+ }
+
+--- a/lib/bootstrap/bundler.rb
++++ b/lib/bootstrap/bundler.rb
+@@ -19,6 +19,50 @@
+   module Bundler
+     extend self
+ 
++    # In development/test contexts it is possible to run Logstash tasks without having
++    # bootstrapped the vendor/bundle directory.
++    #
++    # This helper attempts to `require "bundler"` using the current GEM_HOME/GEM_PATH,
++    # but falls back to JRuby's default gem paths when Bundler is not available.
++    #
++    # This enables Gradle/Rake tasks that need Bundler to run in environments that
++    # haven't executed the full bootstrap.
++    def require_bundler!
++      require "bundler"
++    rescue LoadError
++      intended_env = {"GEM_HOME" => ENV["GEM_HOME"], "GEM_PATH" => ENV["GEM_PATH"]}
++
++      # Try loading bundler from JRuby's default gem installation.
++      ::Gem.clear_paths
++      ENV["GEM_HOME"] = ::Gem.default_dir
++      ENV["GEM_PATH"] = ::Gem.default_path.join(::File::PATH_SEPARATOR)
++      ::Gem.paths = ENV
++      require "bundler"
++    rescue LoadError
++      # As a last resort, attempt to activate/install bundler into GEM_HOME.
++      begin
++        require "rubygems/dependency_installer"
++        Gem::DependencyInstaller.new({:document => []}).install("bundler")
++        ::Gem.clear_paths
++        ::Gem.paths = ENV
++        require "bundler"
++      rescue => e
++        raise LoadError, "unable to load or install bundler: #{e.class}: #{e.message}"
++      end
++    ensure
++      if defined?(intended_env) && intended_env
++        ::Gem.clear_paths
++        ENV["GEM_HOME"] = intended_env["GEM_HOME"]
++        ENV["GEM_PATH"] = intended_env["GEM_PATH"]
++        ::Gem.paths = ENV
++      end
++    end
++
++    def require_bundler_cli!
++      require_bundler!
++      require "bundler/cli"
++    end
++
+     def patch!
+       # Patch to prevent Bundler to save a .bundle/config file in the root
+       # of the application
+@@ -63,7 +107,7 @@
+       # set BUNDLE_GEMFILE ENV before requiring bundler to avoid bundler recurse and load unrelated Gemfile(s)
+       ENV["BUNDLE_GEMFILE"] = Environment::GEMFILE_PATH
+ 
+-      require "bundler"
++      require_bundler!
+       LogStash::Bundler.patch!
+ 
+       ::Bundler.settings.set_local(:path, Environment::BUNDLE_DIR)
+@@ -108,8 +152,7 @@
+       # Bundler.settings[:gemfile] unlike Bundler.setup. For the sake of consistency and defensive/future proofing, let's keep it here.
+       ENV["BUNDLE_GEMFILE"] = LogStash::Environment::GEMFILE_PATH
+ 
+-      require "bundler"
+-      require "bundler/cli"
++      require_bundler_cli!
+ 
+       require "fileutils"
+       # create Gemfile from template iff it does not exist
+
+--- a/rubyUtils.gradle
++++ b/rubyUtils.gradle
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -172,7 +172,10 @@
+     env.put "USE_RUBY", "1"
+     env.put "GEM_HOME", gemDir
+     env.put "GEM_SPEC_CACHE", "${buildDir}/cache".toString()
+-    env.put "GEM_PATH", gemDir
++    // Do NOT force GEM_PATH to only the vendor/bundle directory. When bootstrapping is skipped,
++    // the vendor/bundle directory may not contain required default gems such as `rake`.
++    // By leaving GEM_PATH unset, JRuby/RubyGems will include its default gem paths.
++    env.remove "GEM_PATH"
+     try {
+         block(jruby)
+     } finally {
+
+--- a/gradlew
++++ b/gradlew
+@@ -199,6 +199,50 @@
+ #     double quotes to make sure that they get re-expanded; and
+ #   * put everything else in single quotes, so that it's not re-expanded.
+ 
++# Some CI wrappers may inject Gradle's `--console` option multiple times.
++# Gradle treats this as an error ("Multiple arguments were provided for command-line option '--console'.").
++# Normalize arguments by keeping only the first occurrence.
++console_seen=false
++sanitized_args=
++while [ "$#" -gt 0 ]; do
++    case "$1" in
++        --console)
++            if [ "$console_seen" = false ]; then
++                console_seen=true
++                sanitized_args="$sanitized_args \"$1\""
++                if [ "$#" -ge 2 ]; then
++                    sanitized_args="$sanitized_args \"$2\""
++                    shift 2
++                    continue
++                fi
++            fi
++            # skip this occurrence and its value (if present)
++            if [ "$#" -ge 2 ]; then
++                shift 2
++            else
++                shift 1
++            fi
++            continue
++            ;;
++        --console=*)
++            if [ "$console_seen" = false ]; then
++                console_seen=true
++                sanitized_args="$sanitized_args \"$1\""
++            fi
++            shift 1
++            continue
++            ;;
++        *)
++            sanitized_args="$sanitized_args \"$1\""
++            shift 1
++            continue
++            ;;
++    esac
++done
++
++# shellcheck disable=SC2086
++eval "set -- $sanitized_args"
++
+ set -- \
+         "-Dorg.gradle.appname=$APP_BASE_NAME" \
+         -classpath "$CLASSPATH" \

@@ -1,0 +1,80 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java
++++ b/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java
+@@ -1116,7 +1116,7 @@
+     /**
+      * Method that is called to check if there are alternative names (aliases) that can be accepted for entries
+      * in addition to primary names that were introspected earlier, related to {@link #findEnumValues}.
+-     * These aliases should be returned in {@code String[][] aliases} passed in as argument. 
++     * These aliases should be returned in {@code String[][] aliases} passed in as argument.
+      * The {@code aliases.length} is expected to match the number of {@code Enum} values.
+      *
+      * @param config The configuration of the mapper
+@@ -1133,7 +1133,7 @@
+     }
+ 
+     /**
+-     * Finds the first Enum value that should be considered as default value 
++     * Finds the first Enum value that should be considered as default value
+      * for unknown Enum values, if present.
+      *
+      * @param ac The Enum class to scan for the default value.
+@@ -1397,6 +1397,29 @@
+         return null;
+     }
+ 
++    /**
++     * Method called to allow pluggable discovery of a "default" creator
++     * (constructor or static factory method) to use when there is otherwise
++     * no explicitly annotated creator. This is typically needed for language
++     * integrations that have a concept of a primary/canonical constructor
++     * (for example Kotlin/Scala).
++     *
++     * @param config Configuration settings in effect (for serialization or deserialization)
++     * @param ac Class being introspected
++     * @param constructors Candidate constructors (excluding default/no-arg constructor)
++     * @param factoryMethods Candidate factory methods
++     *
++     * @return Creator to use as the default creator, if any; {@code null} if none
++     *
++     * @since 2.19
++     */
++    public AnnotatedWithParams findDefaultCreator(MapperConfig<?> config,
++            AnnotatedClass ac,
++            List<AnnotatedConstructor> constructors,
++            List<AnnotatedMethod> factoryMethods) {
++        return null;
++    }
++
+     /**
+      * Method for checking whether given annotated item (method, constructor)
+      * has an annotation
+
+--- a/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
++++ b/src/main/java/com/fasterxml/jackson/databind/introspect/AnnotationIntrospectorPair.java
+@@ -607,7 +607,7 @@
+         Enum<?> en = _primary.findDefaultEnumValue(enumCls);
+         return (en == null) ? _secondary.findDefaultEnumValue(enumCls) : en;
+     }
+-    
++
+     @Override // since 2.16
+     public Enum<?> findDefaultEnumValue(AnnotatedClass annotatedClass, Enum<?>[] enumValues) {
+         Enum<?> en = _primary.findDefaultEnumValue(annotatedClass, enumValues);
+@@ -735,6 +735,17 @@
+         return (mode == null) ? _secondary.findCreatorAnnotation(config, a) : mode;
+     }
+ 
++    @Override
++    public AnnotatedWithParams findDefaultCreator(MapperConfig<?> config,
++            AnnotatedClass ac,
++            List<AnnotatedConstructor> constructors,
++            List<AnnotatedMethod> factoryMethods) {
++        AnnotatedWithParams result = _primary.findDefaultCreator(config, ac,
++                constructors, factoryMethods);
++        return (result == null) ? _secondary.findDefaultCreator(config, ac,
++                constructors, factoryMethods) : result;
++    }
++
+     /*
+     /**********************************************************************
+     /* Deserialization: other method annotations

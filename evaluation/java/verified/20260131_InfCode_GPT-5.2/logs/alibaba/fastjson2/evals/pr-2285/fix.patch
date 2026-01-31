@@ -1,0 +1,27 @@
+--- a/core/src/main/java/com/alibaba/fastjson2/writer/ObjectWriterBaseModule.java
++++ b/core/src/main/java/com/alibaba/fastjson2/writer/ObjectWriterBaseModule.java
+@@ -1,5 +1,6 @@
+ package com.alibaba.fastjson2.writer;
+ 
++import com.alibaba.fastjson2.JSONException;
+ import com.alibaba.fastjson2.JSONFactory;
+ import com.alibaba.fastjson2.JSONPObject;
+ import com.alibaba.fastjson2.JSONPath;
+@@ -1495,6 +1496,17 @@
+         }
+ 
+         annotationProcessor.getBeanInfo(beanInfo, enumClass);
++        if (beanInfo.serializer != null && ObjectWriter.class.isAssignableFrom(beanInfo.serializer)) {
++            try {
++                Constructor constructor = beanInfo.serializer.getDeclaredConstructor();
++                constructor.setAccessible(true);
++                return (ObjectWriter) constructor.newInstance();
++            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
++                     InvocationTargetException e) {
++                throw new JSONException("create serializer error", e);
++            }
++        }
++
+         if (beanInfo.writeEnumAsJavaBean) {
+             return null;
+         }

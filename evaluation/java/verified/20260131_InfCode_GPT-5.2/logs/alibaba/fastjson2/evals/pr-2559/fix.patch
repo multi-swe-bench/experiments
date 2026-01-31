@@ -1,0 +1,74 @@
+--- a/core/src/main/java/com/alibaba/fastjson2/reader/ObjectReaderBaseModule.java
++++ b/core/src/main/java/com/alibaba/fastjson2/reader/ObjectReaderBaseModule.java
+@@ -156,6 +156,71 @@
+         }
+ 
+         {
++            // MongoDB Decimal128 support (optional dependency)
++            // Fix for https://github.com/alibaba/fastjson2/issues/2558
++            Class decimal128Class = TypeUtils.loadClass("org.bson.types.Decimal128");
++            if (decimal128Class != null) {
++                Method bigDecimalValueMethod = null;
++                Method doubleValueMethod = null;
++                try {
++                    bigDecimalValueMethod = decimal128Class.getMethod("bigDecimalValue");
++                } catch (Throwable ignored) {
++                    // ignored
++                }
++                try {
++                    doubleValueMethod = decimal128Class.getMethod("doubleValue");
++                } catch (Throwable ignored) {
++                    // ignored
++                }
++
++                final Method finalBigDecimalValueMethod = bigDecimalValueMethod;
++                final Method finalDoubleValueMethod = doubleValueMethod;
++
++                Function<Object, BigDecimal> DECIMAL128_TO_DECIMAL = o -> {
++                    if (o == null) {
++                        return null;
++                    }
++
++                    if (finalBigDecimalValueMethod != null) {
++                        try {
++                            return (BigDecimal) finalBigDecimalValueMethod.invoke(o);
++                        } catch (Throwable ignored) {
++                            // ignored
++                        }
++                    }
++
++                    // Fallbacks
++                    if (finalDoubleValueMethod != null) {
++                        try {
++                            Object v = finalDoubleValueMethod.invoke(o);
++                            if (v instanceof Number) {
++                                return BigDecimal.valueOf(((Number) v).doubleValue());
++                            }
++                        } catch (Throwable ignored) {
++                            // ignored
++                        }
++                    }
++
++                    return new BigDecimal(o.toString());
++                };
++
++                Function<Object, Double> DECIMAL128_TO_DOUBLE = o -> {
++                    BigDecimal decimal = DECIMAL128_TO_DECIMAL.apply(o);
++                    return decimal == null ? null : decimal.doubleValue();
++                };
++
++                Function<Object, Double> DECIMAL128_TO_DOUBLE_VALUE = o -> {
++                    BigDecimal decimal = DECIMAL128_TO_DECIMAL.apply(o);
++                    return decimal == null ? 0D : decimal.doubleValue();
++                };
++
++                provider.registerTypeConvert(decimal128Class, BigDecimal.class, DECIMAL128_TO_DECIMAL);
++                provider.registerTypeConvert(decimal128Class, Double.class, DECIMAL128_TO_DOUBLE);
++                provider.registerTypeConvert(decimal128Class, double.class, DECIMAL128_TO_DOUBLE_VALUE);
++            }
++        }
++
++        {
+             // String to Any
+             provider.registerTypeConvert(String.class, char.class, new StringToAny(char.class, '0'));
+             provider.registerTypeConvert(String.class, boolean.class, new StringToAny(boolean.class, false));

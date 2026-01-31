@@ -1,0 +1,69 @@
+--- a/src/main/java/com/fasterxml/jackson/core/util/VersionUtil.java
++++ b/src/main/java/com/fasterxml/jackson/core/util/VersionUtil.java
+@@ -141,15 +141,60 @@
+     {
+         if (s != null && (s = s.trim()).length() > 0) {
+             String[] parts = V_SEP.split(s);
+-            return new Version(parseVersionPart(parts[0]),
+-                    (parts.length > 1) ? parseVersionPart(parts[1]) : 0,
+-                    (parts.length > 2) ? parseVersionPart(parts[2]) : 0,
+-                    (parts.length > 3) ? parts[3] : null,
+-                    groupId, artifactId);
++            final int major = parseVersionPart(parts[0]);
++            final int minor = (parts.length > 1) ? parseVersionPart(parts[1]) : 0;
++            final int patch = (parts.length > 2) ? parseVersionPart(parts[2]) : 0;
++
++            /*
++             * Snapshot qualifier handling:
++             *
++             * For regular snapshots we get tokens like "2.16.0-SNAPSHOT" -> parts[3] == "SNAPSHOT".
++             * But Maven-deployed (timestamped) snapshots are of form:
++             *   "2.16.0-20240101.123456-1"
++             * which gets split into multiple tokens due to '.' and '-' being separators.
++             *
++             * Historically we only kept parts[3] ("20240101") which loses the timestamp/build
++             * information. To keep round-trippability, take the entire remainder from the
++             * start of the 4th token.
++             */
++            String snapshotInfo = null;
++            if (parts.length > 3) {
++                int snapshotStart = _findVersionTokenStart(s, 3);
++                snapshotInfo = (snapshotStart < 0) ? parts[3] : s.substring(snapshotStart);
++            }
++
++            return new Version(major, minor, patch, snapshotInfo, groupId, artifactId);
+         }
+         return Version.unknownVersion();
+     }
+ 
++    private static boolean _isVersionSeparator(char c) {
++        return (c == '-') || (c == '_') || (c == '.') || (c == '/') || (c == ';') || (c == ':');
++    }
++
++    /**
++     * Helper method to locate start-offset (in {@code s}) of given token when using
++     * {@link #V_SEP} separators.
++     */
++    private static int _findVersionTokenStart(String s, int tokenIndex) {
++        int count = -1;
++        boolean inSeparator = true;
++        for (int i = 0, len = s.length(); i < len; ++i) {
++            char c = s.charAt(i);
++            if (_isVersionSeparator(c)) {
++                inSeparator = true;
++                continue;
++            }
++            if (inSeparator) {
++                inSeparator = false;
++                if (++count == tokenIndex) {
++                    return i;
++                }
++            }
++        }
++        return -1;
++    }
++
+     protected static int parseVersionPart(String s) {
+         int number = 0;
+         for (int i = 0, len = s.length(); i < len; ++i) {
+

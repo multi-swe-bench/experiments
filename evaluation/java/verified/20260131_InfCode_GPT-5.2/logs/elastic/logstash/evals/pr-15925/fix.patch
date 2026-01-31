@@ -1,0 +1,52 @@
+--- a/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java
++++ b/tools/jvm-options-parser/src/main/java/org/logstash/launchers/JvmOptionsParser.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -66,6 +66,17 @@
+             "11-:--add-opens=java.management/sun.management=ALL-UNNAMED"
+     };
+ 
++    /**
++     * Historically-proven default for Netty's pooled allocator max order.
++     *
++     * Logstash 8.7.0's Netty upgrade changed the effective default such that
++     * moderately-sized messages could fall back to unpooled buffers, hurting performance.
++     *
++     * We restore the previous proven default unless the user has explicitly configured it.
++     */
++    private static final String NETTY_ALLOCATOR_MAX_ORDER_OPTION_PREFIX = "-Dio.netty.allocator.maxOrder=";
++    private static final String NETTY_ALLOCATOR_MAX_ORDER_DEFAULT = "-Dio.netty.allocator.maxOrder=11";
++
+ 
+     @SuppressWarnings("serial")
+     static class JvmOptionsFileParserException extends Exception {
+@@ -180,6 +191,10 @@
+         // Set mandatory JVM options
+         jvmOptionsContent.addAll(getMandatoryJvmOptions(javaMajorVersion));
+ 
++        // Restore historically-proven Netty allocator behavior unless explicitly set by the user.
++        // We add this after consuming user-provided sources so we do not override a custom setting.
++        maybeInjectNettyAllocatorMaxOrder(jvmOptionsContent);
++
+         System.out.println(String.join(" ", jvmOptionsContent));
+     }
+ 
+@@ -390,4 +405,11 @@
+         }
+         return Integer.parseInt(specVersionMatcher.group("javaMajorVersion"));
+     }
++
++    private static void maybeInjectNettyAllocatorMaxOrder(final Set<String> jvmOptionsContent) {
++        final boolean userConfigured = jvmOptionsContent.stream().anyMatch(opt -> opt.startsWith(NETTY_ALLOCATOR_MAX_ORDER_OPTION_PREFIX));
++        if (!userConfigured) {
++            jvmOptionsContent.add(NETTY_ALLOCATOR_MAX_ORDER_DEFAULT);
++        }
++    }
+ }

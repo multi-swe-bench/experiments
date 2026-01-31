@@ -1,0 +1,25 @@
+--- a/gson/src/main/java/com/google/gson/internal/Streams.java
++++ b/gson/src/main/java/com/google/gson/internal/Streams.java
+@@ -105,15 +105,22 @@
+      */
+     static class CurrentWrite implements CharSequence {
+       char[] chars;
++
+       @Override public int length() {
+         return chars.length;
+       }
++
+       @Override public char charAt(int i) {
+         return chars[i];
+       }
++
+       @Override public CharSequence subSequence(int start, int end) {
+         return new String(chars, start, end - start);
+       }
++
++      @Override public String toString() {
++        return new String(chars);
++      }
+     }
+   }
+ 

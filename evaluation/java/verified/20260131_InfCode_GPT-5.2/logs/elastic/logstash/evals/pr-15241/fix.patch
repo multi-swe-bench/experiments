@@ -1,0 +1,104 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -112,18 +112,18 @@
+     private final Path queuePath;
+     private final FileLock fileLock;
+     private volatile RecordIOWriter currentWriter;
+-    private int currentSegmentIndex;
+-    private Timestamp lastEntryTimestamp;
+-    private Duration flushInterval;
+-    private Instant lastWrite;
++    private volatile int currentSegmentIndex;
++    private volatile Timestamp lastEntryTimestamp;
++    private volatile Duration flushInterval;
++    private volatile Instant lastWrite;
+     private final AtomicBoolean open = new AtomicBoolean(true);
+-    private ScheduledExecutorService flushScheduler;
++    private volatile ScheduledExecutorService flushScheduler;
+     private final LongAdder droppedEvents = new LongAdder();
+     private final LongAdder expiredEvents = new LongAdder();
+-    private String lastError = "no errors";
++    private volatile String lastError = "no errors";
+     private final Clock clock;
+-    private Optional<Timestamp> oldestSegmentTimestamp;
+-    private Optional<Path> oldestSegmentPath = Optional.empty();
++    private volatile Optional<Timestamp> oldestSegmentTimestamp;
++    private volatile Optional<Path> oldestSegmentPath = Optional.empty();
+     private final TemporalAmount retentionTime;
+ 
+     public static final class Builder {
+@@ -438,14 +438,16 @@
+      * Start from the end of the latest block, and going backward try to read the next event from its start.
+      * */
+     private static Optional<Timestamp> readTimestampOfLastEventInSegment(Path segmentPath) throws IOException {
+-        final int lastBlockId = (int) Math.ceil(((Files.size(segmentPath) - VERSION_SIZE) / (double) BLOCK_SIZE)) - 1;
+         byte[] eventBytes = null;
+-        try (RecordIOReader recordReader = new RecordIOReader(segmentPath)) {
+-            int blockId = lastBlockId;
+-            while (eventBytes == null && blockId >= 0) { // no event present in last block, try with the one before
+-                recordReader.seekToBlock(blockId);
+-                eventBytes = recordReader.readEvent();
+-                blockId--;
++        try {
++            final int lastBlockId = (int) Math.ceil(((Files.size(segmentPath) - VERSION_SIZE) / (double) BLOCK_SIZE)) - 1;
++            try (RecordIOReader recordReader = new RecordIOReader(segmentPath)) {
++                int blockId = lastBlockId;
++                while (eventBytes == null && blockId >= 0) { // no event present in last block, try with the one before
++                    recordReader.seekToBlock(blockId);
++                    eventBytes = recordReader.readEvent();
++                    blockId--;
++                }
+             }
+         } catch (NoSuchFileException nsfex) {
+             // the segment file may have been removed by the clean consumed feature on the reader side
+
+--- a/gradlew
++++ b/gradlew
+@@ -199,6 +199,22 @@
+ #     double quotes to make sure that they get re-expanded; and
+ #   * put everything else in single quotes, so that it's not re-expanded.
+ 
++# Some runners may pass --console multiple times. Gradle treats this as an error.
++# Keep only the first occurrence.
++console_seen=false
++for arg do
++    shift
++    case $arg in
++      --console|--console=*)
++        if $console_seen ; then
++            continue
++        fi
++        console_seen=true
++        ;;
++    esac
++    set -- "$@" "$arg"
++done
++
+ set -- \
+         "-Dorg.gradle.appname=$APP_BASE_NAME" \
+         -classpath "$CLASSPATH" \
+@@ -211,6 +227,15 @@
+     die "xargs is not available"
+ fi
+ 
++# Some environments provide Gradle console settings in GRADLE_OPTS while also passing them
++# on the command line. Gradle treats multiple --console options as an error.
++# Ensure GRADLE_OPTS does not contribute a --console option.
++case " $GRADLE_OPTS " in
++  *" --console "*|*" --console="*)
++    GRADLE_OPTS=$(printf '%s' "$GRADLE_OPTS" | sed 's/--console=[^ ]*//g; s/--console [^ ]*//g; s/--console//g')
++    ;;
++esac
++
+ # Use "xargs" to parse quoted args.
+ #
+ # With -n1 it outputs one arg per line, with the quotes and backslashes removed.

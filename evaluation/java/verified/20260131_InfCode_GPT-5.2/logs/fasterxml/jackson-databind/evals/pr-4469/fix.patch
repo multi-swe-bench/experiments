@@ -1,0 +1,43 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/impl/FieldProperty.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/impl/FieldProperty.java
+@@ -126,7 +126,7 @@
+ 
+     @Override
+     public void deserializeAndSet(JsonParser p,
+-    		DeserializationContext ctxt, Object instance) throws IOException
++                DeserializationContext ctxt, Object instance) throws IOException
+     {
+         Object value;
+         if (p.hasToken(JsonToken.VALUE_NULL)) {
+@@ -155,7 +155,7 @@
+ 
+     @Override
+     public Object deserializeSetAndReturn(JsonParser p,
+-    		DeserializationContext ctxt, Object instance) throws IOException
++                DeserializationContext ctxt, Object instance) throws IOException
+     {
+         Object value;
+         if (p.hasToken(JsonToken.VALUE_NULL)) {
+@@ -186,6 +186,11 @@
+     @Override
+     public void set(Object instance, Object value) throws IOException
+     {
++        // [databind#4441]: with property-based creators values may be buffered and later
++        // assigned via this method; must still honor per-property null handling.
++        if (_skipNulls && (value == null)) {
++            return;
++        }
+         try {
+             _field.set(instance, value);
+         } catch (Exception e) {
+@@ -197,6 +202,10 @@
+     @Override
+     public Object setAndReturn(Object instance, Object value) throws IOException
+     {
++        // [databind#4441]: see comment in {@link #set(Object, Object)}
++        if (_skipNulls && (value == null)) {
++            return instance;
++        }
+         try {
+             _field.set(instance, value);
+         } catch (Exception e) {

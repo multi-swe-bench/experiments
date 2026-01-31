@@ -1,0 +1,69 @@
+--- a/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
++++ b/logstash-core/src/main/java/org/logstash/common/io/DeadLetterQueueWriter.java
+@@ -7,7 +7,7 @@
+  * not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+- *	http://www.apache.org/licenses/LICENSE-2.0
++ *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing,
+  * software distributed under the License is distributed on an
+@@ -477,19 +477,33 @@
+     private void finalizeSegment(final FinalizeWhen finalizeWhen) throws IOException {
+         lock.lock();
+         try {
+-            if (!isCurrentWriterStale() && finalizeWhen == FinalizeWhen.ONLY_IF_STALE)
++            if (currentWriter == null) {
+                 return;
++            }
+ 
+-            if (currentWriter != null) {
+-                if (currentWriter.hasWritten()) {
+-                    currentWriter.close();
+-                    sealSegment(currentSegmentIndex);
+-                }
+-                updateOldestSegmentReference();
+-                executeAgeRetentionPolicy();
+-                if (isOpen() && currentWriter.hasWritten()) {
+-                    nextWriter();
++            // The scheduled flush checker calls this method with ONLY_IF_STALE.
++            // Historically, it would return early if the current writer was not stale, which meant
++            // that age retention was not enforced until the next write.
++            //
++            // In particular, when the current (head) segment is empty (never written), it can never
++            // be considered stale (RecordIOWriter#isStale requires at least one write), and expired
++            // sealed segments would remain on disk indefinitely.
++            if (finalizeWhen == FinalizeWhen.ONLY_IF_STALE && !isCurrentWriterStale()) {
++                if (!currentWriter.hasWritten()) {
++                    updateOldestSegmentReference();
++                    executeAgeRetentionPolicy();
+                 }
++                return;
++            }
++
++            if (currentWriter.hasWritten()) {
++                currentWriter.close();
++                sealSegment(currentSegmentIndex);
++            }
++            updateOldestSegmentReference();
++            executeAgeRetentionPolicy();
++            if (isOpen() && currentWriter.hasWritten()) {
++                nextWriter();
+             }
+         } finally {
+             lock.unlock();
+
+--- a/lib/bootstrap/bundler.rb
++++ b/lib/bootstrap/bundler.rb
+@@ -200,7 +200,9 @@
+     def genericize_platform
+       output = LogStash::Bundler.invoke!({:add_platform => 'java'})
+       specific_platforms.each do |platform|
+-        output << LogStash::Bundler.invoke!({:remove_platform => platform})
++        # Bundler's CLI expects platform identifiers as Strings; passing a Gem::Platform instance
++        # can fail on some JRuby/bundler combinations (e.g., NoMethodError on `empty?`).
++        output << LogStash::Bundler.invoke!({:remove_platform => platform.to_s})
+       end
+       output
+     end

@@ -1,0 +1,19 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/ThrowableDeserializer.java
+@@ -131,9 +131,13 @@
+             if (PROP_NAME_MESSAGE.equalsIgnoreCase(propName)) {
+                 if (hasStringCreator) {
+                     throwable = (Throwable) _valueInstantiator.createFromString(ctxt, p.getValueAsString());
+-                    continue;
++                } else {
++                    // 18-Jan-2026, tatu (databind#4071): For custom Throwable types that do not
++                    // have a single-String-arg constructor, we must ignore incoming "message"
++                    // property (there is no mutator for it) instead of failing on unknown.
++                    p.skipChildren();
+                 }
+-                // fall through
++                continue;
+             }
+ 
+             // Things marked as ignorable should not be passed to any setter
+

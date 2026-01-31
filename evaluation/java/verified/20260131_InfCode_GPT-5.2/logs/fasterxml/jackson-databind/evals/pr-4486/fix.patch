@@ -1,0 +1,152 @@
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/EnumDeserializer.java
+@@ -236,7 +236,7 @@
+           JsonFormat.Feature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE)).orElse(_useDefaultValueForUnknownEnum);
+         Boolean useNullForUnknownEnum = Optional.ofNullable(findFormatFeature(ctxt, property, handledType(),
+           JsonFormat.Feature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)).orElse(_useNullForUnknownEnum);
+-        
++
+         return withResolved(caseInsensitive, useDefaultValueForUnknownEnum, useNullForUnknownEnum);
+     }
+ 
+@@ -462,7 +462,7 @@
+     }
+ 
+     /**
+-     * Since 2.16, {@link #_lookupByToString} it is passed via 
++     * Since 2.16, {@link #_lookupByToString} it is passed via
+      * {@link #EnumDeserializer(EnumResolver, boolean, EnumResolver, EnumResolver)}, so there is no need for lazy
+      * initialization. But kept for backward-compatilibility reasons. In case {@link #_lookupByToString} is null.
+      *
+@@ -486,14 +486,24 @@
+ 
+     // @since 2.15
+     protected boolean useNullForUnknownEnum(DeserializationContext ctxt) {
+-        return Boolean.TRUE.equals(_useNullForUnknownEnum)
+-          || ctxt.isEnabled(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL);
++        // If per-property/per-type override exists, it must take precedence
++        // over global setting (can both enable and disable)
++        if (_useNullForUnknownEnum != null) {
++            return _useNullForUnknownEnum.booleanValue();
++        }
++        return ctxt.isEnabled(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL);
+     }
+ 
+     // @since 2.15
+     protected boolean useDefaultValueForUnknownEnum(DeserializationContext ctxt) {
+-        return (_enumDefaultValue != null)
+-          && (Boolean.TRUE.equals(_useDefaultValueForUnknownEnum)
+-          || ctxt.isEnabled(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE));
++        if (_enumDefaultValue == null) {
++            return false;
++        }
++        // If per-property/per-type override exists, it must take precedence
++        // over global setting (can both enable and disable)
++        if (_useDefaultValueForUnknownEnum != null) {
++            return _useDefaultValueForUnknownEnum.booleanValue();
++        }
++        return ctxt.isEnabled(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE);
+     }
+ }
+
+--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/FactoryBasedEnumDeserializer.java
++++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/FactoryBasedEnumDeserializer.java
+@@ -27,6 +27,12 @@
+     extends StdDeserializer<Object>
+     implements ContextualDeserializer
+ {
++    /**
++     * Per-property/per-type override for {@link DeserializationFeature#READ_UNKNOWN_ENUM_VALUES_AS_NULL}.
++     *
++     * Null means "use global setting".
++     */
++    protected final Boolean _useNullForUnknownEnum;
+     private static final long serialVersionUID = 1;
+ 
+     // Marker type; null if String expected; otherwise usually numeric wrapper
+@@ -57,6 +63,7 @@
+         _deser = null;
+         _valueInstantiator = valueInstantiator;
+         _creatorProps = creatorProps;
++        _useNullForUnknownEnum = null;
+     }
+ 
+     /**
+@@ -71,6 +78,7 @@
+         _deser = null;
+         _valueInstantiator = null;
+         _creatorProps = null;
++        _useNullForUnknownEnum = null;
+     }
+ 
+     protected FactoryBasedEnumDeserializer(FactoryBasedEnumDeserializer base,
+@@ -81,8 +89,22 @@
+         _hasArgs = base._hasArgs;
+         _valueInstantiator = base._valueInstantiator;
+         _creatorProps = base._creatorProps;
++        _useNullForUnknownEnum = base._useNullForUnknownEnum;
++
++        _deser = deser;
++    }
++
++    protected FactoryBasedEnumDeserializer(FactoryBasedEnumDeserializer base,
++            JsonDeserializer<?> deser, Boolean useNullForUnknownEnum) {
++        super(base._valueClass);
++        _inputType = base._inputType;
++        _factory = base._factory;
++        _hasArgs = base._hasArgs;
++        _valueInstantiator = base._valueInstantiator;
++        _creatorProps = base._creatorProps;
+ 
+         _deser = deser;
++        _useNullForUnknownEnum = useNullForUnknownEnum;
+     }
+ 
+     @Override
+@@ -90,12 +112,22 @@
+             BeanProperty property)
+         throws JsonMappingException
+     {
++        // Resolve per-property/per-type override for READ_UNKNOWN_ENUM_VALUES_AS_NULL
++        final Boolean useNullForUnknownEnum = findFormatFeature(ctxt, property, handledType(),
++                com.fasterxml.jackson.annotation.JsonFormat.Feature.READ_UNKNOWN_ENUM_VALUES_AS_NULL);
++
++        JsonDeserializer<?> deser = _deser;
++
+         // So: no need to fetch if we had it; or if target is `String`(-like); or
+         // if we have properties-based Creator (for which we probably SHOULD do
+         // different contextualization?)
+-        if ((_deser == null) && (_inputType != null) && (_creatorProps == null)) {
+-            return new FactoryBasedEnumDeserializer(this,
+-                    ctxt.findContextualValueDeserializer(_inputType, property));
++        if ((deser == null) && (_inputType != null) && (_creatorProps == null)) {
++            deser = ctxt.findContextualValueDeserializer(_inputType, property);
++        }
++
++        // Only create a new instance if something actually changed
++        if ((deser != _deser) || !java.util.Objects.equals(useNullForUnknownEnum, _useNullForUnknownEnum)) {
++            return new FactoryBasedEnumDeserializer(this, deser, useNullForUnknownEnum);
+         }
+         return this;
+     }
+@@ -196,7 +228,9 @@
+             Throwable t = ClassUtil.throwRootCauseIfIOE(e);
+             if (t instanceof IllegalArgumentException) {
+                 // [databind#1642]:
+-                if (ctxt.isEnabled(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)) {
++                // Must allow per-property/per-type override via @JsonFormat
++                if ((_useNullForUnknownEnum != null) ? _useNullForUnknownEnum.booleanValue()
++                        : ctxt.isEnabled(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)) {
+                     return null;
+                 }
+                 // 12-Oct-2021, tatu: Should probably try to provide better exception since
+@@ -216,7 +250,7 @@
+ 
+     // Method to deserialize the Enum using property based methodology
+     protected Object deserializeEnumUsingPropertyBased(final JsonParser p, final DeserializationContext ctxt,
+-    		final PropertyBasedCreator creator) throws IOException
++                final PropertyBasedCreator creator) throws IOException
+     {
+         PropertyValueBuffer buffer = creator.startBuilding(p, ctxt, null);
+ 
+
