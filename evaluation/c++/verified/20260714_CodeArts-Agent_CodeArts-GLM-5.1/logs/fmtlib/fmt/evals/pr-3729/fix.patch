@@ -1,0 +1,103 @@
+diff --git a/include/fmt/std.h b/include/fmt/std.h
+index 4799df1a..bf47eb9f 100644
+--- a/include/fmt/std.h
++++ b/include/fmt/std.h
+@@ -89,6 +89,18 @@ template <typename Char, typename PathChar> auto get_path_string(
+     return p.string<Char>();
+ }
+ 
++template <typename Char, typename PathChar>
++auto get_path_string(const std::filesystem::path& p,
++                     const std::basic_string<PathChar>& native, bool generic) {
++  if (!generic) return get_path_string<Char>(p, native);
++  if constexpr (std::is_same_v<Char, char> &&
++                std::is_same_v<PathChar, wchar_t>) {
++    return to_utf8<wchar_t>(p.generic_wstring(), to_utf8_error_policy::replace);
++  } else {
++    return p.generic_string<Char>();
++  }
++}
++
+ template <typename Char, typename PathChar>
+ void write_escaped_path(basic_memory_buffer<Char>& quoted,
+                         const std::filesystem::path& p,
+@@ -106,6 +118,31 @@ void write_escaped_path(basic_memory_buffer<Char>& quoted,
+   }
+ }
+ 
++template <typename Char>
++void write_escaped_path(basic_memory_buffer<Char>& quoted,
++                        const std::filesystem::path& p, bool generic) {
++  // On Windows, path::value_type is wchar_t and Char is char; we need UTF-8
++  // conversion. On POSIX, path::value_type is char and Char is char; direct.
++  if constexpr (std::is_same_v<Char, wchar_t>) {
++    if (generic)
++      write_escaped_string<wchar_t>(std::back_inserter(quoted),
++                                    p.generic_wstring());
++    else
++      write_escaped_string<wchar_t>(std::back_inserter(quoted), p.wstring());
++  } else {
++    // path::value_type may be char (POSIX) or wchar_t (Windows). Use the
++    // existing write_escaped_path overload that takes the native string.
++    if (generic) {
++      auto s = p.generic_string<Char>();
++      write_escaped_string<Char>(std::back_inserter(quoted), s);
++    } else {
++      detail::write_escaped_path(quoted, p, p.native());
++    }
++  }
++}
++
++enum class path_format { native, generic };
++
+ }  // namespace detail
+ 
+ FMT_EXPORT
+@@ -114,6 +151,7 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
+   format_specs<Char> specs_;
+   detail::arg_ref<Char> width_ref_;
+   bool debug_ = false;
++  detail::path_format path_format_ = detail::path_format::native;
+ 
+  public:
+   FMT_CONSTEXPR void set_debug_format(bool set = true) { debug_ = set; }
+@@ -126,9 +164,20 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
+     if (it == end) return it;
+ 
+     it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
+-    if (it != end && *it == '?') {
+-      debug_ = true;
+-      ++it;
++    if (it != end) {
++      if (*it == '?') {
++        debug_ = true;
++        ++it;
++      }
++      if (it != end) {
++        if (*it == 'g') {
++          path_format_ = detail::path_format::generic;
++          ++it;
++        } else if (*it == 'n') {
++          path_format_ = detail::path_format::native;
++          ++it;
++        }
++      }
+     }
+     return it;
+   }
+@@ -138,12 +187,13 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
+     auto specs = specs_;
+     detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
+                                                        ctx);
++    bool generic = path_format_ == detail::path_format::generic;
+     if (!debug_) {
+-      auto s = detail::get_path_string<Char>(p, p.native());
++      auto s = detail::get_path_string<Char>(p, p.native(), generic);
+       return detail::write(ctx.out(), basic_string_view<Char>(s), specs);
+     }
+     auto quoted = basic_memory_buffer<Char>();
+-    detail::write_escaped_path(quoted, p, p.native());
++    detail::write_escaped_path<Char>(quoted, p, generic);
+     return detail::write(ctx.out(),
+                          basic_string_view<Char>(quoted.data(), quoted.size()),
+                          specs);

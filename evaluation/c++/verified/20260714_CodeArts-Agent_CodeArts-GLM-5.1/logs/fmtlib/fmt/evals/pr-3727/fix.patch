@@ -1,0 +1,46 @@
+diff --git a/include/fmt/chrono.h b/include/fmt/chrono.h
+index 7bd4206d..7c5b985e 100644
+--- a/include/fmt/chrono.h
++++ b/include/fmt/chrono.h
+@@ -2095,12 +2095,17 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
+       }
+ 
+       return formatter<std::tm, Char>::do_format(
+-          gmtime(std::chrono::time_point_cast<std::chrono::seconds>(val)), ctx,
+-          &subsecs);
++          gmtime(static_cast<std::time_t>(
++              std::chrono::duration_cast<std::chrono::seconds>(val.time_since_epoch())
++                  .count())),
++          ctx, &subsecs);
+     }
+ 
+     return formatter<std::tm, Char>::format(
+-        gmtime(std::chrono::time_point_cast<std::chrono::seconds>(val)), ctx);
++        gmtime(static_cast<std::time_t>(
++            std::chrono::duration_cast<std::chrono::seconds>(val.time_since_epoch())
++                .count())),
++        ctx);
+   }
+ };
+ 
+@@ -2123,12 +2128,18 @@ struct formatter<std::chrono::local_time<Duration>, Char>
+           epoch - std::chrono::duration_cast<std::chrono::seconds>(epoch));
+ 
+       return formatter<std::tm, Char>::do_format(
+-          localtime(std::chrono::time_point_cast<std::chrono::seconds>(val)),
++          localtime(static_cast<std::time_t>(
++              std::chrono::duration_cast<std::chrono::seconds>(
++                  std::chrono::current_zone()->to_sys(val).time_since_epoch())
++                  .count())),
+           ctx, &subsecs);
+     }
+ 
+     return formatter<std::tm, Char>::format(
+-        localtime(std::chrono::time_point_cast<std::chrono::seconds>(val)),
++        localtime(static_cast<std::time_t>(
++            std::chrono::duration_cast<std::chrono::seconds>(
++                std::chrono::current_zone()->to_sys(val).time_since_epoch())
++                .count())),
+         ctx);
+   }
+ };

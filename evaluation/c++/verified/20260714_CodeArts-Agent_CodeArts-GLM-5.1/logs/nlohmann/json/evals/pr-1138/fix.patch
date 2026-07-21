@@ -1,0 +1,188 @@
+diff --git a/include/nlohmann/detail/conversions/from_json.hpp b/include/nlohmann/detail/conversions/from_json.hpp
+index ac4cea5f..cb0021df 100644
+--- a/include/nlohmann/detail/conversions/from_json.hpp
++++ b/include/nlohmann/detail/conversions/from_json.hpp
+@@ -9,6 +9,7 @@
+ #include <string> // string
+ #include <tuple> // tuple, make_tuple
+ #include <type_traits> // is_arithmetic, is_same, is_enum, underlying_type, is_convertible
++#include <unordered_map> // unordered_map
+ #include <utility> // pair, declval
+ #include <valarray> // valarray
+ 
+@@ -208,14 +209,10 @@ void from_json(const BasicJsonType& j, CompatibleObjectType& obj)
+     }
+ 
+     auto inner_object = j.template get_ptr<const typename BasicJsonType::object_t*>();
+-    using value_type = typename CompatibleObjectType::value_type;
+-    std::transform(
+-        inner_object->begin(), inner_object->end(),
+-        std::inserter(obj, obj.begin()),
+-        [](typename BasicJsonType::object_t::value_type const & p)
++    for (const auto& p : *inner_object)
+     {
+-        return value_type(p.first, p.second.template get<typename CompatibleObjectType::mapped_type>());
+-    });
++        obj.emplace(p.first, p.second.template get<typename CompatibleObjectType::mapped_type>());
++    }
+ }
+ 
+ // overload for arithmetic types, not chosen for basic_json template arguments
+@@ -297,6 +294,63 @@ void from_json(const BasicJsonType& j, std::map<Key, Value>& m)
+     }
+ }
+ 
++template <typename BasicJsonType, typename Key, typename Value,
++          typename = enable_if_t<not std::is_constructible<
++                                     typename BasicJsonType::string_t, Key>::value>>
++void from_json(const BasicJsonType& j, std::unordered_map<Key, Value>& m)
++{
++    if (JSON_UNLIKELY(not j.is_array()))
++    {
++        JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
++    }
++    for (const auto& p : j)
++    {
++        if (JSON_UNLIKELY(not p.is_array()))
++        {
++            JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(p.type_name())));
++        }
++        m.emplace(p.at(0).template get<Key>(), p.at(1).template get<Value>());
++    }
++}
++
++template <typename BasicJsonType, typename Key, typename Value,
++          typename = enable_if_t<not std::is_constructible<
++                                     typename BasicJsonType::string_t, Key>::value>>
++void from_json(const BasicJsonType& j, std::multimap<Key, Value>& m)
++{
++    if (JSON_UNLIKELY(not j.is_array()))
++    {
++        JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
++    }
++    for (const auto& p : j)
++    {
++        if (JSON_UNLIKELY(not p.is_array()))
++        {
++            JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(p.type_name())));
++        }
++        m.emplace(p.at(0).template get<Key>(), p.at(1).template get<Value>());
++    }
++}
++
++template <typename BasicJsonType, typename Key, typename Value,
++          typename = enable_if_t<not std::is_constructible<
++                                     typename BasicJsonType::string_t, Key>::value>>
++void from_json(const BasicJsonType& j, std::unordered_multimap<Key, Value>& m)
++{
++    if (JSON_UNLIKELY(not j.is_array()))
++    {
++        JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
++    }
++    for (const auto& p : j)
++    {
++        if (JSON_UNLIKELY(not p.is_array()))
++        {
++            JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(p.type_name())));
++        }
++        m.emplace(p.at(0).template get<Key>(), p.at(1).template get<Value>());
++    }
++}
++
+ struct from_json_fn
+ {
+   private:
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 2b387a8b..f38d42bb 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -913,6 +913,7 @@ inline bool operator<(const value_t lhs, const value_t rhs) noexcept
+ #include <string> // string
+ #include <tuple> // tuple, make_tuple
+ #include <type_traits> // is_arithmetic, is_same, is_enum, underlying_type, is_convertible
++#include <unordered_map> // unordered_map
+ #include <utility> // pair, declval
+ #include <valarray> // valarray
+ 
+@@ -1116,14 +1117,10 @@ void from_json(const BasicJsonType& j, CompatibleObjectType& obj)
+     }
+ 
+     auto inner_object = j.template get_ptr<const typename BasicJsonType::object_t*>();
+-    using value_type = typename CompatibleObjectType::value_type;
+-    std::transform(
+-        inner_object->begin(), inner_object->end(),
+-        std::inserter(obj, obj.begin()),
+-        [](typename BasicJsonType::object_t::value_type const & p)
++    for (const auto& p : *inner_object)
+     {
+-        return value_type(p.first, p.second.template get<typename CompatibleObjectType::mapped_type>());
+-    });
++        obj.emplace(p.first, p.second.template get<typename CompatibleObjectType::mapped_type>());
++    }
+ }
+ 
+ // overload for arithmetic types, not chosen for basic_json template arguments
+@@ -1205,6 +1202,63 @@ void from_json(const BasicJsonType& j, std::map<Key, Value>& m)
+     }
+ }
+ 
++template <typename BasicJsonType, typename Key, typename Value,
++          typename = enable_if_t<not std::is_constructible<
++                                     typename BasicJsonType::string_t, Key>::value>>
++void from_json(const BasicJsonType& j, std::unordered_map<Key, Value>& m)
++{
++    if (JSON_UNLIKELY(not j.is_array()))
++    {
++        JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
++    }
++    for (const auto& p : j)
++    {
++        if (JSON_UNLIKELY(not p.is_array()))
++        {
++            JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(p.type_name())));
++        }
++        m.emplace(p.at(0).template get<Key>(), p.at(1).template get<Value>());
++    }
++}
++
++template <typename BasicJsonType, typename Key, typename Value,
++          typename = enable_if_t<not std::is_constructible<
++                                     typename BasicJsonType::string_t, Key>::value>>
++void from_json(const BasicJsonType& j, std::multimap<Key, Value>& m)
++{
++    if (JSON_UNLIKELY(not j.is_array()))
++    {
++        JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
++    }
++    for (const auto& p : j)
++    {
++        if (JSON_UNLIKELY(not p.is_array()))
++        {
++            JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(p.type_name())));
++        }
++        m.emplace(p.at(0).template get<Key>(), p.at(1).template get<Value>());
++    }
++}
++
++template <typename BasicJsonType, typename Key, typename Value,
++          typename = enable_if_t<not std::is_constructible<
++                                     typename BasicJsonType::string_t, Key>::value>>
++void from_json(const BasicJsonType& j, std::unordered_multimap<Key, Value>& m)
++{
++    if (JSON_UNLIKELY(not j.is_array()))
++    {
++        JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
++    }
++    for (const auto& p : j)
++    {
++        if (JSON_UNLIKELY(not p.is_array()))
++        {
++            JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(p.type_name())));
++        }
++        m.emplace(p.at(0).template get<Key>(), p.at(1).template get<Value>());
++    }
++}
++
+ struct from_json_fn
+ {
+   private:

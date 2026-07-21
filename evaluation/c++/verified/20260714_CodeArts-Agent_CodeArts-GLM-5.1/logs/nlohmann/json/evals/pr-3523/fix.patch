@@ -1,0 +1,52 @@
+diff --git a/include/nlohmann/detail/input/binary_reader.hpp b/include/nlohmann/detail/input/binary_reader.hpp
+index cbcb4158..a2f5fc56 100644
+--- a/include/nlohmann/detail/input/binary_reader.hpp
++++ b/include/nlohmann/detail/input/binary_reader.hpp
+@@ -2168,7 +2168,7 @@ class binary_reader
+                     for (auto i : dim)
+                     {
+                         result *= i;
+-                        if (JSON_HEDLEY_UNLIKELY(!sax->number_integer(static_cast<number_integer_t>(i))))
++                        if (JSON_HEDLEY_UNLIKELY(!sax->number_unsigned(static_cast<number_unsigned_t>(i))))
+                         {
+                             return false;
+                         }
+diff --git a/include/nlohmann/detail/output/binary_writer.hpp b/include/nlohmann/detail/output/binary_writer.hpp
+index bb44a181..e348dc9f 100644
+--- a/include/nlohmann/detail/output/binary_writer.hpp
++++ b/include/nlohmann/detail/output/binary_writer.hpp
+@@ -1625,7 +1625,9 @@ class binary_writer
+         std::size_t len = (value.at(key).empty() ? 0 : 1);
+         for (const auto& el : value.at(key))
+         {
+-            len *= static_cast<std::size_t>(el.m_value.number_unsigned);
++            len *= el.type() == value_t::number_unsigned
++                   ? static_cast<std::size_t>(el.m_value.number_unsigned)
++                   : static_cast<std::size_t>(el.m_value.number_integer);
+         }
+ 
+         key = "_ArrayData_";
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 2837e74b..42eefd7e 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -10758,7 +10758,7 @@ class binary_reader
+                     for (auto i : dim)
+                     {
+                         result *= i;
+-                        if (JSON_HEDLEY_UNLIKELY(!sax->number_integer(static_cast<number_integer_t>(i))))
++                        if (JSON_HEDLEY_UNLIKELY(!sax->number_unsigned(static_cast<number_unsigned_t>(i))))
+                         {
+                             return false;
+                         }
+@@ -15818,7 +15818,9 @@ class binary_writer
+         std::size_t len = (value.at(key).empty() ? 0 : 1);
+         for (const auto& el : value.at(key))
+         {
+-            len *= static_cast<std::size_t>(el.m_value.number_unsigned);
++            len *= el.type() == value_t::number_unsigned
++                   ? static_cast<std::size_t>(el.m_value.number_unsigned)
++                   : static_cast<std::size_t>(el.m_value.number_integer);
+         }
+ 
+         key = "_ArrayData_";

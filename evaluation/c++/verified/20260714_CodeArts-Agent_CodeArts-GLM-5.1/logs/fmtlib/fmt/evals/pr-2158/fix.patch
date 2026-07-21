@@ -1,0 +1,39 @@
+diff --git a/include/fmt/format.h b/include/fmt/format.h
+index 44c2a3b4..5457332d 100644
+--- a/include/fmt/format.h
++++ b/include/fmt/format.h
+@@ -471,13 +471,15 @@ template <typename OutputIt> class truncating_iterator_base {
+   size_t limit_;
+   size_t count_;
+ 
++  truncating_iterator_base() : out_(), limit_(0), count_(0) {}
++
+   truncating_iterator_base(OutputIt out, size_t limit)
+       : out_(out), limit_(limit), count_(0) {}
+ 
+  public:
+   using iterator_category = std::output_iterator_tag;
+   using value_type = typename std::iterator_traits<OutputIt>::value_type;
+-  using difference_type = void;
++  using difference_type = std::ptrdiff_t;
+   using pointer = void;
+   using reference = void;
+   using _Unchecked_type =
+@@ -502,6 +504,8 @@ class truncating_iterator<OutputIt, std::false_type>
+  public:
+   using value_type = typename truncating_iterator_base<OutputIt>::value_type;
+ 
++  truncating_iterator() : truncating_iterator_base<OutputIt>(), blackhole_() {}
++
+   truncating_iterator(OutputIt out, size_t limit)
+       : truncating_iterator_base<OutputIt>(out, limit) {}
+ 
+@@ -525,6 +529,8 @@ template <typename OutputIt>
+ class truncating_iterator<OutputIt, std::true_type>
+     : public truncating_iterator_base<OutputIt> {
+  public:
++  truncating_iterator() : truncating_iterator_base<OutputIt>() {}
++
+   truncating_iterator(OutputIt out, size_t limit)
+       : truncating_iterator_base<OutputIt>(out, limit) {}
+ 

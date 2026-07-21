@@ -1,0 +1,199 @@
+diff --git a/include/nlohmann/detail/macro_scope.hpp b/include/nlohmann/detail/macro_scope.hpp
+index 06805b1a..d65abcd5 100644
+--- a/include/nlohmann/detail/macro_scope.hpp
++++ b/include/nlohmann/detail/macro_scope.hpp
+@@ -102,3 +102,17 @@
+     basic_json<ObjectType, ArrayType, StringType, BooleanType,             \
+     NumberIntegerType, NumberUnsignedType, NumberFloatType,                \
+     AllocatorType, JSONSerializer>
++
++#define JSON_SERIALIZE_ENUM(ENUM_TYPE, ...)                                \
++    inline void to_json(nlohmann::json& j, const ENUM_TYPE& e)            \
++    {                                                                      \
++        static const nlohmann::multi_bimap<ENUM_TYPE, nlohmann::json> m = \
++            __VA_ARGS__;                                                   \
++        j = m.at_right(e);                                                \
++    }                                                                      \
++    inline void from_json(const nlohmann::json& j, ENUM_TYPE& e)          \
++    {                                                                      \
++        static const nlohmann::multi_bimap<ENUM_TYPE, nlohmann::json> m = \
++            __VA_ARGS__;                                                   \
++        e = m.at_left(j);                                                 \
++    }
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index 0a46d0c2..f36e3436 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -69,6 +69,7 @@ SOFTWARE.
+ #include <nlohmann/detail/json_ref.hpp>
+ #include <nlohmann/detail/json_pointer.hpp>
+ #include <nlohmann/adl_serializer.hpp>
++#include <nlohmann/multi_bimap.hpp>
+ 
+ /*!
+ @brief namespace for Niels Lohmann
+diff --git a/include/nlohmann/multi_bimap.hpp b/include/nlohmann/multi_bimap.hpp
+new file mode 100644
+index 00000000..613e7335
+--- /dev/null
++++ b/include/nlohmann/multi_bimap.hpp
+@@ -0,0 +1,48 @@
++#pragma once
++
++#include <utility>
++#include <vector>
++
++namespace nlohmann
++{
++template<typename TL, typename TR>
++class multi_bimap
++{
++  public:
++    using left_type = TL;
++    using right_type = TR;
++    using value_type = std::pair<left_type, right_type>;
++    using container_type = std::vector<value_type>;
++
++    multi_bimap(std::initializer_list<value_type> init)
++        : m_pairs(init)
++    {}
++
++    right_type at_right(const left_type& key) const
++    {
++        for (const auto& p : m_pairs)
++        {
++            if (p.first == key)
++            {
++                return p.second;
++            }
++        }
++        return m_pairs.empty() ? right_type{} : m_pairs.front().second;
++    }
++
++    left_type at_left(const right_type& key) const
++    {
++        for (const auto& p : m_pairs)
++        {
++            if (p.second == key)
++            {
++                return p.first;
++            }
++        }
++        return m_pairs.empty() ? left_type{} : m_pairs.front().first;
++    }
++
++  private:
++    container_type m_pairs;
++};
++}
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 79f74e4c..94e7c38e 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -218,6 +218,20 @@ using json = basic_json<>;
+     NumberIntegerType, NumberUnsignedType, NumberFloatType,                \
+     AllocatorType, JSONSerializer>
+ 
++#define JSON_SERIALIZE_ENUM(ENUM_TYPE, ...)                                \
++    inline void to_json(nlohmann::json& j, const ENUM_TYPE& e)            \
++    {                                                                      \
++        static const nlohmann::multi_bimap<ENUM_TYPE, nlohmann::json> m = \
++            __VA_ARGS__;                                                   \
++        j = m.at_right(e);                                                \
++    }                                                                      \
++    inline void from_json(const nlohmann::json& j, ENUM_TYPE& e)          \
++    {                                                                      \
++        static const nlohmann::multi_bimap<ENUM_TYPE, nlohmann::json> m = \
++            __VA_ARGS__;                                                   \
++        e = m.at_left(j);                                                 \
++    }
++
+ // #include <nlohmann/detail/meta/cpp_future.hpp>
+ 
+ 
+@@ -12262,6 +12276,56 @@ struct adl_serializer
+ };
+ }  // namespace nlohmann
+ 
++// #include <nlohmann/multi_bimap.hpp>
++
++
++#include <utility>
++#include <vector>
++
++namespace nlohmann
++{
++template<typename TL, typename TR>
++class multi_bimap
++{
++  public:
++    using left_type = TL;
++    using right_type = TR;
++    using value_type = std::pair<left_type, right_type>;
++    using container_type = std::vector<value_type>;
++
++    multi_bimap(std::initializer_list<value_type> init)
++        : m_pairs(init)
++    {}
++
++    right_type at_right(const left_type& key) const
++    {
++        for (const auto& p : m_pairs)
++        {
++            if (p.first == key)
++            {
++                return p.second;
++            }
++        }
++        return m_pairs.empty() ? right_type{} : m_pairs.front().second;
++    }
++
++    left_type at_left(const right_type& key) const
++    {
++        for (const auto& p : m_pairs)
++        {
++            if (p.second == key)
++            {
++                return p.first;
++            }
++        }
++        return m_pairs.empty() ? left_type{} : m_pairs.front().first;
++    }
++
++  private:
++    container_type m_pairs;
++};
++}
++
+ 
+ /*!
+ @brief namespace for Niels Lohmann
+diff --git a/test_enum2.cpp b/test_enum2.cpp
+new file mode 100644
+index 00000000..2bb6d64c
+--- /dev/null
++++ b/test_enum2.cpp
+@@ -0,0 +1,23 @@
++#include <iostream>
++#include <nlohmann/json.hpp>
++
++enum TaskState {
++    TS_STOPPED,
++    TS_RUNNING,
++    TS_COMPLETED,
++    TS_INVALID=-1,
++};
++
++JSON_SERIALIZE_ENUM( TaskState, ({
++    {TS_INVALID, nullptr},
++    {TS_STOPPED, "stopped"},
++    {TS_RUNNING, "running"},
++    {TS_COMPLETED, "completed"},
++}))
++
++int main()
++{
++    nlohmann::json j = TS_STOPPED;
++    std::cout << j << std::endl;
++    return 0;
++}

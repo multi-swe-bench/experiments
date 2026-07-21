@@ -1,0 +1,677 @@
+检测到 Debian 12 系统
+进入12+系统
+替换系统源完成
+==============================================================================
+Get:1 http://mirrors.tools.huawei.com/debian bookworm InRelease [151 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm-updates InRelease [55.4 kB]
+Get:3 http://mirrors.tools.huawei.com/debian-security bookworm-security InRelease [48.0 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 Packages [8790 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm-updates/main amd64 Packages [6924 B]
+Get:6 http://mirrors.tools.huawei.com/debian-security bookworm-security/main amd64 Packages [316 kB]
+Fetched 9368 kB in 1s (6439 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+patch is already the newest version (2.7.6-7).
+build-essential is already the newest version (12.9).
+libpcre2-dev is already the newest version (10.42-1).
+libpcre2-dev set to manually installed.
+libncurses-dev is already the newest version (6.4-4).
+libncurses-dev set to manually installed.
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+The following additional packages will be installed:
+  libonig5 libssl3 openssl
+Suggested packages:
+  libssl-doc
+The following NEW packages will be installed:
+  libonig-dev libonig5
+The following packages will be upgraded:
+  libssl-dev libssl3 openssl
+3 upgraded, 2 newly installed, 0 to remove and 158 not upgraded.
+Need to get 6203 kB of archives.
+After this operation, 780 kB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig5 amd64 6.9.8-1 [188 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig-dev amd64 6.9.8-1 [96.7 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl-dev amd64 3.0.20-1~deb12u2 [2443 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl3 amd64 3.0.20-1~deb12u2 [2036 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 openssl amd64 3.0.20-1~deb12u2 [1439 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 6203 kB in 0s (16.9 MB/s)
+Selecting previously unselected package libonig5:amd64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 31854 files and directories currently installed.)
+Preparing to unpack .../libonig5_6.9.8-1_amd64.deb ...
+Unpacking libonig5:amd64 (6.9.8-1) ...
+Selecting previously unselected package libonig-dev.
+Preparing to unpack .../libonig-dev_6.9.8-1_amd64.deb ...
+Unpacking libonig-dev (6.9.8-1) ...
+Preparing to unpack .../libssl-dev_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl-dev:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../libssl3_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl3:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../openssl_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking openssl (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Setting up libssl3:amd64 (3.0.20-1~deb12u2) ...
+Setting up libssl-dev:amd64 (3.0.20-1~deb12u2) ...
+Setting up openssl (3.0.20-1~deb12u2) ...
+Setting up libonig5:amd64 (6.9.8-1) ...
+Setting up libonig-dev (6.9.8-1) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+cmake is already the newest version (3.25.1-1).
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+0 upgraded, 0 newly installed, 0 to remove and 158 not upgraded.
+=== RUN FULL via /home/fix-run.sh (tee log) ===
+#!/bin/bash
+set -e
+
+cd /home/Catch2
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake -DCATCH_DEVELOPMENT_BUILD=ON ..
+make
+ctest
+
+=========================================
+当前目录：/home
+当前目录内容：Catch2 add_certificate_for_c.sh check_git_changes.sh fix-run.sh fix.patch prepare.sh run.sh test-run.sh test.patch
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+wget is already the newest version (1.21.3-1+deb12u1).
+0 upgraded, 0 newly installed, 0 to remove and 158 not upgraded.
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libgpm2 libsodium23 vim-common vim-runtime xxd
+Suggested packages:
+  gpm ctags vim-doc vim-scripts
+The following NEW packages will be installed:
+  libgpm2 libsodium23 vim vim-common vim-runtime xxd
+0 upgraded, 6 newly installed, 0 to remove and 158 not upgraded.
+Need to get 8980 kB of archives.
+After this operation, 41.9 MB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-common all 2:9.0.1378-2+deb12u2 [125 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libgpm2 amd64 1.20.7-10+b1 [14.2 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libsodium23 amd64 1.0.18-1+deb12u1 [162 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-runtime all 2:9.0.1378-2+deb12u2 [7027 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim amd64 2:9.0.1378-2+deb12u2 [1568 kB]
+Get:6 http://mirrors.tools.huawei.com/debian bookworm/main amd64 xxd amd64 2:9.0.1378-2+deb12u2 [84.1 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 8980 kB in 0s (18.8 MB/s)
+Selecting previously unselected package vim-common.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 31897 files and directories currently installed.)
+Preparing to unpack .../0-vim-common_2%3a9.0.1378-2+deb12u2_all.deb ...
+Unpacking vim-common (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package libgpm2:amd64.
+Preparing to unpack .../1-libgpm2_1.20.7-10+b1_amd64.deb ...
+Unpacking libgpm2:amd64 (1.20.7-10+b1) ...
+Selecting previously unselected package libsodium23:amd64.
+Preparing to unpack .../2-libsodium23_1.0.18-1+deb12u1_amd64.deb ...
+Unpacking libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Selecting previously unselected package vim-runtime.
+Preparing to unpack .../3-vim-runtime_2%3a9.0.1378-2+deb12u2_all.deb ...
+Adding 'diversion of /usr/share/vim/vim90/doc/help.txt to /usr/share/vim/vim90/doc/help.txt.vim-tiny by vim-runtime'
+Adding 'diversion of /usr/share/vim/vim90/doc/tags to /usr/share/vim/vim90/doc/tags.vim-tiny by vim-runtime'
+Unpacking vim-runtime (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package vim.
+Preparing to unpack .../4-vim_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking vim (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package xxd.
+Preparing to unpack .../5-xxd_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking xxd (2:9.0.1378-2+deb12u2) ...
+Setting up libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Setting up libgpm2:amd64 (1.20.7-10+b1) ...
+Setting up xxd (2:9.0.1378-2+deb12u2) ...
+Setting up vim-common (2:9.0.1378-2+deb12u2) ...
+Setting up vim-runtime (2:9.0.1378-2+deb12u2) ...
+Setting up vim (2:9.0.1378-2+deb12u2) ...
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/ex (ex) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rview (rview) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rvim (rvim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vi (vi) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/view (view) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vim (vim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vimdiff (vimdiff) in auto mode
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Processing triggers for hicolor-icon-theme (0.17-2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libcurl3-gnutls libcurl3-nss libcurl4 libcurl4-openssl-dev
+Suggested packages:
+  libcurl4-doc libidn-dev libldap2-dev librtmp-dev libssh2-1-dev
+The following packages will be upgraded:
+  curl libcurl3-gnutls libcurl3-nss libcurl4 libcurl4-openssl-dev
+5 upgraded, 0 newly installed, 0 to remove and 153 not upgraded.
+Need to get 1982 kB of archives.
+After this operation, 5120 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4-openssl-dev amd64 7.88.1-10+deb12u15 [493 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 curl amd64 7.88.1-10+deb12u15 [316 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4 amd64 7.88.1-10+deb12u15 [392 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl3-gnutls amd64 7.88.1-10+deb12u15 [386 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl3-nss amd64 7.88.1-10+deb12u15 [396 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 1982 kB in 0s (5992 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 34054 files and directories currently installed.)
+Preparing to unpack .../libcurl4-openssl-dev_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../curl_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking curl (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl4_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl3-gnutls_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl3-nss_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl3-nss:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Setting up libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) ...
+Setting up libcurl3-nss:amd64 (7.88.1-10+deb12u15) ...
+Setting up libcurl4:amd64 (7.88.1-10+deb12u15) ...
+Setting up curl (7.88.1-10+deb12u15) ...
+Setting up libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+=== 配置证书 (abcert) ===
+[abcert][INFO] Created temporary directory .tmp.pems.WvZ0XO0u
+[abcert][INFO] Operating system: Debian GNU/Linux 12 (bookworm)
+[abcert][INFO] Installing certificates
+'.tmp.pems.WvZ0XO0u/HWBPITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWBPITEnterpriseCA1.crt'
+'.tmp.pems.WvZ0XO0u/HWITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWITEnterpriseCA1.crt'
+'.tmp.pems.WvZ0XO0u/HuaweiBPITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiBPITRootCA.crt'
+'.tmp.pems.WvZ0XO0u/HuaweiITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiITRootCA.crt'
+'.tmp.pems.WvZ0XO0u/HuaweiWebSecureInternetGatewayCA.pem' -> '/usr/local/share/ca-certificates/HuaweiWebSecureInternetGatewayCA.crt'
+Updating certificates in /etc/ssl/certs...
+rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+5 added, 0 removed; done.
+Running hooks in /etc/ca-certificates/update.d...
+done.
+[abcert][INFO] Removed .tmp.pems.WvZ0XO0u
+abcert 安装完成
+================git=====================
+http.version=HTTP/1.1
+http.postbuffer=524288000
+http.timeout=600
+================git=====================
+================env=====================
+HTTPS_PROXY=http://test:test@proxysg.huawei.com:8080/
+no_proxy=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+HOSTNAME=e116768b3525
+GCC_MIRRORS=https://ftpmirror.gnu.org/gcc 		https://mirrors.kernel.org/gnu/gcc 		https://bigsearcher.com/mirrors/gcc/releases 		http://www.netgull.com/gcc/releases 		https://ftpmirror.gnu.org/gcc 		https://sourceware.org/pub/gcc/releases 		ftp://ftp.gnu.org/gnu/gcc
+HOME=/root
+OLDPWD=/home
+NO_PROXY=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+https_proxy=http://test:test@proxysg.huawei.com:8080/
+GPG_KEYS=B215C1633BCA0477615F1B35A5B3A004745C015A 	B3C42148A44E6983B3E4CC0793FA9B1AB75C61B8 	90AA470469D3965A87A5DCB494D03953902C9419 	80F98B2E0DAB6C8281BDF541A7C8C3B2F71EDF1C 	7F74F97C103468EE5D750B583AB00996FC26A641 	33C235A34C46AA3FFB293709A328C3A2C3C45C06 	D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62
+http_proxy=http://test:test@proxysg.huawei.com:8080/
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+GIT_SSL_NO_VERIFY=true
+PWD=/tmp/tmp.9Iz7gx4xZP/abcert_install
+HTTP_PROXY=http://test:test@proxysg.huawei.com:8080/
+GCC_VERSION=14.2.0
+================env=====================
+#!/bin/bash
+# set -e
+
+cd /home/Catch2
+git ls-files --others --exclude-standard | xargs -I {} mv {} {}.bak
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake -DCATCH_DEVELOPMENT_BUILD=ON ..
+make
+ctest
+
+=========================================
+patching file tests/CMakeLists.txt
+patching file tests/SelfTest/Baselines/automake.sw.approved.txt
+patching file tests/SelfTest/Baselines/automake.sw.multi.approved.txt
+patching file tests/SelfTest/Baselines/compact.sw.approved.txt
+patching file tests/SelfTest/Baselines/compact.sw.multi.approved.txt
+patching file tests/SelfTest/Baselines/console.std.approved.txt
+patching file tests/SelfTest/Baselines/console.sw.approved.txt
+patching file tests/SelfTest/Baselines/console.sw.multi.approved.txt
+patching file tests/SelfTest/Baselines/junit.sw.approved.txt
+patching file tests/SelfTest/Baselines/junit.sw.multi.approved.txt
+patching file tests/SelfTest/Baselines/sonarqube.sw.approved.txt
+patching file tests/SelfTest/Baselines/sonarqube.sw.multi.approved.txt
+patching file tests/SelfTest/Baselines/tap.sw.approved.txt
+patching file tests/SelfTest/Baselines/tap.sw.multi.approved.txt
+patching file tests/SelfTest/Baselines/teamcity.sw.approved.txt
+patching file tests/SelfTest/Baselines/teamcity.sw.multi.approved.txt
+patching file tests/SelfTest/Baselines/xml.sw.approved.txt
+patching file tests/SelfTest/Baselines/xml.sw.multi.approved.txt
+patching file tests/SelfTest/IntrospectiveTests/AssertionHandler.tests.cpp
+patching file tests/SelfTest/UsageTests/Misc.tests.cpp
+patching file extras/catch_amalgamated.cpp
+patching file src/catch2/internal/catch_run_context.cpp
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test HAVE_FLAG__ffile_prefix_map__home_Catch2__
+-- Performing Test HAVE_FLAG__ffile_prefix_map__home_Catch2__ - Success
+-- Found PythonInterp: /usr/bin/python3 (found suitable version "3.11.2", minimum required is "3") 
+-- Performing Test HAVE_FLAG__Wabsolute_value
+-- Performing Test HAVE_FLAG__Wabsolute_value - Failed
+-- Performing Test HAVE_FLAG__Wall
+-- Performing Test HAVE_FLAG__Wall - Success
+-- Performing Test HAVE_FLAG__Wc__20_compat
+-- Performing Test HAVE_FLAG__Wc__20_compat - Success
+-- Performing Test HAVE_FLAG__Wcall_to_pure_virtual_from_ctor_dtor
+-- Performing Test HAVE_FLAG__Wcall_to_pure_virtual_from_ctor_dtor - Failed
+-- Performing Test HAVE_FLAG__Wcast_align
+-- Performing Test HAVE_FLAG__Wcast_align - Success
+-- Performing Test HAVE_FLAG__Wcatch_value
+-- Performing Test HAVE_FLAG__Wcatch_value - Success
+-- Performing Test HAVE_FLAG__Wdangling
+-- Performing Test HAVE_FLAG__Wdangling - Failed
+-- Performing Test HAVE_FLAG__Wdeprecated
+-- Performing Test HAVE_FLAG__Wdeprecated - Success
+-- Performing Test HAVE_FLAG__Wdeprecated_register
+-- Performing Test HAVE_FLAG__Wdeprecated_register - Failed
+-- Performing Test HAVE_FLAG__Wexceptions
+-- Performing Test HAVE_FLAG__Wexceptions - Success
+-- Performing Test HAVE_FLAG__Wexit_time_destructors
+-- Performing Test HAVE_FLAG__Wexit_time_destructors - Failed
+-- Performing Test HAVE_FLAG__Wextra
+-- Performing Test HAVE_FLAG__Wextra - Success
+-- Performing Test HAVE_FLAG__Wextra_semi
+-- Performing Test HAVE_FLAG__Wextra_semi - Success
+-- Performing Test HAVE_FLAG__Wfloat_equal
+-- Performing Test HAVE_FLAG__Wfloat_equal - Success
+-- Performing Test HAVE_FLAG__Wglobal_constructors
+-- Performing Test HAVE_FLAG__Wglobal_constructors - Failed
+-- Performing Test HAVE_FLAG__Winit_self
+-- Performing Test HAVE_FLAG__Winit_self - Success
+-- Performing Test HAVE_FLAG__Wmisleading_indentation
+-- Performing Test HAVE_FLAG__Wmisleading_indentation - Success
+-- Performing Test HAVE_FLAG__Wmismatched_new_delete
+-- Performing Test HAVE_FLAG__Wmismatched_new_delete - Success
+-- Performing Test HAVE_FLAG__Wmismatched_return_types
+-- Performing Test HAVE_FLAG__Wmismatched_return_types - Failed
+-- Performing Test HAVE_FLAG__Wmismatched_tags
+-- Performing Test HAVE_FLAG__Wmismatched_tags - Success
+-- Performing Test HAVE_FLAG__Wmissing_braces
+-- Performing Test HAVE_FLAG__Wmissing_braces - Success
+-- Performing Test HAVE_FLAG__Wmissing_declarations
+-- Performing Test HAVE_FLAG__Wmissing_declarations - Success
+-- Performing Test HAVE_FLAG__Wmissing_noreturn
+-- Performing Test HAVE_FLAG__Wmissing_noreturn - Success
+-- Performing Test HAVE_FLAG__Wmissing_prototypes
+-- Performing Test HAVE_FLAG__Wmissing_prototypes - Failed
+-- Performing Test HAVE_FLAG__Wmissing_variable_declarations
+-- Performing Test HAVE_FLAG__Wmissing_variable_declarations - Failed
+-- Performing Test HAVE_FLAG__Wnull_dereference
+-- Performing Test HAVE_FLAG__Wnull_dereference - Success
+-- Performing Test HAVE_FLAG__Wold_style_cast
+-- Performing Test HAVE_FLAG__Wold_style_cast - Success
+-- Performing Test HAVE_FLAG__Woverloaded_virtual
+-- Performing Test HAVE_FLAG__Woverloaded_virtual - Success
+-- Performing Test HAVE_FLAG__Wparentheses
+-- Performing Test HAVE_FLAG__Wparentheses - Success
+-- Performing Test HAVE_FLAG__Wpedantic
+-- Performing Test HAVE_FLAG__Wpedantic - Success
+-- Performing Test HAVE_FLAG__Wredundant_decls
+-- Performing Test HAVE_FLAG__Wredundant_decls - Success
+-- Performing Test HAVE_FLAG__Wreorder
+-- Performing Test HAVE_FLAG__Wreorder - Success
+-- Performing Test HAVE_FLAG__Wreturn_std_move
+-- Performing Test HAVE_FLAG__Wreturn_std_move - Failed
+-- Performing Test HAVE_FLAG__Wshadow
+-- Performing Test HAVE_FLAG__Wshadow - Success
+-- Performing Test HAVE_FLAG__Wstrict_aliasing
+-- Performing Test HAVE_FLAG__Wstrict_aliasing - Success
+-- Performing Test HAVE_FLAG__Wsuggest_destructor_override
+-- Performing Test HAVE_FLAG__Wsuggest_destructor_override - Failed
+-- Performing Test HAVE_FLAG__Wsuggest_override
+-- Performing Test HAVE_FLAG__Wsuggest_override - Success
+-- Performing Test HAVE_FLAG__Wundef
+-- Performing Test HAVE_FLAG__Wundef - Success
+-- Performing Test HAVE_FLAG__Wuninitialized
+-- Performing Test HAVE_FLAG__Wuninitialized - Success
+-- Performing Test HAVE_FLAG__Wunneeded_internal_declaration
+-- Performing Test HAVE_FLAG__Wunneeded_internal_declaration - Failed
+-- Performing Test HAVE_FLAG__Wunreachable_code_aggressive
+-- Performing Test HAVE_FLAG__Wunreachable_code_aggressive - Failed
+-- Performing Test HAVE_FLAG__Wunused
+-- Performing Test HAVE_FLAG__Wunused - Success
+-- Performing Test HAVE_FLAG__Wunused_function
+-- Performing Test HAVE_FLAG__Wunused_function - Success
+-- Performing Test HAVE_FLAG__Wunused_parameter
+-- Performing Test HAVE_FLAG__Wunused_parameter - Success
+-- Performing Test HAVE_FLAG__Wvla
+-- Performing Test HAVE_FLAG__Wvla - Success
+-- Performing Test HAVE_FLAG__Wweak_vtables
+-- Performing Test HAVE_FLAG__Wweak_vtables - Failed
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/Catch2/build
+[  0%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/benchmark/catch_chronometer.cpp.o
+[  1%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/benchmark/detail/catch_benchmark_function.cpp.o
+[  1%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/benchmark/detail/catch_run_for_at_least.cpp.o
+[  2%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/benchmark/detail/catch_stats.cpp.o
+[  3%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/generators/catch_generator_exception.cpp.o
+[  3%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/generators/catch_generators.cpp.o
+[  4%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/generators/catch_generators_random.cpp.o
+[  4%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_automake.cpp.o
+[  5%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_common_base.cpp.o
+[  6%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_compact.cpp.o
+[  6%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_console.cpp.o
+[  7%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_cumulative_base.cpp.o
+[  7%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_event_listener.cpp.o
+[  8%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_helpers.cpp.o
+[  9%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_junit.cpp.o
+[  9%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_multi.cpp.o
+[ 10%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_registrars.cpp.o
+[ 11%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_sonarqube.cpp.o
+[ 11%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_streaming_base.cpp.o
+[ 12%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_tap.cpp.o
+[ 12%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_teamcity.cpp.o
+[ 13%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_xml.cpp.o
+[ 14%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_capture.cpp.o
+[ 14%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_config.cpp.o
+[ 15%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_exception.cpp.o
+[ 15%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_generatortracker.cpp.o
+[ 16%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_registry_hub.cpp.o
+[ 17%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_reporter.cpp.o
+[ 17%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_reporter_factory.cpp.o
+[ 18%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_testcase.cpp.o
+[ 19%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_approx.cpp.o
+[ 19%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_assertion_result.cpp.o
+[ 20%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_config.cpp.o
+[ 20%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_get_random_seed.cpp.o
+[ 21%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_message.cpp.o
+[ 22%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_registry_hub.cpp.o
+[ 22%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_session.cpp.o
+[ 23%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_tag_alias_autoregistrar.cpp.o
+[ 23%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_test_case_info.cpp.o
+[ 24%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_test_spec.cpp.o
+[ 25%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_timer.cpp.o
+[ 25%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_tostring.cpp.o
+[ 26%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_totals.cpp.o
+[ 26%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_translate_exception.cpp.o
+[ 27%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_version.cpp.o
+[ 28%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_assertion_handler.cpp.o
+[ 28%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_case_insensitive_comparisons.cpp.o
+[ 29%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_clara.cpp.o
+[ 30%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_commandline.cpp.o
+[ 30%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_console_colour.cpp.o
+[ 31%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_context.cpp.o
+[ 31%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_debug_console.cpp.o
+[ 32%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_debugger.cpp.o
+[ 33%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_decomposer.cpp.o
+[ 33%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_enforce.cpp.o
+[ 34%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_enum_values_registry.cpp.o
+[ 34%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_errno_guard.cpp.o
+[ 35%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_exception_translator_registry.cpp.o
+[ 36%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_fatal_condition_handler.cpp.o
+[ 36%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_floating_point_helpers.cpp.o
+[ 37%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_getenv.cpp.o
+[ 38%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_istream.cpp.o
+[ 38%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_lazy_expr.cpp.o
+[ 39%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_leak_detector.cpp.o
+[ 39%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_list.cpp.o
+[ 40%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_message_info.cpp.o
+[ 41%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_output_redirect.cpp.o
+[ 41%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_parse_numbers.cpp.o
+[ 42%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_polyfills.cpp.o
+[ 42%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_random_number_generator.cpp.o
+[ 43%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_random_seed_generation.cpp.o
+[ 44%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_reporter_registry.cpp.o
+[ 44%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_reporter_spec_parser.cpp.o
+[ 45%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_result_type.cpp.o
+[ 46%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_reusable_string_stream.cpp.o
+[ 46%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_run_context.cpp.o
+[ 47%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_section.cpp.o
+[ 47%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_singletons.cpp.o
+[ 48%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_source_line_info.cpp.o
+[ 49%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_startup_exception_registry.cpp.o
+[ 49%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_stdstreams.cpp.o
+[ 50%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_string_manip.cpp.o
+[ 50%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_stringref.cpp.o
+[ 51%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_tag_alias_registry.cpp.o
+[ 52%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_test_case_info_hasher.cpp.o
+[ 52%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_test_case_registry_impl.cpp.o
+[ 53%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_test_case_tracker.cpp.o
+[ 53%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_test_failure_exception.cpp.o
+[ 54%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_test_registry.cpp.o
+[ 55%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_test_spec_parser.cpp.o
+[ 55%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_textflow.cpp.o
+[ 56%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_uncaught_exceptions.cpp.o
+[ 57%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_wildcard_pattern.cpp.o
+[ 57%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_xmlwriter.cpp.o
+[ 58%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers.cpp.o
+[ 58%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_container_properties.cpp.o
+[ 59%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_exception.cpp.o
+[ 60%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_floating_point.cpp.o
+[ 60%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_predicate.cpp.o
+[ 61%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_quantifiers.cpp.o
+[ 61%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_string.cpp.o
+[ 62%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_templated.cpp.o
+[ 63%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/internal/catch_matchers_impl.cpp.o
+[ 63%] Linking CXX static library libCatch2.a
+[ 63%] Built target Catch2
+[ 64%] Building CXX object src/CMakeFiles/Catch2WithMain.dir/catch2/internal/catch_main.cpp.o
+[ 65%] Linking CXX static library libCatch2Main.a
+[ 65%] Built target Catch2WithMain
+[ 65%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/TestRegistrations.cpp.o
+[ 66%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Algorithms.tests.cpp.o
+[ 66%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/AssertionHandler.tests.cpp.o
+[ 67%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Clara.tests.cpp.o
+[ 68%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/CmdLine.tests.cpp.o
+[ 68%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/CmdLineHelpers.tests.cpp.o
+[ 69%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/ColourImpl.tests.cpp.o
+[ 69%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Details.tests.cpp.o
+[ 70%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/FloatingPoint.tests.cpp.o
+[ 71%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/GeneratorsImpl.tests.cpp.o
+[ 71%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/InternalBenchmark.tests.cpp.o
+[ 72%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Parse.tests.cpp.o
+[ 73%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/PartTracker.tests.cpp.o
+[ 73%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/RandomNumberGeneration.tests.cpp.o
+[ 74%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Reporters.tests.cpp.o
+[ 74%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Tag.tests.cpp.o
+[ 75%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/TestCaseInfoHasher.tests.cpp.o
+[ 76%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/TestSpec.tests.cpp.o
+[ 76%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/TestSpecParser.tests.cpp.o
+[ 77%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/TextFlow.tests.cpp.o
+[ 77%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Sharding.tests.cpp.o
+[ 78%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Stream.tests.cpp.o
+[ 79%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/String.tests.cpp.o
+[ 79%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/StringManip.tests.cpp.o
+[ 80%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Xml.tests.cpp.o
+[ 80%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Traits.tests.cpp.o
+[ 81%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/ToString.tests.cpp.o
+[ 82%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/UniquePtr.tests.cpp.o
+[ 82%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/helpers/parse_test_spec.cpp.o
+[ 83%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/TimingTests/Sleep.tests.cpp.o
+[ 84%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Approx.tests.cpp.o
+[ 84%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/BDD.tests.cpp.o
+[ 85%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Benchmark.tests.cpp.o
+[ 85%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Class.tests.cpp.o
+[ 86%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Compilation.tests.cpp.o
+[ 87%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Condition.tests.cpp.o
+[ 87%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Decomposition.tests.cpp.o
+[ 88%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/EnumToString.tests.cpp.o
+[ 88%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Exception.tests.cpp.o
+[ 89%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Generators.tests.cpp.o
+[ 90%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Message.tests.cpp.o
+[ 90%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Misc.tests.cpp.o
+[ 91%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Skip.tests.cpp.o
+[ 92%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringByte.tests.cpp.o
+[ 92%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringChrono.tests.cpp.o
+[ 93%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringGeneral.tests.cpp.o
+[ 93%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringOptional.tests.cpp.o
+[ 94%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringPair.tests.cpp.o
+[ 95%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringTuple.tests.cpp.o
+[ 95%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringVariant.tests.cpp.o
+[ 96%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringVector.tests.cpp.o
+[ 96%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringWhich.tests.cpp.o
+[ 97%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Tricky.tests.cpp.o
+[ 98%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/VariadicMacros.tests.cpp.o
+[ 98%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/MatchersRanges.tests.cpp.o
+[ 99%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Matchers.tests.cpp.o
+[100%] Linking CXX executable SelfTest
+[100%] Built target SelfTest
+Test project /home/Catch2/build
+      Start 30: ApprovalTests
+ 1/69 Test #30: ApprovalTests ................................................   Passed    3.37 sec
+      Start  1: RunTests
+ 2/69 Test  #1: RunTests .....................................................   Passed    1.43 sec
+      Start  2: List::Tests::Output
+ 3/69 Test  #2: List::Tests::Output ..........................................   Passed    0.01 sec
+      Start  3: List::Tests::Quiet
+ 4/69 Test  #3: List::Tests::Quiet ...........................................   Passed    0.00 sec
+      Start  4: List::Tests::ExitCode
+ 5/69 Test  #4: List::Tests::ExitCode ........................................   Passed    0.00 sec
+      Start  5: List::Tests::XmlOutput
+ 6/69 Test  #5: List::Tests::XmlOutput .......................................   Passed    0.01 sec
+      Start  6: List::Tags::Output
+ 7/69 Test  #6: List::Tags::Output ...........................................   Passed    0.01 sec
+      Start  7: List::Tags::ExitCode
+ 8/69 Test  #7: List::Tags::ExitCode .........................................   Passed    0.01 sec
+      Start  8: List::Tags::XmlOutput
+ 9/69 Test  #8: List::Tags::XmlOutput ........................................   Passed    0.01 sec
+      Start  9: List::Reporters::Output
+10/69 Test  #9: List::Reporters::Output ......................................   Passed    0.00 sec
+      Start 10: List::Reporters::ExitCode
+11/69 Test #10: List::Reporters::ExitCode ....................................   Passed    0.00 sec
+      Start 11: List::Reporters::XmlOutput
+12/69 Test #11: List::Reporters::XmlOutput ...................................   Passed    0.00 sec
+      Start 12: List::Listeners::Output
+13/69 Test #12: List::Listeners::Output ......................................   Passed    0.00 sec
+      Start 13: List::Listeners::ExitCode
+14/69 Test #13: List::Listeners::ExitCode ....................................   Passed    0.00 sec
+      Start 14: List::Listeners::XmlOutput
+15/69 Test #14: List::Listeners::XmlOutput ...................................   Passed    0.00 sec
+      Start 15: NoAssertions
+16/69 Test #15: NoAssertions .................................................   Passed    0.00 sec
+      Start 16: TestSpecs::CombiningMatchingAndNonMatchingIsOk-1
+17/69 Test #16: TestSpecs::CombiningMatchingAndNonMatchingIsOk-1 .............   Passed    0.01 sec
+      Start 17: TestSpecs::CombiningMatchingAndNonMatchingIsOk-2
+18/69 Test #17: TestSpecs::CombiningMatchingAndNonMatchingIsOk-2 .............   Passed    0.01 sec
+      Start 18: TestSpecs::NoMatchedTestsFail
+19/69 Test #18: TestSpecs::NoMatchedTestsFail ................................   Passed    0.00 sec
+      Start 19: TestSpecs::OverrideFailureWithNoMatchedTests
+20/69 Test #19: TestSpecs::OverrideFailureWithNoMatchedTests .................   Passed    0.00 sec
+      Start 20: TestSpecs::OverrideAllSkipFailure
+21/69 Test #20: TestSpecs::OverrideAllSkipFailure ............................   Passed    0.01 sec
+      Start 21: TestSpecs::NonMatchingTestSpecIsRoundTrippable
+22/69 Test #21: TestSpecs::NonMatchingTestSpecIsRoundTrippable ...............   Passed    0.01 sec
+      Start 22: Warnings::UnmatchedTestSpecIsAccepted
+23/69 Test #22: Warnings::UnmatchedTestSpecIsAccepted ........................   Passed    0.00 sec
+      Start 23: Warnings::MultipleWarningsCanBeSpecified
+24/69 Test #23: Warnings::MultipleWarningsCanBeSpecified .....................   Passed    0.00 sec
+      Start 24: TestSpecs::WarnUnmatchedTestSpecFailsWithUnmatchedTestSpec
+25/69 Test #24: TestSpecs::WarnUnmatchedTestSpecFailsWithUnmatchedTestSpec ...   Passed    0.01 sec
+      Start 25: UnmatchedOutputFilter
+26/69 Test #25: UnmatchedOutputFilter ........................................   Passed    0.00 sec
+      Start 26: FilteredSection-1
+27/69 Test #26: FilteredSection-1 ............................................   Passed    0.00 sec
+      Start 27: FilteredSection-2
+28/69 Test #27: FilteredSection-2 ............................................   Passed    0.00 sec
+      Start 28: FilteredSection::GeneratorsDontCauseInfiniteLoop-1
+29/69 Test #28: FilteredSection::GeneratorsDontCauseInfiniteLoop-1 ...........   Passed    0.01 sec
+      Start 29: FilteredSection::GeneratorsDontCauseInfiniteLoop-2
+30/69 Test #29: FilteredSection::GeneratorsDontCauseInfiniteLoop-2 ...........   Passed    0.01 sec
+      Start 31: RegressionCheck-1670
+31/69 Test #31: RegressionCheck-1670 .........................................   Passed    0.00 sec
+      Start 32: VersionCheck
+32/69 Test #32: VersionCheck .................................................   Passed    0.00 sec
+      Start 33: LibIdentityTest
+33/69 Test #33: LibIdentityTest ..............................................   Passed    0.00 sec
+      Start 34: FilenameAsTagsTest
+34/69 Test #34: FilenameAsTagsTest ...........................................   Passed    0.01 sec
+      Start 35: FilenameAsTagsMatching
+35/69 Test #35: FilenameAsTagsMatching .......................................   Passed    0.00 sec
+      Start 36: EscapeSpecialCharactersInTestNames
+36/69 Test #36: EscapeSpecialCharactersInTestNames ...........................   Passed    0.00 sec
+      Start 37: NegativeSpecNoHiddenTests
+37/69 Test #37: NegativeSpecNoHiddenTests ....................................   Passed    0.00 sec
+      Start 38: TestsInFile::SimpleSpecs
+38/69 Test #38: TestsInFile::SimpleSpecs .....................................   Passed    0.01 sec
+      Start 39: TestsInFile::EscapeSpecialCharacters
+39/69 Test #39: TestsInFile::EscapeSpecialCharacters .........................   Passed    0.01 sec
+      Start 40: TestsInFile::InvalidTestNames-1
+40/69 Test #40: TestsInFile::InvalidTestNames-1 ..............................   Passed    0.00 sec
+      Start 41: TagAlias
+41/69 Test #41: TagAlias .....................................................   Passed    0.00 sec
+      Start 42: RandomTestOrdering
+42/69 Test #42: RandomTestOrdering ...........................................   Passed    0.05 sec
+      Start 43: CheckConvenienceHeaders
+43/69 Test #43: CheckConvenienceHeaders ......................................   Passed    0.03 sec
+      Start 44: Benchmarking::SkipBenchmarkMacros
+44/69 Test #44: Benchmarking::SkipBenchmarkMacros ............................   Passed    0.01 sec
+      Start 45: Benchmarking::FailureReporting::ThrowingBenchmark
+45/69 Test #45: Benchmarking::FailureReporting::ThrowingBenchmark ............   Passed    3.10 sec
+      Start 46: Benchmarking::FailureReporting::FailedAssertion
+46/69 Test #46: Benchmarking::FailureReporting::FailedAssertion ..............   Passed    2.94 sec
+      Start 47: Benchmarking::FailureReporting::FailMacro
+47/69 Test #47: Benchmarking::FailureReporting::FailMacro ....................   Passed    3.14 sec
+      Start 48: Benchmarking::FailureReporting::ShouldFailIsRespected
+48/69 Test #48: Benchmarking::FailureReporting::ShouldFailIsRespected ........   Passed    3.07 sec
+      Start 49: ErrorHandling::InvalidTestSpecExitsEarly
+49/69 Test #49: ErrorHandling::InvalidTestSpecExitsEarly .....................   Passed    0.00 sec
+      Start 50: MultiReporter::CapturingReportersDontPropagateStdOut
+50/69 Test #50: MultiReporter::CapturingReportersDontPropagateStdOut .........   Passed    0.01 sec
+      Start 51: MultiReporter::NonCapturingReportersPropagateStdout
+51/69 Test #51: MultiReporter::NonCapturingReportersPropagateStdout ..........   Passed    0.00 sec
+      Start 52: Outputs::DashAsOutLocationSendsOutputToStdout
+52/69 Test #52: Outputs::DashAsOutLocationSendsOutputToStdout ................   Passed    0.00 sec
+      Start 53: Reporters::DashAsLocationInReporterSpecSendsOutputToStdout
+53/69 Test #53: Reporters::DashAsLocationInReporterSpecSendsOutputToStdout ...   Passed    0.00 sec
+      Start 54: Reporters::ReporterSpecificColourOverridesDefaultColour
+54/69 Test #54: Reporters::ReporterSpecificColourOverridesDefaultColour ......   Passed    0.00 sec
+      Start 55: Reporters::UnrecognizedOptionInSpecCausesError
+55/69 Test #55: Reporters::UnrecognizedOptionInSpecCausesError ...............   Passed    0.00 sec
+      Start 56: Colours::ColourModeCanBeExplicitlySetToAnsi
+56/69 Test #56: Colours::ColourModeCanBeExplicitlySetToAnsi ..................   Passed    0.00 sec
+      Start 57: Reporters::JUnit::NamespacesAreNormalized
+57/69 Test #57: Reporters::JUnit::NamespacesAreNormalized ....................   Passed    0.00 sec
+      Start 58: Reporters:Filters:compact
+58/69 Test #58: Reporters:Filters:compact ....................................   Passed    0.00 sec
+      Start 59: Reporters:RngSeed:compact
+59/69 Test #59: Reporters:RngSeed:compact ....................................   Passed    0.00 sec
+      Start 60: Reporters:Filters:console
+60/69 Test #60: Reporters:Filters:console ....................................   Passed    0.00 sec
+      Start 61: Reporters:RngSeed:console
+61/69 Test #61: Reporters:RngSeed:console ....................................   Passed    0.00 sec
+      Start 62: Reporters:Filters:JUnit
+62/69 Test #62: Reporters:Filters:JUnit ......................................   Passed    0.00 sec
+      Start 63: Reporters:RngSeed:JUnit
+63/69 Test #63: Reporters:RngSeed:JUnit ......................................   Passed    0.00 sec
+      Start 64: Reporters:Filters:SonarQube
+64/69 Test #64: Reporters:Filters:SonarQube ..................................   Passed    0.00 sec
+      Start 65: Reporters:RngSeed:SonarQube
+65/69 Test #65: Reporters:RngSeed:SonarQube ..................................   Passed    0.00 sec
+      Start 66: Reporters:Filters:TAP
+66/69 Test #66: Reporters:Filters:TAP ........................................   Passed    0.00 sec
+      Start 67: Reporters:RngSeed:TAP
+67/69 Test #67: Reporters:RngSeed:TAP ........................................   Passed    0.00 sec
+      Start 68: Reporters:Filters:XML
+68/69 Test #68: Reporters:Filters:XML ........................................   Passed    0.00 sec
+      Start 69: Reporters:RngSeed:XML
+69/69 Test #69: Reporters:RngSeed:XML ........................................   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 69
+
+Label Time Summary:
+uses-python    =   3.45 sec*proc (3 tests)
+
+Total Test time (real) =  17.46 sec
+=================log=================
+cat: /home/ponyc/build/build_debug/CMakeFiles/CMakeOutput.log: No such file or directory

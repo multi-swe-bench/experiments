@@ -1,0 +1,20 @@
+diff --git a/include/fmt/format.h b/include/fmt/format.h
+index 6df5d849..4556e6d3 100644
+--- a/include/fmt/format.h
++++ b/include/fmt/format.h
+@@ -1591,7 +1591,14 @@ OutputIt write_nonfinite(OutputIt out, bool isinf,
+   constexpr size_t str_size = 3;
+   auto sign = fspecs.sign;
+   auto size = str_size + (sign ? 1 : 0);
+-  return write_padded(out, specs, size, [=](reserve_iterator<OutputIt> it) {
++  auto s = specs;
++  // Zero-padding has no effect on inf/nan; use right-aligned space padding.
++  if (s.align == align::numeric) {
++    s.align = align::right;
++    auto fill_c = static_cast<Char>(' ');
++    s.fill = basic_string_view<Char>(&fill_c, 1);
++  }
++  return write_padded(out, s, size, [=](reserve_iterator<OutputIt> it) {
+     if (sign) *it++ = static_cast<Char>(data::signs[sign]);
+     return copy_str<Char>(str, str + str_size, it);
+   });

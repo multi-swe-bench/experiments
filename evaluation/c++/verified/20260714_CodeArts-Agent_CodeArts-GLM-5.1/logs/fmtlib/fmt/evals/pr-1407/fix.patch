@@ -1,0 +1,72 @@
+diff --git a/include/fmt/core.h b/include/fmt/core.h
+index 02a389fa..49f5bab7 100644
+--- a/include/fmt/core.h
++++ b/include/fmt/core.h
+@@ -916,6 +916,17 @@ using mapped_type_constant =
+     type_constant<decltype(arg_mapper<Context>().map(std::declval<T>())),
+                   typename Context::char_type>;
+ 
++template <typename T, typename Context, typename Enable = void>
++struct is_formattable_impl : std::false_type {};
++
++template <typename T, typename Context>
++struct is_formattable_impl<
++    T, Context,
++    enable_if_t<
++        (mapped_type_constant<T, Context>::value != custom_type) ||
++        has_formatter<T, Context>::value ||
++        has_fallback_formatter<T, Context>::value>> : std::true_type {};
++
+ enum { packed_arg_bits = 5 };
+ // Maximum number of arguments with packed types.
+ enum { max_packed_args = 63 / packed_arg_bits };
+@@ -1160,6 +1171,10 @@ using buffer_context =
+ using format_context = buffer_context<char>;
+ using wformat_context = buffer_context<wchar_t>;
+ 
++/** Specifies if ``T`` is a formattable type. */
++template <typename T, typename Context = format_context>
++using is_formattable = internal::is_formattable_impl<T, Context>;
++
+ /**
+   \rst
+   An array of references to arguments. It can be implicitly converted into
+diff --git a/test/core-test.cc b/test/core-test.cc
+index acfd2cd0..a7dc7780 100644
+--- a/test/core-test.cc
++++ b/test/core-test.cc
+@@ -649,3 +649,34 @@ TEST(FormatterTest, FormatExplicitlyConvertibleToStringLike) {
+   EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_like()));
+ }
+ #endif
++
++struct not_formattable {};
++
++TEST(IsFormattableTest, BasicTypes) {
++  EXPECT_TRUE(fmt::is_formattable<int>::value);
++  EXPECT_TRUE(fmt::is_formattable<unsigned>::value);
++  EXPECT_TRUE(fmt::is_formattable<long long>::value);
++  EXPECT_TRUE(fmt::is_formattable<float>::value);
++  EXPECT_TRUE(fmt::is_formattable<double>::value);
++  EXPECT_TRUE(fmt::is_formattable<bool>::value);
++  EXPECT_TRUE(fmt::is_formattable<const char*>::value);
++  EXPECT_TRUE(fmt::is_formattable<std::string>::value);
++  EXPECT_TRUE(fmt::is_formattable<fmt::string_view>::value);
++}
++
++TEST(IsFormattableTest, CustomFormattableType) {
++  EXPECT_TRUE(fmt::is_formattable<test_struct>::value);
++}
++
++TEST(IsFormattableTest, NonFormattableType) {
++  EXPECT_FALSE(fmt::is_formattable<not_formattable>::value);
++}
++
++#if FMT_USE_CONSTEXPR
++TEST(IsFormattableTest, ConstexprContext) {
++  constexpr bool is_int_formattable = fmt::is_formattable<int>::value;
++  EXPECT_TRUE(is_int_formattable);
++  constexpr bool is_not_formattable = !fmt::is_formattable<not_formattable>::value;
++  EXPECT_TRUE(is_not_formattable);
++}
++#endif

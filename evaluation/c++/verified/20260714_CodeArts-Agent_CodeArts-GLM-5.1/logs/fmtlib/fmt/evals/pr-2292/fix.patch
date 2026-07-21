@@ -1,0 +1,399 @@
+diff --git a/include/fmt/chrono.h b/include/fmt/chrono.h
+index e26e5190..d8e80a6e 100644
+--- a/include/fmt/chrono.h
++++ b/include/fmt/chrono.h
+@@ -407,14 +407,7 @@ FMT_END_DETAIL_NAMESPACE
+ 
+ template <typename Char, typename Duration>
+ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
+-                 Char> : formatter<std::tm, Char> {
+-  template <typename FormatContext>
+-  auto format(std::chrono::time_point<std::chrono::system_clock> val,
+-              FormatContext& ctx) -> decltype(ctx.out()) {
+-    std::tm time = localtime(val);
+-    return formatter<std::tm, Char>::format(time, ctx);
+-  }
+-};
++                 Char>;
+ 
+ template <typename Char> struct formatter<std::tm, Char> {
+   template <typename ParseContext>
+@@ -576,6 +569,39 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
+     case 'B':
+       handler.on_full_month();
+       break;
++    case 'm':
++      handler.on_month(numeric_system::standard);
++      break;
++    // Day of the month/year:
++    case 'd':
++      handler.on_day_of_month(numeric_system::standard);
++      break;
++    case 'e':
++      handler.on_day_of_month_space(numeric_system::standard);
++      break;
++    case 'j':
++      handler.on_day_of_year();
++      break;
++    // Year:
++    case 'Y':
++      handler.on_year(numeric_system::standard);
++      break;
++    case 'y':
++      handler.on_short_year(numeric_system::standard);
++      break;
++    case 'C':
++      handler.on_century(numeric_system::standard);
++      break;
++    // Week of the year:
++    case 'U':
++      handler.on_dec0_week_of_year(numeric_system::standard);
++      break;
++    case 'V':
++      handler.on_iso_week_of_year(numeric_system::standard);
++      break;
++    case 'W':
++      handler.on_dec1_week_of_year(numeric_system::standard);
++      break;
+     // Hour, minute, second:
+     case 'H':
+       handler.on_24_hour(numeric_system::standard);
+@@ -643,6 +669,15 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
+       case 'X':
+         handler.on_loc_time(numeric_system::alternative);
+         break;
++      case 'Y':
++        handler.on_year(numeric_system::alternative);
++        break;
++      case 'y':
++        handler.on_short_year(numeric_system::alternative);
++        break;
++      case 'C':
++        handler.on_century(numeric_system::alternative);
++        break;
+       default:
+         FMT_THROW(format_error("invalid format"));
+       }
+@@ -670,6 +705,33 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
+       case 'S':
+         handler.on_second(numeric_system::alternative);
+         break;
++      case 'm':
++        handler.on_month(numeric_system::alternative);
++        break;
++      case 'd':
++        handler.on_day_of_month(numeric_system::alternative);
++        break;
++      case 'e':
++        handler.on_day_of_month_space(numeric_system::alternative);
++        break;
++      case 'Y':
++        handler.on_year(numeric_system::alternative);
++        break;
++      case 'y':
++        handler.on_short_year(numeric_system::alternative);
++        break;
++      case 'C':
++        handler.on_century(numeric_system::alternative);
++        break;
++      case 'U':
++        handler.on_dec0_week_of_year(numeric_system::alternative);
++        break;
++      case 'V':
++        handler.on_iso_week_of_year(numeric_system::alternative);
++        break;
++      case 'W':
++        handler.on_dec1_week_of_year(numeric_system::alternative);
++        break;
+       default:
+         FMT_THROW(format_error("invalid format"));
+       }
+@@ -694,6 +756,16 @@ struct chrono_format_checker {
+   FMT_NORETURN void on_dec1_weekday(numeric_system) { report_no_date(); }
+   FMT_NORETURN void on_abbr_month() { report_no_date(); }
+   FMT_NORETURN void on_full_month() { report_no_date(); }
++  FMT_NORETURN void on_month(numeric_system) { report_no_date(); }
++  FMT_NORETURN void on_day_of_month(numeric_system) { report_no_date(); }
++  FMT_NORETURN void on_day_of_month_space(numeric_system) { report_no_date(); }
++  FMT_NORETURN void on_day_of_year() { report_no_date(); }
++  FMT_NORETURN void on_year(numeric_system) { report_no_date(); }
++  FMT_NORETURN void on_short_year(numeric_system) { report_no_date(); }
++  FMT_NORETURN void on_century(numeric_system) { report_no_date(); }
++  FMT_NORETURN void on_dec0_week_of_year(numeric_system) { report_no_date(); }
++  FMT_NORETURN void on_iso_week_of_year(numeric_system) { report_no_date(); }
++  FMT_NORETURN void on_dec1_week_of_year(numeric_system) { report_no_date(); }
+   FMT_CONSTEXPR void on_24_hour(numeric_system) {}
+   FMT_CONSTEXPR void on_12_hour(numeric_system) {}
+   FMT_CONSTEXPR void on_minute(numeric_system) {}
+@@ -978,6 +1050,16 @@ struct chrono_formatter {
+   void on_dec1_weekday(numeric_system) {}
+   void on_abbr_month() {}
+   void on_full_month() {}
++  void on_month(numeric_system) {}
++  void on_day_of_month(numeric_system) {}
++  void on_day_of_month_space(numeric_system) {}
++  void on_day_of_year() {}
++  void on_year(numeric_system) {}
++  void on_short_year(numeric_system) {}
++  void on_century(numeric_system) {}
++  void on_dec0_week_of_year(numeric_system) {}
++  void on_iso_week_of_year(numeric_system) {}
++  void on_dec1_week_of_year(numeric_system) {}
+   void on_datetime(numeric_system) {}
+   void on_loc_date(numeric_system) {}
+   void on_loc_time(numeric_system) {}
+@@ -1058,8 +1140,7 @@ struct chrono_formatter {
+   void on_iso_time() {
+     on_24_hour_time();
+     *out++ = ':';
+-    if (handle_nan_inf()) return;
+-    write(second(), 2);
++    on_second(numeric_system::standard);
+   }
+ 
+   void on_am_pm() {
+@@ -1078,8 +1159,244 @@ struct chrono_formatter {
+   }
+ };
+ 
++template <typename FormatContext, typename OutputIt, typename Char,
++          typename Duration>
++struct time_point_formatter {
++  FormatContext& context;
++  OutputIt out;
++  std::tm tm_;
++  Duration subsec_;
++
++  using char_type = typename FormatContext::char_type;
++
++  time_point_formatter(FormatContext& ctx, OutputIt o, std::tm time,
++                       Duration subsec)
++      : context(ctx), out(o), tm_(time), subsec_(subsec) {}
++
++  void write(int value, int width) {
++    uint32_or_64_or_128_t<int> n = to_unsigned(value);
++    int num_digits = detail::count_digits(n);
++    if (width > num_digits) out = std::fill_n(out, width - num_digits, '0');
++    out = format_decimal<char_type>(out, n, num_digits).end;
++  }
++
++  void format_localized(char format, char modifier = 0) {
++    auto locale = std::locale::classic();
++    auto& facet = std::use_facet<std::time_put<char_type>>(locale);
++    std::basic_ostringstream<char_type> os;
++    os.imbue(locale);
++    facet.put(os, os, ' ', &tm_, format, modifier);
++    auto str = os.str();
++    std::copy(str.begin(), str.end(), out);
++  }
++
++  void on_text(const char_type* begin, const char_type* end) {
++    std::copy(begin, end, out);
++  }
++
++  void on_abbr_weekday() { format_localized('a'); }
++  void on_full_weekday() { format_localized('A'); }
++  void on_dec0_weekday(numeric_system ns) {
++    if (ns == numeric_system::standard) return write(tm_.tm_wday, 1);
++    format_localized('w', 'O');
++  }
++  void on_dec1_weekday(numeric_system ns) {
++    if (ns == numeric_system::standard) {
++      write(tm_.tm_wday == 0 ? 7 : tm_.tm_wday, 1);
++      return;
++    }
++    format_localized('u', 'O');
++  }
++  void on_abbr_month() { format_localized('b'); }
++  void on_full_month() { format_localized('B'); }
++  void on_month(numeric_system ns) {
++    if (ns == numeric_system::standard) return write(tm_.tm_mon + 1, 2);
++    format_localized('m', 'O');
++  }
++  void on_day_of_month(numeric_system ns) {
++    if (ns == numeric_system::standard) return write(tm_.tm_mday, 2);
++    format_localized('d', 'O');
++  }
++  void on_day_of_month_space(numeric_system ns) {
++    if (ns == numeric_system::standard) {
++      if (tm_.tm_mday < 10) *out++ = ' ';
++      write(tm_.tm_mday, 1);
++      return;
++    }
++    format_localized('e', 'O');
++  }
++  void on_day_of_year() { write(tm_.tm_yday + 1, 3); }
++  void on_year(numeric_system ns) {
++    if (ns == numeric_system::standard) return write(tm_.tm_year + 1900, 4);
++    format_localized('Y', 'E');
++  }
++  void on_short_year(numeric_system ns) {
++    if (ns == numeric_system::standard) return write(tm_.tm_year % 100, 2);
++    format_localized('y', 'O');
++  }
++  void on_century(numeric_system ns) {
++    if (ns == numeric_system::standard) return write((tm_.tm_year + 1900) / 100, 2);
++    format_localized('C', 'E');
++  }
++  void on_dec0_week_of_year(numeric_system ns) {
++    if (ns == numeric_system::standard) return write((tm_.tm_yday - tm_.tm_wday + 7) / 7, 2);
++    format_localized('U', 'O');
++  }
++  void on_iso_week_of_year(numeric_system ns) {
++    if (ns == numeric_system::standard) {
++      // ISO week calculation
++      int doy = tm_.tm_yday + 1;
++      int wday = tm_.tm_wday == 0 ? 7 : tm_.tm_wday;
++      int week = (doy - wday + 10) / 7;
++      if (week < 1) week = 1;
++      if (week > 52) {
++        int next_year_doy = 365 + ((tm_.tm_year + 1900) % 4 == 0 ? 1 : 0);
++        int next_wday = wday + (next_year_doy - doy) % 7;
++        if (next_wday > 7) next_wday -= 7;
++        if (next_wday <= 4) week = 1;
++      }
++      write(week, 2);
++      return;
++    }
++    format_localized('V', 'O');
++  }
++  void on_dec1_week_of_year(numeric_system ns) {
++    if (ns == numeric_system::standard) {
++      int wday = tm_.tm_wday == 0 ? 6 : tm_.tm_wday - 1;
++      write((tm_.tm_yday - wday + 7) / 7, 2);
++      return;
++    }
++    format_localized('W', 'O');
++  }
++  void on_24_hour(numeric_system ns) {
++    if (ns == numeric_system::standard) return write(tm_.tm_hour, 2);
++    format_localized('H', 'O');
++  }
++  void on_12_hour(numeric_system ns) {
++    if (ns == numeric_system::standard) return write(tm_.tm_hour % 12 ? tm_.tm_hour % 12 : 12, 2);
++    format_localized('I', 'O');
++  }
++  void on_minute(numeric_system ns) {
++    if (ns == numeric_system::standard) return write(tm_.tm_min, 2);
++    format_localized('M', 'O');
++  }
++  void on_second(numeric_system ns) {
++    if (ns == numeric_system::standard) {
++      write(tm_.tm_sec, 2);
++      if (subsec_ != Duration::zero()) {
++        *out++ = '.';
++        using period = typename Duration::period;
++        constexpr int num_fractional_digits =
++            period::den == 1 ? 0
++            : period::den == 10 ? 1
++            : period::den == 100 ? 2
++            : period::den == 1000 ? 3
++            : period::den == 10000 ? 4
++            : period::den == 100000 ? 5
++            : period::den == 1000000 ? 6
++            : period::den == 10000000 ? 7
++            : period::den == 100000000 ? 8
++            : period::den == 1000000000 ? 9
++            : -1;
++        if (num_fractional_digits > 0) {
++          auto subsec_count = subsec_.count();
++          if (subsec_count < 0) subsec_count = -subsec_count;
++          write(static_cast<int>(subsec_count), num_fractional_digits);
++        } else {
++          auto ms = get_milliseconds(subsec_);
++          if (ms != std::chrono::milliseconds(0)) {
++            write(static_cast<int>(ms.count()), 3);
++          }
++        }
++      }
++      return;
++    }
++    format_localized('S', 'O');
++  }
++  void on_datetime(numeric_system ns) {
++    if (ns == numeric_system::standard) return format_localized('c');
++    format_localized('c', 'E');
++  }
++  void on_loc_date(numeric_system ns) {
++    if (ns == numeric_system::standard) return format_localized('x');
++    format_localized('x', 'E');
++  }
++  void on_loc_time(numeric_system ns) {
++    if (ns == numeric_system::standard) return format_localized('X');
++    format_localized('X', 'E');
++  }
++  void on_us_date() {
++    write(tm_.tm_mon + 1, 2);
++    *out++ = '/';
++    write(tm_.tm_mday, 2);
++    *out++ = '/';
++    write(tm_.tm_year % 100, 2);
++  }
++  void on_iso_date() {
++    write(tm_.tm_year + 1900, 4);
++    *out++ = '-';
++    write(tm_.tm_mon + 1, 2);
++    *out++ = '-';
++    write(tm_.tm_mday, 2);
++  }
++  void on_12_hour_time() { format_localized('r'); }
++  void on_24_hour_time() {
++    write(tm_.tm_hour, 2);
++    *out++ = ':';
++    write(tm_.tm_min, 2);
++  }
++  void on_iso_time() {
++    on_24_hour_time();
++    *out++ = ':';
++    on_second(numeric_system::standard);
++  }
++  void on_am_pm() { format_localized('p'); }
++  void on_utc_offset() { format_localized('z'); }
++  void on_tz_name() { format_localized('Z'); }
++  void on_duration_value() {}
++  void on_duration_unit() {}
++};
++
+ FMT_END_DETAIL_NAMESPACE
+ 
++template <typename Char, typename Duration>
++struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
++                 Char> {
++  basic_format_specs<Char> specs;
++  basic_string_view<Char> format_str;
++
++  template <typename ParseContext>
++  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
++    auto it = ctx.begin();
++    if (it != ctx.end() && *it == ':') ++it;
++    auto end = it;
++    while (end != ctx.end() && *end != '}') ++end;
++    format_str = {it, detail::to_unsigned(end - it)};
++    return end;
++  }
++
++  template <typename FormatContext>
++  auto format(std::chrono::time_point<std::chrono::system_clock, Duration> val,
++              FormatContext& ctx) const -> decltype(ctx.out()) {
++    auto specs_copy = specs;
++    std::tm time = localtime(val);
++    using period = typename Duration::period;
++    auto subsec = std::chrono::duration_cast<
++        std::chrono::duration<typename Duration::rep, period>>(
++        val.time_since_epoch()) -
++                  std::chrono::duration_cast<std::chrono::seconds>(
++                      val.time_since_epoch());
++    basic_memory_buffer<Char> buf;
++    auto out = std::back_inserter(buf);
++    detail::time_point_formatter<FormatContext, decltype(out), Char, Duration> f(
++        ctx, out, time, subsec);
++    detail::parse_chrono_format(format_str.begin(), format_str.end(), f);
++    return detail::write(ctx.out(),
++                         basic_string_view<Char>(buf.data(), buf.size()),
++                         specs_copy);
++  }
++};
++
+ template <typename Rep, typename Period, typename Char>
+ struct formatter<std::chrono::duration<Rep, Period>, Char> {
+  private:

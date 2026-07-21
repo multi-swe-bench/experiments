@@ -1,0 +1,44 @@
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index fc3e6082..0182544a 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -6008,7 +6008,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+ 
+         for (auto it = j.cbegin(); it != j.cend(); ++it)
+         {
+-            m_value.object->operator[](it.key()) = it.value();
++            set_parent(m_value.object->operator[](it.key()) = it.value());
+         }
+     }
+ 
+@@ -6068,7 +6068,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+ 
+         for (auto it = first; it != last; ++it)
+         {
+-            m_value.object->operator[](it.key()) = it.value();
++            set_parent(m_value.object->operator[](it.key()) = it.value());
+         }
+     }
+ 
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 8959265d..d0fe64f2 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -23413,7 +23413,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+ 
+         for (auto it = j.cbegin(); it != j.cend(); ++it)
+         {
+-            m_value.object->operator[](it.key()) = it.value();
++            set_parent(m_value.object->operator[](it.key()) = it.value());
+         }
+     }
+ 
+@@ -23473,7 +23473,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+ 
+         for (auto it = first; it != last; ++it)
+         {
+-            m_value.object->operator[](it.key()) = it.value();
++            set_parent(m_value.object->operator[](it.key()) = it.value());
+         }
+     }
+ 

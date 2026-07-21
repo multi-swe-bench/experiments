@@ -1,0 +1,24 @@
+diff --git a/include/fmt/core.h b/include/fmt/core.h
+index f6886cf4..aa7cd33d 100644
+--- a/include/fmt/core.h
++++ b/include/fmt/core.h
+@@ -15,6 +15,7 @@
+ #include <limits>
+ #include <string>
+ #include <type_traits>
++#include <vector>
+ 
+ // The fmt library version in the form major * 10000 + minor * 100 + patch.
+ #define FMT_VERSION 100001
+@@ -294,6 +295,11 @@ inline auto format_as(T b) -> unsigned char {
+ }
+ #endif
+ 
++template <typename T, FMT_ENABLE_IF(std::is_same<T, std::vector<bool>::reference>::value)>
++inline auto format_as(T ref) -> bool {
++  return static_cast<bool>(ref);
++}
++
+ namespace detail {
+ // Suppresses "unused variable" warnings with the method described in
+ // https://herbsutter.com/2009/10/18/mailbag-shutting-up-compiler-warnings/.

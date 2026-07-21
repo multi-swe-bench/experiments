@@ -1,0 +1,21 @@
+diff --git a/src/json.hpp b/src/json.hpp
+index 8e1186ae..71b094d9 100644
+--- a/src/json.hpp
++++ b/src/json.hpp
+@@ -1037,10 +1037,12 @@ void from_json(const BasicJsonType& j, CompatibleObjectType& obj)
+     auto inner_object = j.template get_ptr<const typename BasicJsonType::object_t*>();
+     using std::begin;
+     using std::end;
+-    // we could avoid the assignment, but this might require a for loop, which
+-    // might be less efficient than the container constructor for some
+-    // containers (would it?)
+-    obj = CompatibleObjectType(begin(*inner_object), end(*inner_object));
++    using value_type = typename CompatibleObjectType::value_type;
++    std::transform(begin(*inner_object), end(*inner_object),
++                   std::inserter(obj, obj.end()), [](const typename BasicJsonType::object_t::value_type& p)
++    {
++        return value_type(p.first, p.second.template get<typename value_type::second_type>());
++    });
+ }
+ 
+ // overload for arithmetic types, not chosen for basic_json template arguments

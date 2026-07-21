@@ -1,0 +1,248 @@
+diff --git a/include/fmt/chrono.h b/include/fmt/chrono.h
+index 65e6c7e0..4c00e2c5 100644
+--- a/include/fmt/chrono.h
++++ b/include/fmt/chrono.h
+@@ -2040,10 +2040,12 @@ using weekday = std::chrono::weekday;
+ using day = std::chrono::day;
+ using month = std::chrono::month;
+ using year = std::chrono::year;
++using year_month_day = std::chrono::year_month_day;
++using year_month = std::chrono::year_month;
++using month_day = std::chrono::month_day;
++using month_day_last = std::chrono::month_day_last;
+ #else
+-// A fallback version of weekday.
+ class weekday {
+- private:
+   unsigned char value_;
+ 
+  public:
+@@ -2054,7 +2056,6 @@ class weekday {
+ };
+ 
+ class day {
+- private:
+   unsigned char value_;
+ 
+  public:
+@@ -2062,10 +2063,12 @@ class day {
+   constexpr explicit day(unsigned d) noexcept
+       : value_(static_cast<unsigned char>(d)) {}
+   constexpr explicit operator unsigned() const noexcept { return value_; }
++  friend constexpr auto operator==(const day& a, const day& b) noexcept {
++    return a.value_ == b.value_;
++  }
+ };
+ 
+ class month {
+- private:
+   unsigned char value_;
+ 
+  public:
+@@ -2073,19 +2076,70 @@ class month {
+   constexpr explicit month(unsigned m) noexcept
+       : value_(static_cast<unsigned char>(m)) {}
+   constexpr explicit operator unsigned() const noexcept { return value_; }
++  friend constexpr auto operator==(const month& a, const month& b) noexcept {
++    return a.value_ == b.value_;
++  }
+ };
+ 
+ class year {
+- private:
+   int value_;
+ 
+  public:
+   year() = default;
+   constexpr explicit year(int y) noexcept : value_(y) {}
+   constexpr explicit operator int() const noexcept { return value_; }
++  friend constexpr auto operator==(const year& a, const year& b) noexcept {
++    return a.value_ == b.value_;
++  }
+ };
+ 
+-class year_month_day {};
++class year_month_day {
++  fmt::year y_;
++  fmt::month m_;
++  fmt::day d_;
++
++ public:
++  year_month_day() = default;
++  constexpr year_month_day(const fmt::year& y, const fmt::month& m,
++                           const fmt::day& d) noexcept
++      : y_(y), m_(m), d_(d) {}
++  constexpr auto year() const noexcept -> fmt::year { return y_; }
++  constexpr auto month() const noexcept -> fmt::month { return m_; }
++  constexpr auto day() const noexcept -> fmt::day { return d_; }
++};
++
++class year_month {
++  fmt::year y_;
++  fmt::month m_;
++
++ public:
++  year_month() = default;
++  constexpr year_month(const fmt::year& y, const fmt::month& m) noexcept
++      : y_(y), m_(m) {}
++  constexpr auto year() const noexcept -> fmt::year { return y_; }
++  constexpr auto month() const noexcept -> fmt::month { return m_; }
++};
++
++class month_day {
++  fmt::month m_;
++  fmt::day d_;
++
++ public:
++  month_day() = default;
++  constexpr month_day(const fmt::month& m, const fmt::day& d) noexcept
++      : m_(m), d_(d) {}
++  constexpr auto month() const noexcept -> fmt::month { return m_; }
++  constexpr auto day() const noexcept -> fmt::day { return d_; }
++};
++
++class month_day_last {
++  fmt::month m_;
++
++ public:
++  month_day_last() = default;
++  constexpr explicit month_day_last(const fmt::month& m) noexcept : m_(m) {}
++  constexpr auto month() const noexcept -> fmt::month { return m_; }
++};
+ #endif
+ 
+ // A rudimentary weekday formatter.
+@@ -2168,7 +2222,6 @@ template <typename Char> struct formatter<year, Char> {
+   template <typename FormatContext>
+   auto format(year y, FormatContext& ctx) const -> decltype(ctx.out()) {
+     auto time = std::tm();
+-    // std::tm::tm_year is years since 1900
+     time.tm_year = static_cast<int>(y) - 1900;
+     detail::get_locale loc(true, ctx.locale());
+     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
+@@ -2177,6 +2230,125 @@ template <typename Char> struct formatter<year, Char> {
+   }
+ };
+ 
++template <typename Char> struct formatter<year_month_day, Char> {
++ private:
++  format_specs specs_;
++  detail::arg_ref<Char> width_ref_;
++  bool localized_ = false;
++  basic_string_view<Char> format_str_;
++
++ public:
++  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
++      -> decltype(ctx.begin()) {
++    auto it = ctx.begin(), end = ctx.end();
++    if (it == end || *it == '}') return it;
++
++    it = detail::parse_align(it, end, specs_);
++    if (it == end) return it;
++
++    it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
++    if (it == end) return it;
++
++    if (it != end && *it == 'L') {
++      localized_ = true;
++      ++it;
++    }
++
++    end = detail::parse_chrono_format(it, end, detail::tm_format_checker());
++    if (end != it) format_str_ = {it, detail::to_unsigned(end - it)};
++    return end;
++  }
++
++  template <typename FormatContext>
++  auto format(year_month_day ymd, FormatContext& ctx) const -> decltype(ctx.out()) {
++    auto specs = specs_;
++    auto buf = basic_memory_buffer<Char>();
++    auto out = std::back_inserter(buf);
++    detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
++                                                       ctx);
++
++    auto time = std::tm();
++    time.tm_year = static_cast<int>(ymd.year()) - 1900;
++    time.tm_mon = static_cast<int>(static_cast<unsigned>(ymd.month())) - 1;
++    time.tm_mday = static_cast<int>(static_cast<unsigned>(ymd.day()));
++
++    auto loc_ref = ctx.locale();
++    detail::get_locale loc(localized_ || static_cast<bool>(loc_ref), loc_ref);
++    auto w = detail::tm_writer<decltype(out), Char>(loc, out, time);
++    if (format_str_.begin() == format_str_.end())
++      w.on_iso_date();
++    else
++      detail::parse_chrono_format(format_str_.begin(), format_str_.end(), w);
++    return detail::write(
++        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
++  }
++};
++
++template <typename Char> struct formatter<year_month, Char> {
++  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
++      -> decltype(ctx.begin()) {
++    return ctx.begin();
++  }
++
++  template <typename FormatContext>
++  auto format(year_month ym, FormatContext& ctx) const -> decltype(ctx.out()) {
++    auto time = std::tm();
++    time.tm_year = static_cast<int>(ym.year()) - 1900;
++    time.tm_mon = static_cast<int>(static_cast<unsigned>(ym.month())) - 1;
++    detail::get_locale loc(true, ctx.locale());
++    auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
++    w.on_year(detail::numeric_system::standard);
++    *w.out() = '/';
++    auto w2 = detail::tm_writer<decltype(ctx.out()), Char>(loc, w.out(), time);
++    w2.on_abbr_month();
++    return w2.out();
++  }
++};
++
++template <typename Char> struct formatter<month_day, Char> {
++  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
++      -> decltype(ctx.begin()) {
++    return ctx.begin();
++  }
++
++  template <typename FormatContext>
++  auto format(month_day md, FormatContext& ctx) const -> decltype(ctx.out()) {
++    auto time = std::tm();
++    time.tm_mon = static_cast<int>(static_cast<unsigned>(md.month())) - 1;
++    time.tm_mday = static_cast<int>(static_cast<unsigned>(md.day()));
++    detail::get_locale loc(true, ctx.locale());
++    auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
++    w.on_abbr_month();
++    *w.out() = '/';
++    auto w2 = detail::tm_writer<decltype(ctx.out()), Char>(loc, w.out(), time);
++    w2.on_day_of_month(detail::numeric_system::standard);
++    return w2.out();
++  }
++};
++
++template <typename Char> struct formatter<month_day_last, Char> {
++  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
++      -> decltype(ctx.begin()) {
++    return ctx.begin();
++  }
++
++  template <typename FormatContext>
++  auto format(month_day_last mdl, FormatContext& ctx) const -> decltype(ctx.out()) {
++    auto time = std::tm();
++    time.tm_mon = static_cast<int>(static_cast<unsigned>(mdl.month())) - 1;
++    detail::get_locale loc(true, ctx.locale());
++    auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
++    w.on_abbr_month();
++    auto out = w.out();
++    *out++ = '/';
++    *out++ = 'l';
++    *out++ = 'a';
++    *out++ = 's';
++    *out++ = 't';
++    return out;
++  }
++};
++
+ template <typename Rep, typename Period, typename Char>
+ struct formatter<std::chrono::duration<Rep, Period>, Char> {
+  private:

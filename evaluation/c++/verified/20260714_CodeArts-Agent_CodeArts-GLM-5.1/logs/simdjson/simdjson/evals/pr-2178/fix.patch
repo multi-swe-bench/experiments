@@ -1,0 +1,374 @@
+diff --git a/include/simdjson/dom/element-inl.h b/include/simdjson/dom/element-inl.h
+index 1f071da6..19803b3d 100644
+--- a/include/simdjson/dom/element-inl.h
++++ b/include/simdjson/dom/element-inl.h
+@@ -384,7 +384,7 @@ inline simdjson_result<element> element::at_pointer(std::string_view json_pointe
+       return array(tape).at_pointer(json_pointer);
+     default: {
+       if(!json_pointer.empty()) { // a non-empty string is invalid on an atom
+-        return INVALID_JSON_POINTER;
++        return NO_SUCH_FIELD;
+       }
+       // an empty string means that we return the current node
+       dom::element copy(*this);
+diff --git a/include/simdjson/generic/ondemand/document-inl.h b/include/simdjson/generic/ondemand/document-inl.h
+index 70072c42..7be4e347 100644
+--- a/include/simdjson/generic/ondemand/document-inl.h
++++ b/include/simdjson/generic/ondemand/document-inl.h
+@@ -312,7 +312,7 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -329,7 +329,7 @@ simdjson_inline simdjson_result<value> document::at_path(std::string_view json_p
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+diff --git a/include/simdjson/generic/ondemand/value-inl.h b/include/simdjson/generic/ondemand/value-inl.h
+index 41e02fa2..247ca97e 100644
+--- a/include/simdjson/generic/ondemand/value-inl.h
++++ b/include/simdjson/generic/ondemand/value-inl.h
+@@ -249,7 +249,7 @@ simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_p
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -262,7 +262,7 @@ simdjson_inline simdjson_result<value> value::at_path(std::string_view json_path
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+diff --git a/singleheader/simdjson.cpp b/singleheader/simdjson.cpp
+index 7a8d24ab..9506c442 100644
+--- a/singleheader/simdjson.cpp
++++ b/singleheader/simdjson.cpp
+@@ -1,4 +1,4 @@
+-/* auto-generated on 2024-05-07 18:04:59 -0400. Do not edit! */
++/* auto-generated on 2026-07-02 14:38:42 +0000. Do not edit! */
+ /* including simdjson.cpp:  */
+ /* begin file simdjson.cpp */
+ #define SIMDJSON_SRC_SIMDJSON_CPP
+diff --git a/singleheader/simdjson.h b/singleheader/simdjson.h
+index 985ffe11..a5ed44c7 100644
+--- a/singleheader/simdjson.h
++++ b/singleheader/simdjson.h
+@@ -1,4 +1,4 @@
+-/* auto-generated on 2024-05-07 18:04:59 -0400. Do not edit! */
++/* auto-generated on 2026-07-02 14:38:42 +0000. Do not edit! */
+ /* including simdjson.h:  */
+ /* begin file simdjson.h */
+ #ifndef SIMDJSON_H
+@@ -7449,7 +7449,7 @@ inline simdjson_result<element> element::at_pointer(std::string_view json_pointe
+       return array(tape).at_pointer(json_pointer);
+     default: {
+       if(!json_pointer.empty()) { // a non-empty string is invalid on an atom
+-        return INVALID_JSON_POINTER;
++        return NO_SUCH_FIELD;
+       }
+       // an empty string means that we return the current node
+       dom::element copy(*this);
+@@ -36776,7 +36776,7 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -36793,7 +36793,7 @@ simdjson_inline simdjson_result<value> document::at_path(std::string_view json_p
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -40093,7 +40093,7 @@ simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_p
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -40106,7 +40106,7 @@ simdjson_inline simdjson_result<value> value::at_path(std::string_view json_path
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -47113,7 +47113,7 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -47130,7 +47130,7 @@ simdjson_inline simdjson_result<value> document::at_path(std::string_view json_p
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -50430,7 +50430,7 @@ simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_p
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -50443,7 +50443,7 @@ simdjson_inline simdjson_result<value> value::at_path(std::string_view json_path
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -57942,7 +57942,7 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -57959,7 +57959,7 @@ simdjson_inline simdjson_result<value> document::at_path(std::string_view json_p
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -61259,7 +61259,7 @@ simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_p
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -61272,7 +61272,7 @@ simdjson_inline simdjson_result<value> value::at_path(std::string_view json_path
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -68770,7 +68770,7 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -68787,7 +68787,7 @@ simdjson_inline simdjson_result<value> document::at_path(std::string_view json_p
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -72087,7 +72087,7 @@ simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_p
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -72100,7 +72100,7 @@ simdjson_inline simdjson_result<value> value::at_path(std::string_view json_path
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -79713,7 +79713,7 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -79730,7 +79730,7 @@ simdjson_inline simdjson_result<value> document::at_path(std::string_view json_p
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -83030,7 +83030,7 @@ simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_p
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -83043,7 +83043,7 @@ simdjson_inline simdjson_result<value> value::at_path(std::string_view json_path
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -90979,7 +90979,7 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -90996,7 +90996,7 @@ simdjson_inline simdjson_result<value> document::at_path(std::string_view json_p
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -94296,7 +94296,7 @@ simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_p
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -94309,7 +94309,7 @@ simdjson_inline simdjson_result<value> value::at_path(std::string_view json_path
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -101716,7 +101716,7 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -101733,7 +101733,7 @@ simdjson_inline simdjson_result<value> document::at_path(std::string_view json_p
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -105033,7 +105033,7 @@ simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_p
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -105046,7 +105046,7 @@ simdjson_inline simdjson_result<value> value::at_path(std::string_view json_path
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -112466,7 +112466,7 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -112483,7 +112483,7 @@ simdjson_inline simdjson_result<value> document::at_path(std::string_view json_p
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -115783,7 +115783,7 @@ simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_p
+     case json_type::object:
+       return (*this).get_object().at_pointer(json_pointer);
+     default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 
+@@ -115796,7 +115796,7 @@ simdjson_inline simdjson_result<value> value::at_path(std::string_view json_path
+   case json_type::object:
+       return (*this).get_object().at_path(json_path);
+   default:
+-      return INVALID_JSON_POINTER;
++      return NO_SUCH_FIELD;
+   }
+ }
+ 

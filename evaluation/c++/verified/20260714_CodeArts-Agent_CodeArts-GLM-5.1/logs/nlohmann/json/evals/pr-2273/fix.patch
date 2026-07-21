@@ -1,0 +1,65 @@
+diff --git a/include/nlohmann/detail/input/binary_reader.hpp b/include/nlohmann/detail/input/binary_reader.hpp
+index d2f75cfd..6c9f0132 100644
+--- a/include/nlohmann/detail/input/binary_reader.hpp
++++ b/include/nlohmann/detail/input/binary_reader.hpp
+@@ -678,6 +678,60 @@ class binary_reader
+             case 0xBF: // map (indefinite length)
+                 return get_cbor_object(std::size_t(-1));
+ 
++            // tag 0x00..0x17 (0..23)
++            case 0xC0:
++            case 0xC1:
++            case 0xC2:
++            case 0xC3:
++            case 0xC4:
++            case 0xC5:
++            case 0xC6:
++            case 0xC7:
++            case 0xC8:
++            case 0xC9:
++            case 0xCA:
++            case 0xCB:
++            case 0xCC:
++            case 0xCD:
++            case 0xCE:
++            case 0xCF:
++            case 0xD0:
++            case 0xD1:
++            case 0xD2:
++            case 0xD3:
++            case 0xD4:
++            case 0xD5:
++            case 0xD6:
++            case 0xD7:
++            {
++                // skip tag number (0..23)
++                return parse_cbor_internal();
++            }
++
++            case 0xD8: // tag (one-byte uint8_t follows)
++            {
++                std::uint8_t tag{};
++                return get_number(input_format_t::cbor, tag) && parse_cbor_internal();
++            }
++
++            case 0xD9: // tag (two-byte uint16_t follows)
++            {
++                std::uint16_t tag{};
++                return get_number(input_format_t::cbor, tag) && parse_cbor_internal();
++            }
++
++            case 0xDA: // tag (four-byte uint32_t follows)
++            {
++                std::uint32_t tag{};
++                return get_number(input_format_t::cbor, tag) && parse_cbor_internal();
++            }
++
++            case 0xDB: // tag (eight-byte uint64_t follows)
++            {
++                std::uint64_t tag{};
++                return get_number(input_format_t::cbor, tag) && parse_cbor_internal();
++            }
++
+             case 0xF4: // false
+                 return sax->boolean(false);
+ 

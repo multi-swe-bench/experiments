@@ -1,0 +1,1145 @@
+检测到 Debian 11 系统
+进入debian其他系统
+替换系统源完成
+==============================================================================
+Get:1 http://mirrors.tools.huawei.com/debian bullseye InRelease [75.1 kB]
+Get:2 http://mirrors.tools.huawei.com/debian-security bullseye-security InRelease [27.2 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bullseye-updates InRelease [44.0 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bullseye/main amd64 Packages [8066 kB]
+Get:5 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 Packages [464 kB]
+Get:6 http://mirrors.tools.huawei.com/debian bullseye-updates/main amd64 Packages [18.8 kB]
+Fetched 8695 kB in 1s (6011 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+build-essential is already the newest version (12.9).
+libncurses-dev is already the newest version (6.2+20201114-2+deb11u2).
+libncurses-dev set to manually installed.
+patch is already the newest version (2.7.6-7).
+libpcre2-dev is already the newest version (10.36-2+deb11u1).
+libpcre2-dev set to manually installed.
+zlib1g-dev is already the newest version (1:1.2.11.dfsg-2+deb11u2).
+The following additional packages will be installed:
+  libonig5 libssl1.1
+Suggested packages:
+  libssl-doc
+The following NEW packages will be installed:
+  libonig-dev libonig5
+The following packages will be upgraded:
+  libssl-dev libssl1.1
+2 upgraded, 2 newly installed, 0 to remove and 136 not upgraded.
+Need to get 3667 kB of archives.
+After this operation, 904 kB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 libssl-dev amd64 1.1.1w-0+deb11u8 [1822 kB]
+Get:2 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 libssl1.1 amd64 1.1.1w-0+deb11u8 [1566 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bullseye/main amd64 libonig5 amd64 6.9.6-1.1 [185 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bullseye/main amd64 libonig-dev amd64 6.9.6-1.1 [94.2 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 3667 kB in 0s (9364 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29372 files and directories currently installed.)
+Preparing to unpack .../libssl-dev_1.1.1w-0+deb11u8_amd64.deb ...
+Unpacking libssl-dev:amd64 (1.1.1w-0+deb11u8) over (1.1.1w-0+deb11u1) ...
+Preparing to unpack .../libssl1.1_1.1.1w-0+deb11u8_amd64.deb ...
+Unpacking libssl1.1:amd64 (1.1.1w-0+deb11u8) over (1.1.1w-0+deb11u1) ...
+Setting up libssl1.1:amd64 (1.1.1w-0+deb11u8) ...
+debconf: unable to initialize frontend: Dialog
+debconf: (TERM is not set, so the dialog frontend is not usable.)
+debconf: falling back to frontend: Readline
+Selecting previously unselected package libonig5:amd64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29372 files and directories currently installed.)
+Preparing to unpack .../libonig5_6.9.6-1.1_amd64.deb ...
+Unpacking libonig5:amd64 (6.9.6-1.1) ...
+Selecting previously unselected package libonig-dev.
+Preparing to unpack .../libonig-dev_6.9.6-1.1_amd64.deb ...
+Unpacking libonig-dev (6.9.6-1.1) ...
+Setting up libssl-dev:amd64 (1.1.1w-0+deb11u8) ...
+Setting up libonig5:amd64 (6.9.6-1.1) ...
+Setting up libonig-dev (6.9.6-1.1) ...
+Processing triggers for libc-bin (2.31-13+deb11u10) ...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+cmake is already the newest version (3.18.4-2+deb11u1).
+zlib1g-dev is already the newest version (1:1.2.11.dfsg-2+deb11u2).
+0 upgraded, 0 newly installed, 0 to remove and 136 not upgraded.
+=== RUN FULL via /home/fix-run.sh (tee log) ===
+#!/bin/bash
+set -e
+
+cd /home/simdjson
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake -DSIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build .
+ctest
+
+=========================================
+>>> 修复 /home/simdjson/dependencies/import.cmake RENAME 问题...
+>>> 修复前内容:
+     1	set(dep_root "${simdjson_SOURCE_DIR}/dependencies/.cache")
+     2	if(DEFINED ENV{simdjson_DEPENDENCY_CACHE_DIR})
+     3	  set(dep_root "$ENV{simdjson_DEPENDENCY_CACHE_DIR}")
+     4	endif()
+     5	
+     6	function(import_dependency NAME GITHUB_REPO COMMIT)
+     7	  message(STATUS "Importing ${NAME} (${GITHUB_REPO}@${COMMIT})")
+     8	  set(target "${dep_root}/${NAME}")
+     9	
+    10	  # If the folder exists in the cache, then we assume that everything is as
+    11	  # should be and do nothing
+    12	  if(EXISTS "${target}")
+    13	    set("${NAME}_SOURCE_DIR" "${target}" PARENT_SCOPE)
+    14	    return()
+    15	  endif()
+    16	
+    17	  set(zip_url "https://github.com/${GITHUB_REPO}/archive/${COMMIT}.zip")
+    18	  set(archive "${dep_root}/archive.zip")
+    19	  set(dest "${dep_root}/_extract")
+    20	
+    21	  file(DOWNLOAD "${zip_url}" "${archive}")
+    22	  file(MAKE_DIRECTORY "${dest}")
+    23	  execute_process(
+    24	          WORKING_DIRECTORY "${dest}"
+    25	          COMMAND "${CMAKE_COMMAND}" -E tar xf "${archive}")
+    26	  file(REMOVE "${archive}")
+    27	
+    28	  # GitHub archives only ever have one folder component at the root, so this
+    29	  # will always match that single folder
+    30	  file(GLOB dir LIST_DIRECTORIES YES "${dest}/*")
+    31	
+    32	  file(RENAME "${dir}" "${target}")
+    33	
+    34	  set("${NAME}_SOURCE_DIR" "${target}" PARENT_SCOPE)
+    35	endfunction()
+    36	
+    37	# Delegates to the dependency
+    38	macro(add_dependency NAME)
+    39	  if(NOT DEFINED "${NAME}_SOURCE_DIR")
+    40	    message(FATAL_ERROR "Missing ${NAME}_SOURCE_DIR variable")
+    41	  endif()
+    42	
+    43	  add_subdirectory("${${NAME}_SOURCE_DIR}" "${PROJECT_BINARY_DIR}/_deps/${NAME}" EXCLUDE_FROM_ALL)
+    44	endmacro()
+    45	
+    46	function(set_off NAME)
+    47	  set("${NAME}" OFF CACHE INTERNAL "")
+    48	endfunction()
+>>> /home/simdjson/dependencies/import.cmake 已修复: RENAME -> copy_directory+REMOVE
+>>> 修复后内容:
+     1	set(dep_root "${simdjson_SOURCE_DIR}/dependencies/.cache")
+     2	if(DEFINED ENV{simdjson_DEPENDENCY_CACHE_DIR})
+     3	  set(dep_root "$ENV{simdjson_DEPENDENCY_CACHE_DIR}")
+     4	endif()
+     5	
+     6	function(import_dependency NAME GITHUB_REPO COMMIT)
+     7	  message(STATUS "Importing ${NAME} (${GITHUB_REPO}@${COMMIT})")
+     8	  set(target "${dep_root}/${NAME}")
+     9	
+    10	  # If the folder exists in the cache, then we assume that everything is as
+    11	  # should be and do nothing
+    12	  if(EXISTS "${target}")
+    13	    set("${NAME}_SOURCE_DIR" "${target}" PARENT_SCOPE)
+    14	    return()
+    15	  endif()
+    16	
+    17	  set(zip_url "https://github.com/${GITHUB_REPO}/archive/${COMMIT}.zip")
+    18	  set(archive "${dep_root}/archive.zip")
+    19	  set(dest "${dep_root}/_extract")
+    20	
+    21	  file(DOWNLOAD "${zip_url}" "${archive}")
+    22	  file(MAKE_DIRECTORY "${dest}")
+    23	  execute_process(
+    24	          WORKING_DIRECTORY "${dest}"
+    25	          COMMAND "${CMAKE_COMMAND}" -E tar xf "${archive}")
+    26	  file(REMOVE "${archive}")
+    27	
+    28	  # GitHub archives only ever have one folder component at the root, so this
+    29	  # will always match that single folder
+    30	  file(GLOB dir LIST_DIRECTORIES YES "${dest}/*")
+    31	
+    32	  execute_process(COMMAND "${CMAKE_COMMAND}" -E copy_directory "${dir}" "${target}")
+    33	  file(REMOVE_RECURSE "${dir}")
+    34	
+    35	  set("${NAME}_SOURCE_DIR" "${target}" PARENT_SCOPE)
+    36	endfunction()
+    37	
+    38	# Delegates to the dependency
+    39	macro(add_dependency NAME)
+    40	  if(NOT DEFINED "${NAME}_SOURCE_DIR")
+    41	    message(FATAL_ERROR "Missing ${NAME}_SOURCE_DIR variable")
+    42	  endif()
+    43	
+    44	  add_subdirectory("${${NAME}_SOURCE_DIR}" "${PROJECT_BINARY_DIR}/_deps/${NAME}" EXCLUDE_FROM_ALL)
+    45	endmacro()
+    46	
+    47	function(set_off NAME)
+    48	  set("${NAME}" OFF CACHE INTERNAL "")
+    49	endfunction()
+当前目录：/home
+当前目录内容：add_certificate_for_c.sh check_git_changes.sh fix-run.sh fix.patch prepare.sh run.sh simdjson test-run.sh test.patch
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages will be upgraded:
+  wget
+1 upgraded, 0 newly installed, 0 to remove and 135 not upgraded.
+Need to get 964 kB of archives.
+After this operation, 0 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 wget amd64 1.21-1+deb11u2 [964 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 964 kB in 0s (3542 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29414 files and directories currently installed.)
+Preparing to unpack .../wget_1.21-1+deb11u2_amd64.deb ...
+Unpacking wget (1.21-1+deb11u2) over (1.21-1+deb11u1) ...
+Setting up wget (1.21-1+deb11u2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libgpm2 vim-common vim-runtime xxd
+Suggested packages:
+  gpm ctags vim-doc vim-scripts
+The following NEW packages will be installed:
+  libgpm2 vim vim-common vim-runtime xxd
+0 upgraded, 5 newly installed, 0 to remove and 135 not upgraded.
+Need to get 8179 kB of archives.
+After this operation, 36.9 MB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 xxd amd64 2:8.2.2434-3+deb11u3 [193 kB]
+Get:2 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 vim-common all 2:8.2.2434-3+deb11u3 [227 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bullseye/main amd64 libgpm2 amd64 1.20.7-8 [35.6 kB]
+Get:4 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 vim-runtime all 2:8.2.2434-3+deb11u3 [6229 kB]
+Get:5 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 vim amd64 2:8.2.2434-3+deb11u3 [1496 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 8179 kB in 0s (20.1 MB/s)
+Selecting previously unselected package xxd.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29414 files and directories currently installed.)
+Preparing to unpack .../xxd_2%3a8.2.2434-3+deb11u3_amd64.deb ...
+Unpacking xxd (2:8.2.2434-3+deb11u3) ...
+Selecting previously unselected package vim-common.
+Preparing to unpack .../vim-common_2%3a8.2.2434-3+deb11u3_all.deb ...
+Unpacking vim-common (2:8.2.2434-3+deb11u3) ...
+Selecting previously unselected package libgpm2:amd64.
+Preparing to unpack .../libgpm2_1.20.7-8_amd64.deb ...
+Unpacking libgpm2:amd64 (1.20.7-8) ...
+Selecting previously unselected package vim-runtime.
+Preparing to unpack .../vim-runtime_2%3a8.2.2434-3+deb11u3_all.deb ...
+Adding 'diversion of /usr/share/vim/vim82/doc/help.txt to /usr/share/vim/vim82/doc/help.txt.vim-tiny by vim-runtime'
+Adding 'diversion of /usr/share/vim/vim82/doc/tags to /usr/share/vim/vim82/doc/tags.vim-tiny by vim-runtime'
+Unpacking vim-runtime (2:8.2.2434-3+deb11u3) ...
+Selecting previously unselected package vim.
+Preparing to unpack .../vim_2%3a8.2.2434-3+deb11u3_amd64.deb ...
+Unpacking vim (2:8.2.2434-3+deb11u3) ...
+Setting up libgpm2:amd64 (1.20.7-8) ...
+Setting up xxd (2:8.2.2434-3+deb11u3) ...
+Setting up vim-common (2:8.2.2434-3+deb11u3) ...
+Setting up vim-runtime (2:8.2.2434-3+deb11u3) ...
+Setting up vim (2:8.2.2434-3+deb11u3) ...
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vim (vim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vimdiff (vimdiff) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rvim (rvim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rview (rview) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vi (vi) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/view (view) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/ex (ex) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in auto mode
+Processing triggers for libc-bin (2.31-13+deb11u10) ...
+Processing triggers for hicolor-icon-theme (0.17-2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libcurl4 libcurl4-openssl-dev
+Suggested packages:
+  libcurl4-doc libidn11-dev libldap2-dev librtmp-dev libssh2-1-dev
+The following packages will be upgraded:
+  curl libcurl4 libcurl4-openssl-dev
+3 upgraded, 0 newly installed, 0 to remove and 132 not upgraded.
+Need to get 1057 kB of archives.
+After this operation, 0 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 libcurl4-openssl-dev amd64 7.74.0-1.3+deb11u16 [438 kB]
+Get:2 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 curl amd64 7.74.0-1.3+deb11u16 [272 kB]
+Get:3 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 libcurl4 amd64 7.74.0-1.3+deb11u16 [347 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 1057 kB in 0s (2666 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 31386 files and directories currently installed.)
+Preparing to unpack .../libcurl4-openssl-dev_7.74.0-1.3+deb11u16_amd64.deb ...
+Unpacking libcurl4-openssl-dev:amd64 (7.74.0-1.3+deb11u16) over (7.74.0-1.3+deb11u14) ...
+Preparing to unpack .../curl_7.74.0-1.3+deb11u16_amd64.deb ...
+Unpacking curl (7.74.0-1.3+deb11u16) over (7.74.0-1.3+deb11u14) ...
+Preparing to unpack .../libcurl4_7.74.0-1.3+deb11u16_amd64.deb ...
+Unpacking libcurl4:amd64 (7.74.0-1.3+deb11u16) over (7.74.0-1.3+deb11u14) ...
+Setting up libcurl4:amd64 (7.74.0-1.3+deb11u16) ...
+Setting up curl (7.74.0-1.3+deb11u16) ...
+Setting up libcurl4-openssl-dev:amd64 (7.74.0-1.3+deb11u16) ...
+Processing triggers for libc-bin (2.31-13+deb11u10) ...
+=== 配置证书 (abcert) ===
+[abcert][INFO] Created temporary directory .tmp.pems.W0t2vU7i
+[abcert][INFO] Operating system: Debian GNU/Linux 11 (bullseye)
+[abcert][INFO] Installing certificates
+'.tmp.pems.W0t2vU7i/HWBPITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWBPITEnterpriseCA1.crt'
+'.tmp.pems.W0t2vU7i/HWITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWITEnterpriseCA1.crt'
+'.tmp.pems.W0t2vU7i/HuaweiBPITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiBPITRootCA.crt'
+'.tmp.pems.W0t2vU7i/HuaweiITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiITRootCA.crt'
+'.tmp.pems.W0t2vU7i/HuaweiWebSecureInternetGatewayCA.pem' -> '/usr/local/share/ca-certificates/HuaweiWebSecureInternetGatewayCA.crt'
+Updating certificates in /etc/ssl/certs...
+5 added, 0 removed; done.
+Running hooks in /etc/ca-certificates/update.d...
+done.
+[abcert][INFO] Removed .tmp.pems.W0t2vU7i
+abcert 安装完成
+================git=====================
+http.version=HTTP/1.1
+http.postbuffer=524288000
+http.timeout=600
+================git=====================
+================env=====================
+HTTPS_PROXY=http://test:test@proxysg.huawei.com:8080/
+no_proxy=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+HOSTNAME=6e153380be83
+GCC_MIRRORS=https://ftpmirror.gnu.org/gcc 		https://mirrors.kernel.org/gnu/gcc 		https://bigsearcher.com/mirrors/gcc/releases 		http://www.netgull.com/gcc/releases 		https://ftpmirror.gnu.org/gcc 		https://sourceware.org/pub/gcc/releases 		ftp://ftp.gnu.org/gnu/gcc
+HOME=/root
+OLDPWD=/home
+NO_PROXY=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+https_proxy=http://test:test@proxysg.huawei.com:8080/
+GPG_KEYS=B215C1633BCA0477615F1B35A5B3A004745C015A 	B3C42148A44E6983B3E4CC0793FA9B1AB75C61B8 	90AA470469D3965A87A5DCB494D03953902C9419 	80F98B2E0DAB6C8281BDF541A7C8C3B2F71EDF1C 	7F74F97C103468EE5D750B583AB00996FC26A641 	33C235A34C46AA3FFB293709A328C3A2C3C45C06 	D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62
+http_proxy=http://test:test@proxysg.huawei.com:8080/
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+GIT_SSL_NO_VERIFY=true
+PWD=/tmp/tmp.1TPOq6wpHq/abcert_install
+HTTP_PROXY=http://test:test@proxysg.huawei.com:8080/
+GCC_VERSION=11.5.0
+================env=====================
+#!/bin/bash
+# set -e
+
+cd /home/simdjson
+git ls-files --others --exclude-standard | xargs -I {} mv {} {}.bak
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake -DSIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build .
+ctest
+
+=========================================
+patching file tests/ondemand/CMakeLists.txt
+patching file tests/ondemand/ondemand_iterate_many_csv.cpp
+patch: **** Only garbage was found in the patch input.
+-- The CXX compiler identification is GNU 11.5.0
+-- The C compiler identification is GNU 11.5.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/local/bin/gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- No build type selected, default to Release
+-- Looking for fork
+-- Looking for fork - found
+-- Looking for wait
+-- Looking for wait - found
+-- Adding -Og to compile flag
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Check if compiler accepts -pthread
+-- Check if compiler accepts -pthread - yes
+-- Found Threads: TRUE  
+-- Importing google_benchmarks (google/benchmark@v1.7.1)
+-- Failed to find LLVM FileCheck
+-- Found Git: /usr/bin/git (found version "2.30.2") 
+-- git version: v3.1.8-17-g74bb7b25-dirty normalized to 3.1.8.17
+-- Version: 3.1.8.17
+-- Looking for shm_open in rt
+-- Looking for shm_open in rt - found
+-- Performing Test HAVE_CXX_FLAG_WALL
+-- Performing Test HAVE_CXX_FLAG_WALL - Success
+-- Performing Test HAVE_CXX_FLAG_WEXTRA
+-- Performing Test HAVE_CXX_FLAG_WEXTRA - Success
+-- Performing Test HAVE_CXX_FLAG_WSHADOW
+-- Performing Test HAVE_CXX_FLAG_WSHADOW - Success
+-- Performing Test HAVE_CXX_FLAG_WFLOAT_EQUAL
+-- Performing Test HAVE_CXX_FLAG_WFLOAT_EQUAL - Success
+-- Performing Test HAVE_CXX_FLAG_WSUGGEST_OVERRIDE
+-- Performing Test HAVE_CXX_FLAG_WSUGGEST_OVERRIDE - Success
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC - Success
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC_ERRORS
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC_ERRORS - Success
+-- Performing Test HAVE_CXX_FLAG_WSHORTEN_64_TO_32
+-- Performing Test HAVE_CXX_FLAG_WSHORTEN_64_TO_32 - Failed
+-- Performing Test HAVE_CXX_FLAG_FSTRICT_ALIASING
+-- Performing Test HAVE_CXX_FLAG_FSTRICT_ALIASING - Success
+-- Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED_DECLARATIONS
+-- Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED_DECLARATIONS - Success
+-- Performing Test HAVE_CXX_FLAG_WSTRICT_ALIASING
+-- Performing Test HAVE_CXX_FLAG_WSTRICT_ALIASING - Success
+-- Performing Test HAVE_CXX_FLAG_WD654
+-- Performing Test HAVE_CXX_FLAG_WD654 - Failed
+-- Performing Test HAVE_CXX_FLAG_WTHREAD_SAFETY
+-- Performing Test HAVE_CXX_FLAG_WTHREAD_SAFETY - Failed
+-- Performing Test HAVE_CXX_FLAG_COVERAGE
+-- Performing Test HAVE_CXX_FLAG_COVERAGE - Success
+-- Compiling and running to test HAVE_STD_REGEX
+-- Performing Test HAVE_STD_REGEX -- success
+-- Compiling and running to test HAVE_GNU_POSIX_REGEX
+-- Performing Test HAVE_GNU_POSIX_REGEX -- failed to compile
+-- Compiling and running to test HAVE_POSIX_REGEX
+-- Performing Test HAVE_POSIX_REGEX -- success
+-- Compiling and running to test HAVE_STEADY_CLOCK
+-- Performing Test HAVE_STEADY_CLOCK -- success
+-- Importing simdjson-data (simdjson/simdjson-data@a5b13babe65c1bba7186b41b43d4cbdc20a5c470)
+-- Performing Test USE_BOOST_JSON
+-- Performing Test USE_BOOST_JSON - Success
+-- Importing boostjson (boostorg/json@ee8d72d)
+-- Importing cjson (DaveGamble/cJSON@c69134d)
+-- Importing fastjson (mikeando/fastjson@485f994)
+-- Importing gason (vivkin/gason@7aee524)
+-- Importing jsmn (zserge/jsmn@18e9fe4)
+-- Importing json (nlohmann/json@v3.10.5)
+-- Importing json11 (dropbox/json11@ec4e452)
+-- Importing rapidjson (Tencent/rapidjson@f54b0e4)
+-- Check if the system is big endian
+-- Searching 16 bit integer
+-- Looking for sys/types.h
+-- Looking for sys/types.h - found
+-- Looking for stdint.h
+-- Looking for stdint.h - found
+-- Looking for stddef.h
+-- Looking for stddef.h - found
+-- Check size of unsigned short
+-- Check size of unsigned short - done
+-- Searching 16 bit integer - Using unsigned short
+-- Check if the system is big endian - little endian
+-- Importing sajson (chadaustin/sajson@2dcfd35)
+-- Importing ujson4c (esnme/ujson4c@e14f3fd)
+-- Importing yyjson (ibireme/yyjson@c385651)
+-- Importing cxxopts (jarro2783/cxxopts@794c975)
+-- cxxopts version 2.2.0
+-- We have cxxopts as a dependency and we are building the tools (e.g., json2json).
+-- Found Python3: /usr/bin/python3.9 (found version "3.9.2") found components: Interpreter 
+-- Including amalgamate_demo test. 
+-- Including simdjson-singleheader test.
+-- Including amalgamate_demo_direct_from_repository test.
+-- Either git is unavailable or else it is too old. We are disabling checkperf targets.
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/simdjson/build
+Scanning dependencies of target simdjson
+[  0%] Building CXX object CMakeFiles/simdjson.dir/src/simdjson.cpp.o
+[  1%] Linking CXX static library libsimdjson.a
+[  1%] Built target simdjson
+Scanning dependencies of target cjson
+[  1%] Building C object dependencies/CMakeFiles/cjson.dir/.cache/cjson/cJSON.c.o
+[  1%] Linking C static library libcjson.a
+[  1%] Built target cjson
+Scanning dependencies of target boostjson
+[  1%] Building CXX object dependencies/CMakeFiles/boostjson.dir/.cache/boostjson/src/src.cpp.o
+[  2%] Linking CXX static library libboostjson.a
+[  2%] Built target boostjson
+Scanning dependencies of target jsoncpp
+[  3%] Building CXX object dependencies/CMakeFiles/jsoncpp.dir/jsoncppdist/jsoncpp.cpp.o
+[  3%] Linking CXX static library libjsoncpp.a
+[  3%] Built target jsoncpp
+Scanning dependencies of target ujson4c
+[  5%] Building C object dependencies/CMakeFiles/ujson4c.dir/.cache/ujson4c/src/ujdecode.c.o
+[  5%] Building C object dependencies/CMakeFiles/ujson4c.dir/.cache/ujson4c/3rdparty/ultrajsondec.c.o
+[  6%] Linking C static library libujson4c.a
+[  6%] Built target ujson4c
+Scanning dependencies of target fastjson
+[  7%] Building CXX object dependencies/CMakeFiles/fastjson.dir/.cache/fastjson/src/fastjson.cpp.o
+[  7%] Building CXX object dependencies/CMakeFiles/fastjson.dir/.cache/fastjson/src/fastjson2.cpp.o
+[  7%] Building CXX object dependencies/CMakeFiles/fastjson.dir/.cache/fastjson/src/fastjson_dom.cpp.o
+[  9%] Linking CXX static library libfastjson.a
+[  9%] Built target fastjson
+Scanning dependencies of target gason
+[  9%] Building CXX object dependencies/CMakeFiles/gason.dir/.cache/gason/src/gason.cpp.o
+[  9%] Linking CXX static library libgason.a
+[  9%] Built target gason
+Scanning dependencies of target yyjson
+[  9%] Building C object dependencies/CMakeFiles/yyjson.dir/.cache/yyjson/src/yyjson.c.o
+[ 10%] Linking C static library libyyjson.a
+[ 10%] Built target yyjson
+Scanning dependencies of target jsmn
+[ 11%] Building C object dependencies/CMakeFiles/jsmn.dir/.cache/jsmn/jsmn.c.o
+[ 11%] Linking C static library libjsmn.a
+[ 11%] Built target jsmn
+Scanning dependencies of target json11
+[ 11%] Building CXX object dependencies/CMakeFiles/json11.dir/.cache/json11/json11.cpp.o
+[ 13%] Linking CXX static library libjson11.a
+[ 13%] Built target json11
+Scanning dependencies of target minify
+[ 14%] Building CXX object tools/CMakeFiles/minify.dir/minify.cpp.o
+[ 14%] Linking CXX executable minify
+[ 14%] Built target minify
+Scanning dependencies of target jsonpointer
+[ 14%] Building CXX object tools/CMakeFiles/jsonpointer.dir/jsonpointer.cpp.o
+[ 15%] Linking CXX executable jsonpointer
+[ 15%] Built target jsonpointer
+Scanning dependencies of target jsonstats
+[ 15%] Building CXX object tools/CMakeFiles/jsonstats.dir/jsonstats.cpp.o
+[ 15%] Linking CXX executable jsonstats
+[ 15%] Built target jsonstats
+Scanning dependencies of target json2json
+[ 15%] Building CXX object tools/CMakeFiles/json2json.dir/json2json.cpp.o
+[ 15%] Linking CXX executable json2json
+[ 15%] Built target json2json
+Scanning dependencies of target amalgamate_demo_direct_from_repository
+[ 15%] Building CXX object singleheader/CMakeFiles/amalgamate_demo_direct_from_repository.dir/amalgamate_demo.cpp.o
+[ 15%] Linking CXX executable amalgamate_demo_direct_from_repository
+[ 15%] Built target amalgamate_demo_direct_from_repository
+Scanning dependencies of target singleheader-files
+[ 15%] Generating simdjson.cpp, simdjson.h, amalgamate_demo.cpp, README.md
+SCRIPTPATH=/home/simdjson/singleheader PROJECTPATH=/home/simdjson
+We are about to amalgamate all simdjson files into one source file.
+See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/wiki/Single_Compilation_Unit for rationale.
+timestamp is 2023-06-05 09:04:36 -0400
+Creating /home/simdjson/build/singleheader/simdjson.h
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+Creating /home/simdjson/build/singleheader/simdjson.cpp
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+Done with all files generation.
+Files have been written to directory: /home/simdjson/build/singleheader/
+-rw-r--r-- 1 root root     170 Mar 18  2025 /home/simdjson/build/singleheader/README.md
+-rw-r--r-- 1 root root    2734 Mar 18  2025 /home/simdjson/build/singleheader/amalgamate_demo.cpp
+-rw-r--r-- 1 root root  690133 Jul 14 01:41 /home/simdjson/build/singleheader/simdjson.cpp
+-rw-r--r-- 1 root root 1293284 Jul 14 01:41 /home/simdjson/build/singleheader/simdjson.h
+Done with all files generation.
+
+Giving final instructions:
+Try :
+
+```
+
+c++ -O3 -std=c++17 -pthread -o amalgamate_demo amalgamate_demo.cpp  && ./amalgamate_demo ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson
+
+
+
+[ 15%] Built target singleheader-files
+Scanning dependencies of target amalgamate_demo
+[ 15%] Building CXX object singleheader/CMakeFiles/amalgamate_demo.dir/amalgamate_demo.cpp.o
+[ 17%] Linking CXX executable amalgamate_demo
+[ 17%] Built target amalgamate_demo
+Scanning dependencies of target generated-data
+[ 17%] Built target generated-data
+Scanning dependencies of target unicode_tests
+[ 17%] Building CXX object tests/CMakeFiles/unicode_tests.dir/unicode_tests.cpp.o
+[ 17%] Linking CXX executable unicode_tests
+[ 17%] Built target unicode_tests
+Scanning dependencies of target checkimplementation
+[ 17%] Building CXX object tests/CMakeFiles/checkimplementation.dir/checkimplementation.cpp.o
+[ 18%] Linking CXX executable checkimplementation
+[ 18%] Built target checkimplementation
+Scanning dependencies of target minify_tests
+[ 18%] Building CXX object tests/CMakeFiles/minify_tests.dir/minify_tests.cpp.o
+[ 19%] Linking CXX executable minify_tests
+[ 19%] Built target minify_tests
+Scanning dependencies of target padded_string_tests
+[ 19%] Building CXX object tests/CMakeFiles/padded_string_tests.dir/padded_string_tests.cpp.o
+[ 21%] Linking CXX executable padded_string_tests
+[ 21%] Built target padded_string_tests
+Scanning dependencies of target pointercheck
+[ 21%] Building CXX object tests/dom/CMakeFiles/pointercheck.dir/pointercheck.cpp.o
+[ 22%] Linking CXX executable pointercheck
+[ 22%] Built target pointercheck
+Scanning dependencies of target document_tests
+[ 23%] Building CXX object tests/dom/CMakeFiles/document_tests.dir/document_tests.cpp.o
+[ 23%] Linking CXX executable document_tests
+[ 23%] Built target document_tests
+Scanning dependencies of target numberparsingcheck
+[ 23%] Building CXX object tests/dom/CMakeFiles/numberparsingcheck.dir/numberparsingcheck.cpp.o
+[ 23%] Linking CXX executable numberparsingcheck
+[ 23%] Built target numberparsingcheck
+Scanning dependencies of target basictests
+[ 23%] Building CXX object tests/dom/CMakeFiles/basictests.dir/basictests.cpp.o
+[ 25%] Linking CXX executable basictests
+[ 25%] Built target basictests
+Scanning dependencies of target integer_tests
+[ 25%] Building CXX object tests/dom/CMakeFiles/integer_tests.dir/integer_tests.cpp.o
+[ 26%] Linking CXX executable integer_tests
+[ 26%] Built target integer_tests
+Scanning dependencies of target jsoncheck
+[ 27%] Building CXX object tests/dom/CMakeFiles/jsoncheck.dir/jsoncheck.cpp.o
+[ 27%] Linking CXX executable jsoncheck
+[ 27%] Built target jsoncheck
+Scanning dependencies of target document_stream_tests
+[ 27%] Building CXX object tests/dom/CMakeFiles/document_stream_tests.dir/document_stream_tests.cpp.o
+[ 27%] Linking CXX executable document_stream_tests
+[ 27%] Built target document_stream_tests
+Scanning dependencies of target minefieldcheck
+[ 28%] Building CXX object tests/dom/CMakeFiles/minefieldcheck.dir/minefieldcheck.cpp.o
+[ 28%] Linking CXX executable minefieldcheck
+[ 28%] Built target minefieldcheck
+Scanning dependencies of target parse_many_test
+[ 30%] Building CXX object tests/dom/CMakeFiles/parse_many_test.dir/parse_many_test.cpp.o
+[ 30%] Linking CXX executable parse_many_test
+[ 30%] Built target parse_many_test
+Scanning dependencies of target random_string_number_tests
+[ 30%] Building CXX object tests/dom/CMakeFiles/random_string_number_tests.dir/random_string_number_tests.cpp.o
+[ 30%] Linking CXX executable random_string_number_tests
+[ 30%] Built target random_string_number_tests
+Scanning dependencies of target trivially_copyable_test
+[ 30%] Building CXX object tests/dom/CMakeFiles/trivially_copyable_test.dir/trivially_copyable_test.cpp.o
+[ 30%] Linking CXX executable trivially_copyable_test
+[ 30%] Built target trivially_copyable_test
+Scanning dependencies of target extracting_values_example
+[ 31%] Building CXX object tests/dom/CMakeFiles/extracting_values_example.dir/extracting_values_example.cpp.o
+[ 31%] Linking CXX executable extracting_values_example
+[ 31%] Built target extracting_values_example
+Scanning dependencies of target stringparsingcheck
+[ 31%] Building CXX object tests/dom/CMakeFiles/stringparsingcheck.dir/stringparsingcheck.cpp.o
+[ 32%] Linking CXX executable stringparsingcheck
+[ 32%] Built target stringparsingcheck
+Scanning dependencies of target errortests
+[ 34%] Building CXX object tests/dom/CMakeFiles/errortests.dir/errortests.cpp.o
+[ 34%] Linking CXX executable errortests
+[ 34%] Built target errortests
+Scanning dependencies of target ondemand_wrong_type_error_tests
+[ 35%] Building CXX object tests/ondemand/CMakeFiles/ondemand_wrong_type_error_tests.dir/ondemand_wrong_type_error_tests.cpp.o
+[ 35%] Linking CXX executable ondemand_wrong_type_error_tests
+[ 35%] Built target ondemand_wrong_type_error_tests
+Scanning dependencies of target ondemand_misc_tests
+[ 35%] Building CXX object tests/ondemand/CMakeFiles/ondemand_misc_tests.dir/ondemand_misc_tests.cpp.o
+[ 36%] Linking CXX executable ondemand_misc_tests
+[ 36%] Built target ondemand_misc_tests
+Scanning dependencies of target ondemand_error_tests
+[ 36%] Building CXX object tests/ondemand/CMakeFiles/ondemand_error_tests.dir/ondemand_error_tests.cpp.o
+[ 36%] Linking CXX executable ondemand_error_tests
+[ 36%] Built target ondemand_error_tests
+Scanning dependencies of target ondemand_compilation_tests
+[ 38%] Building CXX object tests/ondemand/CMakeFiles/ondemand_compilation_tests.dir/ondemand_compilation_tests.cpp.o
+[ 38%] Linking CXX executable ondemand_compilation_tests
+[ 38%] Built target ondemand_compilation_tests
+Scanning dependencies of target ondemand_active_tests
+[ 39%] Building CXX object tests/ondemand/CMakeFiles/ondemand_active_tests.dir/ondemand_active_tests.cpp.o
+[ 39%] Linking CXX executable ondemand_active_tests
+[ 39%] Built target ondemand_active_tests
+Scanning dependencies of target ondemand_tostring_tests
+[ 39%] Building CXX object tests/ondemand/CMakeFiles/ondemand_tostring_tests.dir/ondemand_tostring_tests.cpp.o
+[ 39%] Linking CXX executable ondemand_tostring_tests
+[ 39%] Built target ondemand_tostring_tests
+Scanning dependencies of target ondemand_log_error_tests
+[ 39%] Building CXX object tests/ondemand/CMakeFiles/ondemand_log_error_tests.dir/ondemand_log_error_tests.cpp.o
+[ 39%] Linking CXX executable ondemand_log_error_tests
+[ 39%] Built target ondemand_log_error_tests
+Scanning dependencies of target ondemand_document_stream_tests
+[ 39%] Building CXX object tests/ondemand/CMakeFiles/ondemand_document_stream_tests.dir/ondemand_document_stream_tests.cpp.o
+[ 40%] Linking CXX executable ondemand_document_stream_tests
+[ 40%] Built target ondemand_document_stream_tests
+Scanning dependencies of target ondemand_object_tests
+[ 40%] Building CXX object tests/ondemand/CMakeFiles/ondemand_object_tests.dir/ondemand_object_tests.cpp.o
+[ 42%] Linking CXX executable ondemand_object_tests
+[ 42%] Built target ondemand_object_tests
+Scanning dependencies of target ondemand_array_tests
+[ 42%] Building CXX object tests/ondemand/CMakeFiles/ondemand_array_tests.dir/ondemand_array_tests.cpp.o
+[ 43%] Linking CXX executable ondemand_array_tests
+[ 43%] Built target ondemand_array_tests
+Scanning dependencies of target ondemand_scalar_tests
+[ 43%] Building CXX object tests/ondemand/CMakeFiles/ondemand_scalar_tests.dir/ondemand_scalar_tests.cpp.o
+[ 44%] Linking CXX executable ondemand_scalar_tests
+[ 44%] Built target ondemand_scalar_tests
+Scanning dependencies of target ondemand_twitter_tests
+[ 46%] Building CXX object tests/ondemand/CMakeFiles/ondemand_twitter_tests.dir/ondemand_twitter_tests.cpp.o
+[ 46%] Linking CXX executable ondemand_twitter_tests
+[ 46%] Built target ondemand_twitter_tests
+Scanning dependencies of target ondemand_log_tests
+[ 47%] Building CXX object tests/ondemand/CMakeFiles/ondemand_log_tests.dir/ondemand_log_tests.cpp.o
+[ 47%] Linking CXX executable ondemand_log_tests
+[ 47%] Built target ondemand_log_tests
+Scanning dependencies of target ondemand_object_error_tests
+[ 48%] Building CXX object tests/ondemand/CMakeFiles/ondemand_object_error_tests.dir/ondemand_object_error_tests.cpp.o
+[ 48%] Linking CXX executable ondemand_object_error_tests
+[ 48%] Built target ondemand_object_error_tests
+Scanning dependencies of target ondemand_number_in_string_tests
+[ 48%] Building CXX object tests/ondemand/CMakeFiles/ondemand_number_in_string_tests.dir/ondemand_number_in_string_tests.cpp.o
+[ 48%] Linking CXX executable ondemand_number_in_string_tests
+[ 48%] Built target ondemand_number_in_string_tests
+Scanning dependencies of target ondemand_ordering_tests
+[ 48%] Building CXX object tests/ondemand/CMakeFiles/ondemand_ordering_tests.dir/ondemand_ordering_tests.cpp.o
+[ 48%] Linking CXX executable ondemand_ordering_tests
+[ 48%] Built target ondemand_ordering_tests
+Scanning dependencies of target ondemand_error_location_tests
+[ 48%] Building CXX object tests/ondemand/CMakeFiles/ondemand_error_location_tests.dir/ondemand_error_location_tests.cpp.o
+[ 50%] Linking CXX executable ondemand_error_location_tests
+[ 50%] Built target ondemand_error_location_tests
+Scanning dependencies of target ondemand_readme_examples
+[ 51%] Building CXX object tests/ondemand/CMakeFiles/ondemand_readme_examples.dir/ondemand_readme_examples.cpp.o
+[ 51%] Linking CXX executable ondemand_readme_examples
+[ 51%] Built target ondemand_readme_examples
+Scanning dependencies of target ondemand_number_tests
+[ 52%] Building CXX object tests/ondemand/CMakeFiles/ondemand_number_tests.dir/ondemand_number_tests.cpp.o
+[ 52%] Linking CXX executable ondemand_number_tests
+[ 52%] Built target ondemand_number_tests
+Scanning dependencies of target ondemand_parse_api_tests
+[ 53%] Building CXX object tests/ondemand/CMakeFiles/ondemand_parse_api_tests.dir/ondemand_parse_api_tests.cpp.o
+[ 53%] Linking CXX executable ondemand_parse_api_tests
+[ 53%] Built target ondemand_parse_api_tests
+Scanning dependencies of target ondemand_key_string_tests
+[ 53%] Building CXX object tests/ondemand/CMakeFiles/ondemand_key_string_tests.dir/ondemand_key_string_tests.cpp.o
+[ 55%] Linking CXX executable ondemand_key_string_tests
+[ 55%] Built target ondemand_key_string_tests
+Scanning dependencies of target ondemand_array_error_tests
+[ 55%] Building CXX object tests/ondemand/CMakeFiles/ondemand_array_error_tests.dir/ondemand_array_error_tests.cpp.o
+[ 56%] Linking CXX executable ondemand_array_error_tests
+[ 56%] Built target ondemand_array_error_tests
+Scanning dependencies of target ondemand_json_pointer_tests
+[ 56%] Building CXX object tests/ondemand/CMakeFiles/ondemand_json_pointer_tests.dir/ondemand_json_pointer_tests.cpp.o
+[ 57%] Linking CXX executable ondemand_json_pointer_tests
+[ 57%] Built target ondemand_json_pointer_tests
+Scanning dependencies of target ondemand_iterate_many_csv
+[ 59%] Building CXX object tests/ondemand/CMakeFiles/ondemand_iterate_many_csv.dir/ondemand_iterate_many_csv.cpp.o
+In file included from /home/simdjson/tests/ondemand/../cast_tester.h:5,
+                 from /home/simdjson/tests/ondemand/test_ondemand.h:7,
+                 from /home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:2:
+/home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp: In function 'bool iterate_many_csv_tests::normal()':
+/home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:16:37: error: no matching function for call to 'simdjson::fallback::ondemand::parser::iterate_many(simdjson::padded_string&, size_t, bool)'
+   16 |   ASSERT_SUCCESS(parser.iterate_many(json, json.size(), true).get(doc_stream));
+      |                  ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~
+/home/simdjson/tests/ondemand/../test_macros.h:116:69: note: in definition of macro 'ASSERT_SUCCESS'
+  116 | #define ASSERT_SUCCESS(ACTUAL)          do { if (!::assert_success((ACTUAL),             #ACTUAL)) { return false; } } while (0);
+      |                                                                     ^~~~~~
+In file included from /home/simdjson/include/simdjson/generic/ondemand-inl.h:14,
+                 from /home/simdjson/include/simdjson/builtin.h:35,
+                 from /home/simdjson/include/simdjson.h:39,
+                 from /home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:1:
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:87:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const uint8_t*, size_t, size_t)'
+   87 | inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:87:77: note:   no known conversion for argument 1 from 'simdjson::padded_string' to 'const uint8_t*' {aka 'const unsigned char*'}
+   87 | inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+      |                                                              ~~~~~~~~~~~~~~~^~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:91:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const char*, size_t, size_t)'
+   91 | inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:91:74: note:   no known conversion for argument 1 from 'simdjson::padded_string' to 'const char*'
+   91 | inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size) noexcept {
+      |                                                              ~~~~~~~~~~~~^~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:94:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const string&, size_t)'
+   94 | inline simdjson_result<document_stream> parser::iterate_many(const std::string &s, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:94:41: note:   candidate expects 2 arguments, 3 provided
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:97:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const simdjson::padded_string&, size_t)'
+   97 | inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:97:41: note:   candidate expects 2 arguments, 3 provided
+In file included from /home/simdjson/tests/ondemand/../cast_tester.h:5,
+                 from /home/simdjson/tests/ondemand/test_ondemand.h:7,
+                 from /home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:2:
+/home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp: In function 'bool iterate_many_csv_tests::small_batch_size()':
+/home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:31:37: error: no matching function for call to 'simdjson::fallback::ondemand::parser::iterate_many(simdjson::padded_string&, int, bool)'
+   31 |   ASSERT_SUCCESS(parser.iterate_many(json, 32, true).get(doc_stream));
+      |                  ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+/home/simdjson/tests/ondemand/../test_macros.h:116:69: note: in definition of macro 'ASSERT_SUCCESS'
+  116 | #define ASSERT_SUCCESS(ACTUAL)          do { if (!::assert_success((ACTUAL),             #ACTUAL)) { return false; } } while (0);
+      |                                                                     ^~~~~~
+In file included from /home/simdjson/include/simdjson/generic/ondemand-inl.h:14,
+                 from /home/simdjson/include/simdjson/builtin.h:35,
+                 from /home/simdjson/include/simdjson.h:39,
+                 from /home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:1:
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:87:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const uint8_t*, size_t, size_t)'
+   87 | inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:87:77: note:   no known conversion for argument 1 from 'simdjson::padded_string' to 'const uint8_t*' {aka 'const unsigned char*'}
+   87 | inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+      |                                                              ~~~~~~~~~~~~~~~^~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:91:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const char*, size_t, size_t)'
+   91 | inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:91:74: note:   no known conversion for argument 1 from 'simdjson::padded_string' to 'const char*'
+   91 | inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size) noexcept {
+      |                                                              ~~~~~~~~~~~~^~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:94:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const string&, size_t)'
+   94 | inline simdjson_result<document_stream> parser::iterate_many(const std::string &s, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:94:41: note:   candidate expects 2 arguments, 3 provided
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:97:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const simdjson::padded_string&, size_t)'
+   97 | inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:97:41: note:   candidate expects 2 arguments, 3 provided
+In file included from /home/simdjson/tests/ondemand/../cast_tester.h:5,
+                 from /home/simdjson/tests/ondemand/test_ondemand.h:7,
+                 from /home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:2:
+/home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp: In function 'bool iterate_many_csv_tests::trailing_comma()':
+/home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:46:37: error: no matching function for call to 'simdjson::fallback::ondemand::parser::iterate_many(simdjson::padded_string&, size_t, bool)'
+   46 |   ASSERT_SUCCESS(parser.iterate_many(json, json.size(), true).get(doc_stream));
+      |                  ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~
+/home/simdjson/tests/ondemand/../test_macros.h:116:69: note: in definition of macro 'ASSERT_SUCCESS'
+  116 | #define ASSERT_SUCCESS(ACTUAL)          do { if (!::assert_success((ACTUAL),             #ACTUAL)) { return false; } } while (0);
+      |                                                                     ^~~~~~
+In file included from /home/simdjson/include/simdjson/generic/ondemand-inl.h:14,
+                 from /home/simdjson/include/simdjson/builtin.h:35,
+                 from /home/simdjson/include/simdjson.h:39,
+                 from /home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:1:
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:87:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const uint8_t*, size_t, size_t)'
+   87 | inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:87:77: note:   no known conversion for argument 1 from 'simdjson::padded_string' to 'const uint8_t*' {aka 'const unsigned char*'}
+   87 | inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+      |                                                              ~~~~~~~~~~~~~~~^~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:91:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const char*, size_t, size_t)'
+   91 | inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:91:74: note:   no known conversion for argument 1 from 'simdjson::padded_string' to 'const char*'
+   91 | inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size) noexcept {
+      |                                                              ~~~~~~~~~~~~^~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:94:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const string&, size_t)'
+   94 | inline simdjson_result<document_stream> parser::iterate_many(const std::string &s, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:94:41: note:   candidate expects 2 arguments, 3 provided
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:97:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const simdjson::padded_string&, size_t)'
+   97 | inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:97:41: note:   candidate expects 2 arguments, 3 provided
+In file included from /home/simdjson/tests/ondemand/../cast_tester.h:5,
+                 from /home/simdjson/tests/ondemand/test_ondemand.h:7,
+                 from /home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:2:
+/home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp: In function 'bool iterate_many_csv_tests::check_parsed_values()':
+/home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:62:37: error: no matching function for call to 'simdjson::fallback::ondemand::parser::iterate_many(simdjson::padded_string&, size_t, bool)'
+   62 |   ASSERT_SUCCESS(parser.iterate_many(json, json.size(), true).get(doc_stream));
+      |                  ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~
+/home/simdjson/tests/ondemand/../test_macros.h:116:69: note: in definition of macro 'ASSERT_SUCCESS'
+  116 | #define ASSERT_SUCCESS(ACTUAL)          do { if (!::assert_success((ACTUAL),             #ACTUAL)) { return false; } } while (0);
+      |                                                                     ^~~~~~
+In file included from /home/simdjson/include/simdjson/generic/ondemand-inl.h:14,
+                 from /home/simdjson/include/simdjson/builtin.h:35,
+                 from /home/simdjson/include/simdjson.h:39,
+                 from /home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:1:
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:87:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const uint8_t*, size_t, size_t)'
+   87 | inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:87:77: note:   no known conversion for argument 1 from 'simdjson::padded_string' to 'const uint8_t*' {aka 'const unsigned char*'}
+   87 | inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+      |                                                              ~~~~~~~~~~~~~~~^~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:91:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const char*, size_t, size_t)'
+   91 | inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:91:74: note:   no known conversion for argument 1 from 'simdjson::padded_string' to 'const char*'
+   91 | inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size) noexcept {
+      |                                                              ~~~~~~~~~~~~^~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:94:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const string&, size_t)'
+   94 | inline simdjson_result<document_stream> parser::iterate_many(const std::string &s, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:94:41: note:   candidate expects 2 arguments, 3 provided
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:97:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const simdjson::padded_string&, size_t)'
+   97 | inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:97:41: note:   candidate expects 2 arguments, 3 provided
+In file included from /home/simdjson/tests/ondemand/../cast_tester.h:5,
+                 from /home/simdjson/tests/ondemand/test_ondemand.h:7,
+                 from /home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:2:
+/home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp: In function 'bool iterate_many_csv_tests::leading_comma()':
+/home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:130:37: error: no matching function for call to 'simdjson::fallback::ondemand::parser::iterate_many(simdjson::padded_string&, size_t, bool)'
+  130 |   ASSERT_SUCCESS(parser.iterate_many(json, json.size(), true).get(doc_stream));
+      |                  ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~
+/home/simdjson/tests/ondemand/../test_macros.h:116:69: note: in definition of macro 'ASSERT_SUCCESS'
+  116 | #define ASSERT_SUCCESS(ACTUAL)          do { if (!::assert_success((ACTUAL),             #ACTUAL)) { return false; } } while (0);
+      |                                                                     ^~~~~~
+In file included from /home/simdjson/include/simdjson/generic/ondemand-inl.h:14,
+                 from /home/simdjson/include/simdjson/builtin.h:35,
+                 from /home/simdjson/include/simdjson.h:39,
+                 from /home/simdjson/tests/ondemand/ondemand_iterate_many_csv.cpp:1:
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:87:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const uint8_t*, size_t, size_t)'
+   87 | inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:87:77: note:   no known conversion for argument 1 from 'simdjson::padded_string' to 'const uint8_t*' {aka 'const unsigned char*'}
+   87 | inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+      |                                                              ~~~~~~~~~~~~~~~^~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:91:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const char*, size_t, size_t)'
+   91 | inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:91:74: note:   no known conversion for argument 1 from 'simdjson::padded_string' to 'const char*'
+   91 | inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size) noexcept {
+      |                                                              ~~~~~~~~~~~~^~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:94:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const string&, size_t)'
+   94 | inline simdjson_result<document_stream> parser::iterate_many(const std::string &s, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:94:41: note:   candidate expects 2 arguments, 3 provided
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:97:41: note: candidate: 'simdjson::simdjson_result<simdjson::fallback::ondemand::document_stream> simdjson::fallback::ondemand::parser::iterate_many(const simdjson::padded_string&, size_t)'
+   97 | inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size) noexcept {
+      |                                         ^~~~~~
+/home/simdjson/include/simdjson/generic/ondemand/parser-inl.h:97:41: note:   candidate expects 2 arguments, 3 provided
+gmake[2]: *** [tests/ondemand/CMakeFiles/ondemand_iterate_many_csv.dir/build.make:82: tests/ondemand/CMakeFiles/ondemand_iterate_many_csv.dir/ondemand_iterate_many_csv.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:3072: tests/ondemand/CMakeFiles/ondemand_iterate_many_csv.dir/all] Error 2
+gmake: *** [Makefile:182: all] Error 2
+Test project /home/simdjson/build
+      Start  1: avoid_abort
+ 1/96 Test  #1: avoid_abort ..........................................   Passed    0.00 sec
+      Start  2: avoid_cout
+ 2/96 Test  #2: avoid_cout ...........................................   Passed    0.00 sec
+      Start  3: avoid_cerr
+ 3/96 Test  #3: avoid_cerr ...........................................   Passed    0.00 sec
+      Start  4: avoid_printf
+ 4/96 Test  #4: avoid_printf .........................................   Passed    0.00 sec
+      Start  5: avoid_stdout
+ 5/96 Test  #5: avoid_stdout .........................................   Passed    0.00 sec
+      Start  6: avoid_stderr
+ 6/96 Test  #6: avoid_stderr .........................................   Passed    0.00 sec
+      Start  7: amalgamate_demo
+ 7/96 Test  #7: amalgamate_demo ......................................   Passed    0.00 sec
+      Start  8: simdjson-singleheader
+ 8/96 Test  #8: simdjson-singleheader ................................   Passed    6.90 sec
+      Start  9: amalgamate_demo_direct_from_repository
+ 9/96 Test  #9: amalgamate_demo_direct_from_repository ...............   Passed    0.00 sec
+      Start 10: unicode_tests
+10/96 Test #10: unicode_tests ........................................   Passed    0.05 sec
+      Start 11: minify_tests
+11/96 Test #11: minify_tests .........................................   Passed    0.11 sec
+      Start 12: padded_string_tests
+12/96 Test #12: padded_string_tests ..................................   Passed    0.00 sec
+      Start 13: checkimplementation
+13/96 Test #13: checkimplementation ..................................   Passed    0.00 sec
+      Start 14: random_string_number_tests
+14/96 Test #14: random_string_number_tests ...........................   Passed    1.02 sec
+      Start 15: basictests
+15/96 Test #15: basictests ...........................................   Passed    0.01 sec
+      Start 16: document_stream_tests
+16/96 Test #16: document_stream_tests ................................   Passed    0.24 sec
+      Start 17: document_tests
+17/96 Test #17: document_tests .......................................   Passed    0.00 sec
+      Start 18: errortests
+18/96 Test #18: errortests ...........................................   Passed    0.00 sec
+      Start 19: extracting_values_example
+19/96 Test #19: extracting_values_example ............................   Passed    0.00 sec
+      Start 20: integer_tests
+20/96 Test #20: integer_tests ........................................   Passed    0.00 sec
+      Start 21: jsoncheck
+21/96 Test #21: jsoncheck ............................................   Passed    0.00 sec
+      Start 22: minefieldcheck
+22/96 Test #22: minefieldcheck .......................................   Passed    0.01 sec
+      Start 23: numberparsingcheck
+23/96 Test #23: numberparsingcheck ...................................   Passed    0.03 sec
+      Start 24: parse_many_test
+24/96 Test #24: parse_many_test ......................................   Passed    0.00 sec
+      Start 25: pointercheck
+25/96 Test #25: pointercheck .........................................   Passed    0.00 sec
+      Start 26: stringparsingcheck
+26/96 Test #26: stringparsingcheck ...................................   Passed    0.04 sec
+      Start 27: trivially_copyable_test
+27/96 Test #27: trivially_copyable_test ..............................   Passed    0.00 sec
+      Start 29: json2json
+28/96 Test #29: json2json ............................................   Passed    0.01 sec
+      Start 28: testjson2json
+29/96 Test #28: testjson2json ........................................   Passed    0.69 sec
+      Start 30: simdjson_force_implementation_error
+30/96 Test #30: simdjson_force_implementation_error ..................   Passed    0.01 sec
+      Start 31: readme_examples
+31/96 Test #31: readme_examples ......................................   Passed    3.49 sec
+      Start 32: readme_examples11
+32/96 Test #32: readme_examples11 ....................................   Passed    3.39 sec
+      Start 33: readme_examples_noexceptions
+33/96 Test #33: readme_examples_noexceptions .........................   Passed    2.54 sec
+      Start 34: readme_examples_noexceptions11
+34/96 Test #34: readme_examples_noexceptions11 .......................   Passed    2.27 sec
+      Start 35: readme_examples_will_fail_with_exceptions_off
+35/96 Test #35: readme_examples_will_fail_with_exceptions_off ........   Passed    1.62 sec
+      Start 36: ondemand_log_tests
+36/96 Test #36: ondemand_log_tests ...................................   Passed    0.00 sec
+      Start 37: ondemand_log_error_tests
+37/96 Test #37: ondemand_log_error_tests .............................   Passed    0.00 sec
+      Start 38: ondemand_tostring_tests
+38/96 Test #38: ondemand_tostring_tests ..............................   Passed    0.01 sec
+      Start 39: ondemand_active_tests
+39/96 Test #39: ondemand_active_tests ................................   Passed    0.00 sec
+      Start 40: ondemand_array_tests
+40/96 Test #40: ondemand_array_tests .................................   Passed    0.00 sec
+      Start 41: ondemand_array_error_tests
+41/96 Test #41: ondemand_array_error_tests ...........................   Passed    0.00 sec
+      Start 42: ondemand_compilation_tests
+42/96 Test #42: ondemand_compilation_tests ...........................   Passed    0.00 sec
+      Start 43: ondemand_document_stream_tests
+43/96 Test #43: ondemand_document_stream_tests .......................   Passed    0.04 sec
+      Start 44: ondemand_error_tests
+44/96 Test #44: ondemand_error_tests .................................   Passed    0.00 sec
+      Start 45: ondemand_error_location_tests
+45/96 Test #45: ondemand_error_location_tests ........................   Passed    0.00 sec
+      Start 46: ondemand_json_pointer_tests
+46/96 Test #46: ondemand_json_pointer_tests ..........................   Passed    0.00 sec
+      Start 47: ondemand_key_string_tests
+47/96 Test #47: ondemand_key_string_tests ............................   Passed    0.00 sec
+      Start 48: ondemand_misc_tests
+48/96 Test #48: ondemand_misc_tests ..................................   Passed    0.00 sec
+      Start 49: ondemand_number_tests
+49/96 Test #49: ondemand_number_tests ................................   Passed    0.01 sec
+      Start 50: ondemand_number_in_string_tests
+50/96 Test #50: ondemand_number_in_string_tests ......................   Passed    0.00 sec
+      Start 51: ondemand_object_tests
+51/96 Test #51: ondemand_object_tests ................................   Passed    0.00 sec
+      Start 52: ondemand_object_error_tests
+52/96 Test #52: ondemand_object_error_tests ..........................   Passed    0.00 sec
+      Start 53: ondemand_ordering_tests
+53/96 Test #53: ondemand_ordering_tests ..............................   Passed    0.00 sec
+      Start 54: ondemand_parse_api_tests
+54/96 Test #54: ondemand_parse_api_tests .............................   Passed    0.00 sec
+      Start 55: ondemand_readme_examples
+55/96 Test #55: ondemand_readme_examples .............................   Passed    0.00 sec
+      Start 56: ondemand_scalar_tests
+56/96 Test #56: ondemand_scalar_tests ................................   Passed    0.00 sec
+      Start 57: ondemand_twitter_tests
+57/96 Test #57: ondemand_twitter_tests ...............................   Passed    0.00 sec
+      Start 58: ondemand_wrong_type_error_tests
+58/96 Test #58: ondemand_wrong_type_error_tests ......................   Passed    0.00 sec
+      Start 59: ondemand_iterate_many_csv
+Could not find executable ondemand_iterate_many_csv
+Looked in the following places:
+ondemand_iterate_many_csv
+ondemand_iterate_many_csv
+Unable to find executable: ondemand_iterate_many_csv
+Release/ondemand_iterate_many_csv
+Release/ondemand_iterate_many_csv
+Debug/ondemand_iterate_many_csv
+Debug/ondemand_iterate_many_csv
+MinSizeRel/ondemand_iterate_many_csv
+MinSizeRel/ondemand_iterate_many_csv
+RelWithDebInfo/ondemand_iterate_many_csv
+RelWithDebInfo/ondemand_iterate_many_csv
+Deployment/ondemand_iterate_many_csv
+Deployment/ondemand_iterate_many_csv
+Development/ondemand_iterate_many_csv
+Development/ondemand_iterate_many_csv
+59/96 Test #59: ondemand_iterate_many_csv ............................***Not Run   0.00 sec
+      Start 60: ondemand_assert_out_of_order_values
+Unable to find executable: ondemand_assert_out_of_order_values
+Could not find executable ondemand_assert_out_of_order_values
+Looked in the following places:
+ondemand_assert_out_of_order_values
+ondemand_assert_out_of_order_values
+Release/ondemand_assert_out_of_order_values
+Release/ondemand_assert_out_of_order_values
+Debug/ondemand_assert_out_of_order_values
+Debug/ondemand_assert_out_of_order_values
+MinSizeRel/ondemand_assert_out_of_order_values
+MinSizeRel/ondemand_assert_out_of_order_values
+RelWithDebInfo/ondemand_assert_out_of_order_values
+RelWithDebInfo/ondemand_assert_out_of_order_values
+Deployment/ondemand_assert_out_of_order_values
+Deployment/ondemand_assert_out_of_order_values
+Development/ondemand_assert_out_of_order_values
+Development/ondemand_assert_out_of_order_values
+60/96 Test #60: ondemand_assert_out_of_order_values ..................***Not Run   0.00 sec
+      Start 61: iterate_char_star_should_compile
+61/96 Test #61: iterate_char_star_should_compile .....................   Passed    1.77 sec
+      Start 62: iterate_char_star_should_not_compile
+62/96 Test #62: iterate_char_star_should_not_compile .................   Passed    1.65 sec
+      Start 63: iterate_string_view_should_compile
+63/96 Test #63: iterate_string_view_should_compile ...................   Passed    1.75 sec
+      Start 64: iterate_string_view_should_not_compile
+64/96 Test #64: iterate_string_view_should_not_compile ...............   Passed    1.61 sec
+      Start 65: iterate_temporary_buffer_should_compile
+65/96 Test #65: iterate_temporary_buffer_should_compile ..............   Passed    1.77 sec
+      Start 66: iterate_temporary_buffer_should_not_compile
+66/96 Test #66: iterate_temporary_buffer_should_not_compile ..........   Passed    1.59 sec
+      Start 67: first_second_access_should_compile
+67/96 Test #67: first_second_access_should_compile ...................   Passed    2.16 sec
+      Start 68: first_second_access_should_not_compile
+68/96 Test #68: first_second_access_should_not_compile ...............   Passed    1.60 sec
+      Start 69: example_compiletest_should_compile
+69/96 Test #69: example_compiletest_should_compile ...................   Passed    0.27 sec
+      Start 70: example_compiletest_should_not_compile
+70/96 Test #70: example_compiletest_should_not_compile ...............   Passed    0.18 sec
+      Start 71: bad_array_count_should_compile
+71/96 Test #71: bad_array_count_should_compile .......................   Passed    1.95 sec
+      Start 72: bad_array_count_should_not_compile
+72/96 Test #72: bad_array_count_should_not_compile ...................   Passed    1.61 sec
+      Start 73: dangling_parser_load_should_compile
+73/96 Test #73: dangling_parser_load_should_compile ..................   Passed    2.04 sec
+      Start 74: dangling_parser_load_should_not_compile
+74/96 Test #74: dangling_parser_load_should_not_compile ..............   Passed    1.60 sec
+      Start 75: dangling_parser_parse_uint8_should_compile
+75/96 Test #75: dangling_parser_parse_uint8_should_compile ...........   Passed    2.02 sec
+      Start 76: dangling_parser_parse_uint8_should_not_compile
+76/96 Test #76: dangling_parser_parse_uint8_should_not_compile .......   Passed    1.60 sec
+      Start 77: dangling_parser_parse_uchar_should_compile
+77/96 Test #77: dangling_parser_parse_uchar_should_compile ...........   Passed    2.01 sec
+      Start 78: dangling_parser_parse_uchar_should_not_compile
+78/96 Test #78: dangling_parser_parse_uchar_should_not_compile .......   Passed    1.58 sec
+      Start 79: dangling_parser_parse_stdstring_should_compile
+79/96 Test #79: dangling_parser_parse_stdstring_should_compile .......   Passed    2.03 sec
+      Start 80: dangling_parser_parse_stdstring_should_not_compile
+80/96 Test #80: dangling_parser_parse_stdstring_should_not_compile ...   Passed    1.56 sec
+      Start 81: dangling_parser_parse_padstring_should_compile
+81/96 Test #81: dangling_parser_parse_padstring_should_compile .......   Passed    1.99 sec
+      Start 82: dangling_parser_parse_padstring_should_not_compile
+82/96 Test #82: dangling_parser_parse_padstring_should_not_compile ...   Passed    1.57 sec
+      Start 83: unsafe_parse_many_should_compile
+83/96 Test #83: unsafe_parse_many_should_compile .....................   Passed    2.19 sec
+      Start 84: unsafe_parse_many_should_not_compile
+84/96 Test #84: unsafe_parse_many_should_not_compile .................   Passed    1.58 sec
+      Start 85: quickstart
+85/96 Test #85: quickstart ...........................................   Passed    3.60 sec
+      Start 86: quickstart11
+86/96 Test #86: quickstart11 .........................................   Passed    3.51 sec
+      Start 87: quickstart14
+87/96 Test #87: quickstart14 .........................................   Passed    3.38 sec
+      Start 88: quickstart_noexceptions
+88/96 Test #88: quickstart_noexceptions ..............................   Passed    3.55 sec
+      Start 89: quickstart_noexceptions11
+89/96 Test #89: quickstart_noexceptions11 ............................   Passed    3.37 sec
+      Start 90: quickstart2_noexceptions
+90/96 Test #90: quickstart2_noexceptions .............................   Passed    3.54 sec
+      Start 91: quickstart2_noexceptions11
+91/96 Test #91: quickstart2_noexceptions11 ...........................   Passed    3.26 sec
+      Start 92: quickstart_ondemand
+92/96 Test #92: quickstart_ondemand ..................................   Passed    3.62 sec
+      Start 93: quickstart_ondemand11
+93/96 Test #93: quickstart_ondemand11 ................................   Passed    3.45 sec
+      Start 94: quickstart_ondemand14
+94/96 Test #94: quickstart_ondemand14 ................................   Passed    3.39 sec
+      Start 95: quickstart_ondemand_noexceptions
+95/96 Test #95: quickstart_ondemand_noexceptions .....................   Passed    3.54 sec
+      Start 96: quickstart_ondemand_noexceptions11
+96/96 Test #96: quickstart_ondemand_noexceptions11 ...................   Passed    3.31 sec
+
+98% tests passed, 2 tests failed out of 96
+
+Label Time Summary:
+acceptance             =  57.49 sec*proc (66 tests)
+assert                 =   0.00 sec*proc (1 test)
+compile                =  41.53 sec*proc (12 tests)
+dom                    =   1.41 sec*proc (15 tests)
+explicitonly           =   0.00 sec*proc (1 test)
+no_mingw               =  81.21 sec*proc (36 tests)
+ondemand               =  14.02 sec*proc (33 tests)
+other                  =   0.12 sec*proc (3 tests)
+per_implementation     =   9.23 sec*proc (47 tests)
+quickstart             =  41.53 sec*proc (12 tests)
+quickstart_ondemand    =  17.31 sec*proc (5 tests)
+singleheader           =   6.91 sec*proc (3 tests)
+
+Total Test time (real) = 103.81 sec
+
+The following tests FAILED:
+Errors while running CTest
+	 59 - ondemand_iterate_many_csv (Not Run)
+	 60 - ondemand_assert_out_of_order_values (Not Run)

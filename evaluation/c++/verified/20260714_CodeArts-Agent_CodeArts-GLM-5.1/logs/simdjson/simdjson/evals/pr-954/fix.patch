@@ -1,0 +1,567 @@
+diff --git a/include/simdjson/dom/document_stream.h b/include/simdjson/dom/document_stream.h
+index 947ebf8c..bf3041a2 100644
+--- a/include/simdjson/dom/document_stream.h
++++ b/include/simdjson/dom/document_stream.h
+@@ -72,8 +72,14 @@ private:
+  */
+ class document_stream {
+ public:
+-  /** Move one document_stream to another. */
++  /**
++   * Move one document_stream to another.
++   */
+   really_inline document_stream(document_stream && other) noexcept = default;
++  /** @private Construct an empty document_stream with an error. */
++  really_inline document_stream() noexcept;
++  /** @private Construct a document_stream with an error and no parser. */
++  really_inline document_stream(error_code _error) noexcept;
+   really_inline ~document_stream() noexcept;
+ 
+   /**
+@@ -133,7 +139,7 @@ private:
+ 
+   document_stream &operator=(const document_stream &) = delete; // Disallow copying
+ 
+-  document_stream(document_stream &other) = delete;    // Disallow copying
++  document_stream(const document_stream &other) = delete;    // Disallow copying
+ 
+   /**
+    * Construct a document_stream. Does not allocate or parse anything until the iterator is
+@@ -199,7 +205,7 @@ private:
+   /** Pass the next batch through stage 1 with the given parser. */
+   inline error_code run_stage1(dom::parser &p, size_t batch_start) noexcept;
+ 
+-  dom::parser &parser;
++  dom::parser *parser;
+   const uint8_t *buf;
+   const size_t len;
+   const size_t batch_size;
+@@ -235,6 +241,44 @@ private:
+ }; // class document_stream
+ 
+ } // namespace dom
++
++/**
++ * The result of a document_stream operation that may fail.
++ *
++ * Provides a way to check for errors before iterating the stream:
++ *
++ *   dom::parser parser;
++ *   auto [stream, error] = parser.load_many(path);
++ *   if (error) { cerr << error << endl; return; }
++ *   for (auto [doc, error] : stream) {
++ *     if (error) { cerr << error << endl; return; }
++ *     cout << doc << endl;
++ *   }
++ */
++template<>
++struct simdjson_result<dom::document_stream> : public internal::simdjson_result_base<dom::document_stream> {
++public:
++  really_inline simdjson_result() noexcept;
++  really_inline simdjson_result(dom::document_stream &&value) noexcept;
++  really_inline simdjson_result(error_code error) noexcept;
++
++  really_inline dom::document_stream::iterator begin() noexcept;
++  really_inline dom::document_stream::iterator end() noexcept;
++
++#if SIMDJSON_EXCEPTIONS
++  really_inline operator dom::document_stream() && noexcept(false);
++#else
++  /**
++   * @private Deprecated conversion to document_stream that mirrors the old
++   * behavior where load_many() returned document_stream directly. This allows
++   * noexcept code that used the old API to continue working with a deprecation
++   * warning.
++   */
++  [[deprecated("Use tie(), get(), or value() instead.")]]
++  really_inline operator dom::document_stream() && noexcept;
++#endif
++};
++
+ } // namespace simdjson
+ 
+ #endif // SIMDJSON_DOCUMENT_STREAM_H
+diff --git a/include/simdjson/dom/parser.h b/include/simdjson/dom/parser.h
+index 49ca234d..9d6ce3c0 100644
+--- a/include/simdjson/dom/parser.h
++++ b/include/simdjson/dom/parser.h
+@@ -193,14 +193,13 @@ public:
+    *                   spot is cache-related: small enough to fit in cache, yet big enough to
+    *                   parse as many documents as possible in one tight loop.
+    *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+-   * @return The stream. If there is an error, it will be returned during iteration. An empty input
+-   *         will yield 0 documents rather than an EMPTY error. Errors:
++   * @return The stream, or an error:
+    *         - IO_ERROR if there was an error opening or reading the file.
+    *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails.
+    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
+    *         - other json errors if parsing fails.
+    */
+-  inline document_stream load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
++  inline simdjson_result<document_stream> load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+ 
+   /**
+    * Parse a buffer containing many JSON documents.
+diff --git a/include/simdjson/inline/document_stream.h b/include/simdjson/inline/document_stream.h
+index 3e72305b..9c2fd3f6 100644
+--- a/include/simdjson/inline/document_stream.h
++++ b/include/simdjson/inline/document_stream.h
+@@ -64,13 +64,32 @@ inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_
+ }
+ #endif
+ 
++really_inline document_stream::document_stream() noexcept
++  : parser{nullptr},
++    buf{nullptr},
++    len{0},
++    batch_size{0},
++    error{UNINITIALIZED}
++{
++}
++
++really_inline document_stream::document_stream(error_code _error) noexcept
++  : parser{nullptr},
++    buf{nullptr},
++    len{0},
++    batch_size{0},
++    error{_error}
++{
++  assert(_error);
++}
++
+ really_inline document_stream::document_stream(
+   dom::parser &_parser,
+   size_t _batch_size,
+   const uint8_t *_buf,
+   size_t _len
+ ) noexcept
+-  : parser{_parser},
++  : parser{&_parser},
+     buf{_buf},
+     len{_len},
+     batch_size{_batch_size},
+@@ -88,7 +107,7 @@ really_inline document_stream::document_stream(
+   size_t _batch_size,
+   error_code _error
+ ) noexcept
+-  : parser{_parser},
++  : parser{&_parser},
+     buf{nullptr},
+     len{0},
+     batch_size{_batch_size},
+@@ -117,7 +136,7 @@ really_inline document_stream::iterator::iterator(document_stream& _stream, bool
+ really_inline simdjson_result<element> document_stream::iterator::operator*() noexcept {
+   // Once we have yielded any errors, we're finished.
+   if (stream.error) { finished = true; return stream.error; }
+-  return stream.parser.doc.root();
++  return stream.parser->doc.root();
+ }
+ 
+ really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
+@@ -134,12 +153,12 @@ really_inline bool document_stream::iterator::operator!=(const document_stream::
+ inline void document_stream::start() noexcept {
+   if (error) { return; }
+ 
+-  error = parser.ensure_capacity(batch_size);
++  error = parser->ensure_capacity(batch_size);
+   if (error) { return; }
+ 
+   // Always run the first stage 1 parse immediately
+   batch_start = 0;
+-  error = run_stage1(parser, batch_start);
++  error = run_stage1(*parser, batch_start);
+   if (error) { return; }
+ 
+ #ifdef SIMDJSON_THREADS_ENABLED
+@@ -163,8 +182,8 @@ inline void document_stream::next() noexcept {
+   if (error) { return; }
+ 
+   // Load the next document from the batch
+-  doc_index = batch_start + parser.implementation->structural_indexes[parser.implementation->next_structural_index];
+-  error = parser.implementation->stage2_next(parser.doc);
++  doc_index = batch_start + parser->implementation->structural_indexes[parser->implementation->next_structural_index];
++  error = parser->implementation->stage2_next(parser->doc);
+   // If that was the last document in the batch, load another batch (if available)
+   while (error == EMPTY) {
+     batch_start = next_batch_start();
+@@ -173,17 +192,17 @@ inline void document_stream::next() noexcept {
+ #ifdef SIMDJSON_THREADS_ENABLED
+     load_from_stage1_thread();
+ #else
+-    error = run_stage1(parser, batch_start);
++    error = run_stage1(*parser, batch_start);
+ #endif
+     if (error) { continue; } // If the error was EMPTY, we may want to load another batch.
+     // Run stage 2 on the first document in the batch
+-    doc_index = batch_start + parser.implementation->structural_indexes[parser.implementation->next_structural_index];
+-    error = parser.implementation->stage2_next(parser.doc);
++    doc_index = batch_start + parser->implementation->structural_indexes[parser->implementation->next_structural_index];
++    error = parser->implementation->stage2_next(parser->doc);
+   }
+ }
+ 
+ inline size_t document_stream::next_batch_start() const noexcept {
+-  return batch_start + parser.implementation->structural_indexes[parser.implementation->n_structural_indexes];
++  return batch_start + parser->implementation->structural_indexes[parser->implementation->n_structural_indexes];
+ }
+ 
+ inline error_code document_stream::run_stage1(dom::parser &p, size_t _batch_start) noexcept {
+@@ -202,7 +221,7 @@ inline void document_stream::load_from_stage1_thread() noexcept {
+   worker->finish();
+   // Swap to the parser that was loaded up in the thread. Make sure the parser has
+   // enough memory to swap to, as well.
+-  std::swap(parser, stage1_thread_parser);
++  std::swap(*parser, stage1_thread_parser);
+   error = stage1_thread_error;
+   if (error) { return; }
+ 
+@@ -226,5 +245,38 @@ inline void document_stream::start_stage1_thread() noexcept {
+ #endif // SIMDJSON_THREADS_ENABLED
+ 
+ } // namespace dom
++
++//
++// simdjson_result<dom::document_stream> inline implementation
++//
++
++really_inline simdjson_result<dom::document_stream>::simdjson_result() noexcept
++    : internal::simdjson_result_base<dom::document_stream>() {}
++really_inline simdjson_result<dom::document_stream>::simdjson_result(dom::document_stream &&value) noexcept
++    : internal::simdjson_result_base<dom::document_stream>(std::forward<dom::document_stream>(value)) {}
++really_inline simdjson_result<dom::document_stream>::simdjson_result(error_code error) noexcept
++    : internal::simdjson_result_base<dom::document_stream>(error) {}
++
++really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept {
++  if (error()) { return dom::document_stream(error()).begin(); }
++  return first.begin();
++}
++
++really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept {
++  if (error()) { return dom::document_stream(error()).end(); }
++  return first.end();
++}
++
++#if SIMDJSON_EXCEPTIONS
++really_inline simdjson_result<dom::document_stream>::operator dom::document_stream() && noexcept(false) {
++  return std::forward<internal::simdjson_result_base<dom::document_stream>>(*this).take_value();
++}
++#else
++really_inline simdjson_result<dom::document_stream>::operator dom::document_stream() && noexcept {
++  if (error()) { return dom::document_stream(error()); }
++  return std::move(first);
++}
++#endif
++
+ } // namespace simdjson
+ #endif // SIMDJSON_INLINE_DOCUMENT_STREAM_H
+diff --git a/include/simdjson/inline/parser.h b/include/simdjson/inline/parser.h
+index 16bd47c6..0f98e94b 100644
+--- a/include/simdjson/inline/parser.h
++++ b/include/simdjson/inline/parser.h
+@@ -84,11 +84,11 @@ inline simdjson_result<element> parser::load(const std::string &path) & noexcept
+   return parse(loaded_bytes.get(), len, false);
+ }
+ 
+-inline document_stream parser::load_many(const std::string &path, size_t batch_size) noexcept {
++inline simdjson_result<document_stream> parser::load_many(const std::string &path, size_t batch_size) noexcept {
+   size_t len;
+   auto _error = read_file(path).get(len);
+   if (_error) {
+-    return document_stream(*this, batch_size, _error);
++    return _error;
+   }
+   return document_stream(*this, batch_size, (const uint8_t*)loaded_bytes.get(), len);
+ }
+diff --git a/singleheader/simdjson.h b/singleheader/simdjson.h
+index 21efa8e4..2777b138 100644
+--- a/singleheader/simdjson.h
++++ b/singleheader/simdjson.h
+@@ -3335,14 +3335,13 @@ public:
+    *                   spot is cache-related: small enough to fit in cache, yet big enough to
+    *                   parse as many documents as possible in one tight loop.
+    *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+-   * @return The stream. If there is an error, it will be returned during iteration. An empty input
+-   *         will yield 0 documents rather than an EMPTY error. Errors:
++   * @return The stream, or an error:
+    *         - IO_ERROR if there was an error opening or reading the file.
+    *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails.
+    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
+    *         - other json errors if parsing fails.
+    */
+-  inline document_stream load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
++  inline simdjson_result<document_stream> load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+ 
+   /**
+    * Parse a buffer containing many JSON documents.
+@@ -3577,6 +3576,10 @@ class document_stream {
+ public:
+   /** Move one document_stream to another. */
+   really_inline document_stream(document_stream && other) noexcept = default;
++  /** @private Construct an empty document_stream with an error. */
++  really_inline document_stream() noexcept;
++  /** @private Construct a document_stream with an error and no parser. */
++  really_inline document_stream(error_code _error) noexcept;
+   really_inline ~document_stream() noexcept;
+ 
+   /**
+@@ -3620,7 +3623,7 @@ private:
+ 
+   document_stream &operator=(const document_stream &) = delete; // Disallow copying
+ 
+-  document_stream(document_stream &other) = delete;    // Disallow copying
++  document_stream(const document_stream &other) = delete;    // Disallow copying
+ 
+   /**
+    * Construct a document_stream. Does not allocate or parse anything until the iterator is
+@@ -3628,10 +3631,18 @@ private:
+    */
+   really_inline document_stream(
+     dom::parser &parser,
++    size_t batch_size,
+     const uint8_t *buf,
+-    size_t len,
++    size_t len
++  ) noexcept;
++
++  /**
++   * Construct a document_stream with an initial error.
++   */
++  really_inline document_stream(
++    dom::parser &parser,
+     size_t batch_size,
+-    error_code error = SUCCESS
++    error_code error
+   ) noexcept;
+ 
+   /**
+@@ -3678,7 +3689,7 @@ private:
+   /** Pass the next batch through stage 1 with the given parser. */
+   inline error_code run_stage1(dom::parser &p, size_t batch_start) noexcept;
+ 
+-  dom::parser &parser;
++  dom::parser *parser;
+   const uint8_t *buf;
+   const size_t len;
+   const size_t batch_size;
+@@ -3711,6 +3722,38 @@ private:
+ }; // class document_stream
+ 
+ } // namespace dom
++
++/**
++ * The result of a document_stream operation that may fail.
++ *
++ * Provides a way to check for errors before iterating the stream:
++ *
++ *   dom::parser parser;
++ *   auto [stream, error] = parser.load_many(path);
++ *   if (error) { cerr << error << endl; return; }
++ *   for (auto [doc, error] : stream) {
++ *     if (error) { cerr << error << endl; return; }
++ *     cout << doc << endl;
++ *   }
++ */
++template<>
++struct simdjson_result<dom::document_stream> : public internal::simdjson_result_base<dom::document_stream> {
++public:
++  really_inline simdjson_result() noexcept;
++  really_inline simdjson_result(dom::document_stream &&value) noexcept;
++  really_inline simdjson_result(error_code error) noexcept;
++
++  really_inline dom::document_stream::iterator begin() noexcept;
++  really_inline dom::document_stream::iterator end() noexcept;
++
++#if SIMDJSON_EXCEPTIONS
++  really_inline operator dom::document_stream() && noexcept(false);
++#else
++  [[deprecated("Use tie(), get(), or value() instead.")]]
++  really_inline operator dom::document_stream() && noexcept;
++#endif
++};
++
+ } // namespace simdjson
+ 
+ #endif // SIMDJSON_DOCUMENT_STREAM_H
+@@ -4953,19 +4996,51 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ar
+ namespace simdjson {
+ namespace dom {
+ 
++really_inline document_stream::document_stream() noexcept
++  : parser{nullptr},
++    buf{nullptr},
++    len{0},
++    batch_size{0},
++    error{UNINITIALIZED}
++{
++}
++
++really_inline document_stream::document_stream(error_code _error) noexcept
++  : parser{nullptr},
++    buf{nullptr},
++    len{0},
++    batch_size{0},
++    error{_error}
++{
++  assert(_error);
++}
++
+ really_inline document_stream::document_stream(
+   dom::parser &_parser,
+-  const uint8_t *_buf,
+-  size_t _len,
+   size_t _batch_size,
+-  error_code _error
++  const uint8_t *_buf,
++  size_t _len
+ ) noexcept
+-  : parser{_parser},
++  : parser{&_parser},
+     buf{_buf},
+     len{_len},
+     batch_size{_batch_size},
++    error{SUCCESS}
++{
++}
++
++really_inline document_stream::document_stream(
++  dom::parser &_parser,
++  size_t _batch_size,
++  error_code _error
++) noexcept
++  : parser{&_parser},
++    buf{nullptr},
++    len{0},
++    batch_size{_batch_size},
+     error{_error}
+ {
++  assert(_error);
+ }
+ 
+ inline document_stream::~document_stream() noexcept {
+@@ -4994,7 +5069,7 @@ really_inline document_stream::iterator::iterator(document_stream& _stream, bool
+ really_inline simdjson_result<element> document_stream::iterator::operator*() noexcept {
+   // Once we have yielded any errors, we're finished.
+   if (stream.error) { finished = true; return stream.error; }
+-  return stream.parser.doc.root();
++  return stream.parser->doc.root();
+ }
+ 
+ really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
+@@ -5011,12 +5086,12 @@ really_inline bool document_stream::iterator::operator!=(const document_stream::
+ inline void document_stream::start() noexcept {
+   if (error) { return; }
+ 
+-  error = parser.ensure_capacity(batch_size);
++  error = parser->ensure_capacity(batch_size);
+   if (error) { return; }
+ 
+   // Always run the first stage 1 parse immediately
+   batch_start = 0;
+-  error = run_stage1(parser, batch_start);
++  error = run_stage1(*parser, batch_start);
+   if (error) { return; }
+ 
+ #ifdef SIMDJSON_THREADS_ENABLED
+@@ -5036,7 +5111,7 @@ inline void document_stream::next() noexcept {
+   if (error) { return; }
+ 
+   // Load the next document from the batch
+-  error = parser.implementation->stage2_next(parser.doc);
++  error = parser->implementation->stage2_next(parser->doc);
+ 
+   // If that was the last document in the batch, load another batch (if available)
+   while (error == EMPTY) {
+@@ -5046,17 +5121,17 @@ inline void document_stream::next() noexcept {
+ #ifdef SIMDJSON_THREADS_ENABLED
+     load_from_stage1_thread();
+ #else
+-    error = run_stage1(parser, batch_start);
++    error = run_stage1(*parser, batch_start);
+ #endif
+     if (error) { continue; } // If the error was EMPTY, we may want to load another batch.
+ 
+     // Run stage 2 on the first document in the batch
+-    error = parser.implementation->stage2_next(parser.doc);
++    error = parser->implementation->stage2_next(parser->doc);
+   }
+ }
+ 
+ inline size_t document_stream::next_batch_start() const noexcept {
+-  return batch_start + parser.implementation->structural_indexes[parser.implementation->n_structural_indexes];
++  return batch_start + parser->implementation->structural_indexes[parser->implementation->n_structural_indexes];
+ }
+ 
+ inline error_code document_stream::run_stage1(dom::parser &p, size_t _batch_start) noexcept {
+@@ -5076,7 +5151,7 @@ inline void document_stream::load_from_stage1_thread() noexcept {
+ 
+   // Swap to the parser that was loaded up in the thread. Make sure the parser has
+   // enough memory to swap to, as well.
+-  std::swap(parser, stage1_thread_parser);
++  std::swap(*parser, stage1_thread_parser);
+   error = stage1_thread_error;
+   if (error) { return; }
+ 
+@@ -5101,6 +5176,39 @@ inline void document_stream::start_stage1_thread() noexcept {
+ #endif // SIMDJSON_THREADS_ENABLED
+ 
+ } // namespace dom
++
++//
++// simdjson_result<dom::document_stream> inline implementation
++//
++
++really_inline simdjson_result<dom::document_stream>::simdjson_result() noexcept
++    : internal::simdjson_result_base<dom::document_stream>() {}
++really_inline simdjson_result<dom::document_stream>::simdjson_result(dom::document_stream &&value) noexcept
++    : internal::simdjson_result_base<dom::document_stream>(std::forward<dom::document_stream>(value)) {}
++really_inline simdjson_result<dom::document_stream>::simdjson_result(error_code error) noexcept
++    : internal::simdjson_result_base<dom::document_stream>(error) {}
++
++really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept {
++  if (error()) { return dom::document_stream(error()).begin(); }
++  return first.begin();
++}
++
++really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept {
++  if (error()) { return dom::document_stream(error()).end(); }
++  return first.end();
++}
++
++#if SIMDJSON_EXCEPTIONS
++really_inline simdjson_result<dom::document_stream>::operator dom::document_stream() && noexcept(false) {
++  return std::forward<internal::simdjson_result_base<dom::document_stream>>(*this).take_value();
++}
++#else
++really_inline simdjson_result<dom::document_stream>::operator dom::document_stream() && noexcept {
++  if (error()) { return dom::document_stream(error()); }
++  return std::move(first);
++}
++#endif
++
+ } // namespace simdjson
+ #endif // SIMDJSON_INLINE_DOCUMENT_STREAM_H
+ /* end file include/simdjson/inline/document_stream.h */
+@@ -6793,11 +6901,12 @@ inline simdjson_result<element> parser::load(const std::string &path) & noexcept
+   return parse(loaded_bytes.get(), len, false);
+ }
+ 
+-inline document_stream parser::load_many(const std::string &path, size_t batch_size) noexcept {
++inline simdjson_result<document_stream> parser::load_many(const std::string &path, size_t batch_size) noexcept {
+   size_t len;
+   error_code code;
+   read_file(path).tie(len, code);
+-  return document_stream(*this, (const uint8_t*)loaded_bytes.get(), len, batch_size, code);
++  if (code) { return code; }
++  return document_stream(*this, batch_size, (const uint8_t*)loaded_bytes.get(), len);
+ }
+ 
+ inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
+@@ -6831,7 +6940,7 @@ really_inline simdjson_result<element> parser::parse(const padded_string &s) & n
+ }
+ 
+ inline document_stream parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+-  return document_stream(*this, buf, len, batch_size);
++  return document_stream(*this, batch_size, buf, len);
+ }
+ inline document_stream parser::parse_many(const char *buf, size_t len, size_t batch_size) noexcept {
+   return parse_many((const uint8_t *)buf, len, batch_size);

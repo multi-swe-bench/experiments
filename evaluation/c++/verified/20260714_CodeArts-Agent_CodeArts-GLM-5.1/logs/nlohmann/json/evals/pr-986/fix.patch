@@ -1,0 +1,220 @@
+diff --git a/include/nlohmann/detail/meta.hpp b/include/nlohmann/detail/meta.hpp
+index 49f1069f..11ec9f49 100644
+--- a/include/nlohmann/detail/meta.hpp
++++ b/include/nlohmann/detail/meta.hpp
+@@ -235,6 +235,7 @@ struct is_compatible_complete_type
+         not std::is_base_of<std::istream, CompatibleCompleteType>::value and
+         not std::is_same<BasicJsonType, CompatibleCompleteType>::value and
+         not is_basic_json_nested_type<BasicJsonType, CompatibleCompleteType>::value and
++        not is_basic_json<CompatibleCompleteType>::value and
+         has_to_json<BasicJsonType, CompatibleCompleteType>::value;
+ };
+ 
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index f92729f3..3763fb34 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -172,6 +172,13 @@ class basic_json
+     template<typename BasicJsonType>
+     friend class ::nlohmann::detail::binary_reader;
+ 
++    template<template<typename, typename, typename...> class,
++             template<typename, typename...> class,
++             class, class, class, class, class,
++             template<typename> class,
++             template<typename, typename> class>
++    friend class basic_json;
++
+     /// workaround type for MSVC
+     using basic_json_t = NLOHMANN_BASIC_JSON_TPL;
+ 
+@@ -1242,6 +1249,81 @@ class basic_json
+         assert_invariant();
+     }
+ 
++    /*!
++    @brief create a JSON value from an existing JSON value of a different type
++
++    This constructor creates a JSON value by copying from a different
++    @ref basic_json specialization. It recursively converts the internal data
++    structure, avoiding infinite recursion that would occur if the general
++    "compatible type" constructor were used.
++
++    @tparam OtherBasicJsonType a different specialization of @ref basic_json
++
++    @param[in] other  the JSON value to copy from
++
++    @since version 3.1.2
++    */
++    template <typename OtherBasicJsonType,
++              typename std::enable_if<
++                  detail::is_basic_json<OtherBasicJsonType>::value and
++                  not std::is_same<OtherBasicJsonType, basic_json_t>::value,
++                  int>::type = 0>
++    basic_json(const OtherBasicJsonType& other)
++        : m_type(other.m_type)
++    {
++        switch (m_type)
++        {
++            case value_t::boolean:
++            {
++                m_value = other.m_value.boolean;
++                break;
++            }
++
++            case value_t::number_float:
++            {
++                m_value = other.m_value.number_float;
++                break;
++            }
++
++            case value_t::number_integer:
++            {
++                m_value = other.m_value.number_integer;
++                break;
++            }
++
++            case value_t::number_unsigned:
++            {
++                m_value = other.m_value.number_unsigned;
++                break;
++            }
++
++            case value_t::string:
++            {
++                m_value = *other.m_value.string;
++                break;
++            }
++
++            case value_t::array:
++            {
++                m_value.array = create<array_t>(other.m_value.array->begin(),
++                                                 other.m_value.array->end());
++                break;
++            }
++
++            case value_t::object:
++            {
++                m_value.object = create<object_t>(other.m_value.object->begin(),
++                                                   other.m_value.object->end());
++                break;
++            }
++
++            default:
++                break;
++        }
++
++        assert_invariant();
++    }
++
+     /*!
+     @brief create a container (array or object) from an initializer list
+ 
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 3dcb834b..b250472c 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -468,6 +468,7 @@ struct is_compatible_complete_type
+         not std::is_base_of<std::istream, CompatibleCompleteType>::value and
+         not std::is_same<BasicJsonType, CompatibleCompleteType>::value and
+         not is_basic_json_nested_type<BasicJsonType, CompatibleCompleteType>::value and
++        not is_basic_json<CompatibleCompleteType>::value and
+         has_to_json<BasicJsonType, CompatibleCompleteType>::value;
+ };
+ 
+@@ -9770,6 +9771,13 @@ class basic_json
+     template<typename BasicJsonType>
+     friend class ::nlohmann::detail::binary_reader;
+ 
++    template<template<typename, typename, typename...> class,
++             template<typename, typename...> class,
++             class, class, class, class, class,
++             template<typename> class,
++             template<typename, typename> class>
++    friend class basic_json;
++
+     /// workaround type for MSVC
+     using basic_json_t = NLOHMANN_BASIC_JSON_TPL;
+ 
+@@ -10840,6 +10848,81 @@ class basic_json
+         assert_invariant();
+     }
+ 
++    /*!
++    @brief create a JSON value from an existing JSON value of a different type
++
++    This constructor creates a JSON value by copying from a different
++    @ref basic_json specialization. It recursively converts the internal data
++    structure, avoiding infinite recursion that would occur if the general
++    "compatible type" constructor were used.
++
++    @tparam OtherBasicJsonType a different specialization of @ref basic_json
++
++    @param[in] other  the JSON value to copy from
++
++    @since version 3.1.2
++    */
++    template <typename OtherBasicJsonType,
++              typename std::enable_if<
++                  detail::is_basic_json<OtherBasicJsonType>::value and
++                  not std::is_same<OtherBasicJsonType, basic_json_t>::value,
++                  int>::type = 0>
++    basic_json(const OtherBasicJsonType& other)
++        : m_type(other.m_type)
++    {
++        switch (m_type)
++        {
++            case value_t::boolean:
++            {
++                m_value = other.m_value.boolean;
++                break;
++            }
++
++            case value_t::number_float:
++            {
++                m_value = other.m_value.number_float;
++                break;
++            }
++
++            case value_t::number_integer:
++            {
++                m_value = other.m_value.number_integer;
++                break;
++            }
++
++            case value_t::number_unsigned:
++            {
++                m_value = other.m_value.number_unsigned;
++                break;
++            }
++
++            case value_t::string:
++            {
++                m_value = *other.m_value.string;
++                break;
++            }
++
++            case value_t::array:
++            {
++                m_value.array = create<array_t>(other.m_value.array->begin(),
++                                                 other.m_value.array->end());
++                break;
++            }
++
++            case value_t::object:
++            {
++                m_value.object = create<object_t>(other.m_value.object->begin(),
++                                                   other.m_value.object->end());
++                break;
++            }
++
++            default:
++                break;
++        }
++
++        assert_invariant();
++    }
++
+     /*!
+     @brief create a container (array or object) from an initializer list
+ 

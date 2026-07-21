@@ -1,0 +1,232 @@
+diff --git a/include/nlohmann/detail/input/binary_reader.hpp b/include/nlohmann/detail/input/binary_reader.hpp
+index edd4c4f7..639a34f0 100644
+--- a/include/nlohmann/detail/input/binary_reader.hpp
++++ b/include/nlohmann/detail/input/binary_reader.hpp
+@@ -2004,6 +2004,65 @@ class binary_reader
+                 return get_number(input_format_t::ubjson, number) && sax->number_float(static_cast<number_float_t>(number), "");
+             }
+ 
++            case 'H':  // high-precision number
++            {
++                string_t s;
++                return get_ubjson_string(s) &&
++                       [](string_t str, json_sax_t* sax_)
++                       {
++                           if (str.empty())
++                           {
++                               return sax_->string(str);
++                           }
++
++                           // try to parse as unsigned integer first
++                           if (str[0] != '-')
++                           {
++                               try
++                               {
++                                   std::size_t pos = 0;
++                                   const auto val = std::stoull(str, &pos);
++                                   if (pos == str.size() &&
++                                           val <= static_cast<std::uint64_t>((std::numeric_limits<number_unsigned_t>::max)()))
++                                   {
++                                       return sax_->number_unsigned(static_cast<number_unsigned_t>(val));
++                                   }
++                               }
++                               catch (...)
++                               {
++                                   // ignore
++                               }
++                           }
++
++                           // try to parse as signed integer
++                           try
++                           {
++                               std::size_t pos = 0;
++                               const auto val = std::stoll(str, &pos);
++                               if (pos == str.size() &&
++                                       val >= (std::numeric_limits<number_integer_t>::min)() &&
++                                       val <= (std::numeric_limits<number_integer_t>::max)())
++                               {
++                                   return sax_->number_integer(static_cast<number_integer_t>(val));
++                               }
++                           }
++                           catch (...)
++                           {
++                               // ignore
++                           }
++
++                           // fallback to float
++                           try
++                           {
++                               return sax_->number_float(static_cast<number_float_t>(std::stold(str)), str);
++                           }
++                           catch (...)
++                           {
++                               return sax_->string(str);
++                           }
++                       }(std::move(s), sax);
++            }
++
+             case 'C':  // char
+             {
+                 get();
+diff --git a/include/nlohmann/detail/output/binary_writer.hpp b/include/nlohmann/detail/output/binary_writer.hpp
+index 342cb478..54161738 100644
+--- a/include/nlohmann/detail/output/binary_writer.hpp
++++ b/include/nlohmann/detail/output/binary_writer.hpp
+@@ -1319,7 +1319,13 @@ class binary_writer
+         }
+         else
+         {
+-            JSON_THROW(out_of_range::create(407, "integer number " + std::to_string(n) + " cannot be represented by UBJSON as it does not fit int64"));
++            if (add_prefix)
++            {
++                oa->write_character(to_char_type('H'));  // high-precision number
++            }
++            const auto s = std::to_string(n);
++            write_number_with_ubjson_prefix(s.size(), true);
++            oa->write_characters(reinterpret_cast<const CharType*>(s.c_str()), s.size());
+         }
+     }
+ 
+@@ -1373,7 +1379,13 @@ class binary_writer
+         // LCOV_EXCL_START
+         else
+         {
+-            JSON_THROW(out_of_range::create(407, "integer number " + std::to_string(n) + " cannot be represented by UBJSON as it does not fit int64"));
++            if (add_prefix)
++            {
++                oa->write_character(to_char_type('H'));  // high-precision number
++            }
++            const auto s = std::to_string(n);
++            write_number_with_ubjson_prefix(s.size(), true);
++            oa->write_characters(reinterpret_cast<const CharType*>(s.c_str()), s.size());
+         }
+         // LCOV_EXCL_STOP
+     }
+@@ -1437,8 +1449,11 @@ class binary_writer
+                 {
+                     return 'l';
+                 }
+-                // no check and assume int64_t (see note above)
+-                return 'L';
++                if (j.m_value.number_unsigned <= static_cast<std::uint64_t>((std::numeric_limits<std::int64_t>::max)()))
++                {
++                    return 'L';
++                }
++                return 'H';  // high-precision number
+             }
+ 
+             case value_t::number_float:
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 68198efb..6d81e7c4 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -8013,6 +8013,65 @@ class binary_reader
+                 return get_number(input_format_t::ubjson, number) && sax->number_float(static_cast<number_float_t>(number), "");
+             }
+ 
++            case 'H':  // high-precision number
++            {
++                string_t s;
++                return get_ubjson_string(s) &&
++                       [](string_t str, json_sax_t* sax_)
++                       {
++                           if (str.empty())
++                           {
++                               return sax_->string(str);
++                           }
++
++                           // try to parse as unsigned integer first
++                           if (str[0] != '-')
++                           {
++                               try
++                               {
++                                   std::size_t pos = 0;
++                                   const auto val = std::stoull(str, &pos);
++                                   if (pos == str.size() &&
++                                           val <= static_cast<std::uint64_t>((std::numeric_limits<number_unsigned_t>::max)()))
++                                   {
++                                       return sax_->number_unsigned(static_cast<number_unsigned_t>(val));
++                                   }
++                               }
++                               catch (...)
++                               {
++                                   // ignore
++                               }
++                           }
++
++                           // try to parse as signed integer
++                           try
++                           {
++                               std::size_t pos = 0;
++                               const auto val = std::stoll(str, &pos);
++                               if (pos == str.size() &&
++                                       val >= (std::numeric_limits<number_integer_t>::min)() &&
++                                       val <= (std::numeric_limits<number_integer_t>::max)())
++                               {
++                                   return sax_->number_integer(static_cast<number_integer_t>(val));
++                               }
++                           }
++                           catch (...)
++                           {
++                               // ignore
++                           }
++
++                           // fallback to float
++                           try
++                           {
++                               return sax_->number_float(static_cast<number_float_t>(std::stold(str)), str);
++                           }
++                           catch (...)
++                           {
++                               return sax_->string(str);
++                           }
++                       }(std::move(s), sax);
++            }
++
+             case 'C':  // char
+             {
+                 get();
+@@ -13985,7 +14044,13 @@ class binary_writer
+         }
+         else
+         {
+-            JSON_THROW(out_of_range::create(407, "integer number " + std::to_string(n) + " cannot be represented by UBJSON as it does not fit int64"));
++            if (add_prefix)
++            {
++                oa->write_character(to_char_type('H'));  // high-precision number
++            }
++            const auto s = std::to_string(n);
++            write_number_with_ubjson_prefix(s.size(), true);
++            oa->write_characters(reinterpret_cast<const CharType*>(s.c_str()), s.size());
+         }
+     }
+ 
+@@ -14039,7 +14104,13 @@ class binary_writer
+         // LCOV_EXCL_START
+         else
+         {
+-            JSON_THROW(out_of_range::create(407, "integer number " + std::to_string(n) + " cannot be represented by UBJSON as it does not fit int64"));
++            if (add_prefix)
++            {
++                oa->write_character(to_char_type('H'));  // high-precision number
++            }
++            const auto s = std::to_string(n);
++            write_number_with_ubjson_prefix(s.size(), true);
++            oa->write_characters(reinterpret_cast<const CharType*>(s.c_str()), s.size());
+         }
+         // LCOV_EXCL_STOP
+     }
+@@ -14103,8 +14174,11 @@ class binary_writer
+                 {
+                     return 'l';
+                 }
+-                // no check and assume int64_t (see note above)
+-                return 'L';
++                if (j.m_value.number_unsigned <= static_cast<std::uint64_t>((std::numeric_limits<std::int64_t>::max)()))
++                {
++                    return 'L';
++                }
++                return 'H';  // high-precision number
+             }
+ 
+             case value_t::number_float:

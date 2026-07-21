@@ -1,0 +1,193 @@
+diff --git a/doc/examples/contains_json_pointer.cpp b/doc/examples/contains_json_pointer.cpp
+index 5375a435..16dde663 100644
+--- a/doc/examples/contains_json_pointer.cpp
++++ b/doc/examples/contains_json_pointer.cpp
+@@ -18,27 +18,7 @@ int main()
+               << j.contains("/array/1"_json_pointer) << '\n'
+               << j.contains("/array/-"_json_pointer) << '\n'
+               << j.contains("/array/4"_json_pointer) << '\n'
+-              << j.contains("/baz"_json_pointer) << std::endl;
+-
+-    // out_of_range.106
+-    try
+-    {
+-        // try to use an array index with leading '0'
+-        j.contains("/array/01"_json_pointer);
+-    }
+-    catch (json::parse_error& e)
+-    {
+-        std::cout << e.what() << '\n';
+-    }
+-
+-    // out_of_range.109
+-    try
+-    {
+-        // try to use an array index that is not a number
+-        j.contains("/array/one"_json_pointer);
+-    }
+-    catch (json::parse_error& e)
+-    {
+-        std::cout << e.what() << '\n';
+-    }
++              << j.contains("/baz"_json_pointer) << '\n'
++              << j.contains("/array/01"_json_pointer) << '\n'
++              << j.contains("/array/one"_json_pointer) << std::endl;
+ }
+diff --git a/include/nlohmann/detail/json_pointer.hpp b/include/nlohmann/detail/json_pointer.hpp
+index 5e4c8a1f..b9104ded 100644
+--- a/include/nlohmann/detail/json_pointer.hpp
++++ b/include/nlohmann/detail/json_pointer.hpp
+@@ -649,8 +649,9 @@ class json_pointer
+     }
+ 
+     /*!
+-    @throw parse_error.106   if an array index begins with '0'
+-    @throw parse_error.109   if an array index was not a number
++    @return true if the resolved reference token set is contained in the JSON value, false otherwise.
++
++    @note Unlike @ref operator[] or @ref at, this method does not throw for invalid array indices.
+     */
+     bool contains(const BasicJsonType* ptr) const
+     {
+@@ -679,14 +680,46 @@ class json_pointer
+                         return false;
+                     }
+ 
+-                    const auto idx = static_cast<size_type>(array_index(reference_token));
+-                    if (idx >= ptr->size())
++                    // error condition (cf. RFC 6901, Sect. 4)
++                    if (JSON_HEDLEY_UNLIKELY(reference_token.size() > 1 and reference_token[0] == '0'))
++                    {
++                        return false;
++                    }
++
++                    // error condition (cf. RFC 6901, Sect. 4)
++                    if (JSON_HEDLEY_UNLIKELY(not (reference_token[0] >= '0' and reference_token[0] <= '9')))
++                    {
++                        return false;
++                    }
++
++                    std::size_t processed_chars = 0;
++                    int idx = 0;
++                    JSON_TRY
++                    {
++                        idx = std::stoi(reference_token, &processed_chars);
++                    }
++                    JSON_CATCH(std::invalid_argument&)
++                    {
++                        return false;
++                    }
++                    JSON_CATCH(std::out_of_range&)
++                    {
++                        return false;
++                    }
++
++                    // check if the string was completely read
++                    if (JSON_HEDLEY_UNLIKELY(processed_chars != reference_token.size()))
++                    {
++                        return false;
++                    }
++
++                    if (JSON_HEDLEY_UNLIKELY(static_cast<size_type>(idx) >= ptr->size()))
+                     {
+                         // index out of range
+                         return false;
+                     }
+ 
+-                    ptr = &ptr->operator[](idx);
++                    ptr = &ptr->operator[](static_cast<size_type>(idx));
+                     break;
+                 }
+ 
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index 88b550f3..63a86e14 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -4075,8 +4075,8 @@ class basic_json
+ 
+     @post If `j.contains(ptr)` returns true, it is safe to call `j[ptr]`.
+ 
+-    @throw parse_error.106   if an array index begins with '0'
+-    @throw parse_error.109   if an array index was not a number
++    @note Unlike @ref operator[] or @ref at, this method does not throw for
++    invalid array indices, but returns false instead.
+ 
+     @complexity Logarithmic in the size of the JSON object.
+ 
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 15d069fc..98692510 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -11052,8 +11052,9 @@ class json_pointer
+     }
+ 
+     /*!
+-    @throw parse_error.106   if an array index begins with '0'
+-    @throw parse_error.109   if an array index was not a number
++    @return true if the resolved reference token set is contained in the JSON value, false otherwise.
++
++    @note Unlike @ref operator[] or @ref at, this method does not throw for invalid array indices.
+     */
+     bool contains(const BasicJsonType* ptr) const
+     {
+@@ -11082,14 +11083,46 @@ class json_pointer
+                         return false;
+                     }
+ 
+-                    const auto idx = static_cast<size_type>(array_index(reference_token));
+-                    if (idx >= ptr->size())
++                    // error condition (cf. RFC 6901, Sect. 4)
++                    if (JSON_HEDLEY_UNLIKELY(reference_token.size() > 1 and reference_token[0] == '0'))
++                    {
++                        return false;
++                    }
++
++                    // error condition (cf. RFC 6901, Sect. 4)
++                    if (JSON_HEDLEY_UNLIKELY(not (reference_token[0] >= '0' and reference_token[0] <= '9')))
++                    {
++                        return false;
++                    }
++
++                    std::size_t processed_chars = 0;
++                    int idx = 0;
++                    JSON_TRY
++                    {
++                        idx = std::stoi(reference_token, &processed_chars);
++                    }
++                    JSON_CATCH(std::invalid_argument&)
++                    {
++                        return false;
++                    }
++                    JSON_CATCH(std::out_of_range&)
++                    {
++                        return false;
++                    }
++
++                    // check if the string was completely read
++                    if (JSON_HEDLEY_UNLIKELY(processed_chars != reference_token.size()))
++                    {
++                        return false;
++                    }
++
++                    if (JSON_HEDLEY_UNLIKELY(static_cast<size_type>(idx) >= ptr->size()))
+                     {
+                         // index out of range
+                         return false;
+                     }
+ 
+-                    ptr = &ptr->operator[](idx);
++                    ptr = &ptr->operator[](static_cast<size_type>(idx));
+                     break;
+                 }
+ 
+@@ -18886,8 +18919,8 @@ class basic_json
+ 
+     @post If `j.contains(ptr)` returns true, it is safe to call `j[ptr]`.
+ 
+-    @throw parse_error.106   if an array index begins with '0'
+-    @throw parse_error.109   if an array index was not a number
++    @note Unlike @ref operator[] or @ref at, this method does not throw for
++    invalid array indices, but returns false instead.
+ 
+     @complexity Logarithmic in the size of the JSON object.
+ 

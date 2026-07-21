@@ -1,0 +1,90 @@
+diff --git a/include/nlohmann/detail/output/binary_writer.hpp b/include/nlohmann/detail/output/binary_writer.hpp
+index b93dc6a3..ab1d9244 100644
+--- a/include/nlohmann/detail/output/binary_writer.hpp
++++ b/include/nlohmann/detail/output/binary_writer.hpp
+@@ -767,7 +767,7 @@ class binary_writer
+         }
+         else
+         {
+-            JSON_THROW(out_of_range::create(407, "number overflow serializing " + std::to_string(n)));
++            JSON_THROW(out_of_range::create(407, "number overflow serializing " + std::to_string(n) + "; UBJSON does not support unsigned integers beyond int64_t"));
+         }
+     }
+ 
+@@ -821,7 +821,7 @@ class binary_writer
+         // LCOV_EXCL_START
+         else
+         {
+-            JSON_THROW(out_of_range::create(407, "number overflow serializing " + std::to_string(n)));
++            JSON_THROW(out_of_range::create(407, "number overflow serializing " + std::to_string(n) + "; UBJSON does not support integers beyond int64_t"));
+         }
+         // LCOV_EXCL_STOP
+     }
+@@ -833,7 +833,8 @@ class binary_writer
+           integer limits. In case a number exceeds the limits of int64_t,
+           this will be detected by a later call to function
+           write_number_with_ubjson_prefix. Therefore, we return 'L' for any
+-          value that does not fit the previous limits.
++          value that does not fit the previous limits. For unsigned integers,
++          this may lead to a later exception when the value exceeds int64_t.
+     */
+     CharType ubjson_prefix(const BasicJsonType& j) const noexcept
+     {
+@@ -885,7 +886,11 @@ class binary_writer
+                 {
+                     return 'l';
+                 }
+-                // no check and assume int64_t (see note above)
++                if (j.m_value.number_unsigned <= static_cast<uint64_t>((std::numeric_limits<int64_t>::max)()))
++                {
++                    return 'L';
++                }
++                // overflow - value cannot be represented in UBJSON
+                 return 'L';
+             }
+ 
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index dc206d30..e6e8038f 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -8670,7 +8670,7 @@ class binary_writer
+         }
+         else
+         {
+-            JSON_THROW(out_of_range::create(407, "number overflow serializing " + std::to_string(n)));
++            JSON_THROW(out_of_range::create(407, "number overflow serializing " + std::to_string(n) + "; UBJSON does not support unsigned integers beyond int64_t"));
+         }
+     }
+ 
+@@ -8724,7 +8724,7 @@ class binary_writer
+         // LCOV_EXCL_START
+         else
+         {
+-            JSON_THROW(out_of_range::create(407, "number overflow serializing " + std::to_string(n)));
++            JSON_THROW(out_of_range::create(407, "number overflow serializing " + std::to_string(n) + "; UBJSON does not support integers beyond int64_t"));
+         }
+         // LCOV_EXCL_STOP
+     }
+@@ -8736,7 +8736,8 @@ class binary_writer
+           integer limits. In case a number exceeds the limits of int64_t,
+           this will be detected by a later call to function
+           write_number_with_ubjson_prefix. Therefore, we return 'L' for any
+-          value that does not fit the previous limits.
++          value that does not fit the previous limits. For unsigned integers,
++          this may lead to a later exception when the value exceeds int64_t.
+     */
+     CharType ubjson_prefix(const BasicJsonType& j) const noexcept
+     {
+@@ -8788,7 +8789,11 @@ class binary_writer
+                 {
+                     return 'l';
+                 }
+-                // no check and assume int64_t (see note above)
++                if (j.m_value.number_unsigned <= static_cast<uint64_t>((std::numeric_limits<int64_t>::max)()))
++                {
++                    return 'L';
++                }
++                // overflow - value cannot be represented in UBJSON
+                 return 'L';
+             }
+ 

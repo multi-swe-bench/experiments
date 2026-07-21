@@ -1,0 +1,233 @@
+diff --git a/include/fmt/chrono.h b/include/fmt/chrono.h
+index 65e6c7e0..3fd83599 100644
+--- a/include/fmt/chrono.h
++++ b/include/fmt/chrono.h
+@@ -2040,6 +2040,9 @@ using weekday = std::chrono::weekday;
+ using day = std::chrono::day;
+ using month = std::chrono::month;
+ using year = std::chrono::year;
++using year_month = std::chrono::year_month;
++using year_month_day = std::chrono::year_month_day;
++using year_month_day_last = std::chrono::year_month_day_last;
+ #else
+ // A fallback version of weekday.
+ class weekday {
+@@ -2085,7 +2088,46 @@ class year {
+   constexpr explicit operator int() const noexcept { return value_; }
+ };
+ 
+-class year_month_day {};
++class year_month {
++ private:
++  fmt::year year_;
++  fmt::month month_;
++
++ public:
++  year_month() = default;
++  constexpr year_month(fmt::year y, fmt::month m) noexcept
++      : year_(y), month_(m) {}
++  constexpr auto year() const noexcept -> fmt::year { return year_; }
++  constexpr auto month() const noexcept -> fmt::month { return month_; }
++};
++
++class year_month_day {
++ private:
++  fmt::year year_;
++  fmt::month month_;
++  fmt::day day_;
++
++ public:
++  year_month_day() = default;
++  constexpr year_month_day(fmt::year y, fmt::month m, fmt::day d) noexcept
++      : year_(y), month_(m), day_(d) {}
++  constexpr auto year() const noexcept -> fmt::year { return year_; }
++  constexpr auto month() const noexcept -> fmt::month { return month_; }
++  constexpr auto day() const noexcept -> fmt::day { return day_; }
++};
++
++class year_month_day_last {
++ private:
++  fmt::year year_;
++  fmt::month month_;
++
++ public:
++  year_month_day_last() = default;
++  constexpr year_month_day_last(fmt::year y, fmt::month m) noexcept
++      : year_(y), month_(m) {}
++  constexpr auto year() const noexcept -> fmt::year { return year_; }
++  constexpr auto month() const noexcept -> fmt::month { return month_; }
++};
+ #endif
+ 
+ // A rudimentary weekday formatter.
+@@ -2177,6 +2219,170 @@ template <typename Char> struct formatter<year, Char> {
+   }
+ };
+ 
++template <typename Char> struct formatter<year_month_day, Char> {
++ private:
++  format_specs specs_;
++  detail::arg_ref<Char> width_ref_;
++  bool localized_ = false;
++  basic_string_view<Char> format_str_;
++
++ public:
++  FMT_CONSTEXPR formatter() {
++    format_str_ = detail::string_literal<Char, '%', 'F'>{};
++  }
++
++  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
++      -> decltype(ctx.begin()) {
++    auto it = ctx.begin(), end = ctx.end();
++    if (it == end || *it == '}') return it;
++
++    it = detail::parse_align(it, end, specs_);
++    if (it == end) return it;
++
++    it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
++    if (it == end) return it;
++
++    if (it != end && *it == 'L') {
++      localized_ = true;
++      ++it;
++    }
++    end = detail::parse_chrono_format(it, end, detail::tm_format_checker());
++    // Replace the default format_str only if the new spec is not empty.
++    if (end != it) format_str_ = {it, detail::to_unsigned(end - it)};
++    return end;
++  }
++
++  template <typename FormatContext>
++  auto format(year_month_day ymd, FormatContext& ctx) const
++      -> decltype(ctx.out()) {
++    auto specs = specs_;
++    auto buf = basic_memory_buffer<Char>();
++    auto out = std::back_inserter(buf);
++    detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
++                                                       ctx);
++
++    auto time = std::tm();
++    time.tm_year = static_cast<int>(ymd.year()) - 1900;
++    time.tm_mon = static_cast<int>(static_cast<unsigned>(ymd.month())) - 1;
++    time.tm_mday = static_cast<int>(static_cast<unsigned>(ymd.day()));
++
++    detail::get_locale loc(localized_, ctx.locale());
++    auto w = detail::tm_writer<decltype(out), Char>(loc, out, time);
++    detail::parse_chrono_format(format_str_.begin(), format_str_.end(), w);
++    return detail::write(
++        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
++  }
++};
++
++template <typename Char> struct formatter<year_month, Char> {
++ private:
++  format_specs specs_;
++  detail::arg_ref<Char> width_ref_;
++  bool localized_ = false;
++  basic_string_view<Char> format_str_;
++
++ public:
++  FMT_CONSTEXPR formatter() {
++    format_str_ = detail::string_literal<Char, '%', 'Y', '/', '%', 'm'>{};
++  }
++
++  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
++      -> decltype(ctx.begin()) {
++    auto it = ctx.begin(), end = ctx.end();
++    if (it == end || *it == '}') return it;
++
++    it = detail::parse_align(it, end, specs_);
++    if (it == end) return it;
++
++    it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
++    if (it == end) return it;
++
++    if (it != end && *it == 'L') {
++      localized_ = true;
++      ++it;
++    }
++    end = detail::parse_chrono_format(it, end, detail::tm_format_checker());
++    if (end != it) format_str_ = {it, detail::to_unsigned(end - it)};
++    return end;
++  }
++
++  template <typename FormatContext>
++  auto format(year_month ym, FormatContext& ctx) const -> decltype(ctx.out()) {
++    auto specs = specs_;
++    auto buf = basic_memory_buffer<Char>();
++    auto out = std::back_inserter(buf);
++    detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
++                                                       ctx);
++
++    auto time = std::tm();
++    time.tm_year = static_cast<int>(ym.year()) - 1900;
++    time.tm_mon = static_cast<int>(static_cast<unsigned>(ym.month())) - 1;
++    time.tm_mday = 1;
++
++    detail::get_locale loc(localized_, ctx.locale());
++    auto w = detail::tm_writer<decltype(out), Char>(loc, out, time);
++    detail::parse_chrono_format(format_str_.begin(), format_str_.end(), w);
++    return detail::write(
++        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
++  }
++};
++
++template <typename Char> struct formatter<year_month_day_last, Char> {
++ private:
++  format_specs specs_;
++  detail::arg_ref<Char> width_ref_;
++  bool localized_ = false;
++  basic_string_view<Char> format_str_;
++
++ public:
++  FMT_CONSTEXPR formatter() {
++    format_str_ =
++        detail::string_literal<Char, '%', 'Y', '/', '%', 'b', '/', 'l', 'a',
++                               's', 't'>{};
++  }
++
++  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
++      -> decltype(ctx.begin()) {
++    auto it = ctx.begin(), end = ctx.end();
++    if (it == end || *it == '}') return it;
++
++    it = detail::parse_align(it, end, specs_);
++    if (it == end) return it;
++
++    it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
++    if (it == end) return it;
++
++    if (it != end && *it == 'L') {
++      localized_ = true;
++      ++it;
++    }
++    end = detail::parse_chrono_format(it, end, detail::tm_format_checker());
++    if (end != it) format_str_ = {it, detail::to_unsigned(end - it)};
++    return end;
++  }
++
++  template <typename FormatContext>
++  auto format(year_month_day_last ymdl, FormatContext& ctx) const
++      -> decltype(ctx.out()) {
++    auto specs = specs_;
++    auto buf = basic_memory_buffer<Char>();
++    auto out = std::back_inserter(buf);
++    detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
++                                                       ctx);
++
++    auto time = std::tm();
++    time.tm_year = static_cast<int>(ymdl.year()) - 1900;
++    time.tm_mon = static_cast<int>(static_cast<unsigned>(ymdl.month())) - 1;
++    time.tm_mday = 1;
++
++    detail::get_locale loc(localized_, ctx.locale());
++    auto w = detail::tm_writer<decltype(out), Char>(loc, out, time);
++    detail::parse_chrono_format(format_str_.begin(), format_str_.end(), w);
++    return detail::write(
++        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
++  }
++};
++
+ template <typename Rep, typename Period, typename Char>
+ struct formatter<std::chrono::duration<Rep, Period>, Char> {
+  private:

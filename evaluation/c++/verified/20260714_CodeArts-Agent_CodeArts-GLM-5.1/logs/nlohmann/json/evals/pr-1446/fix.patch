@@ -1,0 +1,64 @@
+diff --git a/include/nlohmann/detail/output/serializer.hpp b/include/nlohmann/detail/output/serializer.hpp
+index 4f7e1ede..23cc8266 100644
+--- a/include/nlohmann/detail/output/serializer.hpp
++++ b/include/nlohmann/detail/output/serializer.hpp
+@@ -441,6 +441,13 @@ class serializer
+                                 // add a replacement character
+                                 if (ensure_ascii)
+                                 {
++                                    // there must be 6 bytes left, as the
++                                    // replacement character is "\ufffd"
++                                    if (string_buffer.size() - bytes < 6)
++                                    {
++                                        o->write_characters(string_buffer.data(), bytes);
++                                        bytes = 0;
++                                    }
+                                     string_buffer[bytes++] = '\\';
+                                     string_buffer[bytes++] = 'u';
+                                     string_buffer[bytes++] = 'f';
+@@ -450,6 +457,13 @@ class serializer
+                                 }
+                                 else
+                                 {
++                                    // there must be 3 bytes left, as the
++                                    // replacement character is "\xEF\xBF\xBD"
++                                    if (string_buffer.size() - bytes < 3)
++                                    {
++                                        o->write_characters(string_buffer.data(), bytes);
++                                        bytes = 0;
++                                    }
+                                     string_buffer[bytes++] = detail::binary_writer<BasicJsonType, char>::to_char_type('\xEF');
+                                     string_buffer[bytes++] = detail::binary_writer<BasicJsonType, char>::to_char_type('\xBF');
+                                     string_buffer[bytes++] = detail::binary_writer<BasicJsonType, char>::to_char_type('\xBD');
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index ef4b0cd0..476acc05 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -11331,6 +11331,13 @@ class serializer
+                                 // add a replacement character
+                                 if (ensure_ascii)
+                                 {
++                                    // there must be 6 bytes left, as the
++                                    // replacement character is "\ufffd"
++                                    if (string_buffer.size() - bytes < 6)
++                                    {
++                                        o->write_characters(string_buffer.data(), bytes);
++                                        bytes = 0;
++                                    }
+                                     string_buffer[bytes++] = '\\';
+                                     string_buffer[bytes++] = 'u';
+                                     string_buffer[bytes++] = 'f';
+@@ -11340,6 +11347,13 @@ class serializer
+                                 }
+                                 else
+                                 {
++                                    // there must be 3 bytes left, as the
++                                    // replacement character is "\xEF\xBF\xBD"
++                                    if (string_buffer.size() - bytes < 3)
++                                    {
++                                        o->write_characters(string_buffer.data(), bytes);
++                                        bytes = 0;
++                                    }
+                                     string_buffer[bytes++] = detail::binary_writer<BasicJsonType, char>::to_char_type('\xEF');
+                                     string_buffer[bytes++] = detail::binary_writer<BasicJsonType, char>::to_char_type('\xBF');
+                                     string_buffer[bytes++] = detail::binary_writer<BasicJsonType, char>::to_char_type('\xBD');

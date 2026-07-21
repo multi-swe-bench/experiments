@@ -1,0 +1,2925 @@
+检测到 Debian 12 系统
+进入12+系统
+替换系统源完成
+==============================================================================
+Get:1 http://mirrors.tools.huawei.com/debian bookworm InRelease [151 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm-updates InRelease [55.4 kB]
+Get:3 http://mirrors.tools.huawei.com/debian-security bookworm-security InRelease [48.0 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 Packages [8790 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm-updates/main amd64 Packages [6924 B]
+Get:6 http://mirrors.tools.huawei.com/debian-security bookworm-security/main amd64 Packages [316 kB]
+Fetched 9368 kB in 1s (6431 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+patch is already the newest version (2.7.6-7).
+build-essential is already the newest version (12.9).
+libpcre2-dev is already the newest version (10.42-1).
+libpcre2-dev set to manually installed.
+libncurses-dev is already the newest version (6.4-4).
+libncurses-dev set to manually installed.
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+The following additional packages will be installed:
+  libonig5 libssl3 openssl
+Suggested packages:
+  libssl-doc
+The following NEW packages will be installed:
+  libonig-dev libonig5
+The following packages will be upgraded:
+  libssl-dev libssl3 openssl
+3 upgraded, 2 newly installed, 0 to remove and 158 not upgraded.
+Need to get 6203 kB of archives.
+After this operation, 780 kB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig5 amd64 6.9.8-1 [188 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig-dev amd64 6.9.8-1 [96.7 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl-dev amd64 3.0.20-1~deb12u2 [2443 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl3 amd64 3.0.20-1~deb12u2 [2036 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 openssl amd64 3.0.20-1~deb12u2 [1439 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 6203 kB in 0s (16.2 MB/s)
+Selecting previously unselected package libonig5:amd64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 31854 files and directories currently installed.)
+Preparing to unpack .../libonig5_6.9.8-1_amd64.deb ...
+Unpacking libonig5:amd64 (6.9.8-1) ...
+Selecting previously unselected package libonig-dev.
+Preparing to unpack .../libonig-dev_6.9.8-1_amd64.deb ...
+Unpacking libonig-dev (6.9.8-1) ...
+Preparing to unpack .../libssl-dev_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl-dev:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../libssl3_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl3:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../openssl_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking openssl (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Setting up libssl3:amd64 (3.0.20-1~deb12u2) ...
+Setting up libssl-dev:amd64 (3.0.20-1~deb12u2) ...
+Setting up openssl (3.0.20-1~deb12u2) ...
+Setting up libonig5:amd64 (6.9.8-1) ...
+Setting up libonig-dev (6.9.8-1) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+cmake is already the newest version (3.25.1-1).
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+0 upgraded, 0 newly installed, 0 to remove and 158 not upgraded.
+=== RUN FULL via /home/fix-run.sh (tee log) ===
+#!/bin/bash
+set -e
+
+cd /home/Catch2
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake -DCATCH_DEVELOPMENT_BUILD=ON ..
+make
+ctest
+
+=========================================
+当前目录：/home
+当前目录内容：Catch2 add_certificate_for_c.sh check_git_changes.sh fix-run.sh fix.patch prepare.sh run.sh test-run.sh test.patch
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+wget is already the newest version (1.21.3-1+deb12u1).
+0 upgraded, 0 newly installed, 0 to remove and 158 not upgraded.
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libgpm2 libsodium23 vim-common vim-runtime xxd
+Suggested packages:
+  gpm ctags vim-doc vim-scripts
+The following NEW packages will be installed:
+  libgpm2 libsodium23 vim vim-common vim-runtime xxd
+0 upgraded, 6 newly installed, 0 to remove and 158 not upgraded.
+Need to get 8980 kB of archives.
+After this operation, 41.9 MB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-common all 2:9.0.1378-2+deb12u2 [125 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libgpm2 amd64 1.20.7-10+b1 [14.2 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libsodium23 amd64 1.0.18-1+deb12u1 [162 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-runtime all 2:9.0.1378-2+deb12u2 [7027 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim amd64 2:9.0.1378-2+deb12u2 [1568 kB]
+Get:6 http://mirrors.tools.huawei.com/debian bookworm/main amd64 xxd amd64 2:9.0.1378-2+deb12u2 [84.1 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 8980 kB in 0s (18.2 MB/s)
+Selecting previously unselected package vim-common.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 31897 files and directories currently installed.)
+Preparing to unpack .../0-vim-common_2%3a9.0.1378-2+deb12u2_all.deb ...
+Unpacking vim-common (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package libgpm2:amd64.
+Preparing to unpack .../1-libgpm2_1.20.7-10+b1_amd64.deb ...
+Unpacking libgpm2:amd64 (1.20.7-10+b1) ...
+Selecting previously unselected package libsodium23:amd64.
+Preparing to unpack .../2-libsodium23_1.0.18-1+deb12u1_amd64.deb ...
+Unpacking libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Selecting previously unselected package vim-runtime.
+Preparing to unpack .../3-vim-runtime_2%3a9.0.1378-2+deb12u2_all.deb ...
+Adding 'diversion of /usr/share/vim/vim90/doc/help.txt to /usr/share/vim/vim90/doc/help.txt.vim-tiny by vim-runtime'
+Adding 'diversion of /usr/share/vim/vim90/doc/tags to /usr/share/vim/vim90/doc/tags.vim-tiny by vim-runtime'
+Unpacking vim-runtime (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package vim.
+Preparing to unpack .../4-vim_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking vim (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package xxd.
+Preparing to unpack .../5-xxd_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking xxd (2:9.0.1378-2+deb12u2) ...
+Setting up libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Setting up libgpm2:amd64 (1.20.7-10+b1) ...
+Setting up xxd (2:9.0.1378-2+deb12u2) ...
+Setting up vim-common (2:9.0.1378-2+deb12u2) ...
+Setting up vim-runtime (2:9.0.1378-2+deb12u2) ...
+Setting up vim (2:9.0.1378-2+deb12u2) ...
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/ex (ex) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rview (rview) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rvim (rvim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vi (vi) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/view (view) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vim (vim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vimdiff (vimdiff) in auto mode
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Processing triggers for hicolor-icon-theme (0.17-2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libcurl3-gnutls libcurl3-nss libcurl4 libcurl4-openssl-dev
+Suggested packages:
+  libcurl4-doc libidn-dev libldap2-dev librtmp-dev libssh2-1-dev
+The following packages will be upgraded:
+  curl libcurl3-gnutls libcurl3-nss libcurl4 libcurl4-openssl-dev
+5 upgraded, 0 newly installed, 0 to remove and 153 not upgraded.
+Need to get 1982 kB of archives.
+After this operation, 5120 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4-openssl-dev amd64 7.88.1-10+deb12u15 [493 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 curl amd64 7.88.1-10+deb12u15 [316 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4 amd64 7.88.1-10+deb12u15 [392 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl3-gnutls amd64 7.88.1-10+deb12u15 [386 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl3-nss amd64 7.88.1-10+deb12u15 [396 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 1982 kB in 0s (5501 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 34054 files and directories currently installed.)
+Preparing to unpack .../libcurl4-openssl-dev_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../curl_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking curl (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl4_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl3-gnutls_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl3-nss_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl3-nss:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Setting up libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) ...
+Setting up libcurl3-nss:amd64 (7.88.1-10+deb12u15) ...
+Setting up libcurl4:amd64 (7.88.1-10+deb12u15) ...
+Setting up curl (7.88.1-10+deb12u15) ...
+Setting up libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+=== 配置证书 (abcert) ===
+[abcert][INFO] Created temporary directory .tmp.pems.ta6RYaVW
+[abcert][INFO] Operating system: Debian GNU/Linux 12 (bookworm)
+[abcert][INFO] Installing certificates
+'.tmp.pems.ta6RYaVW/HWBPITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWBPITEnterpriseCA1.crt'
+'.tmp.pems.ta6RYaVW/HWITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWITEnterpriseCA1.crt'
+'.tmp.pems.ta6RYaVW/HuaweiBPITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiBPITRootCA.crt'
+'.tmp.pems.ta6RYaVW/HuaweiITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiITRootCA.crt'
+'.tmp.pems.ta6RYaVW/HuaweiWebSecureInternetGatewayCA.pem' -> '/usr/local/share/ca-certificates/HuaweiWebSecureInternetGatewayCA.crt'
+Updating certificates in /etc/ssl/certs...
+rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+5 added, 0 removed; done.
+Running hooks in /etc/ca-certificates/update.d...
+done.
+[abcert][INFO] Removed .tmp.pems.ta6RYaVW
+abcert 安装完成
+================git=====================
+http.version=HTTP/1.1
+http.postbuffer=524288000
+http.timeout=600
+================git=====================
+================env=====================
+HTTPS_PROXY=http://test:test@proxysg.huawei.com:8080/
+no_proxy=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+HOSTNAME=7feef497dfb2
+GCC_MIRRORS=https://ftpmirror.gnu.org/gcc 		https://mirrors.kernel.org/gnu/gcc 		https://bigsearcher.com/mirrors/gcc/releases 		http://www.netgull.com/gcc/releases 		https://ftpmirror.gnu.org/gcc 		https://sourceware.org/pub/gcc/releases 		ftp://ftp.gnu.org/gnu/gcc
+HOME=/root
+OLDPWD=/home
+NO_PROXY=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+https_proxy=http://test:test@proxysg.huawei.com:8080/
+GPG_KEYS=B215C1633BCA0477615F1B35A5B3A004745C015A 	B3C42148A44E6983B3E4CC0793FA9B1AB75C61B8 	90AA470469D3965A87A5DCB494D03953902C9419 	80F98B2E0DAB6C8281BDF541A7C8C3B2F71EDF1C 	7F74F97C103468EE5D750B583AB00996FC26A641 	33C235A34C46AA3FFB293709A328C3A2C3C45C06 	D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62
+http_proxy=http://test:test@proxysg.huawei.com:8080/
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+GIT_SSL_NO_VERIFY=true
+PWD=/tmp/tmp.G4tlf3Thdy/abcert_install
+HTTP_PROXY=http://test:test@proxysg.huawei.com:8080/
+GCC_VERSION=14.2.0
+================env=====================
+#!/bin/bash
+# set -e
+
+cd /home/Catch2
+git ls-files --others --exclude-standard | xargs -I {} mv {} {}.bak
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake -DCATCH_DEVELOPMENT_BUILD=ON ..
+make
+ctest
+
+=========================================
+patching file tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp
+patching file src/catch2/internal/catch_textflow.cpp
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test HAVE_FLAG__ffile_prefix_map__home_Catch2__
+-- Performing Test HAVE_FLAG__ffile_prefix_map__home_Catch2__ - Success
+-- Found PythonInterp: /usr/bin/python3 (found suitable version "3.11.2", minimum required is "3") 
+-- Performing Test HAVE_FLAG__Wabsolute_value
+-- Performing Test HAVE_FLAG__Wabsolute_value - Failed
+-- Performing Test HAVE_FLAG__Wall
+-- Performing Test HAVE_FLAG__Wall - Success
+-- Performing Test HAVE_FLAG__Wcall_to_pure_virtual_from_ctor_dtor
+-- Performing Test HAVE_FLAG__Wcall_to_pure_virtual_from_ctor_dtor - Failed
+-- Performing Test HAVE_FLAG__Wcast_align
+-- Performing Test HAVE_FLAG__Wcast_align - Success
+-- Performing Test HAVE_FLAG__Wcatch_value
+-- Performing Test HAVE_FLAG__Wcatch_value - Success
+-- Performing Test HAVE_FLAG__Wdangling
+-- Performing Test HAVE_FLAG__Wdangling - Failed
+-- Performing Test HAVE_FLAG__Wdeprecated
+-- Performing Test HAVE_FLAG__Wdeprecated - Success
+-- Performing Test HAVE_FLAG__Wdeprecated_register
+-- Performing Test HAVE_FLAG__Wdeprecated_register - Failed
+-- Performing Test HAVE_FLAG__Wexceptions
+-- Performing Test HAVE_FLAG__Wexceptions - Success
+-- Performing Test HAVE_FLAG__Wexit_time_destructors
+-- Performing Test HAVE_FLAG__Wexit_time_destructors - Failed
+-- Performing Test HAVE_FLAG__Wextra
+-- Performing Test HAVE_FLAG__Wextra - Success
+-- Performing Test HAVE_FLAG__Wextra_semi
+-- Performing Test HAVE_FLAG__Wextra_semi - Success
+-- Performing Test HAVE_FLAG__Wfloat_equal
+-- Performing Test HAVE_FLAG__Wfloat_equal - Success
+-- Performing Test HAVE_FLAG__Wglobal_constructors
+-- Performing Test HAVE_FLAG__Wglobal_constructors - Failed
+-- Performing Test HAVE_FLAG__Winit_self
+-- Performing Test HAVE_FLAG__Winit_self - Success
+-- Performing Test HAVE_FLAG__Wmisleading_indentation
+-- Performing Test HAVE_FLAG__Wmisleading_indentation - Success
+-- Performing Test HAVE_FLAG__Wmismatched_new_delete
+-- Performing Test HAVE_FLAG__Wmismatched_new_delete - Success
+-- Performing Test HAVE_FLAG__Wmismatched_return_types
+-- Performing Test HAVE_FLAG__Wmismatched_return_types - Failed
+-- Performing Test HAVE_FLAG__Wmismatched_tags
+-- Performing Test HAVE_FLAG__Wmismatched_tags - Success
+-- Performing Test HAVE_FLAG__Wmissing_braces
+-- Performing Test HAVE_FLAG__Wmissing_braces - Success
+-- Performing Test HAVE_FLAG__Wmissing_declarations
+-- Performing Test HAVE_FLAG__Wmissing_declarations - Success
+-- Performing Test HAVE_FLAG__Wmissing_noreturn
+-- Performing Test HAVE_FLAG__Wmissing_noreturn - Success
+-- Performing Test HAVE_FLAG__Wmissing_prototypes
+-- Performing Test HAVE_FLAG__Wmissing_prototypes - Failed
+-- Performing Test HAVE_FLAG__Wmissing_variable_declarations
+-- Performing Test HAVE_FLAG__Wmissing_variable_declarations - Failed
+-- Performing Test HAVE_FLAG__Wnull_dereference
+-- Performing Test HAVE_FLAG__Wnull_dereference - Success
+-- Performing Test HAVE_FLAG__Wold_style_cast
+-- Performing Test HAVE_FLAG__Wold_style_cast - Success
+-- Performing Test HAVE_FLAG__Woverloaded_virtual
+-- Performing Test HAVE_FLAG__Woverloaded_virtual - Success
+-- Performing Test HAVE_FLAG__Wparentheses
+-- Performing Test HAVE_FLAG__Wparentheses - Success
+-- Performing Test HAVE_FLAG__Wpedantic
+-- Performing Test HAVE_FLAG__Wpedantic - Success
+-- Performing Test HAVE_FLAG__Wredundant_decls
+-- Performing Test HAVE_FLAG__Wredundant_decls - Success
+-- Performing Test HAVE_FLAG__Wreorder
+-- Performing Test HAVE_FLAG__Wreorder - Success
+-- Performing Test HAVE_FLAG__Wreturn_std_move
+-- Performing Test HAVE_FLAG__Wreturn_std_move - Failed
+-- Performing Test HAVE_FLAG__Wshadow
+-- Performing Test HAVE_FLAG__Wshadow - Success
+-- Performing Test HAVE_FLAG__Wstrict_aliasing
+-- Performing Test HAVE_FLAG__Wstrict_aliasing - Success
+-- Performing Test HAVE_FLAG__Wsubobject_linkage
+-- Performing Test HAVE_FLAG__Wsubobject_linkage - Success
+-- Performing Test HAVE_FLAG__Wsuggest_destructor_override
+-- Performing Test HAVE_FLAG__Wsuggest_destructor_override - Failed
+-- Performing Test HAVE_FLAG__Wsuggest_override
+-- Performing Test HAVE_FLAG__Wsuggest_override - Success
+-- Performing Test HAVE_FLAG__Wundef
+-- Performing Test HAVE_FLAG__Wundef - Success
+-- Performing Test HAVE_FLAG__Wuninitialized
+-- Performing Test HAVE_FLAG__Wuninitialized - Success
+-- Performing Test HAVE_FLAG__Wunneeded_internal_declaration
+-- Performing Test HAVE_FLAG__Wunneeded_internal_declaration - Failed
+-- Performing Test HAVE_FLAG__Wunreachable_code_aggressive
+-- Performing Test HAVE_FLAG__Wunreachable_code_aggressive - Failed
+-- Performing Test HAVE_FLAG__Wunused
+-- Performing Test HAVE_FLAG__Wunused - Success
+-- Performing Test HAVE_FLAG__Wunused_function
+-- Performing Test HAVE_FLAG__Wunused_function - Success
+-- Performing Test HAVE_FLAG__Wunused_parameter
+-- Performing Test HAVE_FLAG__Wunused_parameter - Success
+-- Performing Test HAVE_FLAG__Wvla
+-- Performing Test HAVE_FLAG__Wvla - Success
+-- Performing Test HAVE_FLAG__Wweak_vtables
+-- Performing Test HAVE_FLAG__Wweak_vtables - Failed
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/Catch2/build
+[  0%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/benchmark/catch_chronometer.cpp.o
+[  1%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/benchmark/detail/catch_analyse.cpp.o
+[  1%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/benchmark/detail/catch_benchmark_function.cpp.o
+[  2%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/benchmark/detail/catch_run_for_at_least.cpp.o
+[  2%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/benchmark/detail/catch_stats.cpp.o
+[  3%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/generators/catch_generator_exception.cpp.o
+[  4%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/generators/catch_generators.cpp.o
+[  4%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/generators/catch_generators_random.cpp.o
+[  5%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_automake.cpp.o
+[  5%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_common_base.cpp.o
+[  6%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_compact.cpp.o
+[  7%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_console.cpp.o
+[  7%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_cumulative_base.cpp.o
+[  8%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_event_listener.cpp.o
+[  8%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_helpers.cpp.o
+[  9%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_json.cpp.o
+[ 10%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_junit.cpp.o
+[ 10%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_multi.cpp.o
+[ 11%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_registrars.cpp.o
+[ 11%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_sonarqube.cpp.o
+[ 12%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_streaming_base.cpp.o
+[ 13%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_tap.cpp.o
+[ 13%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_teamcity.cpp.o
+[ 14%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_xml.cpp.o
+[ 14%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_capture.cpp.o
+[ 15%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_config.cpp.o
+[ 16%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_exception.cpp.o
+[ 16%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_generatortracker.cpp.o
+[ 17%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_registry_hub.cpp.o
+[ 17%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_reporter.cpp.o
+[ 18%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_reporter_factory.cpp.o
+[ 19%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_testcase.cpp.o
+[ 19%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_approx.cpp.o
+[ 20%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_assertion_result.cpp.o
+[ 20%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_config.cpp.o
+[ 21%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_get_random_seed.cpp.o
+[ 22%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_message.cpp.o
+[ 22%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_registry_hub.cpp.o
+[ 23%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_session.cpp.o
+[ 23%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_tag_alias_autoregistrar.cpp.o
+[ 24%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_test_case_info.cpp.o
+[ 25%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_test_spec.cpp.o
+[ 25%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_timer.cpp.o
+[ 26%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_tostring.cpp.o
+[ 26%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_totals.cpp.o
+[ 27%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_translate_exception.cpp.o
+[ 27%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/catch_version.cpp.o
+[ 28%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_assertion_handler.cpp.o
+[ 29%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_case_insensitive_comparisons.cpp.o
+[ 29%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_clara.cpp.o
+[ 30%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_commandline.cpp.o
+[ 30%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_console_colour.cpp.o
+[ 31%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_context.cpp.o
+[ 32%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_debug_console.cpp.o
+[ 32%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_debugger.cpp.o
+[ 33%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_decomposer.cpp.o
+[ 33%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_enforce.cpp.o
+[ 34%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_enum_values_registry.cpp.o
+[ 35%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_errno_guard.cpp.o
+[ 35%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_exception_translator_registry.cpp.o
+[ 36%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_fatal_condition_handler.cpp.o
+[ 36%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_floating_point_helpers.cpp.o
+[ 37%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_getenv.cpp.o
+[ 38%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_istream.cpp.o
+[ 38%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_jsonwriter.cpp.o
+[ 39%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_lazy_expr.cpp.o
+[ 39%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_leak_detector.cpp.o
+[ 40%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_list.cpp.o
+[ 41%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_message_info.cpp.o
+[ 41%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_output_redirect.cpp.o
+[ 42%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_parse_numbers.cpp.o
+[ 42%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_polyfills.cpp.o
+[ 43%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_random_number_generator.cpp.o
+[ 44%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_random_seed_generation.cpp.o
+[ 44%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_reporter_registry.cpp.o
+[ 45%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_reporter_spec_parser.cpp.o
+[ 45%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_result_type.cpp.o
+[ 46%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_reusable_string_stream.cpp.o
+[ 47%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_run_context.cpp.o
+[ 47%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_section.cpp.o
+[ 48%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_singletons.cpp.o
+[ 48%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_source_line_info.cpp.o
+[ 49%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_startup_exception_registry.cpp.o
+[ 50%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_stdstreams.cpp.o
+[ 50%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_string_manip.cpp.o
+[ 51%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_stringref.cpp.o
+[ 51%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_tag_alias_registry.cpp.o
+[ 52%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_test_case_info_hasher.cpp.o
+[ 52%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_test_case_registry_impl.cpp.o
+[ 53%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_test_case_tracker.cpp.o
+[ 54%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_test_failure_exception.cpp.o
+[ 54%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_test_registry.cpp.o
+[ 55%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_test_spec_parser.cpp.o
+[ 55%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_textflow.cpp.o
+[ 56%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_uncaught_exceptions.cpp.o
+[ 57%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_wildcard_pattern.cpp.o
+[ 57%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/internal/catch_xmlwriter.cpp.o
+[ 58%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers.cpp.o
+[ 58%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_container_properties.cpp.o
+[ 59%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_exception.cpp.o
+[ 60%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_floating_point.cpp.o
+[ 60%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_predicate.cpp.o
+[ 61%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_quantifiers.cpp.o
+[ 61%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_string.cpp.o
+[ 62%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_templated.cpp.o
+[ 63%] Building CXX object src/CMakeFiles/Catch2.dir/catch2/matchers/internal/catch_matchers_impl.cpp.o
+[ 63%] Linking CXX static library libCatch2.a
+[ 63%] Built target Catch2
+[ 64%] Building CXX object src/CMakeFiles/Catch2WithMain.dir/catch2/internal/catch_main.cpp.o
+[ 64%] Linking CXX static library libCatch2Main.a
+[ 64%] Built target Catch2WithMain
+[ 65%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/TestRegistrations.cpp.o
+[ 66%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Algorithms.tests.cpp.o
+[ 66%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/AssertionHandler.tests.cpp.o
+[ 67%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Clara.tests.cpp.o
+[ 67%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/CmdLine.tests.cpp.o
+[ 68%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/CmdLineHelpers.tests.cpp.o
+[ 69%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/ColourImpl.tests.cpp.o
+[ 69%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Details.tests.cpp.o
+[ 70%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/FloatingPoint.tests.cpp.o
+[ 70%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/GeneratorsImpl.tests.cpp.o
+[ 71%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Integer.tests.cpp.o
+[ 72%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/InternalBenchmark.tests.cpp.o
+[ 72%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Json.tests.cpp.o
+[ 73%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Parse.tests.cpp.o
+[ 73%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/PartTracker.tests.cpp.o
+[ 74%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/RandomNumberGeneration.tests.cpp.o
+[ 75%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Reporters.tests.cpp.o
+[ 75%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Tag.tests.cpp.o
+[ 76%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/TestCaseInfoHasher.tests.cpp.o
+[ 76%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/TestSpec.tests.cpp.o
+[ 77%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/TestSpecParser.tests.cpp.o
+[ 77%] Building CXX object tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/TextFlow.tests.cpp.o
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:15:24: error: 'AnsiSkippingString' has not been declared in 'Catch::TextFlow'
+   15 | using Catch::TextFlow::AnsiSkippingString;
+      |                        ^~~~~~~~~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp: In function 'void CATCH2_INTERNAL_TEST_39()':
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:208:9: error: 'AnsiSkippingString' was not declared in this scope
+  208 |         AnsiSkippingString str(text);
+      |         ^~~~~~~~~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:211:23: error: 'str' was not declared in this scope; did you mean 'std'?
+  211 |             auto it = str.begin();
+      |                       ^~~
+      |                       std
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:225:23: error: 'str' was not declared in this scope; did you mean 'std'?
+  225 |             auto it = str.end();
+      |                       ^~~
+      |                       std
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:242:9: error: 'AnsiSkippingString' was not declared in this scope
+  242 |         AnsiSkippingString str(text);
+      |         ^~~~~~~~~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:243:19: error: 'str' was not declared in this scope; did you mean 'std'?
+  243 |         auto it = str.begin();
+      |                   ^~~
+      |                   std
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:270:9: error: 'AnsiSkippingString' was not declared in this scope
+  270 |         AnsiSkippingString str(text);
+      |         ^~~~~~~~~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:271:19: error: 'str' was not declared in this scope; did you mean 'std'?
+  271 |         auto it = str.begin();
+      |                   ^~~
+      |                   std
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:298:9: error: 'AnsiSkippingString' was not declared in this scope
+  298 |         AnsiSkippingString str(text);
+      |         ^~~~~~~~~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:299:19: error: 'str' was not declared in this scope; did you mean 'std'?
+  299 |         auto it = str.begin();
+      |                   ^~~
+      |                   std
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:326:9: error: 'AnsiSkippingString' was not declared in this scope
+  326 |         AnsiSkippingString str(text);
+      |         ^~~~~~~~~~~~~~~~~~
+In file included from /home/Catch2/src/catch2/../catch2/catch_tostring.hpp:17,
+                 from /home/Catch2/src/catch2/../catch2/internal/catch_decomposer.hpp:11,
+                 from /home/Catch2/src/catch2/../catch2/internal/catch_assertion_handler.hpp:12,
+                 from /home/Catch2/src/catch2/../catch2/internal/catch_test_macro_impl.hpp:12,
+                 from /home/Catch2/src/catch2/../catch2/catch_test_macros.hpp:11,
+                 from /home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:9:
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:327:27: error: 'str' was not declared in this scope; did you mean 'std'?
+  327 |         CHECK(std::string(str.begin(), str.end()) == text);
+      |                           ^~~
+/home/Catch2/src/catch2/../catch2/internal/catch_compiler_capabilities.hpp:65:76: note: in definition of macro 'CATCH_INTERNAL_IGNORE_BUT_WARN'
+   65 | #    define CATCH_INTERNAL_IGNORE_BUT_WARN(...) (void)__builtin_constant_p(__VA_ARGS__)
+      |                                                                            ^~~~~~~~~~~
+/home/Catch2/src/catch2/../catch2/catch_test_macros.hpp:132:24: note: in expansion of macro 'INTERNAL_CATCH_TEST'
+  132 |   #define CHECK( ... ) INTERNAL_CATCH_TEST( "CHECK", Catch::ResultDisposition::ContinueOnFailure, __VA_ARGS__ )
+      |                        ^~~~~~~~~~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:327:9: note: in expansion of macro 'CHECK'
+  327 |         CHECK(std::string(str.begin(), str.end()) == text);
+      |         ^~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:327:27: error: 'str' was not declared in this scope; did you mean 'std'?
+  327 |         CHECK(std::string(str.begin(), str.end()) == text);
+      |                           ^~~
+/home/Catch2/src/catch2/../catch2/internal/catch_test_macro_impl.hpp:56:63: note: in definition of macro 'INTERNAL_CATCH_TEST'
+   56 |     } while( (void)0, (false) && static_cast<const bool&>( !!(__VA_ARGS__) ) ) // the expression here is never evaluated at runtime but it forces the compiler to give it a look
+      |                                                               ^~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:327:9: note: in expansion of macro 'CHECK'
+  327 |         CHECK(std::string(str.begin(), str.end()) == text);
+      |         ^~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp: In function 'void CATCH2_INTERNAL_TEST_48()':
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:334:5: error: 'AnsiSkippingString' was not declared in this scope
+  334 |     AnsiSkippingString str(text);
+      |     ^~~~~~~~~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:335:11: error: 'str' was not declared in this scope; did you mean 'std'?
+  335 |     CHECK(str.size() == 5);
+      |           ^~~
+/home/Catch2/src/catch2/../catch2/internal/catch_compiler_capabilities.hpp:65:76: note: in definition of macro 'CATCH_INTERNAL_IGNORE_BUT_WARN'
+   65 | #    define CATCH_INTERNAL_IGNORE_BUT_WARN(...) (void)__builtin_constant_p(__VA_ARGS__)
+      |                                                                            ^~~~~~~~~~~
+/home/Catch2/src/catch2/../catch2/catch_test_macros.hpp:132:24: note: in expansion of macro 'INTERNAL_CATCH_TEST'
+  132 |   #define CHECK( ... ) INTERNAL_CATCH_TEST( "CHECK", Catch::ResultDisposition::ContinueOnFailure, __VA_ARGS__ )
+      |                        ^~~~~~~~~~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:335:5: note: in expansion of macro 'CHECK'
+  335 |     CHECK(str.size() == 5);
+      |     ^~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:335:11: error: 'str' was not declared in this scope; did you mean 'std'?
+  335 |     CHECK(str.size() == 5);
+      |           ^~~
+/home/Catch2/src/catch2/../catch2/internal/catch_test_macro_impl.hpp:56:63: note: in definition of macro 'INTERNAL_CATCH_TEST'
+   56 |     } while( (void)0, (false) && static_cast<const bool&>( !!(__VA_ARGS__) ) ) // the expression here is never evaluated at runtime but it forces the compiler to give it a look
+      |                                                               ^~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:335:5: note: in expansion of macro 'CHECK'
+  335 |     CHECK(str.size() == 5);
+      |     ^~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp: In function 'void CATCH2_INTERNAL_TEST_50()':
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:342:9: error: 'AnsiSkippingString' was not declared in this scope
+  342 |         AnsiSkippingString str(text);
+      |         ^~~~~~~~~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:343:18: error: 'str' was not declared in this scope; did you mean 'std'?
+  343 |         auto a = str.begin();
+      |                  ^~~
+      |                  std
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:356:9: error: 'AnsiSkippingString' was not declared in this scope
+  356 |         AnsiSkippingString str(text);
+      |         ^~~~~~~~~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:357:18: error: 'str' was not declared in this scope; did you mean 'std'?
+  357 |         auto a = str.begin();
+      |                  ^~~
+      |                  std
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:370:9: error: 'AnsiSkippingString' was not declared in this scope
+  370 |         AnsiSkippingString str(text);
+      |         ^~~~~~~~~~~~~~~~~~
+/home/Catch2/tests/SelfTest/IntrospectiveTests/TextFlow.tests.cpp:371:18: error: 'str' was not declared in this scope; did you mean 'std'?
+  371 |         auto a = str.begin();
+      |                  ^~~
+      |                  std
+make[2]: *** [tests/CMakeFiles/SelfTest.dir/build.make:370: tests/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/TextFlow.tests.cpp.o] Error 1
+make[1]: *** [CMakeFiles/Makefile2:927: tests/CMakeFiles/SelfTest.dir/all] Error 2
+make: *** [Makefile:166: all] Error 2
+Test project /home/Catch2/build
+      Start 30: ApprovalTests
+ 1/71 Test #30: ApprovalTests ................................................***Failed    0.03 sec
+      Start  1: RunTests
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+ 2/71 Test  #1: RunTests .....................................................***Not Run   0.00 sec
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+      Start  2: List::Tests::Output
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+ 3/71 Test  #2: List::Tests::Output ..........................................***Not Run   0.00 sec
+      Start  3: List::Tests::Quiet
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+ 4/71 Test  #3: List::Tests::Quiet ...........................................***Not Run   0.00 sec
+      Start  4: List::Tests::ExitCode
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+ 5/71 Test  #4: List::Tests::ExitCode ........................................***Not Run   0.00 sec
+      Start  5: List::Tests::XmlOutput
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+ 6/71 Test  #5: List::Tests::XmlOutput .......................................***Not Run   0.00 sec
+      Start  6: List::Tags::Output
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+ 7/71 Test  #6: List::Tags::Output ...........................................***Not Run   0.00 sec
+      Start  7: List::Tags::ExitCode
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+ 8/71 Test  #7: List::Tags::ExitCode .........................................***Not Run   0.00 sec
+      Start  8: List::Tags::XmlOutput
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+ 9/71 Test  #8: List::Tags::XmlOutput ........................................***Not Run   0.00 sec
+      Start  9: List::Reporters::Output
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+10/71 Test  #9: List::Reporters::Output ......................................***Not Run   0.00 sec
+      Start 10: List::Reporters::ExitCode
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+11/71 Test #10: List::Reporters::ExitCode ....................................***Not Run   0.00 sec
+      Start 11: List::Reporters::XmlOutput
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+12/71 Test #11: List::Reporters::XmlOutput ...................................***Not Run   0.00 sec
+      Start 12: List::Listeners::Output
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+13/71 Test #12: List::Listeners::Output ......................................***Not Run   0.00 sec
+      Start 13: List::Listeners::ExitCode
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+14/71 Test #13: List::Listeners::ExitCode ....................................***Not Run   0.00 sec
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+      Start 14: List::Listeners::XmlOutput
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+15/71 Test #14: List::Listeners::XmlOutput ...................................***Not Run   0.00 sec
+      Start 15: NoAssertions
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+16/71 Test #15: NoAssertions .................................................***Not Run   0.00 sec
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+      Start 16: TestSpecs::CombiningMatchingAndNonMatchingIsOk-1
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+17/71 Test #16: TestSpecs::CombiningMatchingAndNonMatchingIsOk-1 .............***Not Run   0.00 sec
+      Start 17: TestSpecs::CombiningMatchingAndNonMatchingIsOk-2
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+18/71 Test #17: TestSpecs::CombiningMatchingAndNonMatchingIsOk-2 .............***Not Run   0.00 sec
+      Start 18: TestSpecs::NoMatchedTestsFail
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+19/71 Test #18: TestSpecs::NoMatchedTestsFail ................................***Not Run   0.00 sec
+      Start 19: TestSpecs::OverrideFailureWithNoMatchedTests
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+20/71 Test #19: TestSpecs::OverrideFailureWithNoMatchedTests .................***Not Run   0.00 sec
+      Start 20: TestSpecs::OverrideAllSkipFailure
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+21/71 Test #20: TestSpecs::OverrideAllSkipFailure ............................***Not Run   0.00 sec
+      Start 21: TestSpecs::NonMatchingTestSpecIsRoundTrippable
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+22/71 Test #21: TestSpecs::NonMatchingTestSpecIsRoundTrippable ...............***Not Run   0.00 sec
+      Start 22: Warnings::UnmatchedTestSpecIsAccepted
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+23/71 Test #22: Warnings::UnmatchedTestSpecIsAccepted ........................***Not Run   0.00 sec
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+      Start 23: Warnings::MultipleWarningsCanBeSpecified
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+24/71 Test #23: Warnings::MultipleWarningsCanBeSpecified .....................***Not Run   0.00 sec
+      Start 24: TestSpecs::WarnUnmatchedTestSpecFailsWithUnmatchedTestSpec
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+25/71 Test #24: TestSpecs::WarnUnmatchedTestSpecFailsWithUnmatchedTestSpec ...***Not Run   0.00 sec
+      Start 25: UnmatchedOutputFilter
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+26/71 Test #25: UnmatchedOutputFilter ........................................***Not Run   0.00 sec
+      Start 26: FilteredSection-1
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+27/71 Test #26: FilteredSection-1 ............................................***Not Run   0.00 sec
+      Start 27: FilteredSection-2
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+28/71 Test #27: FilteredSection-2 ............................................***Not Run   0.00 sec
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+      Start 28: FilteredSection::GeneratorsDontCauseInfiniteLoop-1
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+29/71 Test #28: FilteredSection::GeneratorsDontCauseInfiniteLoop-1 ...........***Not Run   0.00 sec
+      Start 29: FilteredSection::GeneratorsDontCauseInfiniteLoop-2
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+30/71 Test #29: FilteredSection::GeneratorsDontCauseInfiniteLoop-2 ...........***Not Run   0.00 sec
+      Start 31: RegressionCheck-1670
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+31/71 Test #31: RegressionCheck-1670 .........................................***Not Run   0.00 sec
+      Start 32: VersionCheck
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+32/71 Test #32: VersionCheck .................................................***Not Run   0.00 sec
+      Start 33: LibIdentityTest
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+33/71 Test #33: LibIdentityTest ..............................................***Not Run   0.00 sec
+      Start 34: FilenameAsTagsTest
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+34/71 Test #34: FilenameAsTagsTest ...........................................***Not Run   0.00 sec
+      Start 35: FilenameAsTagsMatching
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+35/71 Test #35: FilenameAsTagsMatching .......................................***Not Run   0.00 sec
+      Start 36: EscapeSpecialCharactersInTestNames
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+36/71 Test #36: EscapeSpecialCharactersInTestNames ...........................***Not Run   0.00 sec
+      Start 37: NegativeSpecNoHiddenTests
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+37/71 Test #37: NegativeSpecNoHiddenTests ....................................***Not Run   0.00 sec
+      Start 38: TestsInFile::SimpleSpecs
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+38/71 Test #38: TestsInFile::SimpleSpecs .....................................***Not Run   0.00 sec
+      Start 39: TestsInFile::EscapeSpecialCharacters
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+39/71 Test #39: TestsInFile::EscapeSpecialCharacters .........................***Not Run   0.00 sec
+      Start 40: TestsInFile::InvalidTestNames-1
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+40/71 Test #40: TestsInFile::InvalidTestNames-1 ..............................***Not Run   0.00 sec
+      Start 41: TagAlias
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+41/71 Test #41: TagAlias .....................................................***Not Run   0.00 sec
+      Start 42: RandomTestOrdering
+42/71 Test #42: RandomTestOrdering ...........................................***Failed    0.03 sec
+      Start 43: CheckConvenienceHeaders
+43/71 Test #43: CheckConvenienceHeaders ......................................   Passed    0.03 sec
+      Start 44: Benchmarking::SkipBenchmarkMacros
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+44/71 Test #44: Benchmarking::SkipBenchmarkMacros ............................***Not Run   0.00 sec
+      Start 45: Benchmarking::FailureReporting::ThrowingBenchmark
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+45/71 Test #45: Benchmarking::FailureReporting::ThrowingBenchmark ............***Not Run   0.00 sec
+      Start 46: Benchmarking::FailureReporting::FailedAssertion
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+46/71 Test #46: Benchmarking::FailureReporting::FailedAssertion ..............***Not Run   0.00 sec
+      Start 47: Benchmarking::FailureReporting::FailMacro
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+47/71 Test #47: Benchmarking::FailureReporting::FailMacro ....................***Not Run   0.00 sec
+      Start 48: Benchmarking::FailureReporting::ShouldFailIsRespected
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+48/71 Test #48: Benchmarking::FailureReporting::ShouldFailIsRespected ........***Not Run   0.00 sec
+      Start 49: ErrorHandling::InvalidTestSpecExitsEarly
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+49/71 Test #49: ErrorHandling::InvalidTestSpecExitsEarly .....................***Not Run   0.00 sec
+      Start 50: MultiReporter::CapturingReportersDontPropagateStdOut
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+50/71 Test #50: MultiReporter::CapturingReportersDontPropagateStdOut .........***Not Run   0.00 sec
+      Start 51: MultiReporter::NonCapturingReportersPropagateStdout
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+51/71 Test #51: MultiReporter::NonCapturingReportersPropagateStdout ..........***Not Run   0.00 sec
+      Start 52: Outputs::DashAsOutLocationSendsOutputToStdout
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+52/71 Test #52: Outputs::DashAsOutLocationSendsOutputToStdout ................***Not Run   0.00 sec
+      Start 53: Reporters::DashAsLocationInReporterSpecSendsOutputToStdout
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+53/71 Test #53: Reporters::DashAsLocationInReporterSpecSendsOutputToStdout ...***Not Run   0.00 sec
+      Start 54: Reporters::ReporterSpecificColourOverridesDefaultColour
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+54/71 Test #54: Reporters::ReporterSpecificColourOverridesDefaultColour ......***Not Run   0.00 sec
+      Start 55: Reporters::UnrecognizedOptionInSpecCausesError
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+55/71 Test #55: Reporters::UnrecognizedOptionInSpecCausesError ...............***Not Run   0.00 sec
+      Start 56: Colours::ColourModeCanBeExplicitlySetToAnsi
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+56/71 Test #56: Colours::ColourModeCanBeExplicitlySetToAnsi ..................***Not Run   0.00 sec
+      Start 57: Reporters::JUnit::NamespacesAreNormalized
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+57/71 Test #57: Reporters::JUnit::NamespacesAreNormalized ....................***Not Run   0.00 sec
+      Start 58: Reporters:Filters:compact
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+58/71 Test #58: Reporters:Filters:compact ....................................***Not Run   0.00 sec
+      Start 59: Reporters:RngSeed:compact
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+59/71 Test #59: Reporters:RngSeed:compact ....................................***Not Run   0.00 sec
+      Start 60: Reporters:Filters:console
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+60/71 Test #60: Reporters:Filters:console ....................................***Not Run   0.00 sec
+      Start 61: Reporters:RngSeed:console
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+61/71 Test #61: Reporters:RngSeed:console ....................................***Not Run   0.00 sec
+      Start 62: Reporters:Filters:JUnit
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+62/71 Test #62: Reporters:Filters:JUnit ......................................***Not Run   0.00 sec
+      Start 63: Reporters:RngSeed:JUnit
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+63/71 Test #63: Reporters:RngSeed:JUnit ......................................***Not Run   0.00 sec
+      Start 64: Reporters:Filters:SonarQube
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+64/71 Test #64: Reporters:Filters:SonarQube ..................................***Not Run   0.00 sec
+      Start 65: Reporters:RngSeed:SonarQube
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+65/71 Test #65: Reporters:RngSeed:SonarQube ..................................***Not Run   0.00 sec
+      Start 66: Reporters:Filters:TAP
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+66/71 Test #66: Reporters:Filters:TAP ........................................***Not Run   0.00 sec
+      Start 67: Reporters:RngSeed:TAP
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+67/71 Test #67: Reporters:RngSeed:TAP ........................................***Not Run   0.00 sec
+      Start 68: Reporters:Filters:XML
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+68/71 Test #68: Reporters:Filters:XML ........................................***Not Run   0.00 sec
+      Start 69: Reporters:RngSeed:XML
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+69/71 Test #69: Reporters:RngSeed:XML ........................................***Not Run   0.00 sec
+      Start 70: Reporters:Filters:JSON
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+70/71 Test #70: Reporters:Filters:JSON .......................................***Not Run   0.00 sec
+      Start 71: Reporters:RngSeed:JSON
+Could not find executable /home/Catch2/build/tests/SelfTest
+Looked in the following places:
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Release/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/Debug/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/MinSizeRel/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+Unable to find executable: /home/Catch2/build/tests/SelfTest
+/home/Catch2/build/tests/RelWithDebInfo/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Deployment/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+/home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Release/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/Debug/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/MinSizeRel/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/RelWithDebInfo/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Deployment/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+home/Catch2/build/tests/Development/SelfTest
+71/71 Test #71: Reporters:RngSeed:JSON .......................................***Not Run   0.00 sec
+
+1% tests passed, 70 tests failed out of 71
+
+Label Time Summary:
+uses-python    =   0.09 sec*proc (3 tests)
+
+Total Test time (real) =   0.11 sec
+
+The following tests FAILED:
+	  1 - RunTests (Not Run)
+	  2 - List::Tests::Output (Not Run)
+	  3 - List::Tests::Quiet (Not Run)
+	  4 - List::Tests::ExitCode (Not Run)
+	  5 - List::Tests::XmlOutput (Not Run)
+	  6 - List::Tags::Output (Not Run)
+	  7 - List::Tags::ExitCode (Not Run)
+	  8 - List::Tags::XmlOutput (Not Run)
+	  9 - List::Reporters::Output (Not Run)
+	 10 - List::Reporters::ExitCode (Not Run)
+	 11 - List::Reporters::XmlOutput (Not Run)
+	 12 - List::Listeners::Output (Not Run)
+	 13 - List::Listeners::ExitCode (Not Run)
+	 14 - List::Listeners::XmlOutput (Not Run)
+	 15 - NoAssertions (Not Run)
+	 16 - TestSpecs::CombiningMatchingAndNonMatchingIsOk-1 (Not Run)
+	 17 - TestSpecs::CombiningMatchingAndNonMatchingIsOk-2 (Not Run)
+	 18 - TestSpecs::NoMatchedTestsFail (Not Run)
+	 19 - TestSpecs::OverrideFailureWithNoMatchedTests (Not Run)
+	 20 - TestSpecs::OverrideAllSkipFailure (Not Run)
+	 21 - TestSpecs::NonMatchingTestSpecIsRoundTrippable (Not Run)
+	 22 - Warnings::UnmatchedTestSpecIsAccepted (Not Run)
+	 23 - Warnings::MultipleWarningsCanBeSpecified (Not Run)
+	 24 - TestSpecs::WarnUnmatchedTestSpecFailsWithUnmatchedTestSpec (Not Run)
+	 25 - UnmatchedOutputFilter (Not Run)
+	 26 - FilteredSection-1 (Not Run)
+	 27 - FilteredSection-2 (Not Run)
+	 28 - FilteredSection::GeneratorsDontCauseInfiniteLoop-1 (Not Run)
+	 29 - FilteredSection::GeneratorsDontCauseInfiniteLoop-2 (Not Run)
+	 30 - ApprovalTests (Failed)
+	 31 - RegressionCheck-1670 (Not Run)
+	 32 - VersionCheck (Not Run)
+	 33 - LibIdentityTest (Not Run)
+	 34 - FilenameAsTagsTest (Not Run)
+	 35 - FilenameAsTagsMatching (Not Run)
+	 36 - EscapeSpecialCharactersInTestNames (Not Run)
+	 37 - NegativeSpecNoHiddenTests (Not Run)
+	 38 - TestsInFile::SimpleSpecs (Not Run)
+	 39 - TestsInFile::EscapeSpecialCharacters (Not Run)
+	 40 - TestsInFile::InvalidTestNames-1 (Not Run)
+	 41 - TagAlias (Not Run)
+	 42 - RandomTestOrdering (Failed)
+	 44 - Benchmarking::SkipBenchmarkMacros (Not Run)
+	 45 - Benchmarking::FailureReporting::ThrowingBenchmark (Not Run)
+	 46 - Benchmarking::FailureReporting::FailedAssertion (Not Run)
+	 47 - Benchmarking::FailureReporting::FailMacro (Not Run)
+	 48 - Benchmarking::FailureReporting::ShouldFailIsRespected (Not Run)
+	 49 - ErrorHandling::InvalidTestSpecExitsEarly (Not Run)
+	 50 - MultiReporter::CapturingReportersDontPropagateStdOut (Not Run)
+	 51 - MultiReporter::NonCapturingReportersPropagateStdout (Not Run)
+	 52 - Outputs::DashAsOutLocationSendsOutputToStdout (Not Run)
+	 53 - Reporters::DashAsLocationInReporterSpecSendsOutputToStdout (Not Run)
+	 54 - Reporters::ReporterSpecificColourOverridesDefaultColour (Not Run)
+	 55 - Reporters::UnrecognizedOptionInSpecCausesError (Not Run)
+	 56 - Colours::ColourModeCanBeExplicitlySetToAnsi (Not Run)
+	 57 - Reporters::JUnit::NamespacesAreNormalized (Not Run)
+	 58 - Reporters:Filters:compact (Not Run)
+	 59 - Reporters:RngSeed:compact (Not Run)
+	 60 - Reporters:Filters:console (Not Run)
+	 61 - Reporters:RngSeed:console (Not Run)
+	 62 - Reporters:Filters:JUnit (Not Run)
+	 63 - Reporters:RngSeed:JUnit (Not Run)
+	 64 - Reporters:Filters:SonarQube (Not Run)
+	 65 - Reporters:RngSeed:SonarQube (Not Run)
+	 66 - Reporters:Filters:TAP (Not Run)
+	 67 - Reporters:RngSeed:TAP (Not Run)
+	 68 - Reporters:Filters:XML (Not Run)
+	 69 - Reporters:RngSeed:XML (Not Run)
+	 70 - Reporters:Filters:JSON (Not Run)
+	 71 - Reporters:RngSeed:JSON (Not Run)
+Errors while running CTest
+Output from these tests are in: /home/Catch2/build/Testing/Temporary/LastTest.log
+Use "--rerun-failed --output-on-failure" to re-run the failed cases verbosely.

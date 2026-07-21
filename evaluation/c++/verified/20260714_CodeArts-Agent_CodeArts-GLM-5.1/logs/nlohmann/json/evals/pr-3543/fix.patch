@@ -1,0 +1,76 @@
+diff --git a/include/nlohmann/detail/input/binary_reader.hpp b/include/nlohmann/detail/input/binary_reader.hpp
+index f5871ddf..05206489 100644
+--- a/include/nlohmann/detail/input/binary_reader.hpp
++++ b/include/nlohmann/detail/input/binary_reader.hpp
+@@ -2170,19 +2170,27 @@ class binary_reader
+                         }
+                     }
+ 
+-                    string_t key = "_ArraySize_";
+-                    if (JSON_HEDLEY_UNLIKELY(!sax->start_object(3) || !sax->key(key) || !sax->start_array(dim.size())))
+-                    {
+-                        return false;
+-                    }
+                     result = 1;
+                     for (auto i : dim)
+                     {
++                        if (i != 0 && result > (string_t::npos) / i)
++                        {
++                            return sax->parse_error(chars_read, get_token_string(), out_of_range::create(408, exception_message(input_format, "excessive ndarray size caused overflow", "size"), nullptr));
++                        }
+                         result *= i;
+-                        if (result == 0) // because dim elements shall not have zeros, result = 0 means overflow happened
++                        if (result == string_t::npos)
+                         {
+                             return sax->parse_error(chars_read, get_token_string(), out_of_range::create(408, exception_message(input_format, "excessive ndarray size caused overflow", "size"), nullptr));
+                         }
++                    }
++
++                    string_t key = "_ArraySize_";
++                    if (JSON_HEDLEY_UNLIKELY(!sax->start_object(3) || !sax->key(key) || !sax->start_array(dim.size())))
++                    {
++                        return false;
++                    }
++                    for (auto i : dim)
++                    {
+                         if (JSON_HEDLEY_UNLIKELY(!sax->number_unsigned(static_cast<number_unsigned_t>(i))))
+                         {
+                             return false;
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 98c8dd66..b009a45d 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -10870,19 +10870,27 @@ class binary_reader
+                         }
+                     }
+ 
+-                    string_t key = "_ArraySize_";
+-                    if (JSON_HEDLEY_UNLIKELY(!sax->start_object(3) || !sax->key(key) || !sax->start_array(dim.size())))
+-                    {
+-                        return false;
+-                    }
+                     result = 1;
+                     for (auto i : dim)
+                     {
++                        if (i != 0 && result > (string_t::npos) / i)
++                        {
++                            return sax->parse_error(chars_read, get_token_string(), out_of_range::create(408, exception_message(input_format, "excessive ndarray size caused overflow", "size"), nullptr));
++                        }
+                         result *= i;
+-                        if (result == 0) // because dim elements shall not have zeros, result = 0 means overflow happened
++                        if (result == string_t::npos)
+                         {
+                             return sax->parse_error(chars_read, get_token_string(), out_of_range::create(408, exception_message(input_format, "excessive ndarray size caused overflow", "size"), nullptr));
+                         }
++                    }
++
++                    string_t key = "_ArraySize_";
++                    if (JSON_HEDLEY_UNLIKELY(!sax->start_object(3) || !sax->key(key) || !sax->start_array(dim.size())))
++                    {
++                        return false;
++                    }
++                    for (auto i : dim)
++                    {
+                         if (JSON_HEDLEY_UNLIKELY(!sax->number_unsigned(static_cast<number_unsigned_t>(i))))
+                         {
+                             return false;

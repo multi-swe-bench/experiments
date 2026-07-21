@@ -1,0 +1,30 @@
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index c55bdf54..a786d713 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -2236,6 +2236,10 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         other.m_type = value_t::null;
+         other.m_value = {};
+ 
++#if JSON_DIAGNOSTICS
++        m_parent = other.m_parent;
++#endif
++
+         set_parents();
+         assert_invariant();
+     }
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index cbe69ef4..9629583e 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -19271,6 +19271,10 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         other.m_type = value_t::null;
+         other.m_value = {};
+ 
++#if JSON_DIAGNOSTICS
++        m_parent = other.m_parent;
++#endif
++
+         set_parents();
+         assert_invariant();
+     }

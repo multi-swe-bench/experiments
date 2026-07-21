@@ -1,0 +1,183 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 78d95956..4a6ffe44 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -135,6 +135,7 @@ set(INTERNAL_HEADERS
+     ${SOURCES_DIR}/catch_tag_alias_autoregistrar.hpp
+     ${SOURCES_DIR}/internal/catch_tag_alias_registry.hpp
+     ${SOURCES_DIR}/catch_test_case_info.hpp
++    ${SOURCES_DIR}/internal/catch_test_case_hasher.hpp
+     ${SOURCES_DIR}/internal/catch_test_case_registry_impl.hpp
+     ${SOURCES_DIR}/internal/catch_test_case_tracker.hpp
+     ${SOURCES_DIR}/catch_template_test_macros.hpp
+@@ -201,6 +202,7 @@ set(IMPL_SOURCES
+     ${SOURCES_DIR}/internal/catch_string_manip.cpp
+     ${SOURCES_DIR}/internal/catch_tag_alias_registry.cpp
+     ${SOURCES_DIR}/catch_test_case_info.cpp
++    ${SOURCES_DIR}/internal/catch_test_case_hasher.cpp
+     ${SOURCES_DIR}/internal/catch_test_case_registry_impl.cpp
+     ${SOURCES_DIR}/internal/catch_test_case_tracker.cpp
+     ${SOURCES_DIR}/internal/catch_test_registry.cpp
+diff --git a/src/catch2/internal/catch_test_case_hasher.cpp b/src/catch2/internal/catch_test_case_hasher.cpp
+new file mode 100644
+index 00000000..caf1e7f0
+--- /dev/null
++++ b/src/catch2/internal/catch_test_case_hasher.cpp
+@@ -0,0 +1,42 @@
++
++//              Copyright Catch2 Authors
++// Distributed under the Boost Software License, Version 1.0.
++//   (See accompanying file LICENSE_1_0.txt or copy at
++//        https://www.boost.org/LICENSE_1_0.txt)
++
++// SPDX-License-Identifier: BSL-1.0
++#include <catch2/internal/catch_test_case_hasher.hpp>
++
++#include <catch2/catch_test_case_info.hpp>
++
++namespace Catch {
++
++    TestCaseHasher::TestCaseHasher( hash_t hashSuffix ):
++        m_hashSuffix( hashSuffix ) {}
++
++    uint32_t TestCaseHasher::operator()( TestCaseInfo const& t ) const {
++        // FNV-1a hash with multiplication fold.
++        const hash_t prime = 1099511628211u;
++        hash_t hash = 14695981039346656037u;
++        for (const char c : t.name) {
++            hash ^= c;
++            hash *= prime;
++        }
++        for (const char c : t.className) {
++            hash ^= c;
++            hash *= prime;
++        }
++        for (const auto& tag : t.tags) {
++            for (const char c : tag.original) {
++                hash ^= c;
++                hash *= prime;
++            }
++        }
++        hash ^= m_hashSuffix;
++        hash *= prime;
++        const uint32_t low{ static_cast<uint32_t>(hash) };
++        const uint32_t high{ static_cast<uint32_t>(hash >> 32) };
++        return low * high;
++    }
++
++} // namespace Catch
+diff --git a/src/catch2/internal/catch_test_case_hasher.hpp b/src/catch2/internal/catch_test_case_hasher.hpp
+new file mode 100644
+index 00000000..3d3c9fd7
+--- /dev/null
++++ b/src/catch2/internal/catch_test_case_hasher.hpp
+@@ -0,0 +1,30 @@
++
++//              Copyright Catch2 Authors
++// Distributed under the Boost Software License, Version 1.0.
++//   (See accompanying file LICENSE_1_0.txt or copy at
++//        https://www.boost.org/LICENSE_1_0.txt)
++
++// SPDX-License-Identifier: BSL-1.0
++#ifndef CATCH_TEST_CASE_HASHER_HPP_INCLUDED
++#define CATCH_TEST_CASE_HASHER_HPP_INCLUDED
++
++#include <cstdint>
++
++namespace Catch {
++
++    struct TestCaseInfo;
++
++    class TestCaseHasher {
++    public:
++        using hash_t = uint64_t;
++
++        explicit TestCaseHasher( hash_t hashSuffix );
++        uint32_t operator()( TestCaseInfo const& t ) const;
++
++    private:
++        hash_t m_hashSuffix;
++    };
++
++} // namespace Catch
++
++#endif // CATCH_TEST_CASE_HASHER_HPP_INCLUDED
+diff --git a/tests/SelfTest/IntrospectiveTests/TestCaseHasher.tests.cpp b/tests/SelfTest/IntrospectiveTests/TestCaseHasher.tests.cpp
+new file mode 100644
+index 00000000..54bdf71c
+--- /dev/null
++++ b/tests/SelfTest/IntrospectiveTests/TestCaseHasher.tests.cpp
+@@ -0,0 +1,73 @@
++
++//              Copyright Catch2 Authors
++// Distributed under the Boost Software License, Version 1.0.
++//   (See accompanying file LICENSE_1_0.txt or copy at
++//        https://www.boost.org/LICENSE_1_0.txt)
++
++// SPDX-License-Identifier: BSL-1.0
++
++#include <catch2/catch_test_macros.hpp>
++#include <catch2/internal/catch_test_case_hasher.hpp>
++#include <catch2/catch_test_case_info.hpp>
++
++static constexpr Catch::SourceLineInfo dummySourceLineInfo = CATCH_INTERNAL_LINEINFO;
++
++TEST_CASE("TestCaseHasher produces different hashes for different names",
++          "[test-case-hasher]") {
++    Catch::TestCaseHasher h(0);
++    Catch::TestCaseInfo tc1("", {"name1", ""}, dummySourceLineInfo);
++    Catch::TestCaseInfo tc2("", {"name2", ""}, dummySourceLineInfo);
++    REQUIRE(h(tc1) != h(tc2));
++}
++
++TEST_CASE("TestCaseHasher produces different hashes for different class names",
++          "[test-case-hasher]") {
++    Catch::TestCaseHasher h(0);
++    Catch::TestCaseInfo tc1("class1", {"same-name", ""}, dummySourceLineInfo);
++    Catch::TestCaseInfo tc2("class2", {"same-name", ""}, dummySourceLineInfo);
++    REQUIRE(h(tc1) != h(tc2));
++}
++
++TEST_CASE("TestCaseHasher produces different hashes for different tags",
++          "[test-case-hasher]") {
++    Catch::TestCaseHasher h(0);
++    Catch::TestCaseInfo tc1("", {"same-name", "[tag1]"}, dummySourceLineInfo);
++    Catch::TestCaseInfo tc2("", {"same-name", "[tag2]"}, dummySourceLineInfo);
++    REQUIRE(h(tc1) != h(tc2));
++}
++
++TEST_CASE("TestCaseHasher produces same hash for same test case",
++          "[test-case-hasher]") {
++    Catch::TestCaseHasher h(0);
++    Catch::TestCaseInfo tc1("MyClass", {"my-test", "[tag1][tag2]"}, dummySourceLineInfo);
++    Catch::TestCaseInfo tc2("MyClass", {"my-test", "[tag1][tag2]"}, dummySourceLineInfo);
++    REQUIRE(h(tc1) == h(tc2));
++}
++
++TEST_CASE("TestCaseHasher hash suffix changes the hash",
++          "[test-case-hasher]") {
++    Catch::TestCaseHasher h1(0);
++    Catch::TestCaseHasher h2(1);
++    Catch::TestCaseInfo tc("", {"some-name", ""}, dummySourceLineInfo);
++    REQUIRE(h1(tc) != h2(tc));
++}
++
++TEST_CASE(
++    "TestCaseHasher produces different hashes for same name, same class, "
++    "different tags",
++    "[test-case-hasher]") {
++    Catch::TestCaseHasher h(0);
++    Catch::TestCaseInfo tc1("MyClass", {"name", "[a]"}, dummySourceLineInfo);
++    Catch::TestCaseInfo tc2("MyClass", {"name", "[b]"}, dummySourceLineInfo);
++    REQUIRE(h(tc1) != h(tc2));
++}
++
++TEST_CASE(
++    "TestCaseHasher produces different hashes for same name, different class, "
++    "same tags",
++    "[test-case-hasher]") {
++    Catch::TestCaseHasher h(0);
++    Catch::TestCaseInfo tc1("Class1", {"name", "[a][b]"}, dummySourceLineInfo);
++    Catch::TestCaseInfo tc2("Class2", {"name", "[a][b]"}, dummySourceLineInfo);
++    REQUIRE(h(tc1) != h(tc2));
++}

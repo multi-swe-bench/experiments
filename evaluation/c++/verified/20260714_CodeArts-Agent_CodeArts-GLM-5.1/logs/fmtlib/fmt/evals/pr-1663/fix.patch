@@ -1,0 +1,101 @@
+diff --git a/include/fmt/core.h b/include/fmt/core.h
+index 2e5a51fe..9f99e691 100644
+--- a/include/fmt/core.h
++++ b/include/fmt/core.h
+@@ -629,6 +629,7 @@ using wparse_context FMT_DEPRECATED_ALIAS = basic_format_parse_context<wchar_t>;
+ 
+ template <typename Context> class basic_format_arg;
+ template <typename Context> class basic_format_args;
++template <typename Context> class dynamic_format_arg_store;
+ 
+ // A formatter for objects of type T.
+ template <typename T, typename Char = char, typename Enable = void>
+@@ -1130,6 +1131,7 @@ template <typename Context> class basic_format_arg {
+       -> decltype(vis(0));
+ 
+   friend class basic_format_args<Context>;
++  friend class dynamic_format_arg_store<Context>;
+   friend class internal::arg_map<Context>;
+ 
+   using char_type = typename Context::char_type;
+@@ -1460,6 +1462,8 @@ class dynamic_format_arg_store
+ 
+   // Storage of basic_format_arg must be contiguous.
+   std::vector<basic_format_arg<Context>> data_;
++  // Storage of named argument info, if any named arguments are present.
++  std::vector<internal::named_arg_info<char_type>> named_info_;
+ 
+   // Storage of arguments not fitting into basic_format_arg must grow
+   // without relocation because items in data_ refer to it.
+@@ -1468,13 +1472,29 @@ class dynamic_format_arg_store
+   friend class basic_format_args<Context>;
+ 
+   unsigned long long get_types() const {
+-    return internal::is_unpacked_bit | data_.size();
++    return internal::is_unpacked_bit |
++           (named_info_.empty() ? 0 : internal::has_named_args_bit) |
++           (data_.size() - (named_info_.empty() ? 0 : 1));
+   }
+ 
+   template <typename T> void emplace_arg(const T& arg) {
+     data_.emplace_back(internal::make_arg<Context>(arg));
+   }
+ 
++  template <typename T>
++  void push_back_named_arg(const internal::named_arg<T, char_type>& arg) {
++    if (named_info_.empty()) {
++      data_.insert(data_.begin(), basic_format_arg<Context>());
++    }
++    int arg_index = static_cast<int>(data_.size() - 1);
++    if (internal::const_check(need_copy<T>::value))
++      emplace_arg(dynamic_args_.push<stored_type<T>>(arg.value));
++    else
++      emplace_arg(arg.value);
++    named_info_.push_back({arg.name, arg_index});
++    data_[0] = basic_format_arg<Context>(named_info_.data(), named_info_.size());
++  }
++
+  public:
+   /**
+     \rst
+@@ -1494,15 +1514,17 @@ class dynamic_format_arg_store
+     \endrst
+   */
+   template <typename T> void push_back(const T& arg) {
+-    static_assert(
+-        !std::is_base_of<internal::named_arg_base<char_type>, T>::value,
+-        "named arguments are not supported yet");
+     if (internal::const_check(need_copy<T>::value))
+       emplace_arg(dynamic_args_.push<stored_type<T>>(arg));
+     else
+       emplace_arg(arg);
+   }
+ 
++  template <typename T>
++  void push_back(const internal::named_arg<T, char_type>& arg) {
++    push_back_named_arg(arg);
++  }
++
+   /**
+     Adds a reference to the argument into the dynamic store for later passing to
+     a formating function.
+@@ -1597,7 +1619,10 @@ template <typename Context> class basic_format_args {
+    \endrst
+    */
+   FMT_INLINE basic_format_args(const dynamic_format_arg_store<Context>& store)
+-      : basic_format_args(store.get_types(), store.data_.data()) {}
++      : basic_format_args(
++            store.get_types(),
++            store.named_info_.empty() ? store.data_.data()
++                                       : store.data_.data() + 1) {}
+ 
+   /**
+    \rst
+diff --git a/test-file b/test-file
+new file mode 100644
+index 00000000..2810a093
+--- /dev/null
++++ b/test-file
+@@ -0,0 +1 @@
++Don't panic!
+\ No newline at end of file

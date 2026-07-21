@@ -1,0 +1,643 @@
+检测到 Debian 12 系统
+进入12+系统
+替换系统源完成
+==============================================================================
+Get:1 http://mirrors.tools.huawei.com/debian bookworm InRelease [151 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm-updates InRelease [55.4 kB]
+Get:3 http://mirrors.tools.huawei.com/debian-security bookworm-security InRelease [48.0 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 Packages [8790 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm-updates/main amd64 Packages [6924 B]
+Get:6 http://mirrors.tools.huawei.com/debian-security bookworm-security/main amd64 Packages [316 kB]
+Fetched 9368 kB in 1s (7153 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+patch is already the newest version (2.7.6-7).
+build-essential is already the newest version (12.9).
+libpcre2-dev is already the newest version (10.42-1).
+libpcre2-dev set to manually installed.
+libncurses-dev is already the newest version (6.4-4).
+libncurses-dev set to manually installed.
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+The following additional packages will be installed:
+  libonig5 libssl3 openssl
+Suggested packages:
+  libssl-doc
+The following NEW packages will be installed:
+  libonig-dev libonig5
+The following packages will be upgraded:
+  libssl-dev libssl3 openssl
+3 upgraded, 2 newly installed, 0 to remove and 156 not upgraded.
+Need to get 6203 kB of archives.
+After this operation, 780 kB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig5 amd64 6.9.8-1 [188 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig-dev amd64 6.9.8-1 [96.7 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl-dev amd64 3.0.20-1~deb12u2 [2443 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl3 amd64 3.0.20-1~deb12u2 [2036 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 openssl amd64 3.0.20-1~deb12u2 [1439 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 6203 kB in 0s (18.7 MB/s)
+Selecting previously unselected package libonig5:amd64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 30609 files and directories currently installed.)
+Preparing to unpack .../libonig5_6.9.8-1_amd64.deb ...
+Unpacking libonig5:amd64 (6.9.8-1) ...
+Selecting previously unselected package libonig-dev.
+Preparing to unpack .../libonig-dev_6.9.8-1_amd64.deb ...
+Unpacking libonig-dev (6.9.8-1) ...
+Preparing to unpack .../libssl-dev_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl-dev:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../libssl3_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl3:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../openssl_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking openssl (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Setting up libssl3:amd64 (3.0.20-1~deb12u2) ...
+Setting up libssl-dev:amd64 (3.0.20-1~deb12u2) ...
+Setting up openssl (3.0.20-1~deb12u2) ...
+Setting up libonig5:amd64 (6.9.8-1) ...
+Setting up libonig-dev (6.9.8-1) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+cmake is already the newest version (3.25.1-1).
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+0 upgraded, 0 newly installed, 0 to remove and 156 not upgraded.
+=== RUN FULL via /home/fix-run.sh (tee log) ===
+#!/bin/bash
+set -e
+
+cd /home/json
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake ..  
+cmake --build .
+ctest
+
+=========================================
+当前目录：/home
+当前目录内容：add_certificate_for_c.sh check_git_changes.sh fix-run.sh fix.patch json json_test_data prepare.sh run.sh test-run.sh test.patch
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+wget is already the newest version (1.21.3-1+deb12u1).
+0 upgraded, 0 newly installed, 0 to remove and 156 not upgraded.
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libgpm2 libsodium23 vim-common vim-runtime xxd
+Suggested packages:
+  gpm ctags vim-doc vim-scripts
+The following NEW packages will be installed:
+  libgpm2 libsodium23 vim vim-common vim-runtime xxd
+0 upgraded, 6 newly installed, 0 to remove and 156 not upgraded.
+Need to get 8980 kB of archives.
+After this operation, 41.9 MB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-common all 2:9.0.1378-2+deb12u2 [125 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libgpm2 amd64 1.20.7-10+b1 [14.2 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libsodium23 amd64 1.0.18-1+deb12u1 [162 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-runtime all 2:9.0.1378-2+deb12u2 [7027 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim amd64 2:9.0.1378-2+deb12u2 [1568 kB]
+Get:6 http://mirrors.tools.huawei.com/debian bookworm/main amd64 xxd amd64 2:9.0.1378-2+deb12u2 [84.1 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 8980 kB in 0s (21.3 MB/s)
+Selecting previously unselected package vim-common.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 30652 files and directories currently installed.)
+Preparing to unpack .../0-vim-common_2%3a9.0.1378-2+deb12u2_all.deb ...
+Unpacking vim-common (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package libgpm2:amd64.
+Preparing to unpack .../1-libgpm2_1.20.7-10+b1_amd64.deb ...
+Unpacking libgpm2:amd64 (1.20.7-10+b1) ...
+Selecting previously unselected package libsodium23:amd64.
+Preparing to unpack .../2-libsodium23_1.0.18-1+deb12u1_amd64.deb ...
+Unpacking libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Selecting previously unselected package vim-runtime.
+Preparing to unpack .../3-vim-runtime_2%3a9.0.1378-2+deb12u2_all.deb ...
+Adding 'diversion of /usr/share/vim/vim90/doc/help.txt to /usr/share/vim/vim90/doc/help.txt.vim-tiny by vim-runtime'
+Adding 'diversion of /usr/share/vim/vim90/doc/tags to /usr/share/vim/vim90/doc/tags.vim-tiny by vim-runtime'
+Unpacking vim-runtime (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package vim.
+Preparing to unpack .../4-vim_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking vim (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package xxd.
+Preparing to unpack .../5-xxd_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking xxd (2:9.0.1378-2+deb12u2) ...
+Setting up libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Setting up libgpm2:amd64 (1.20.7-10+b1) ...
+Setting up xxd (2:9.0.1378-2+deb12u2) ...
+Setting up vim-common (2:9.0.1378-2+deb12u2) ...
+Setting up vim-runtime (2:9.0.1378-2+deb12u2) ...
+Setting up vim (2:9.0.1378-2+deb12u2) ...
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/ex (ex) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rview (rview) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rvim (rvim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vi (vi) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/view (view) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vim (vim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vimdiff (vimdiff) in auto mode
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Processing triggers for hicolor-icon-theme (0.17-2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libcurl3-gnutls libcurl3-nss libcurl4 libcurl4-openssl-dev
+Suggested packages:
+  libcurl4-doc libidn-dev libldap2-dev librtmp-dev libssh2-1-dev
+The following packages will be upgraded:
+  curl libcurl3-gnutls libcurl3-nss libcurl4 libcurl4-openssl-dev
+5 upgraded, 0 newly installed, 0 to remove and 151 not upgraded.
+Need to get 1982 kB of archives.
+After this operation, 5120 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4-openssl-dev amd64 7.88.1-10+deb12u15 [493 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 curl amd64 7.88.1-10+deb12u15 [316 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4 amd64 7.88.1-10+deb12u15 [392 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl3-gnutls amd64 7.88.1-10+deb12u15 [386 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl3-nss amd64 7.88.1-10+deb12u15 [396 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 1982 kB in 0s (6018 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 32809 files and directories currently installed.)
+Preparing to unpack .../libcurl4-openssl-dev_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../curl_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking curl (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl4_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl3-gnutls_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl3-nss_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl3-nss:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Setting up libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) ...
+Setting up libcurl3-nss:amd64 (7.88.1-10+deb12u15) ...
+Setting up libcurl4:amd64 (7.88.1-10+deb12u15) ...
+Setting up curl (7.88.1-10+deb12u15) ...
+Setting up libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+=== 配置证书 (abcert) ===
+[abcert][INFO] Created temporary directory .tmp.pems.3SNNI7Fo
+[abcert][INFO] Operating system: Debian GNU/Linux 12 (bookworm)
+[abcert][INFO] Installing certificates
+'.tmp.pems.3SNNI7Fo/HWBPITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWBPITEnterpriseCA1.crt'
+'.tmp.pems.3SNNI7Fo/HWITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWITEnterpriseCA1.crt'
+'.tmp.pems.3SNNI7Fo/HuaweiBPITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiBPITRootCA.crt'
+'.tmp.pems.3SNNI7Fo/HuaweiITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiITRootCA.crt'
+'.tmp.pems.3SNNI7Fo/HuaweiWebSecureInternetGatewayCA.pem' -> '/usr/local/share/ca-certificates/HuaweiWebSecureInternetGatewayCA.crt'
+Updating certificates in /etc/ssl/certs...
+rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+5 added, 0 removed; done.
+Running hooks in /etc/ca-certificates/update.d...
+done.
+[abcert][INFO] Removed .tmp.pems.3SNNI7Fo
+abcert 安装完成
+================git=====================
+http.version=HTTP/1.1
+http.postbuffer=524288000
+http.timeout=600
+================git=====================
+================env=====================
+HTTPS_PROXY=http://test:test@proxysg.huawei.com:8080/
+no_proxy=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+HOSTNAME=8821884fa79e
+GCC_MIRRORS=https://ftpmirror.gnu.org/gcc 		https://mirrors.kernel.org/gnu/gcc 		https://bigsearcher.com/mirrors/gcc/releases 		http://www.netgull.com/gcc/releases 		https://ftpmirror.gnu.org/gcc 		https://sourceware.org/pub/gcc/releases 		ftp://ftp.gnu.org/gnu/gcc
+HOME=/root
+OLDPWD=/home
+NO_PROXY=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+https_proxy=http://test:test@proxysg.huawei.com:8080/
+GPG_KEYS=B215C1633BCA0477615F1B35A5B3A004745C015A 	B3C42148A44E6983B3E4CC0793FA9B1AB75C61B8 	90AA470469D3965A87A5DCB494D03953902C9419 	80F98B2E0DAB6C8281BDF541A7C8C3B2F71EDF1C 	7F74F97C103468EE5D750B583AB00996FC26A641 	33C235A34C46AA3FFB293709A328C3A2C3C45C06 	D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62
+http_proxy=http://test:test@proxysg.huawei.com:8080/
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+GIT_SSL_NO_VERIFY=true
+PWD=/tmp/tmp.1cL3QkjAvb/abcert_install
+HTTP_PROXY=http://test:test@proxysg.huawei.com:8080/
+GCC_VERSION=12.4.0
+================env=====================
+#!/bin/bash
+# set -e
+
+cd /home/json
+git ls-files --others --exclude-standard | xargs -I {} mv {} {}.bak
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake ..  
+cmake --build .
+ctest
+
+=========================================
+patching file tests/src/unit-32bit.cpp
+patching file tests/src/unit-bjdata.cpp
+patching file include/nlohmann/detail/input/binary_reader.hpp
+patching file single_include/nlohmann/json.hpp
+-- The CXX compiler identification is GNU 12.4.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Using the multi-header code from /home/json/include/
+-- Found Git: /usr/bin/git (found version "2.39.5") 
+-- Operating system: Linux-6.8.0-41-generic; Linux 8821884fa79e 6.8.0-41-generic #41-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  2 20:41:06 UTC 2024 x86_64 GNU/Linux
+-- Compiler: c++ (GCC) 12.4.0; Copyright (C) 2022 Free Software Foundation, Inc.; This is free software; see the source for copying conditions.  There is NO; warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+-- Testing standards: 11 14 17 20 23
+-- Looking for C++ include sys/types.h
+-- Looking for C++ include sys/types.h - found
+-- Looking for C++ include stdint.h
+-- Looking for C++ include stdint.h - found
+-- Looking for C++ include stddef.h
+-- Looking for C++ include stddef.h - found
+-- Check size of size_t
+-- Check size of size_t - done
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/json/build
+[  1%] Building CXX object tests/CMakeFiles/test_main.dir/src/unit.cpp.o
+[  1%] Built target test_main
+[  2%] Building CXX object tests/CMakeFiles/test-algorithms_cpp11.dir/src/unit-algorithms.cpp.o
+[  3%] Linking CXX executable test-algorithms_cpp11
+[  3%] Built target test-algorithms_cpp11
+[  3%] Building CXX object tests/CMakeFiles/test-allocator_cpp11.dir/src/unit-allocator.cpp.o
+[  4%] Linking CXX executable test-allocator_cpp11
+[  4%] Built target test-allocator_cpp11
+[  5%] Building CXX object tests/CMakeFiles/test-alt-string_cpp11.dir/src/unit-alt-string.cpp.o
+[  6%] Linking CXX executable test-alt-string_cpp11
+[  6%] Built target test-alt-string_cpp11
+[  6%] Building CXX object tests/CMakeFiles/test-assert_macro_cpp11.dir/src/unit-assert_macro.cpp.o
+[  7%] Linking CXX executable test-assert_macro_cpp11
+[  7%] Built target test-assert_macro_cpp11
+[  8%] Building CXX object tests/CMakeFiles/test-binary_formats_cpp11.dir/src/unit-binary_formats.cpp.o
+[  8%] Linking CXX executable test-binary_formats_cpp11
+[  8%] Built target test-binary_formats_cpp11
+[  9%] Building CXX object tests/CMakeFiles/test-bjdata_cpp11.dir/src/unit-bjdata.cpp.o
+[ 10%] Linking CXX executable test-bjdata_cpp11
+[ 10%] Built target test-bjdata_cpp11
+[ 11%] Building CXX object tests/CMakeFiles/test-bson_cpp11.dir/src/unit-bson.cpp.o
+[ 11%] Linking CXX executable test-bson_cpp11
+[ 11%] Built target test-bson_cpp11
+[ 12%] Building CXX object tests/CMakeFiles/test-byte_container_with_subtype_cpp11.dir/src/unit-byte_container_with_subtype.cpp.o
+[ 13%] Linking CXX executable test-byte_container_with_subtype_cpp11
+[ 13%] Built target test-byte_container_with_subtype_cpp11
+[ 14%] Building CXX object tests/CMakeFiles/test-capacity_cpp11.dir/src/unit-capacity.cpp.o
+[ 14%] Linking CXX executable test-capacity_cpp11
+[ 14%] Built target test-capacity_cpp11
+[ 15%] Building CXX object tests/CMakeFiles/test-cbor_cpp11.dir/src/unit-cbor.cpp.o
+[ 16%] Linking CXX executable test-cbor_cpp11
+[ 16%] Built target test-cbor_cpp11
+[ 16%] Building CXX object tests/CMakeFiles/test-class_const_iterator_cpp11.dir/src/unit-class_const_iterator.cpp.o
+[ 17%] Linking CXX executable test-class_const_iterator_cpp11
+[ 17%] Built target test-class_const_iterator_cpp11
+[ 18%] Building CXX object tests/CMakeFiles/test-class_iterator_cpp11.dir/src/unit-class_iterator.cpp.o
+[ 19%] Linking CXX executable test-class_iterator_cpp11
+[ 19%] Built target test-class_iterator_cpp11
+[ 19%] Building CXX object tests/CMakeFiles/test-class_lexer_cpp11.dir/src/unit-class_lexer.cpp.o
+[ 20%] Linking CXX executable test-class_lexer_cpp11
+[ 20%] Built target test-class_lexer_cpp11
+[ 21%] Building CXX object tests/CMakeFiles/test-class_parser_cpp11.dir/src/unit-class_parser.cpp.o
+[ 22%] Linking CXX executable test-class_parser_cpp11
+[ 22%] Built target test-class_parser_cpp11
+[ 22%] Building CXX object tests/CMakeFiles/test-comparison_cpp11.dir/src/unit-comparison.cpp.o
+[ 23%] Linking CXX executable test-comparison_cpp11
+[ 23%] Built target test-comparison_cpp11
+[ 24%] Building CXX object tests/CMakeFiles/test-comparison_cpp20.dir/src/unit-comparison.cpp.o
+[ 24%] Linking CXX executable test-comparison_cpp20
+[ 24%] Built target test-comparison_cpp20
+[ 25%] Building CXX object tests/CMakeFiles/test-concepts_cpp11.dir/src/unit-concepts.cpp.o
+[ 26%] Linking CXX executable test-concepts_cpp11
+[ 26%] Built target test-concepts_cpp11
+[ 26%] Building CXX object tests/CMakeFiles/test-constructor1_cpp11.dir/src/unit-constructor1.cpp.o
+[ 27%] Linking CXX executable test-constructor1_cpp11
+[ 27%] Built target test-constructor1_cpp11
+[ 28%] Building CXX object tests/CMakeFiles/test-constructor2_cpp11.dir/src/unit-constructor2.cpp.o
+[ 29%] Linking CXX executable test-constructor2_cpp11
+[ 29%] Built target test-constructor2_cpp11
+[ 29%] Building CXX object tests/CMakeFiles/test-convenience_cpp11.dir/src/unit-convenience.cpp.o
+[ 30%] Linking CXX executable test-convenience_cpp11
+[ 30%] Built target test-convenience_cpp11
+[ 31%] Building CXX object tests/CMakeFiles/test-conversions_cpp11.dir/src/unit-conversions.cpp.o
+[ 32%] Linking CXX executable test-conversions_cpp11
+[ 32%] Built target test-conversions_cpp11
+[ 32%] Building CXX object tests/CMakeFiles/test-conversions_cpp17.dir/src/unit-conversions.cpp.o
+[ 33%] Linking CXX executable test-conversions_cpp17
+[ 33%] Built target test-conversions_cpp17
+[ 34%] Building CXX object tests/CMakeFiles/test-deserialization_cpp11.dir/src/unit-deserialization.cpp.o
+[ 34%] Linking CXX executable test-deserialization_cpp11
+[ 34%] Built target test-deserialization_cpp11
+[ 35%] Building CXX object tests/CMakeFiles/test-diagnostics_cpp11.dir/src/unit-diagnostics.cpp.o
+[ 36%] Linking CXX executable test-diagnostics_cpp11
+[ 36%] Built target test-diagnostics_cpp11
+[ 37%] Building CXX object tests/CMakeFiles/test-disabled_exceptions_cpp11.dir/src/unit-disabled_exceptions.cpp.o
+[ 37%] Linking CXX executable test-disabled_exceptions_cpp11
+[ 37%] Built target test-disabled_exceptions_cpp11
+[ 38%] Building CXX object tests/CMakeFiles/test-element_access1_cpp11.dir/src/unit-element_access1.cpp.o
+[ 39%] Linking CXX executable test-element_access1_cpp11
+[ 39%] Built target test-element_access1_cpp11
+[ 40%] Building CXX object tests/CMakeFiles/test-element_access2_cpp11.dir/src/unit-element_access2.cpp.o
+[ 40%] Linking CXX executable test-element_access2_cpp11
+[ 40%] Built target test-element_access2_cpp11
+[ 41%] Building CXX object tests/CMakeFiles/test-element_access2_cpp17.dir/src/unit-element_access2.cpp.o
+[ 42%] Linking CXX executable test-element_access2_cpp17
+[ 42%] Built target test-element_access2_cpp17
+[ 42%] Building CXX object tests/CMakeFiles/test-hash_cpp11.dir/src/unit-hash.cpp.o
+[ 43%] Linking CXX executable test-hash_cpp11
+[ 43%] Built target test-hash_cpp11
+[ 44%] Building CXX object tests/CMakeFiles/test-inspection_cpp11.dir/src/unit-inspection.cpp.o
+[ 45%] Linking CXX executable test-inspection_cpp11
+[ 45%] Built target test-inspection_cpp11
+[ 45%] Building CXX object tests/CMakeFiles/test-items_cpp11.dir/src/unit-items.cpp.o
+[ 46%] Linking CXX executable test-items_cpp11
+[ 46%] Built target test-items_cpp11
+[ 47%] Building CXX object tests/CMakeFiles/test-items_cpp17.dir/src/unit-items.cpp.o
+[ 48%] Linking CXX executable test-items_cpp17
+[ 48%] Built target test-items_cpp17
+[ 48%] Building CXX object tests/CMakeFiles/test-iterators1_cpp11.dir/src/unit-iterators1.cpp.o
+[ 49%] Linking CXX executable test-iterators1_cpp11
+[ 49%] Built target test-iterators1_cpp11
+[ 50%] Building CXX object tests/CMakeFiles/test-iterators2_cpp11.dir/src/unit-iterators2.cpp.o
+[ 50%] Linking CXX executable test-iterators2_cpp11
+[ 50%] Built target test-iterators2_cpp11
+[ 51%] Building CXX object tests/CMakeFiles/test-iterators2_cpp20.dir/src/unit-iterators2.cpp.o
+[ 52%] Linking CXX executable test-iterators2_cpp20
+[ 52%] Built target test-iterators2_cpp20
+[ 53%] Building CXX object tests/CMakeFiles/test-json_patch_cpp11.dir/src/unit-json_patch.cpp.o
+[ 53%] Linking CXX executable test-json_patch_cpp11
+[ 53%] Built target test-json_patch_cpp11
+[ 54%] Building CXX object tests/CMakeFiles/test-json_pointer_cpp11.dir/src/unit-json_pointer.cpp.o
+[ 55%] Linking CXX executable test-json_pointer_cpp11
+[ 55%] Built target test-json_pointer_cpp11
+[ 55%] Building CXX object tests/CMakeFiles/test-large_json_cpp11.dir/src/unit-large_json.cpp.o
+[ 56%] Linking CXX executable test-large_json_cpp11
+[ 56%] Built target test-large_json_cpp11
+[ 57%] Building CXX object tests/CMakeFiles/test-merge_patch_cpp11.dir/src/unit-merge_patch.cpp.o
+[ 58%] Linking CXX executable test-merge_patch_cpp11
+[ 58%] Built target test-merge_patch_cpp11
+[ 58%] Building CXX object tests/CMakeFiles/test-meta_cpp11.dir/src/unit-meta.cpp.o
+[ 59%] Linking CXX executable test-meta_cpp11
+[ 59%] Built target test-meta_cpp11
+[ 60%] Building CXX object tests/CMakeFiles/test-modifiers_cpp11.dir/src/unit-modifiers.cpp.o
+[ 61%] Linking CXX executable test-modifiers_cpp11
+[ 61%] Built target test-modifiers_cpp11
+[ 61%] Building CXX object tests/CMakeFiles/test-msgpack_cpp11.dir/src/unit-msgpack.cpp.o
+[ 62%] Linking CXX executable test-msgpack_cpp11
+[ 62%] Built target test-msgpack_cpp11
+[ 63%] Building CXX object tests/CMakeFiles/test-noexcept_cpp11.dir/src/unit-noexcept.cpp.o
+[ 63%] Linking CXX executable test-noexcept_cpp11
+[ 63%] Built target test-noexcept_cpp11
+[ 64%] Building CXX object tests/CMakeFiles/test-ordered_json_cpp11.dir/src/unit-ordered_json.cpp.o
+[ 65%] Linking CXX executable test-ordered_json_cpp11
+[ 65%] Built target test-ordered_json_cpp11
+[ 66%] Building CXX object tests/CMakeFiles/test-ordered_map_cpp11.dir/src/unit-ordered_map.cpp.o
+[ 66%] Linking CXX executable test-ordered_map_cpp11
+[ 66%] Built target test-ordered_map_cpp11
+[ 67%] Building CXX object tests/CMakeFiles/test-pointer_access_cpp11.dir/src/unit-pointer_access.cpp.o
+[ 68%] Linking CXX executable test-pointer_access_cpp11
+[ 68%] Built target test-pointer_access_cpp11
+[ 69%] Building CXX object tests/CMakeFiles/test-readme_cpp11.dir/src/unit-readme.cpp.o
+[ 69%] Linking CXX executable test-readme_cpp11
+[ 69%] Built target test-readme_cpp11
+[ 70%] Building CXX object tests/CMakeFiles/test-reference_access_cpp11.dir/src/unit-reference_access.cpp.o
+[ 71%] Linking CXX executable test-reference_access_cpp11
+[ 71%] Built target test-reference_access_cpp11
+[ 71%] Building CXX object tests/CMakeFiles/test-regression1_cpp11.dir/src/unit-regression1.cpp.o
+[ 72%] Linking CXX executable test-regression1_cpp11
+[ 72%] Built target test-regression1_cpp11
+[ 73%] Building CXX object tests/CMakeFiles/test-regression1_cpp17.dir/src/unit-regression1.cpp.o
+[ 74%] Linking CXX executable test-regression1_cpp17
+[ 74%] Built target test-regression1_cpp17
+[ 74%] Building CXX object tests/CMakeFiles/test-regression2_cpp11.dir/src/unit-regression2.cpp.o
+[ 75%] Linking CXX executable test-regression2_cpp11
+[ 75%] Built target test-regression2_cpp11
+[ 76%] Building CXX object tests/CMakeFiles/test-regression2_cpp17.dir/src/unit-regression2.cpp.o
+[ 76%] Linking CXX executable test-regression2_cpp17
+[ 76%] Built target test-regression2_cpp17
+[ 77%] Building CXX object tests/CMakeFiles/test-regression2_cpp20.dir/src/unit-regression2.cpp.o
+[ 78%] Linking CXX executable test-regression2_cpp20
+[ 78%] Built target test-regression2_cpp20
+[ 79%] Building CXX object tests/CMakeFiles/test-serialization_cpp11.dir/src/unit-serialization.cpp.o
+[ 79%] Linking CXX executable test-serialization_cpp11
+[ 79%] Built target test-serialization_cpp11
+[ 80%] Building CXX object tests/CMakeFiles/test-testsuites_cpp11.dir/src/unit-testsuites.cpp.o
+[ 81%] Linking CXX executable test-testsuites_cpp11
+[ 81%] Built target test-testsuites_cpp11
+[ 82%] Building CXX object tests/CMakeFiles/test-to_chars_cpp11.dir/src/unit-to_chars.cpp.o
+[ 82%] Linking CXX executable test-to_chars_cpp11
+[ 82%] Built target test-to_chars_cpp11
+[ 83%] Building CXX object tests/CMakeFiles/test-ubjson_cpp11.dir/src/unit-ubjson.cpp.o
+[ 84%] Linking CXX executable test-ubjson_cpp11
+[ 84%] Built target test-ubjson_cpp11
+[ 84%] Building CXX object tests/CMakeFiles/test-udt_cpp11.dir/src/unit-udt.cpp.o
+[ 85%] Linking CXX executable test-udt_cpp11
+[ 85%] Built target test-udt_cpp11
+[ 86%] Building CXX object tests/CMakeFiles/test-udt_macro_cpp11.dir/src/unit-udt_macro.cpp.o
+[ 87%] Linking CXX executable test-udt_macro_cpp11
+[ 87%] Built target test-udt_macro_cpp11
+[ 87%] Building CXX object tests/CMakeFiles/test-unicode1_cpp11.dir/src/unit-unicode1.cpp.o
+[ 88%] Linking CXX executable test-unicode1_cpp11
+[ 88%] Built target test-unicode1_cpp11
+[ 89%] Building CXX object tests/CMakeFiles/test-unicode2_cpp11.dir/src/unit-unicode2.cpp.o
+[ 90%] Linking CXX executable test-unicode2_cpp11
+[ 90%] Built target test-unicode2_cpp11
+[ 90%] Building CXX object tests/CMakeFiles/test-unicode3_cpp11.dir/src/unit-unicode3.cpp.o
+[ 91%] Linking CXX executable test-unicode3_cpp11
+[ 91%] Built target test-unicode3_cpp11
+[ 92%] Building CXX object tests/CMakeFiles/test-unicode4_cpp11.dir/src/unit-unicode4.cpp.o
+[ 92%] Linking CXX executable test-unicode4_cpp11
+[ 92%] Built target test-unicode4_cpp11
+[ 93%] Building CXX object tests/CMakeFiles/test-unicode5_cpp11.dir/src/unit-unicode5.cpp.o
+[ 94%] Linking CXX executable test-unicode5_cpp11
+[ 94%] Built target test-unicode5_cpp11
+[ 95%] Building CXX object tests/CMakeFiles/test-user_defined_input_cpp11.dir/src/unit-user_defined_input.cpp.o
+[ 95%] Linking CXX executable test-user_defined_input_cpp11
+[ 95%] Built target test-user_defined_input_cpp11
+[ 96%] Building CXX object tests/CMakeFiles/test-wstring_cpp11.dir/src/unit-wstring.cpp.o
+[ 97%] Linking CXX executable test-wstring_cpp11
+[ 97%] Built target test-wstring_cpp11
+[ 98%] Building CXX object tests/CMakeFiles/test-comparison_legacy_cpp11.dir/src/unit-comparison.cpp.o
+[ 99%] Linking CXX executable test-comparison_legacy_cpp11
+[ 99%] Built target test-comparison_legacy_cpp11
+[100%] Building CXX object tests/CMakeFiles/test-comparison_legacy_cpp20.dir/src/unit-comparison.cpp.o
+[100%] Linking CXX executable test-comparison_legacy_cpp20
+[100%] Built target test-comparison_legacy_cpp20
+Test project /home/json/build
+      Start  1: download_test_data
+ 1/81 Test  #1: download_test_data ...........................   Passed    0.08 sec
+      Start  2: test-algorithms_cpp11
+ 2/81 Test  #2: test-algorithms_cpp11 ........................   Passed    0.00 sec
+      Start  3: test-allocator_cpp11
+ 3/81 Test  #3: test-allocator_cpp11 .........................   Passed    0.00 sec
+      Start  4: test-alt-string_cpp11
+ 4/81 Test  #4: test-alt-string_cpp11 ........................   Passed    0.00 sec
+      Start  5: test-assert_macro_cpp11
+ 5/81 Test  #5: test-assert_macro_cpp11 ......................   Passed    0.00 sec
+      Start  6: test-binary_formats_cpp11
+ 6/81 Test  #6: test-binary_formats_cpp11 ....................   Passed   20.90 sec
+      Start  7: test-bjdata_cpp11
+ 7/81 Test  #7: test-bjdata_cpp11 ............................   Passed   10.19 sec
+      Start  8: test-bson_cpp11
+ 8/81 Test  #8: test-bson_cpp11 ..............................   Passed    0.01 sec
+      Start  9: test-byte_container_with_subtype_cpp11
+ 9/81 Test  #9: test-byte_container_with_subtype_cpp11 .......   Passed    0.00 sec
+      Start 10: test-capacity_cpp11
+10/81 Test #10: test-capacity_cpp11 ..........................   Passed    0.00 sec
+      Start 11: test-cbor_cpp11
+11/81 Test #11: test-cbor_cpp11 ..............................   Passed   40.29 sec
+      Start 12: test-class_const_iterator_cpp11
+12/81 Test #12: test-class_const_iterator_cpp11 ..............   Passed    0.00 sec
+      Start 13: test-class_iterator_cpp11
+13/81 Test #13: test-class_iterator_cpp11 ....................   Passed    0.00 sec
+      Start 14: test-class_lexer_cpp11
+14/81 Test #14: test-class_lexer_cpp11 .......................   Passed    0.00 sec
+      Start 15: test-class_parser_cpp11
+15/81 Test #15: test-class_parser_cpp11 ......................   Passed    0.07 sec
+      Start 16: test-comparison_cpp11
+16/81 Test #16: test-comparison_cpp11 ........................   Passed    0.00 sec
+      Start 17: test-comparison_cpp20
+17/81 Test #17: test-comparison_cpp20 ........................   Passed    0.00 sec
+      Start 18: test-concepts_cpp11
+18/81 Test #18: test-concepts_cpp11 ..........................   Passed    0.00 sec
+      Start 19: test-constructor1_cpp11
+19/81 Test #19: test-constructor1_cpp11 ......................   Passed    0.01 sec
+      Start 20: test-constructor2_cpp11
+20/81 Test #20: test-constructor2_cpp11 ......................   Passed    0.00 sec
+      Start 21: test-convenience_cpp11
+21/81 Test #21: test-convenience_cpp11 .......................   Passed    0.00 sec
+      Start 22: test-conversions_cpp11
+22/81 Test #22: test-conversions_cpp11 .......................   Passed    0.01 sec
+      Start 23: test-conversions_cpp17
+23/81 Test #23: test-conversions_cpp17 .......................   Passed    0.01 sec
+      Start 24: test-deserialization_cpp11
+24/81 Test #24: test-deserialization_cpp11 ...................   Passed    0.01 sec
+      Start 25: test-diagnostics_cpp11
+25/81 Test #25: test-diagnostics_cpp11 .......................   Passed    0.00 sec
+      Start 26: test-disabled_exceptions_cpp11
+26/81 Test #26: test-disabled_exceptions_cpp11 ...............   Passed    0.00 sec
+      Start 27: test-element_access1_cpp11
+27/81 Test #27: test-element_access1_cpp11 ...................   Passed    0.00 sec
+      Start 28: test-element_access2_cpp11
+28/81 Test #28: test-element_access2_cpp11 ...................   Passed    0.01 sec
+      Start 29: test-element_access2_cpp17
+29/81 Test #29: test-element_access2_cpp17 ...................   Passed    0.01 sec
+      Start 30: test-hash_cpp11
+30/81 Test #30: test-hash_cpp11 ..............................   Passed    0.00 sec
+      Start 31: test-inspection_cpp11
+31/81 Test #31: test-inspection_cpp11 ........................   Passed    5.55 sec
+      Start 32: test-items_cpp11
+32/81 Test #32: test-items_cpp11 .............................   Passed    0.00 sec
+      Start 33: test-items_cpp17
+33/81 Test #33: test-items_cpp17 .............................   Passed    0.00 sec
+      Start 34: test-iterators1_cpp11
+34/81 Test #34: test-iterators1_cpp11 ........................   Passed    0.01 sec
+      Start 35: test-iterators2_cpp11
+35/81 Test #35: test-iterators2_cpp11 ........................   Passed    0.01 sec
+      Start 36: test-iterators2_cpp20
+36/81 Test #36: test-iterators2_cpp20 ........................   Passed    0.01 sec
+      Start 37: test-json_patch_cpp11
+37/81 Test #37: test-json_patch_cpp11 ........................   Passed    0.01 sec
+      Start 38: test-json_pointer_cpp11
+38/81 Test #38: test-json_pointer_cpp11 ......................   Passed    0.00 sec
+      Start 39: test-large_json_cpp11
+39/81 Test #39: test-large_json_cpp11 ........................   Passed    5.33 sec
+      Start 40: test-merge_patch_cpp11
+40/81 Test #40: test-merge_patch_cpp11 .......................   Passed    0.00 sec
+      Start 41: test-meta_cpp11
+41/81 Test #41: test-meta_cpp11 ..............................   Passed    0.00 sec
+      Start 42: test-modifiers_cpp11
+42/81 Test #42: test-modifiers_cpp11 .........................   Passed    0.00 sec
+      Start 43: test-msgpack_cpp11
+43/81 Test #43: test-msgpack_cpp11 ...........................   Passed   40.39 sec
+      Start 44: test-noexcept_cpp11
+44/81 Test #44: test-noexcept_cpp11 ..........................   Passed    0.00 sec
+      Start 45: test-ordered_json_cpp11
+45/81 Test #45: test-ordered_json_cpp11 ......................   Passed    0.00 sec
+      Start 46: test-ordered_map_cpp11
+46/81 Test #46: test-ordered_map_cpp11 .......................   Passed    0.00 sec
+      Start 47: test-pointer_access_cpp11
+47/81 Test #47: test-pointer_access_cpp11 ....................   Passed    0.00 sec
+      Start 48: test-readme_cpp11
+48/81 Test #48: test-readme_cpp11 ............................   Passed    0.00 sec
+      Start 49: test-reference_access_cpp11
+49/81 Test #49: test-reference_access_cpp11 ..................   Passed    0.00 sec
+      Start 50: test-regression1_cpp11
+50/81 Test #50: test-regression1_cpp11 .......................   Passed    6.29 sec
+      Start 51: test-regression1_cpp17
+51/81 Test #51: test-regression1_cpp17 .......................   Passed    7.66 sec
+      Start 52: test-regression2_cpp11
+52/81 Test #52: test-regression2_cpp11 .......................   Passed    0.00 sec
+      Start 53: test-regression2_cpp17
+53/81 Test #53: test-regression2_cpp17 .......................   Passed    0.00 sec
+      Start 54: test-regression2_cpp20
+54/81 Test #54: test-regression2_cpp20 .......................   Passed    0.00 sec
+      Start 55: test-serialization_cpp11
+55/81 Test #55: test-serialization_cpp11 .....................   Passed    0.00 sec
+      Start 56: test-testsuites_cpp11
+56/81 Test #56: test-testsuites_cpp11 ........................   Passed    0.07 sec
+      Start 57: test-to_chars_cpp11
+57/81 Test #57: test-to_chars_cpp11 ..........................   Passed    0.00 sec
+      Start 58: test-ubjson_cpp11
+58/81 Test #58: test-ubjson_cpp11 ............................   Passed   12.75 sec
+      Start 59: test-udt_cpp11
+59/81 Test #59: test-udt_cpp11 ...............................   Passed    0.00 sec
+      Start 60: test-udt_macro_cpp11
+60/81 Test #60: test-udt_macro_cpp11 .........................   Passed    0.00 sec
+      Start 61: test-unicode1_cpp11
+61/81 Test #61: test-unicode1_cpp11 ..........................   Passed    5.87 sec
+      Start 62: test-unicode2_cpp11
+62/81 Test #62: test-unicode2_cpp11 ..........................   Passed   10.60 sec
+      Start 63: test-unicode3_cpp11
+63/81 Test #63: test-unicode3_cpp11 ..........................   Passed   39.48 sec
+      Start 64: test-unicode4_cpp11
+64/81 Test #64: test-unicode4_cpp11 ..........................   Passed  131.50 sec
+      Start 65: test-unicode5_cpp11
+65/81 Test #65: test-unicode5_cpp11 ..........................   Passed   31.46 sec
+      Start 66: test-user_defined_input_cpp11
+66/81 Test #66: test-user_defined_input_cpp11 ................   Passed    0.00 sec
+      Start 67: test-wstring_cpp11
+67/81 Test #67: test-wstring_cpp11 ...........................   Passed    0.00 sec
+      Start 68: test-comparison_legacy_cpp11
+68/81 Test #68: test-comparison_legacy_cpp11 .................   Passed    0.00 sec
+      Start 69: test-comparison_legacy_cpp20
+69/81 Test #69: test-comparison_legacy_cpp20 .................   Passed    0.01 sec
+      Start 70: cmake_import_configure
+70/81 Test #70: cmake_import_configure .......................   Passed    0.19 sec
+      Start 71: cmake_import_build
+71/81 Test #71: cmake_import_build ...........................   Passed    2.80 sec
+      Start 72: cmake_import_minver_configure
+72/81 Test #72: cmake_import_minver_configure ................   Passed    0.19 sec
+      Start 73: cmake_import_minver_build
+73/81 Test #73: cmake_import_minver_build ....................   Passed    1.36 sec
+      Start 74: cmake_add_subdirectory_configure
+74/81 Test #74: cmake_add_subdirectory_configure .............   Passed    0.19 sec
+      Start 75: cmake_add_subdirectory_build
+75/81 Test #75: cmake_add_subdirectory_build .................   Passed    3.98 sec
+      Start 76: cmake_fetch_content_configure
+76/81 Test #76: cmake_fetch_content_configure ................   Passed    0.86 sec
+      Start 77: cmake_fetch_content_build
+77/81 Test #77: cmake_fetch_content_build ....................   Passed    2.65 sec
+      Start 78: cmake_fetch_content2_configure
+78/81 Test #78: cmake_fetch_content2_configure ...............   Passed    0.62 sec
+      Start 79: cmake_fetch_content2_build
+79/81 Test #79: cmake_fetch_content2_build ...................   Passed    2.67 sec
+      Start 80: cmake_target_include_directories_configure
+80/81 Test #80: cmake_target_include_directories_configure ...   Passed    0.19 sec
+      Start 81: cmake_target_include_directories_build
+81/81 Test #81: cmake_target_include_directories_build .......   Passed    4.74 sec
+
+100% tests passed, 0 tests failed out of 81
+
+Label Time Summary:
+all                 = 368.60 sec*proc (68 tests)
+git_required        =   6.80 sec*proc (4 tests)
+not_reproducible    =  20.43 sec*proc (12 tests)
+
+Total Test time (real) = 389.14 sec
+=================log=================
+cat: /home/ponyc/build/build_debug/CMakeFiles/CMakeOutput.log: No such file or directory

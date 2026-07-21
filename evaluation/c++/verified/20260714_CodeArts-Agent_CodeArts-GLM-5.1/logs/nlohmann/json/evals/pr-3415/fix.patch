@@ -1,0 +1,391 @@
+diff --git a/include/nlohmann/detail/json_pointer.hpp b/include/nlohmann/detail/json_pointer.hpp
+index caed67c9..ebe89d79 100644
+--- a/include/nlohmann/detail/json_pointer.hpp
++++ b/include/nlohmann/detail/json_pointer.hpp
+@@ -235,6 +235,8 @@ class json_pointer
+     */
+     BasicJsonType& get_and_create(BasicJsonType& j) const
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         auto* result = &j;
+ 
+         // in case no reference tokens exist, return a reference to the JSON value
+@@ -253,7 +255,7 @@ class json_pointer
+                     else
+                     {
+                         // start a new object otherwise
+-                        result = &result->operator[](reference_token);
++                        result = &result->operator[](string_t(reference_token.c_str()));
+                     }
+                     break;
+                 }
+@@ -261,7 +263,7 @@ class json_pointer
+                 case detail::value_t::object:
+                 {
+                     // create an entry in the object
+-                    result = &result->operator[](reference_token);
++                    result = &result->operator[](string_t(reference_token.c_str()));
+                     break;
+                 }
+ 
+@@ -314,6 +316,8 @@ class json_pointer
+     */
+     BasicJsonType& get_unchecked(BasicJsonType* ptr) const
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         for (const auto& reference_token : reference_tokens)
+         {
+             // convert null values to arrays or objects before continuing
+@@ -338,7 +342,7 @@ class json_pointer
+                 case detail::value_t::object:
+                 {
+                     // use unchecked object access
+-                    ptr = &ptr->operator[](reference_token);
++                    ptr = &ptr->operator[](string_t(reference_token.c_str()));
+                     break;
+                 }
+ 
+@@ -381,6 +385,8 @@ class json_pointer
+     */
+     BasicJsonType& get_checked(BasicJsonType* ptr) const
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         for (const auto& reference_token : reference_tokens)
+         {
+             switch (ptr->type())
+@@ -388,7 +394,7 @@ class json_pointer
+                 case detail::value_t::object:
+                 {
+                     // note: at performs range check
+-                    ptr = &ptr->at(reference_token);
++                    ptr = &ptr->at(string_t(reference_token.c_str()));
+                     break;
+                 }
+ 
+@@ -438,6 +444,8 @@ class json_pointer
+     */
+     const BasicJsonType& get_unchecked(const BasicJsonType* ptr) const
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         for (const auto& reference_token : reference_tokens)
+         {
+             switch (ptr->type())
+@@ -445,7 +453,7 @@ class json_pointer
+                 case detail::value_t::object:
+                 {
+                     // use unchecked object access
+-                    ptr = &ptr->operator[](reference_token);
++                    ptr = &ptr->operator[](string_t(reference_token.c_str()));
+                     break;
+                 }
+ 
+@@ -486,6 +494,8 @@ class json_pointer
+     */
+     const BasicJsonType& get_checked(const BasicJsonType* ptr) const
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         for (const auto& reference_token : reference_tokens)
+         {
+             switch (ptr->type())
+@@ -493,7 +503,7 @@ class json_pointer
+                 case detail::value_t::object:
+                 {
+                     // note: at performs range check
+-                    ptr = &ptr->at(reference_token);
++                    ptr = &ptr->at(string_t(reference_token.c_str()));
+                     break;
+                 }
+ 
+@@ -534,19 +544,21 @@ class json_pointer
+     */
+     bool contains(const BasicJsonType* ptr) const
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         for (const auto& reference_token : reference_tokens)
+         {
+             switch (ptr->type())
+             {
+                 case detail::value_t::object:
+                 {
+-                    if (!ptr->contains(reference_token))
++                    if (!ptr->contains(string_t(reference_token.c_str())))
+                     {
+                         // we did not find the key in the object
+                         return false;
+                     }
+ 
+-                    ptr = &ptr->operator[](reference_token);
++                    ptr = &ptr->operator[](string_t(reference_token.c_str()));
+                     break;
+                 }
+ 
+@@ -692,6 +704,8 @@ class json_pointer
+                         const BasicJsonType& value,
+                         BasicJsonType& result)
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         switch (value.type())
+         {
+             case detail::value_t::array:
+@@ -699,7 +713,7 @@ class json_pointer
+                 if (value.m_value.array->empty())
+                 {
+                     // flatten empty array as null
+-                    result[reference_string] = nullptr;
++                    result[string_t(reference_string.c_str())] = nullptr;
+                 }
+                 else
+                 {
+@@ -718,14 +732,14 @@ class json_pointer
+                 if (value.m_value.object->empty())
+                 {
+                     // flatten empty object as null
+-                    result[reference_string] = nullptr;
++                    result[string_t(reference_string.c_str())] = nullptr;
+                 }
+                 else
+                 {
+                     // iterate object and use keys as reference string
+                     for (const auto& element : *value.m_value.object)
+                     {
+-                        flatten(reference_string + "/" + detail::escape(element.first), element.second, result);
++                        flatten(reference_string + "/" + detail::escape(std::string(element.first.c_str())), element.second, result);
+                     }
+                 }
+                 break;
+@@ -742,7 +756,7 @@ class json_pointer
+             default:
+             {
+                 // add primitive value with its reference string
+-                result[reference_string] = value;
++                result[string_t(reference_string.c_str())] = value;
+                 break;
+             }
+         }
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index db85f8d7..19c8ae31 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -1995,7 +1995,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+             JSON_CATCH (std::out_of_range&)
+             {
+                 // create better exception explanation
+-                JSON_THROW(out_of_range::create(403, "key '" + key + "' not found", *this));
++                JSON_THROW(out_of_range::create(403, "key '" + std::string(key.c_str()) + "' not found", *this));
+             }
+         }
+         else
+@@ -2018,7 +2018,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+             JSON_CATCH (std::out_of_range&)
+             {
+                 // create better exception explanation
+-                JSON_THROW(out_of_range::create(403, "key '" + key + "' not found", *this));
++                JSON_THROW(out_of_range::create(403, "key '" + std::string(key.c_str()) + "' not found", *this));
+             }
+         }
+         else
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index c1f545b0..99d9ff0c 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -12501,6 +12501,8 @@ class json_pointer
+     */
+     BasicJsonType& get_and_create(BasicJsonType& j) const
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         auto* result = &j;
+ 
+         // in case no reference tokens exist, return a reference to the JSON value
+@@ -12519,7 +12521,7 @@ class json_pointer
+                     else
+                     {
+                         // start a new object otherwise
+-                        result = &result->operator[](reference_token);
++                        result = &result->operator[](string_t(reference_token.c_str()));
+                     }
+                     break;
+                 }
+@@ -12527,7 +12529,7 @@ class json_pointer
+                 case detail::value_t::object:
+                 {
+                     // create an entry in the object
+-                    result = &result->operator[](reference_token);
++                    result = &result->operator[](string_t(reference_token.c_str()));
+                     break;
+                 }
+ 
+@@ -12580,6 +12582,8 @@ class json_pointer
+     */
+     BasicJsonType& get_unchecked(BasicJsonType* ptr) const
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         for (const auto& reference_token : reference_tokens)
+         {
+             // convert null values to arrays or objects before continuing
+@@ -12604,7 +12608,7 @@ class json_pointer
+                 case detail::value_t::object:
+                 {
+                     // use unchecked object access
+-                    ptr = &ptr->operator[](reference_token);
++                    ptr = &ptr->operator[](string_t(reference_token.c_str()));
+                     break;
+                 }
+ 
+@@ -12647,6 +12651,8 @@ class json_pointer
+     */
+     BasicJsonType& get_checked(BasicJsonType* ptr) const
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         for (const auto& reference_token : reference_tokens)
+         {
+             switch (ptr->type())
+@@ -12654,7 +12660,7 @@ class json_pointer
+                 case detail::value_t::object:
+                 {
+                     // note: at performs range check
+-                    ptr = &ptr->at(reference_token);
++                    ptr = &ptr->at(string_t(reference_token.c_str()));
+                     break;
+                 }
+ 
+@@ -12704,6 +12710,8 @@ class json_pointer
+     */
+     const BasicJsonType& get_unchecked(const BasicJsonType* ptr) const
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         for (const auto& reference_token : reference_tokens)
+         {
+             switch (ptr->type())
+@@ -12711,7 +12719,7 @@ class json_pointer
+                 case detail::value_t::object:
+                 {
+                     // use unchecked object access
+-                    ptr = &ptr->operator[](reference_token);
++                    ptr = &ptr->operator[](string_t(reference_token.c_str()));
+                     break;
+                 }
+ 
+@@ -12752,6 +12760,8 @@ class json_pointer
+     */
+     const BasicJsonType& get_checked(const BasicJsonType* ptr) const
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         for (const auto& reference_token : reference_tokens)
+         {
+             switch (ptr->type())
+@@ -12759,7 +12769,7 @@ class json_pointer
+                 case detail::value_t::object:
+                 {
+                     // note: at performs range check
+-                    ptr = &ptr->at(reference_token);
++                    ptr = &ptr->at(string_t(reference_token.c_str()));
+                     break;
+                 }
+ 
+@@ -12800,19 +12810,21 @@ class json_pointer
+     */
+     bool contains(const BasicJsonType* ptr) const
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         for (const auto& reference_token : reference_tokens)
+         {
+             switch (ptr->type())
+             {
+                 case detail::value_t::object:
+                 {
+-                    if (!ptr->contains(reference_token))
++                    if (!ptr->contains(string_t(reference_token.c_str())))
+                     {
+                         // we did not find the key in the object
+                         return false;
+                     }
+ 
+-                    ptr = &ptr->operator[](reference_token);
++                    ptr = &ptr->operator[](string_t(reference_token.c_str()));
+                     break;
+                 }
+ 
+@@ -12958,6 +12970,8 @@ class json_pointer
+                         const BasicJsonType& value,
+                         BasicJsonType& result)
+     {
++        using string_t = typename BasicJsonType::string_t;
++
+         switch (value.type())
+         {
+             case detail::value_t::array:
+@@ -12965,7 +12979,7 @@ class json_pointer
+                 if (value.m_value.array->empty())
+                 {
+                     // flatten empty array as null
+-                    result[reference_string] = nullptr;
++                    result[string_t(reference_string.c_str())] = nullptr;
+                 }
+                 else
+                 {
+@@ -12984,14 +12998,14 @@ class json_pointer
+                 if (value.m_value.object->empty())
+                 {
+                     // flatten empty object as null
+-                    result[reference_string] = nullptr;
++                    result[string_t(reference_string.c_str())] = nullptr;
+                 }
+                 else
+                 {
+                     // iterate object and use keys as reference string
+                     for (const auto& element : *value.m_value.object)
+                     {
+-                        flatten(reference_string + "/" + detail::escape(element.first), element.second, result);
++                        flatten(reference_string + "/" + detail::escape(std::string(element.first.c_str())), element.second, result);
+                     }
+                 }
+                 break;
+@@ -13008,7 +13022,7 @@ class json_pointer
+             default:
+             {
+                 // add primitive value with its reference string
+-                result[reference_string] = value;
++                result[string_t(reference_string.c_str())] = value;
+                 break;
+             }
+         }
+@@ -17351,7 +17365,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         detail::parser_callback_t<basic_json>cb = nullptr,
+         const bool allow_exceptions = true,
+         const bool ignore_comments = false
+-                                 )
++    )
+     {
+         return ::nlohmann::detail::parser<basic_json, InputAdapterType>(std::move(adapter),
+                 std::move(cb), allow_exceptions, ignore_comments);
+@@ -19188,7 +19202,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+             JSON_CATCH (std::out_of_range&)
+             {
+                 // create better exception explanation
+-                JSON_THROW(out_of_range::create(403, "key '" + key + "' not found", *this));
++                JSON_THROW(out_of_range::create(403, "key '" + std::string(key.c_str()) + "' not found", *this));
+             }
+         }
+         else
+@@ -19211,7 +19225,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+             JSON_CATCH (std::out_of_range&)
+             {
+                 // create better exception explanation
+-                JSON_THROW(out_of_range::create(403, "key '" + key + "' not found", *this));
++                JSON_THROW(out_of_range::create(403, "key '" + std::string(key.c_str()) + "' not found", *this));
+             }
+         }
+         else

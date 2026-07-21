@@ -1,0 +1,266 @@
+diff --git a/doc/examples/dump.cpp b/doc/examples/dump.cpp
+index 4deb64a1..8ad6beb6 100644
+--- a/doc/examples/dump.cpp
++++ b/doc/examples/dump.cpp
+@@ -31,12 +31,5 @@ int main()
+ 
+     // create JSON value with invalid UTF-8 byte sequence
+     json j_invalid = "\xF0\xA4\xAD\xC0";
+-    try
+-    {
+-        std::cout << j_invalid.dump() << std::endl;
+-    }
+-    catch (json::type_error& e)
+-    {
+-        std::cout << e.what() << std::endl;
+-    }
++    std::cout << j_invalid.dump() << std::endl;
+ }
+diff --git a/doc/examples/dump.output b/doc/examples/dump.output
+index c94eeb02..331062dd 100644
+--- a/doc/examples/dump.output
++++ b/doc/examples/dump.output
+@@ -50,4 +50,4 @@ arrays:
+ strings:
+ "Hellö 😀!"
+ "Hell\u00f6 \ud83d\ude00!"
+-[json.exception.type_error.316] invalid UTF-8 byte at index 3: 0xC0
++"\uFFFD\uFFFD"
+diff --git a/include/nlohmann/detail/exceptions.hpp b/include/nlohmann/detail/exceptions.hpp
+index dd046804..83ac236b 100644
+--- a/include/nlohmann/detail/exceptions.hpp
++++ b/include/nlohmann/detail/exceptions.hpp
+@@ -235,7 +235,7 @@ json.exception.type_error.312 | cannot use update() with string | The @ref updat
+ json.exception.type_error.313 | invalid value to unflatten | The @ref unflatten function converts an object whose keys are JSON Pointers back into an arbitrary nested JSON value. The JSON Pointers must not overlap, because then the resulting value would not be well defined.
+ json.exception.type_error.314 | only objects can be unflattened | The @ref unflatten function only works for an object whose keys are JSON Pointers.
+ json.exception.type_error.315 | values in object must be primitive | The @ref unflatten function only works for an object whose keys are JSON Pointers and whose values are primitive.
+-json.exception.type_error.316 | invalid UTF-8 byte at index 10: 0x7E | The @ref dump function only works with UTF-8 encoded strings; that is, if you assign a `std::string` to a JSON value, make sure it is UTF-8 encoded. |
++json.exception.type_error.316 | invalid UTF-8 byte at index 10: 0x7E | The @ref dump function replaces invalid UTF-8 bytes with the Unicode replacement character `\uFFFD`. This exception is no longer thrown. |
+ 
+ @liveexample{The following code shows how a `type_error` exception can be
+ caught.,type_error}
+diff --git a/include/nlohmann/detail/output/serializer.hpp b/include/nlohmann/detail/output/serializer.hpp
+index bb74a86e..c8f601be 100644
+--- a/include/nlohmann/detail/output/serializer.hpp
++++ b/include/nlohmann/detail/output/serializer.hpp
+@@ -286,6 +286,7 @@ class serializer
+         uint32_t codepoint;
+         uint8_t state = UTF8_ACCEPT;
+         std::size_t bytes = 0;  // number of bytes written to string_buffer
++        std::size_t bytes_after_last_accept = 0; // number of bytes written after last accepted code point
+ 
+         for (std::size_t i = 0; i < s.size(); ++i)
+         {
+@@ -383,15 +384,50 @@ class serializer
+                     {
+                         o->write_characters(string_buffer.data(), bytes);
+                         bytes = 0;
++                        bytes_after_last_accept = 0;
++                    }
++                    else
++                    {
++                        bytes_after_last_accept = bytes;
+                     }
+                     break;
+                 }
+ 
+                 case UTF8_REJECT:  // decode found invalid UTF-8 byte
+                 {
+-                    std::string sn(3, '\0');
+-                    snprintf(&sn[0], sn.size(), "%.2X", byte);
+-                    JSON_THROW(type_error::create(316, "invalid UTF-8 byte at index " + std::to_string(i) + ": 0x" + sn));
++                    // undo bytes that were part of the incomplete sequence
++                    bytes = bytes_after_last_accept;
++                    // write replacement character for invalid UTF-8 byte
++                    string_buffer[bytes++] = '\\';
++                    string_buffer[bytes++] = 'u';
++                    string_buffer[bytes++] = 'F';
++                    string_buffer[bytes++] = 'F';
++                    string_buffer[bytes++] = 'F';
++                    string_buffer[bytes++] = 'D';
++                    // resync at the rejected byte: reset state and re-decode
++                    state = UTF8_ACCEPT;
++                    decode(state, codepoint, byte);
++                    // if the byte itself is also rejected (e.g., a bare continuation byte),
++                    // write another replacement character and skip it
++                    if (state == UTF8_REJECT)
++                    {
++                        string_buffer[bytes++] = '\\';
++                        string_buffer[bytes++] = 'u';
++                        string_buffer[bytes++] = 'F';
++                        string_buffer[bytes++] = 'F';
++                        string_buffer[bytes++] = 'F';
++                        string_buffer[bytes++] = 'D';
++                        state = UTF8_ACCEPT;
++                    }
++                    bytes_after_last_accept = bytes;
++                    // write buffer if needed
++                    if (string_buffer.size() - bytes < 13)
++                    {
++                        o->write_characters(string_buffer.data(), bytes);
++                        bytes = 0;
++                        bytes_after_last_accept = 0;
++                    }
++                    break;
+                 }
+ 
+                 default:  // decode found yet incomplete multi-byte code point
+@@ -417,9 +453,14 @@ class serializer
+         else
+         {
+             // we finish reading, but do not accept: string was incomplete
+-            std::string sn(3, '\0');
+-            snprintf(&sn[0], sn.size(), "%.2X", static_cast<uint8_t>(s.back()));
+-            JSON_THROW(type_error::create(316, "incomplete UTF-8 string; last byte: 0x" + sn));
++            // undo bytes that were part of the incomplete sequence
++            bytes = bytes_after_last_accept;
++            // write buffer and replacement character for incomplete UTF-8 sequence
++            if (bytes > 0)
++            {
++                o->write_characters(string_buffer.data(), bytes);
++            }
++            o->write_characters("\\uFFFD", 6);
+         }
+     }
+ 
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index 619fd9e6..08983001 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -1935,8 +1935,8 @@ class basic_json
+ 
+     @return string containing the serialization of the JSON value
+ 
+-    @throw type_error.316 if a string stored inside the JSON value is not
+-                          UTF-8 encoded
++    @note Invalid UTF-8 bytes in strings are replaced with the Unicode
++    replacement character `\uFFFD`.
+ 
+     @complexity Linear.
+ 
+@@ -5916,8 +5916,8 @@ class basic_json
+ 
+     @return the stream @a o
+ 
+-    @throw type_error.316 if a string stored inside the JSON value is not
+-                          UTF-8 encoded
++    @note Invalid UTF-8 bytes in strings are replaced with the Unicode
++    replacement character `\uFFFD`.
+ 
+     @complexity Linear.
+ 
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 1de78dfc..dbe18d36 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -977,7 +977,7 @@ json.exception.type_error.312 | cannot use update() with string | The @ref updat
+ json.exception.type_error.313 | invalid value to unflatten | The @ref unflatten function converts an object whose keys are JSON Pointers back into an arbitrary nested JSON value. The JSON Pointers must not overlap, because then the resulting value would not be well defined.
+ json.exception.type_error.314 | only objects can be unflattened | The @ref unflatten function only works for an object whose keys are JSON Pointers.
+ json.exception.type_error.315 | values in object must be primitive | The @ref unflatten function only works for an object whose keys are JSON Pointers and whose values are primitive.
+-json.exception.type_error.316 | invalid UTF-8 byte at index 10: 0x7E | The @ref dump function only works with UTF-8 encoded strings; that is, if you assign a `std::string` to a JSON value, make sure it is UTF-8 encoded. |
++json.exception.type_error.316 | invalid UTF-8 byte at index 10: 0x7E | The @ref dump function replaces invalid UTF-8 bytes with the Unicode replacement character `\uFFFD`. This exception is no longer thrown. |
+ 
+ @liveexample{The following code shows how a `type_error` exception can be
+ caught.,type_error}
+@@ -10380,6 +10380,7 @@ class serializer
+         uint32_t codepoint;
+         uint8_t state = UTF8_ACCEPT;
+         std::size_t bytes = 0;  // number of bytes written to string_buffer
++        std::size_t bytes_after_last_accept = 0; // number of bytes written after last accepted code point
+ 
+         for (std::size_t i = 0; i < s.size(); ++i)
+         {
+@@ -10477,15 +10478,50 @@ class serializer
+                     {
+                         o->write_characters(string_buffer.data(), bytes);
+                         bytes = 0;
++                        bytes_after_last_accept = 0;
++                    }
++                    else
++                    {
++                        bytes_after_last_accept = bytes;
+                     }
+                     break;
+                 }
+ 
+                 case UTF8_REJECT:  // decode found invalid UTF-8 byte
+                 {
+-                    std::string sn(3, '\0');
+-                    snprintf(&sn[0], sn.size(), "%.2X", byte);
+-                    JSON_THROW(type_error::create(316, "invalid UTF-8 byte at index " + std::to_string(i) + ": 0x" + sn));
++                    // undo bytes that were part of the incomplete sequence
++                    bytes = bytes_after_last_accept;
++                    // write replacement character for invalid UTF-8 byte
++                    string_buffer[bytes++] = '\\';
++                    string_buffer[bytes++] = 'u';
++                    string_buffer[bytes++] = 'F';
++                    string_buffer[bytes++] = 'F';
++                    string_buffer[bytes++] = 'F';
++                    string_buffer[bytes++] = 'D';
++                    // resync at the rejected byte: reset state and re-decode
++                    state = UTF8_ACCEPT;
++                    decode(state, codepoint, byte);
++                    // if the byte itself is also rejected (e.g., a bare continuation byte),
++                    // write another replacement character and skip it
++                    if (state == UTF8_REJECT)
++                    {
++                        string_buffer[bytes++] = '\\';
++                        string_buffer[bytes++] = 'u';
++                        string_buffer[bytes++] = 'F';
++                        string_buffer[bytes++] = 'F';
++                        string_buffer[bytes++] = 'F';
++                        string_buffer[bytes++] = 'D';
++                        state = UTF8_ACCEPT;
++                    }
++                    bytes_after_last_accept = bytes;
++                    // write buffer if needed
++                    if (string_buffer.size() - bytes < 13)
++                    {
++                        o->write_characters(string_buffer.data(), bytes);
++                        bytes = 0;
++                        bytes_after_last_accept = 0;
++                    }
++                    break;
+                 }
+ 
+                 default:  // decode found yet incomplete multi-byte code point
+@@ -10511,9 +10547,14 @@ class serializer
+         else
+         {
+             // we finish reading, but do not accept: string was incomplete
+-            std::string sn(3, '\0');
+-            snprintf(&sn[0], sn.size(), "%.2X", static_cast<uint8_t>(s.back()));
+-            JSON_THROW(type_error::create(316, "incomplete UTF-8 string; last byte: 0x" + sn));
++            // undo bytes that were part of the incomplete sequence
++            bytes = bytes_after_last_accept;
++            // write buffer and replacement character for incomplete UTF-8 sequence
++            if (bytes > 0)
++            {
++                o->write_characters(string_buffer.data(), bytes);
++            }
++            o->write_characters("\\uFFFD", 6);
+         }
+     }
+ 
+@@ -13419,8 +13460,8 @@ class basic_json
+ 
+     @return string containing the serialization of the JSON value
+ 
+-    @throw type_error.316 if a string stored inside the JSON value is not
+-                          UTF-8 encoded
++    @note Invalid UTF-8 bytes in strings are replaced with the Unicode
++    replacement character `\uFFFD`.
+ 
+     @complexity Linear.
+ 
+@@ -17400,8 +17441,8 @@ class basic_json
+ 
+     @return the stream @a o
+ 
+-    @throw type_error.316 if a string stored inside the JSON value is not
+-                          UTF-8 encoded
++    @note Invalid UTF-8 bytes in strings are replaced with the Unicode
++    replacement character `\uFFFD`.
+ 
+     @complexity Linear.
+ 

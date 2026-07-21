@@ -1,0 +1,56 @@
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index 37ab7edd..a7ed8b19 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -5130,6 +5130,9 @@ inline void swap(nlohmann::NLOHMANN_BASIC_JSON_TPL& j1, nlohmann::NLOHMANN_BASIC
+ 
+ }  // namespace std
+ 
++namespace nlohmann {
++inline namespace literals {
++
+ /// @brief user-defined string literal for JSON values
+ /// @sa https://json.nlohmann.me/api/basic_json/operator_literal_json/
+ JSON_HEDLEY_NON_NULL(1)
+@@ -5146,6 +5149,13 @@ inline nlohmann::json::json_pointer operator "" _json_pointer(const char* s, std
+     return nlohmann::json::json_pointer(std::string(s, n));
+ }
+ 
++}  // inline namespace literals
++}  // namespace nlohmann
++
++// backward compatibility: make literals available in the global namespace
++using nlohmann::literals::operator "" _json;
++using nlohmann::literals::operator "" _json_pointer;
++
+ #include <nlohmann/detail/macro_unscope.hpp>
+ 
+ #endif  // INCLUDE_NLOHMANN_JSON_HPP_
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 420ea096..ccd93773 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -24095,6 +24095,9 @@ inline void swap(nlohmann::NLOHMANN_BASIC_JSON_TPL& j1, nlohmann::NLOHMANN_BASIC
+ 
+ }  // namespace std
+ 
++namespace nlohmann {
++inline namespace literals {
++
+ /// @brief user-defined string literal for JSON values
+ /// @sa https://json.nlohmann.me/api/basic_json/operator_literal_json/
+ JSON_HEDLEY_NON_NULL(1)
+@@ -24111,6 +24114,13 @@ inline nlohmann::json::json_pointer operator "" _json_pointer(const char* s, std
+     return nlohmann::json::json_pointer(std::string(s, n));
+ }
+ 
++}  // inline namespace literals
++}  // namespace nlohmann
++
++// backward compatibility: make literals available in the global namespace
++using nlohmann::literals::operator "" _json;
++using nlohmann::literals::operator "" _json_pointer;
++
+ // #include <nlohmann/detail/macro_unscope.hpp>
+ //     __ _____ _____ _____
+ //  __|  |   __|     |   | |  JSON for Modern C++

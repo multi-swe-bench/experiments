@@ -1,0 +1,135 @@
+diff --git a/include/simdjson/generic/ondemand/document-inl.h b/include/simdjson/generic/ondemand/document-inl.h
+index 794a59ff..980cfc79 100644
+--- a/include/simdjson/generic/ondemand/document-inl.h
++++ b/include/simdjson/generic/ondemand/document-inl.h
+@@ -22,6 +22,10 @@ inline std::string document::to_debug_string() noexcept {
+ inline bool document::is_alive() noexcept {
+   return iter.is_alive();
+ }
++inline const uint8_t *document::current_location() const noexcept {
++  if(!iter.is_alive()) { return nullptr; }
++  return iter.current_location();
++}
+ simdjson_really_inline value_iterator document::resume_value_iterator() noexcept {
+   return value_iterator(&iter, 1, iter.root_position());
+ }
+@@ -447,6 +451,11 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
+   return first.at_pointer(json_pointer);
+ }
+ 
++simdjson_really_inline simdjson_result<const uint8_t *> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::current_location() const noexcept {
++  if (error()) { return error(); }
++  return first.current_location();
++}
++
+ 
+ } // namespace simdjson
+ 
+@@ -497,6 +506,7 @@ simdjson_really_inline simdjson_result<bool> document_reference::is_integer() no
+ simdjson_really_inline simdjson_result<number> document_reference::get_number() noexcept { return doc->get_number(); }
+ simdjson_really_inline simdjson_result<std::string_view> document_reference::raw_json_token() noexcept { return doc->raw_json_token(); }
+ simdjson_really_inline simdjson_result<value> document_reference::at_pointer(std::string_view json_pointer) noexcept { return doc->at_pointer(json_pointer); }
++simdjson_really_inline const uint8_t *document_reference::current_location() const noexcept { return doc->current_location(); }
+ simdjson_really_inline simdjson_result<std::string_view> document_reference::raw_json() noexcept { return doc->raw_json();}
+ simdjson_really_inline document_reference::operator document&() const noexcept { return *doc; }
+ 
+@@ -664,5 +674,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
+   return first.at_pointer(json_pointer);
+ }
+ 
++simdjson_really_inline simdjson_result<const uint8_t *> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::current_location() const noexcept {
++  if (error()) { return error(); }
++  return first.current_location();
++}
++
+ 
+ } // namespace simdjson
+\ No newline at end of file
+diff --git a/include/simdjson/generic/ondemand/document.h b/include/simdjson/generic/ondemand/document.h
+index 4c4b7d7f..7c3effcd 100644
+--- a/include/simdjson/generic/ondemand/document.h
++++ b/include/simdjson/generic/ondemand/document.h
+@@ -426,6 +426,21 @@ public:
+    */
+   inline bool is_alive() noexcept;
+ 
++  /**
++   * Get a pointer to the current location in the JSON input buffer.
++   *
++   * This can be useful for identifying the location of an error when using the On Demand API.
++   * The pointer points into the original JSON buffer; it is not null-terminated.
++   *
++   * You may be pointing outside of the input buffer: it is not generally
++   * safe to dereference this pointer. Always check that the pointer is
++   * within bounds before dereferencing.
++   *
++   * @returns A pointer to the current position in the JSON buffer, or nullptr
++   *          if the document is not alive (e.g., after an unrecoverable error).
++   */
++  inline const uint8_t *current_location() const noexcept;
++
+   /**
+    * Get the value associated with the given JSON pointer.  We use the RFC 6901
+    * https://tools.ietf.org/html/rfc6901 standard.
+@@ -547,6 +562,7 @@ public:
+   simdjson_really_inline simdjson_result<number> get_number() noexcept;
+   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+   simdjson_really_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
++  simdjson_really_inline const uint8_t *current_location() const noexcept;
+ private:
+   document *doc{nullptr};
+ };
+@@ -612,9 +628,8 @@ public:
+   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+ 
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
++  simdjson_really_inline simdjson_result<const uint8_t *> current_location() const noexcept;
+ };
+-
+-
+ } // namespace simdjson
+ 
+ 
+@@ -669,6 +684,7 @@ public:
+   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+ 
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
++  simdjson_really_inline simdjson_result<const uint8_t *> current_location() const noexcept;
+ };
+ 
+ 
+diff --git a/include/simdjson/generic/ondemand/json_iterator-inl.h b/include/simdjson/generic/ondemand/json_iterator-inl.h
+index 16979e80..05663c18 100644
+--- a/include/simdjson/generic/ondemand/json_iterator-inl.h
++++ b/include/simdjson/generic/ondemand/json_iterator-inl.h
+@@ -216,6 +216,10 @@ simdjson_really_inline const uint8_t *json_iterator::unsafe_pointer() const noex
+   return token.peek(0);
+ }
+ 
++simdjson_really_inline const uint8_t *json_iterator::current_location() const noexcept {
++  return token.peek(0);
++}
++
+ simdjson_really_inline const uint8_t *json_iterator::peek(int32_t delta) const noexcept {
+ #if SIMDJSON_CHECK_EOF
+   assert_more_tokens(delta+1);
+diff --git a/include/simdjson/generic/ondemand/json_iterator.h b/include/simdjson/generic/ondemand/json_iterator.h
+index d18ab48c..70bb43f6 100644
+--- a/include/simdjson/generic/ondemand/json_iterator.h
++++ b/include/simdjson/generic/ondemand/json_iterator.h
+@@ -157,6 +157,15 @@ public:
+    * safe to derefence this pointer.
+    */
+   simdjson_really_inline const uint8_t *unsafe_pointer() const noexcept;
++  /**
++   * Get a pointer to the current location in the input buffer.
++   *
++   * This is not null-terminated; it is a view into the JSON.
++   *
++   * You may be pointing outside of the input buffer: it is not generally
++   * safe to derefence this pointer.
++   */
++  simdjson_really_inline const uint8_t *current_location() const noexcept;
+   /**
+    * Get the JSON text for a given token.
+    *

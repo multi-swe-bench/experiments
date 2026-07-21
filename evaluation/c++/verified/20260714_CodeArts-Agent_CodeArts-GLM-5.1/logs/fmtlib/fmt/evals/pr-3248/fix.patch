@@ -1,0 +1,17 @@
+diff --git a/include/fmt/core.h b/include/fmt/core.h
+index 5d13cc6f..90a5bbda 100644
+--- a/include/fmt/core.h
++++ b/include/fmt/core.h
+@@ -2226,8 +2226,10 @@ template <typename Char> class specs_setter {
+   FMT_CONSTEXPR void on_localized() { specs_.localized = true; }
+ 
+   FMT_CONSTEXPR void on_zero() {
+-    if (specs_.align == align::none) specs_.align = align::numeric;
+-    specs_.fill[0] = Char('0');
++    if (specs_.align == align::none) {
++      specs_.align = align::numeric;
++      specs_.fill[0] = Char('0');
++    }
+   }
+ 
+   FMT_CONSTEXPR void on_width(int width) { specs_.width = width; }

@@ -1,0 +1,95 @@
+diff --git a/include/fmt/std.h b/include/fmt/std.h
+index 32c3e454..3d62dc5b 100644
+--- a/include/fmt/std.h
++++ b/include/fmt/std.h
+@@ -11,12 +11,15 @@
+ #include <cstdlib>
+ #include <exception>
+ #include <memory>
++#include <queue>
++#include <stack>
+ #include <thread>
+ #include <type_traits>
+ #include <typeinfo>
+ #include <utility>
+ 
+ #include "ostream.h"
++#include "ranges.h"
+ 
+ #if FMT_HAS_INCLUDE(<version>)
+ #  include <version>
+@@ -285,4 +288,74 @@ struct formatter<
+ };
+ FMT_END_NAMESPACE
+ 
++FMT_BEGIN_NAMESPACE
++
++namespace detail {
++template <typename Adapter, typename Char>
++struct is_formattable_container_adapter : std::true_type {};
++
++template <typename Adapter>
++auto get_underlying_container(const Adapter& adapter) -> const typename Adapter::container_type& {
++  struct accessor : Adapter {
++    static auto get(const Adapter& a) -> const typename Adapter::container_type& {
++      return a.*(&accessor::c);
++    }
++  };
++  return accessor::get(adapter);
++}
++}  // namespace detail
++
++template <typename T, typename Container, typename Char>
++struct formatter<std::queue<T, Container>, Char,
++                 enable_if_t<is_formattable<typename std::queue<T, Container>::container_type::value_type, Char>::value>> {
++  template <typename ParseContext>
++  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
++    return underlying_.parse(ctx);
++  }
++
++  template <typename FormatContext>
++  auto format(const std::queue<T, Container>& q, FormatContext& ctx) const -> decltype(ctx.out()) {
++    return underlying_.format(detail::get_underlying_container(q), ctx);
++  }
++
++ private:
++  range_formatter<T, Char> underlying_;
++};
++
++template <typename T, typename Container, typename Char>
++struct formatter<std::stack<T, Container>, Char,
++                 enable_if_t<is_formattable<typename std::stack<T, Container>::container_type::value_type, Char>::value>> {
++  template <typename ParseContext>
++  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
++    return underlying_.parse(ctx);
++  }
++
++  template <typename FormatContext>
++  auto format(const std::stack<T, Container>& s, FormatContext& ctx) const -> decltype(ctx.out()) {
++    return underlying_.format(detail::get_underlying_container(s), ctx);
++  }
++
++ private:
++  range_formatter<T, Char> underlying_;
++};
++
++template <typename T, typename Container, typename Compare, typename Char>
++struct formatter<std::priority_queue<T, Container, Compare>, Char,
++                 enable_if_t<is_formattable<typename std::priority_queue<T, Container, Compare>::container_type::value_type, Char>::value>> {
++  template <typename ParseContext>
++  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
++    return underlying_.parse(ctx);
++  }
++
++  template <typename FormatContext>
++  auto format(const std::priority_queue<T, Container, Compare>& pq, FormatContext& ctx) const -> decltype(ctx.out()) {
++    return underlying_.format(detail::get_underlying_container(pq), ctx);
++  }
++
++ private:
++  range_formatter<T, Char> underlying_;
++};
++
++FMT_END_NAMESPACE
++
+ #endif  // FMT_STD_H_

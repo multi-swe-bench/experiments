@@ -1,0 +1,48 @@
+diff --git a/include/nlohmann/ordered_map.hpp b/include/nlohmann/ordered_map.hpp
+index 2a72fefd..c87e7c61 100644
+--- a/include/nlohmann/ordered_map.hpp
++++ b/include/nlohmann/ordered_map.hpp
+@@ -43,6 +43,19 @@ template <class Key, class T, class IgnoredLess = std::less<Key>,
+         return {--this->end(), true};
+     }
+ 
++    T& operator[](const Key& key)
++    {
++        for (auto it = this->begin(); it != this->end(); ++it)
++        {
++            if (it->first == key)
++            {
++                return it->second;
++            }
++        }
++        Container::emplace_back(key, T{});
++        return this->back().second;
++    }
++
+     T& operator[](Key&& key)
+     {
+         return emplace(std::move(key), T{}).first->second;
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 6a0f47ab..ef3d25d3 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -16433,6 +16433,19 @@ template <class Key, class T, class IgnoredLess = std::less<Key>,
+         return {--this->end(), true};
+     }
+ 
++    T& operator[](const Key& key)
++    {
++        for (auto it = this->begin(); it != this->end(); ++it)
++        {
++            if (it->first == key)
++            {
++                return it->second;
++            }
++        }
++        Container::emplace_back(key, T{});
++        return this->back().second;
++    }
++
+     T& operator[](Key&& key)
+     {
+         return emplace(std::move(key), T{}).first->second;

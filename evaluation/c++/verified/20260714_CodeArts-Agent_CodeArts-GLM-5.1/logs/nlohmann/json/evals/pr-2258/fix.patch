@@ -1,0 +1,1099 @@
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index 7760f28b..9c0e5a48 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -83,8 +83,8 @@ namespace nlohmann
+ /*!
+ @brief a class to store JSON values
+ 
+-@tparam ObjectType type for JSON objects (`std::map` by default; will be used
+-in @ref object_t)
++@tparam ObjectType type for JSON objects (`nlohmann::ordered_map` by default;
++will be used in @ref object_t)
+ @tparam ArrayType type for JSON arrays (`std::vector` by default; will be used
+ in @ref array_t)
+ @tparam StringType type for JSON strings and object keys (`std::string` by
+@@ -403,8 +403,6 @@ class basic_json
+     /// @{
+ 
+ #if defined(JSON_HAS_CPP_14)
+-    // Use transparent comparator if possible, combined with perfect forwarding
+-    // on find() and count() calls prevents unnecessary string construction.
+     using object_comparator_t = std::less<>;
+ #else
+     using object_comparator_t = std::less<StringType>;
+@@ -422,7 +420,7 @@ class basic_json
+     described below.
+ 
+     @tparam ObjectType  the container to store objects (e.g., `std::map` or
+-    `std::unordered_map`)
++    `nlohmann::ordered_map`)
+     @tparam StringType the type of the keys or names (e.g., `std::string`).
+     The comparison function `std::less<StringType>` is used to order elements
+     inside the container.
+@@ -431,15 +429,14 @@ class basic_json
+ 
+     #### Default type
+ 
+-    With the default values for @a ObjectType (`std::map`), @a StringType
+-    (`std::string`), and @a AllocatorType (`std::allocator`), the default
+-    value for @a object_t is:
++    With the default values for @a ObjectType (`nlohmann::ordered_map`),
++    @a StringType (`std::string`), and @a AllocatorType (`std::allocator`),
++    the default value for @a object_t is:
+ 
+     @code {.cpp}
+-    std::map<
++    nlohmann::ordered_map<
+       std::string, // key_type
+       basic_json, // value_type
+-      std::less<std::string>, // key_compare
+       std::allocator<std::pair<const std::string, basic_json>> // allocator_type
+     >
+     @endcode
+@@ -452,14 +449,14 @@ class basic_json
+     - When all names are unique, objects will be interoperable in the sense
+       that all software implementations receiving that object will agree on
+       the name-value mappings.
+-    - When the names within an object are not unique, it is unspecified which
+-      one of the values for a given key will be chosen. For instance,
+-      `{"key": 2, "key": 1}` could be equal to either `{"key": 1}` or
+-      `{"key": 2}`.
+-    - Internally, name/value pairs are stored in lexicographical order of the
+-      names. Objects will also be serialized (see @ref dump) in this order.
++    - When the names within an object are not unique, the last value for a
++      given key will be kept. For instance, `{"key": 2, "key": 1}` will be
++      equal to `{"key": 1}`.
++    - Internally, name/value pairs are stored in the order of insertion.
++      Objects will also be serialized (see @ref dump) in this order.
+       For instance, `{"b": 1, "a": 2}` and `{"a": 2, "b": 1}` will be stored
+-      and serialized as `{"a": 2, "b": 1}`.
++      and serialized as `{"b": 1, "a": 2}` and `{"a": 2, "b": 1}`
++      respectively.
+     - When comparing objects, the order of the name/value pairs is irrelevant.
+       This makes objects interoperable in the sense that they will not be
+       affected by these differences. For instance, `{"b": 1, "a": 2}` and
+@@ -485,13 +482,11 @@ class basic_json
+ 
+     @since version 1.0.0
+ 
+-    @note The order name/value pairs are added to the object is *not*
+-    preserved by the library. Therefore, iterating an object may return
+-    name/value pairs in a different order than they were originally stored. In
+-    fact, keys will be traversed in alphabetical order as `std::map` with
+-    `std::less` is used by default. Please note this behavior conforms to [RFC
+-    7159](http://rfc7159.net/rfc7159), because any order implements the
+-    specified "unordered" nature of JSON objects.
++    @note The order name/value pairs are added to the object is preserved by
++    the library. Therefore, iterating an object will return name/value pairs
++    in the order they were originally stored. Please note this behavior
++    conforms to [RFC 7159](http://rfc7159.net/rfc7159), because any order
++    implements the specified "unordered" nature of JSON objects.
+     */
+     using object_t = ObjectType<StringType,
+           basic_json,
+diff --git a/include/nlohmann/json_fwd.hpp b/include/nlohmann/json_fwd.hpp
+index 824e86a1..7d9b81a8 100644
+--- a/include/nlohmann/json_fwd.hpp
++++ b/include/nlohmann/json_fwd.hpp
+@@ -2,11 +2,12 @@
+ #define INCLUDE_NLOHMANN_JSON_FWD_HPP_
+ 
+ #include <cstdint> // int64_t, uint64_t
+-#include <map> // map
+ #include <memory> // allocator
+ #include <string> // string
+ #include <vector> // vector
+ 
++#include <nlohmann/ordered_map.hpp>
++
+ /*!
+ @brief namespace for Niels Lohmann
+ @see https://github.com/nlohmann
+@@ -25,7 +26,7 @@ template<typename T = void, typename SFINAE = void>
+ struct adl_serializer;
+ 
+ template<template<typename U, typename V, typename... Args> class ObjectType =
+-         std::map,
++         nlohmann::ordered_map,
+          template<typename U, typename... Args> class ArrayType = std::vector,
+          class StringType = std::string, class BooleanType = bool,
+          class NumberIntegerType = std::int64_t,
+diff --git a/include/nlohmann/ordered_map.hpp b/include/nlohmann/ordered_map.hpp
+new file mode 100644
+index 00000000..a91693df
+--- /dev/null
++++ b/include/nlohmann/ordered_map.hpp
+@@ -0,0 +1,426 @@
++#pragma once
++
++#include <algorithm>
++#include <cstddef>
++#include <functional>
++#include <initializer_list>
++#include <iterator>
++#include <memory>
++#include <stdexcept>
++#include <string>
++#include <type_traits>
++#include <utility>
++#include <vector>
++
++namespace nlohmann
++{
++
++template<class Key, class T, class Compare = std::less<Key>, class Allocator = std::allocator<std::pair<const Key, T>>>
++class ordered_map
++{
++  public:
++    using key_type = Key;
++    using mapped_type = T;
++    using value_type = std::pair<const Key, T>;
++    using size_type = std::size_t;
++    using difference_type = std::ptrdiff_t;
++    using key_compare = Compare;
++    using allocator_type = Allocator;
++    using reference = value_type&;
++    using const_reference = const value_type&;
++    using pointer = typename std::allocator_traits<Allocator>::pointer;
++    using const_pointer = typename std::allocator_traits<Allocator>::const_pointer;
++
++  private:
++    using container_type = std::vector<std::pair<Key, T>, typename std::allocator_traits<Allocator>::template rebind_alloc<std::pair<Key, T>>>;
++
++  public:
++    using iterator = typename container_type::iterator;
++    using const_iterator = typename container_type::const_iterator;
++    using reverse_iterator = typename container_type::reverse_iterator;
++    using const_reverse_iterator = typename container_type::const_reverse_iterator;
++
++  public:
++    ordered_map() = default;
++
++    ordered_map(const ordered_map& other) = default;
++
++    ordered_map(ordered_map&& other) noexcept = default;
++
++    template<class InputIt, typename = typename std::enable_if<std::is_constructible<value_type, typename std::iterator_traits<InputIt>::value_type>::value, int>::type>
++    ordered_map(InputIt first, InputIt last)
++    {
++        for (auto it = first; it != last; ++it)
++        {
++            emplace(it->first, it->second);
++        }
++    }
++
++    ordered_map(std::initializer_list<value_type> init)
++    {
++        for (auto& element : init)
++        {
++            emplace(element.first, element.second);
++        }
++    }
++
++    ordered_map& operator=(const ordered_map& other) = default;
++
++    ordered_map& operator=(ordered_map&& other) noexcept = default;
++
++    T& at(const Key& key)
++    {
++        for (auto& element : m_data)
++        {
++            if (element.first == key)
++            {
++                return element.second;
++            }
++        }
++        throw std::out_of_range("key not found");
++    }
++
++    const T& at(const Key& key) const
++    {
++        for (const auto& element : m_data)
++        {
++            if (element.first == key)
++            {
++                return element.second;
++            }
++        }
++        throw std::out_of_range("key not found");
++    }
++
++    T& operator[](const Key& key)
++    {
++        for (auto& element : m_data)
++        {
++            if (element.first == key)
++            {
++                return element.second;
++            }
++        }
++        m_data.emplace_back(key, T{});
++        return m_data.back().second;
++    }
++
++    T& operator[](Key&& key)
++    {
++        for (auto& element : m_data)
++        {
++            if (element.first == key)
++            {
++                return element.second;
++            }
++        }
++        m_data.emplace_back(std::move(key), T{});
++        return m_data.back().second;
++    }
++
++    iterator begin() noexcept
++    {
++        return m_data.begin();
++    }
++
++    const_iterator begin() const noexcept
++    {
++        return m_data.begin();
++    }
++
++    const_iterator cbegin() const noexcept
++    {
++        return m_data.cbegin();
++    }
++
++    iterator end() noexcept
++    {
++        return m_data.end();
++    }
++
++    const_iterator end() const noexcept
++    {
++        return m_data.end();
++    }
++
++    const_iterator cend() const noexcept
++    {
++        return m_data.cend();
++    }
++
++    reverse_iterator rbegin() noexcept
++    {
++        return m_data.rbegin();
++    }
++
++    const_reverse_iterator rbegin() const noexcept
++    {
++        return m_data.rbegin();
++    }
++
++    reverse_iterator rend() noexcept
++    {
++        return m_data.rend();
++    }
++
++    const_reverse_iterator rend() const noexcept
++    {
++        return m_data.rend();
++    }
++
++    const_reverse_iterator crbegin() const noexcept
++    {
++        return m_data.crbegin();
++    }
++
++    const_reverse_iterator crend() const noexcept
++    {
++        return m_data.crend();
++    }
++
++    bool empty() const noexcept
++    {
++        return m_data.empty();
++    }
++
++    size_type size() const noexcept
++    {
++        return m_data.size();
++    }
++
++    size_type max_size() const noexcept
++    {
++        return m_data.max_size();
++    }
++
++    void clear() noexcept
++    {
++        m_data.clear();
++    }
++
++    std::pair<iterator, bool> insert(const value_type& value)
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == value.first)
++            {
++                return {it, false};
++            }
++        }
++        m_data.emplace_back(value.first, value.second);
++        return {--end(), true};
++    }
++
++    template<class P, typename std::enable_if<std::is_constructible<value_type, P&&>::value, int>::type = 0>
++    std::pair<iterator, bool> insert(P&& value)
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == value.first)
++            {
++                return {it, false};
++            }
++        }
++        m_data.emplace_back(std::forward<P>(value));
++        return {--end(), true};
++    }
++
++    iterator insert(const_iterator hint, const value_type& value)
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == value.first)
++            {
++                return it;
++            }
++        }
++        return m_data.insert(hint, std::make_pair(value.first, value.second));
++    }
++
++    iterator insert(const_iterator hint, value_type&& value)
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == value.first)
++            {
++                return it;
++            }
++        }
++        return m_data.insert(hint, std::make_pair(std::move(value.first), std::move(value.second)));
++    }
++
++    template<class InputIt>
++    void insert(InputIt first, InputIt last)
++    {
++        for (auto it = first; it != last; ++it)
++        {
++            insert(*it);
++        }
++    }
++
++    void insert(std::initializer_list<value_type> ilist)
++    {
++        insert(ilist.begin(), ilist.end());
++    }
++
++    template<class... Args>
++    std::pair<iterator, bool> emplace(Args&& ... args)
++    {
++        // construct a temporary pair to extract key and value
++        auto val = std::make_pair(std::forward<Args>(args)...);
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == val.first)
++            {
++                return {it, false};
++            }
++        }
++        m_data.push_back(std::move(val));
++        return {--end(), true};
++    }
++
++    template<class... Args>
++    iterator emplace_hint(const_iterator hint, Args&& ... args)
++    {
++        auto val = std::make_pair(std::forward<Args>(args)...);
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == val.first)
++            {
++                return it;
++            }
++        }
++        return m_data.insert(hint, std::move(val));
++    }
++
++    iterator erase(const_iterator pos)
++    {
++        return m_data.erase(pos);
++    }
++
++    iterator erase(const_iterator first, const_iterator last)
++    {
++        return m_data.erase(first, last);
++    }
++
++    size_type erase(const key_type& key)
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == key)
++            {
++                m_data.erase(it);
++                return 1;
++            }
++        }
++        return 0;
++    }
++
++    void swap(ordered_map& other) noexcept
++    {
++        std::swap(m_data, other.m_data);
++    }
++
++    size_type count(const Key& key) const
++    {
++        for (const auto& element : m_data)
++        {
++            if (element.first == key)
++            {
++                return 1;
++            }
++        }
++        return 0;
++    }
++
++    iterator find(const Key& key)
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == key)
++            {
++                return it;
++            }
++        }
++        return end();
++    }
++
++    const_iterator find(const Key& key) const
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == key)
++            {
++                return it;
++            }
++        }
++        return end();
++    }
++
++    std::pair<iterator, iterator> equal_range(const Key& key)
++    {
++        auto it = find(key);
++        if (it != end())
++        {
++            return {it, std::next(it)};
++        }
++        return {end(), end()};
++    }
++
++    std::pair<const_iterator, const_iterator> equal_range(const Key& key) const
++    {
++        auto it = find(key);
++        if (it != end())
++        {
++            return {it, std::next(it)};
++        }
++        return {end(), end()};
++    }
++
++    friend bool operator==(const ordered_map& lhs, const ordered_map& rhs)
++    {
++        if (lhs.size() != rhs.size())
++        {
++            return false;
++        }
++        for (const auto& element : lhs)
++        {
++            auto it = rhs.find(element.first);
++            if (it == rhs.end() || it->second != element.second)
++            {
++                return false;
++            }
++        }
++        return true;
++    }
++
++    friend bool operator!=(const ordered_map& lhs, const ordered_map& rhs)
++    {
++        return !(lhs == rhs);
++    }
++
++    friend bool operator<(const ordered_map& lhs, const ordered_map& rhs)
++    {
++        return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
++    }
++
++    friend bool operator<=(const ordered_map& lhs, const ordered_map& rhs)
++    {
++        return !(rhs < lhs);
++    }
++
++    friend bool operator>(const ordered_map& lhs, const ordered_map& rhs)
++    {
++        return rhs < lhs;
++    }
++
++    friend bool operator>=(const ordered_map& lhs, const ordered_map& rhs)
++    {
++        return !(lhs < rhs);
++    }
++
++  private:
++    container_type m_data;
++};
++
++} // namespace nlohmann
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index d6c420d1..01d1b7f2 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -2759,12 +2759,441 @@ using is_detected_convertible =
+ }  // namespace detail
+ }  // namespace nlohmann
+ 
++// #include <nlohmann/ordered_map.hpp>
++#ifndef NLOHMANN_ORDERED_MAP_HPP
++#define NLOHMANN_ORDERED_MAP_HPP
++
++#include <algorithm>
++#include <cstddef>
++#include <functional>
++#include <initializer_list>
++#include <iterator>
++#include <memory>
++#include <stdexcept>
++#include <string>
++#include <type_traits>
++#include <utility>
++#include <vector>
++
++namespace nlohmann
++{
++
++template<class Key, class T, class Compare = std::less<Key>, class Allocator = std::allocator<std::pair<const Key, T>>>
++class ordered_map
++{
++  public:
++    using key_type = Key;
++    using mapped_type = T;
++    using value_type = std::pair<const Key, T>;
++    using size_type = std::size_t;
++    using difference_type = std::ptrdiff_t;
++    using key_compare = Compare;
++    using allocator_type = Allocator;
++    using reference = value_type&;
++    using const_reference = const value_type&;
++    using pointer = typename std::allocator_traits<Allocator>::pointer;
++    using const_pointer = typename std::allocator_traits<Allocator>::const_pointer;
++
++  private:
++    using container_type = std::vector<std::pair<Key, T>, typename std::allocator_traits<Allocator>::template rebind_alloc<std::pair<Key, T>>>;
++
++  public:
++    using iterator = typename container_type::iterator;
++    using const_iterator = typename container_type::const_iterator;
++    using reverse_iterator = typename container_type::reverse_iterator;
++    using const_reverse_iterator = typename container_type::const_reverse_iterator;
++
++  public:
++    ordered_map() = default;
++
++    ordered_map(const ordered_map& other) = default;
++
++    ordered_map(ordered_map&& other) noexcept = default;
++
++    template<class InputIt, typename = typename std::enable_if<std::is_constructible<value_type, typename std::iterator_traits<InputIt>::value_type>::value, int>::type>
++    ordered_map(InputIt first, InputIt last)
++    {
++        for (auto it = first; it != last; ++it)
++        {
++            emplace(it->first, it->second);
++        }
++    }
++
++    ordered_map(std::initializer_list<value_type> init)
++    {
++        for (auto& element : init)
++        {
++            emplace(element.first, element.second);
++        }
++    }
++
++    ordered_map& operator=(const ordered_map& other) = default;
++
++    ordered_map& operator=(ordered_map&& other) noexcept = default;
++
++    T& at(const Key& key)
++    {
++        for (auto& element : m_data)
++        {
++            if (element.first == key)
++            {
++                return element.second;
++            }
++        }
++        throw std::out_of_range("key not found");
++    }
++
++    const T& at(const Key& key) const
++    {
++        for (const auto& element : m_data)
++        {
++            if (element.first == key)
++            {
++                return element.second;
++            }
++        }
++        throw std::out_of_range("key not found");
++    }
++
++    T& operator[](const Key& key)
++    {
++        for (auto& element : m_data)
++        {
++            if (element.first == key)
++            {
++                return element.second;
++            }
++        }
++        m_data.emplace_back(key, T{});
++        return m_data.back().second;
++    }
++
++    T& operator[](Key&& key)
++    {
++        for (auto& element : m_data)
++        {
++            if (element.first == key)
++            {
++                return element.second;
++            }
++        }
++        m_data.emplace_back(std::move(key), T{});
++        return m_data.back().second;
++    }
++
++    iterator begin() noexcept
++    {
++        return m_data.begin();
++    }
++
++    const_iterator begin() const noexcept
++    {
++        return m_data.begin();
++    }
++
++    const_iterator cbegin() const noexcept
++    {
++        return m_data.cbegin();
++    }
++
++    iterator end() noexcept
++    {
++        return m_data.end();
++    }
++
++    const_iterator end() const noexcept
++    {
++        return m_data.end();
++    }
++
++    const_iterator cend() const noexcept
++    {
++        return m_data.cend();
++    }
++
++    reverse_iterator rbegin() noexcept
++    {
++        return m_data.rbegin();
++    }
++
++    const_reverse_iterator rbegin() const noexcept
++    {
++        return m_data.rbegin();
++    }
++
++    reverse_iterator rend() noexcept
++    {
++        return m_data.rend();
++    }
++
++    const_reverse_iterator rend() const noexcept
++    {
++        return m_data.rend();
++    }
++
++    const_reverse_iterator crbegin() const noexcept
++    {
++        return m_data.crbegin();
++    }
++
++    const_reverse_iterator crend() const noexcept
++    {
++        return m_data.crend();
++    }
++
++    bool empty() const noexcept
++    {
++        return m_data.empty();
++    }
++
++    size_type size() const noexcept
++    {
++        return m_data.size();
++    }
++
++    size_type max_size() const noexcept
++    {
++        return m_data.max_size();
++    }
++
++    void clear() noexcept
++    {
++        m_data.clear();
++    }
++
++    std::pair<iterator, bool> insert(const value_type& value)
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == value.first)
++            {
++                return {it, false};
++            }
++        }
++        m_data.emplace_back(value.first, value.second);
++        return {--end(), true};
++    }
++
++    template<class P, typename std::enable_if<std::is_constructible<value_type, P&&>::value, int>::type = 0>
++    std::pair<iterator, bool> insert(P&& value)
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == value.first)
++            {
++                return {it, false};
++            }
++        }
++        m_data.emplace_back(std::forward<P>(value));
++        return {--end(), true};
++    }
++
++    iterator insert(const_iterator hint, const value_type& value)
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == value.first)
++            {
++                return it;
++            }
++        }
++        return m_data.insert(hint, std::make_pair(value.first, value.second));
++    }
++
++    iterator insert(const_iterator hint, value_type&& value)
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == value.first)
++            {
++                return it;
++            }
++        }
++        return m_data.insert(hint, std::make_pair(std::move(value.first), std::move(value.second)));
++    }
++
++    template<class InputIt>
++    void insert(InputIt first, InputIt last)
++    {
++        for (auto it = first; it != last; ++it)
++        {
++            insert(*it);
++        }
++    }
++
++    void insert(std::initializer_list<value_type> ilist)
++    {
++        insert(ilist.begin(), ilist.end());
++    }
++
++    template<class... Args>
++    std::pair<iterator, bool> emplace(Args&& ... args)
++    {
++        auto val = std::make_pair(std::forward<Args>(args)...);
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == val.first)
++            {
++                return {it, false};
++            }
++        }
++        m_data.push_back(std::move(val));
++        return {--end(), true};
++    }
++
++    template<class... Args>
++    iterator emplace_hint(const_iterator hint, Args&& ... args)
++    {
++        auto val = std::make_pair(std::forward<Args>(args)...);
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == val.first)
++            {
++                return it;
++            }
++        }
++        return m_data.insert(hint, std::move(val));
++    }
++
++    iterator erase(const_iterator pos)
++    {
++        return m_data.erase(pos);
++    }
++
++    iterator erase(const_iterator first, const_iterator last)
++    {
++        return m_data.erase(first, last);
++    }
++
++    size_type erase(const key_type& key)
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == key)
++            {
++                m_data.erase(it);
++                return 1;
++            }
++        }
++        return 0;
++    }
++
++    void swap(ordered_map& other) noexcept
++    {
++        std::swap(m_data, other.m_data);
++    }
++
++    size_type count(const Key& key) const
++    {
++        for (const auto& element : m_data)
++        {
++            if (element.first == key)
++            {
++                return 1;
++            }
++        }
++        return 0;
++    }
++
++    iterator find(const Key& key)
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == key)
++            {
++                return it;
++            }
++        }
++        return end();
++    }
++
++    const_iterator find(const Key& key) const
++    {
++        for (auto it = begin(); it != end(); ++it)
++        {
++            if (it->first == key)
++            {
++                return it;
++            }
++        }
++        return end();
++    }
++
++    std::pair<iterator, iterator> equal_range(const Key& key)
++    {
++        auto it = find(key);
++        if (it != end())
++        {
++            return {it, std::next(it)};
++        }
++        return {end(), end()};
++    }
++
++    std::pair<const_iterator, const_iterator> equal_range(const Key& key) const
++    {
++        auto it = find(key);
++        if (it != end())
++        {
++            return {it, std::next(it)};
++        }
++        return {end(), end()};
++    }
++
++    friend bool operator==(const ordered_map& lhs, const ordered_map& rhs)
++    {
++        if (lhs.size() != rhs.size())
++        {
++            return false;
++        }
++        for (const auto& element : lhs)
++        {
++            auto it = rhs.find(element.first);
++            if (it == rhs.end() || it->second != element.second)
++            {
++                return false;
++            }
++        }
++        return true;
++    }
++
++    friend bool operator!=(const ordered_map& lhs, const ordered_map& rhs)
++    {
++        return !(lhs == rhs);
++    }
++
++    friend bool operator<(const ordered_map& lhs, const ordered_map& rhs)
++    {
++        return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
++    }
++
++    friend bool operator<=(const ordered_map& lhs, const ordered_map& rhs)
++    {
++        return !(rhs < lhs);
++    }
++
++    friend bool operator>(const ordered_map& lhs, const ordered_map& rhs)
++    {
++        return rhs < lhs;
++    }
++
++    friend bool operator>=(const ordered_map& lhs, const ordered_map& rhs)
++    {
++        return !(lhs < rhs);
++    }
++
++  private:
++    container_type m_data;
++};
++
++} // namespace nlohmann
++
++#endif // NLOHMANN_ORDERED_MAP_HPP
++
+ // #include <nlohmann/json_fwd.hpp>
+ #ifndef INCLUDE_NLOHMANN_JSON_FWD_HPP_
+ #define INCLUDE_NLOHMANN_JSON_FWD_HPP_
+ 
+ #include <cstdint> // int64_t, uint64_t
+-#include <map> // map
+ #include <memory> // allocator
+ #include <string> // string
+ #include <vector> // vector
+@@ -2787,7 +3216,7 @@ template<typename T = void, typename SFINAE = void>
+ struct adl_serializer;
+ 
+ template<template<typename U, typename V, typename... Args> class ObjectType =
+-         std::map,
++         nlohmann::ordered_map,
+          template<typename U, typename... Args> class ArrayType = std::vector,
+          class StringType = std::string, class BooleanType = bool,
+          class NumberIntegerType = std::int64_t,
+@@ -16012,8 +16441,8 @@ namespace nlohmann
+ /*!
+ @brief a class to store JSON values
+ 
+-@tparam ObjectType type for JSON objects (`std::map` by default; will be used
+-in @ref object_t)
++@tparam ObjectType type for JSON objects (`nlohmann::ordered_map` by default;
++will be used in @ref object_t)
+ @tparam ArrayType type for JSON arrays (`std::vector` by default; will be used
+ in @ref array_t)
+ @tparam StringType type for JSON strings and object keys (`std::string` by
+@@ -16332,8 +16761,6 @@ class basic_json
+     /// @{
+ 
+ #if defined(JSON_HAS_CPP_14)
+-    // Use transparent comparator if possible, combined with perfect forwarding
+-    // on find() and count() calls prevents unnecessary string construction.
+     using object_comparator_t = std::less<>;
+ #else
+     using object_comparator_t = std::less<StringType>;
+@@ -16351,7 +16778,7 @@ class basic_json
+     described below.
+ 
+     @tparam ObjectType  the container to store objects (e.g., `std::map` or
+-    `std::unordered_map`)
++    `nlohmann::ordered_map`)
+     @tparam StringType the type of the keys or names (e.g., `std::string`).
+     The comparison function `std::less<StringType>` is used to order elements
+     inside the container.
+@@ -16360,15 +16787,14 @@ class basic_json
+ 
+     #### Default type
+ 
+-    With the default values for @a ObjectType (`std::map`), @a StringType
+-    (`std::string`), and @a AllocatorType (`std::allocator`), the default
+-    value for @a object_t is:
++    With the default values for @a ObjectType (`nlohmann::ordered_map`),
++    @a StringType (`std::string`), and @a AllocatorType (`std::allocator`),
++    the default value for @a object_t is:
+ 
+     @code {.cpp}
+-    std::map<
++    nlohmann::ordered_map<
+       std::string, // key_type
+       basic_json, // value_type
+-      std::less<std::string>, // key_compare
+       std::allocator<std::pair<const std::string, basic_json>> // allocator_type
+     >
+     @endcode
+@@ -16381,14 +16807,14 @@ class basic_json
+     - When all names are unique, objects will be interoperable in the sense
+       that all software implementations receiving that object will agree on
+       the name-value mappings.
+-    - When the names within an object are not unique, it is unspecified which
+-      one of the values for a given key will be chosen. For instance,
+-      `{"key": 2, "key": 1}` could be equal to either `{"key": 1}` or
+-      `{"key": 2}`.
+-    - Internally, name/value pairs are stored in lexicographical order of the
+-      names. Objects will also be serialized (see @ref dump) in this order.
++    - When the names within an object are not unique, the last value for a
++      given key will be kept. For instance, `{"key": 2, "key": 1}` will be
++      equal to `{"key": 1}`.
++    - Internally, name/value pairs are stored in the order of insertion.
++      Objects will also be serialized (see @ref dump) in this order.
+       For instance, `{"b": 1, "a": 2}` and `{"a": 2, "b": 1}` will be stored
+-      and serialized as `{"a": 2, "b": 1}`.
++      and serialized as `{"b": 1, "a": 2}` and `{"a": 2, "b": 1}`
++      respectively.
+     - When comparing objects, the order of the name/value pairs is irrelevant.
+       This makes objects interoperable in the sense that they will not be
+       affected by these differences. For instance, `{"b": 1, "a": 2}` and
+@@ -16414,13 +16840,11 @@ class basic_json
+ 
+     @since version 1.0.0
+ 
+-    @note The order name/value pairs are added to the object is *not*
+-    preserved by the library. Therefore, iterating an object may return
+-    name/value pairs in a different order than they were originally stored. In
+-    fact, keys will be traversed in alphabetical order as `std::map` with
+-    `std::less` is used by default. Please note this behavior conforms to [RFC
+-    7159](http://rfc7159.net/rfc7159), because any order implements the
+-    specified "unordered" nature of JSON objects.
++    @note The order name/value pairs are added to the object is preserved by
++    the library. Therefore, iterating an object will return name/value pairs
++    in the order they were originally stored. Please note this behavior
++    conforms to [RFC 7159](http://rfc7159.net/rfc7159), because any order
++    implements the specified "unordered" nature of JSON objects.
+     */
+     using object_t = ObjectType<StringType,
+           basic_json,

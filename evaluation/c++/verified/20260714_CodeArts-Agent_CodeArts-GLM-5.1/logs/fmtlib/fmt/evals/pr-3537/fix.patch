@@ -1,0 +1,36 @@
+diff --git a/include/fmt/core.h b/include/fmt/core.h
+index 370b2f1e..f37793b9 100644
+--- a/include/fmt/core.h
++++ b/include/fmt/core.h
+@@ -504,6 +504,8 @@ FMT_EXPORT
+ template <typename T> struct is_char : std::false_type {};
+ template <> struct is_char<char> : std::true_type {};
+ 
++template <typename Char, typename... Args> class basic_format_string;
++
+ namespace detail {
+ 
+ // A base class for compile-time strings.
+@@ -512,6 +514,12 @@ struct compile_string {};
+ template <typename S>
+ struct is_compile_string : std::is_base_of<compile_string, S> {};
+ 
++template <typename Char, typename... Args>
++FMT_INLINE auto to_string_view(const basic_format_string<Char, Args...>& s)
++    -> basic_string_view<Char> {
++  return s.get();
++}
++
+ template <typename Char, FMT_ENABLE_IF(is_char<Char>::value)>
+ FMT_INLINE auto to_string_view(const Char* s) -> basic_string_view<Char> {
+   return s;
+@@ -2748,6 +2756,9 @@ template <typename Char, typename... Args> class basic_format_string {
+   FMT_INLINE auto get() const -> basic_string_view<Char> { return str_; }
+ };
+ 
++template <typename Char, typename... Args>
++struct detail::is_string<basic_format_string<Char, Args...>> : std::true_type {};
++
+ #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
+ // Workaround broken conversion on older gcc.
+ template <typename...> using format_string = string_view;

@@ -1,0 +1,176 @@
+diff --git a/src/catch2/internal/catch_textflow.cpp b/src/catch2/internal/catch_textflow.cpp
+index 857fd2b9..9b67bee3 100644
+--- a/src/catch2/internal/catch_textflow.cpp
++++ b/src/catch2/internal/catch_textflow.cpp
+@@ -36,6 +36,106 @@ namespace {
+                isBreakableAfter( line[at - 1] );
+     }
+ 
++    bool isEscapeChar( char c ) { return c == '\033'; }
++
++    // Finds the end of an ANSI escape sequence starting at `position`.
++    // Returns the index one past the final byte of the escape sequence.
++    // If the character at `position` is not an ESC, returns `position`.
++    size_t findEscapeEnd( std::string const& line, size_t position ) {
++        if ( position >= line.size() || !isEscapeChar( line[position] ) ) {
++            return position;
++        }
++        if ( position + 1 >= line.size() ) {
++            return position + 1;
++        }
++        // CSI sequence: ESC [ (params) final_byte
++        if ( line[position + 1] == '[' ) {
++            size_t j = position + 2;
++            while ( j < line.size() ) {
++                unsigned char c = static_cast<unsigned char>( line[j] );
++                if ( c >= 0x40 && c <= 0x7e ) {
++                    return j + 1;
++                }
++                ++j;
++            }
++        }
++        // Unknown escape type, just skip ESC and next char
++        return position + 2;
++    }
++
++    // Check if a byte position is inside an ANSI escape sequence.
++    // Returns the start of the escape sequence if inside, or npos.
++    size_t findEscapeStart( std::string const& line, size_t position ) {
++        if ( position == 0 || position >= line.size() ) return std::string::npos;
++        const size_t maxLookback = 10;
++        const size_t start = position > maxLookback ? position - maxLookback : 0;
++        for ( size_t i = start; i < position; ++i ) {
++            if ( isEscapeChar( line[i] ) ) {
++                size_t end = findEscapeEnd( line, i );
++                if ( end > position ) {
++                    return i;
++                }
++            }
++        }
++        return std::string::npos;
++    }
++
++    // Calculates the visible (display) length of a string portion,
++    // excluding ANSI escape sequences.
++    size_t visibleLength( std::string const& line, size_t start, size_t length ) {
++        size_t visible = 0;
++        size_t end = start + length;
++        size_t i = start;
++        while ( i < end ) {
++            if ( isEscapeChar( line[i] ) ) {
++                i = findEscapeEnd( line, i );
++            } else {
++                ++visible;
++                ++i;
++            }
++        }
++        return visible;
++    }
++
++    // Given a desired visible length from `start`, find the actual byte offset.
++    size_t visibleToByteOffset( std::string const& line, size_t start, size_t visibleTarget ) {
++        size_t visible = 0;
++        size_t i = start;
++        while ( i < line.size() && visible < visibleTarget ) {
++            if ( isEscapeChar( line[i] ) ) {
++                i = findEscapeEnd( line, i );
++            } else {
++                ++visible;
++                ++i;
++            }
++        }
++        return i;
++    }
++
++    // ANSI-aware boundary check: returns true if `at` is a valid line break
++    // position, considering that positions inside escape sequences are not
++    // valid break points.
++    bool isAnsiAwareBoundary( std::string const& line, size_t at ) {
++        // If we're inside an escape sequence, this is not a valid boundary
++        if ( findEscapeStart( line, at ) != std::string::npos ) {
++            return false;
++        }
++        return isBoundary( line, at );
++    }
++
++    // Given a byte position (relative to lineStart), adjust it to avoid
++    // splitting an ANSI escape sequence. If the position falls inside an
++    // escape, move it back to before the escape starts.
++    // Returns the adjusted relative position.
++    size_t adjustBoundary( std::string const& line, size_t lineStart, size_t relativePos ) {
++        size_t absPos = lineStart + relativePos;
++        size_t escStart = findEscapeStart( line, absPos );
++        if ( escStart != std::string::npos && escStart >= lineStart ) {
++            return escStart - lineStart;
++        }
++        return relativePos;
++    }
++
+ } // namespace
+ 
+ namespace Catch {
+@@ -51,7 +151,8 @@ namespace Catch {
+             }
+ 
+             const auto maxLineLength = m_column.m_width - indentSize();
+-            const auto maxParseTo = std::min(current_line.size(), m_lineStart + maxLineLength);
++            // Find the byte offset that corresponds to maxLineLength visible chars
++            const auto maxParseTo = std::min(current_line.size(), visibleToByteOffset( current_line, m_lineStart, maxLineLength ));
+             while ( m_parsedTo < maxParseTo &&
+                     current_line[m_parsedTo] != '\n' ) {
+                 ++m_parsedTo;
+@@ -60,14 +161,14 @@ namespace Catch {
+             // If we encountered a newline before the column is filled,
+             // then we linebreak at the newline and consider this line
+             // finished.
+-            if ( m_parsedTo < m_lineStart + maxLineLength ) {
++            if ( visibleLength( current_line, m_lineStart, m_parsedTo - m_lineStart ) < maxLineLength ) {
+                 m_lineLength = m_parsedTo - m_lineStart;
+             } else {
+                 // Look for a natural linebreak boundary in the column
+                 // (We look from the end, so that the first found boundary is
+                 // the right one)
+                 size_t newLineLength = maxLineLength;
+-                while ( newLineLength > 0 && !isBoundary( current_line, m_lineStart + newLineLength ) ) {
++                while ( newLineLength > 0 && !isAnsiAwareBoundary( current_line, m_lineStart + newLineLength ) ) {
+                     --newLineLength;
+                 }
+                 while ( newLineLength > 0 &&
+@@ -82,6 +183,16 @@ namespace Catch {
+                     // Otherwise we have to split text with a hyphen
+                     m_addHyphen = true;
+                     m_lineLength = maxLineLength - 1;
++                    // Adjust hyphen break to avoid splitting an escape sequence
++                    m_lineLength = adjustBoundary( current_line, m_lineStart, m_lineLength );
++                    if ( m_lineLength == 0 ) {
++                        // The line starts with an escape sequence that won't fit.
++                        // Include the whole escape sequence in this line anyway
++                        // (it takes zero visible width), and then continue.
++                        size_t escEnd = findEscapeEnd( current_line, m_lineStart );
++                        m_lineLength = escEnd - m_lineStart;
++                        m_addHyphen = false;
++                    }
+                 }
+             }
+         }
+@@ -111,6 +222,7 @@ namespace Catch {
+             assert( m_column.m_width > m_column.m_indent );
+             assert( m_column.m_initialIndent == std::string::npos ||
+                     m_column.m_width > m_column.m_initialIndent );
++            m_parsedTo = 0;
+             calcLength();
+             if ( m_lineLength == 0 ) {
+                 m_lineStart = m_column.m_string.size();
+@@ -195,8 +307,10 @@ namespace Catch {
+                     row += col;
+ 
+                     padding.clear();
+-                    if ( col.size() < width ) {
+-                        padding.append( width - col.size(), ' ' );
++                    // Use visible length for padding, not raw string size
++                    size_t col_visible = visibleLength( col, 0, col.size() );
++                    if ( col_visible < width ) {
++                        padding.append( width - col_visible, ' ' );
+                     }
+                 } else {
+                     padding.append( width, ' ' );

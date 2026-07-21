@@ -1,0 +1,1055 @@
+检测到 Debian 11 系统
+进入debian其他系统
+替换系统源完成
+==============================================================================
+Get:1 http://mirrors.tools.huawei.com/debian bullseye InRelease [75.1 kB]
+Get:2 http://mirrors.tools.huawei.com/debian-security bullseye-security InRelease [27.2 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bullseye-updates InRelease [44.0 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bullseye/main amd64 Packages [8066 kB]
+Get:5 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 Packages [464 kB]
+Get:6 http://mirrors.tools.huawei.com/debian bullseye-updates/main amd64 Packages [18.8 kB]
+Fetched 8695 kB in 2s (5751 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+build-essential is already the newest version (12.9).
+libncurses-dev is already the newest version (6.2+20201114-2+deb11u2).
+libncurses-dev set to manually installed.
+patch is already the newest version (2.7.6-7).
+libpcre2-dev is already the newest version (10.36-2+deb11u1).
+libpcre2-dev set to manually installed.
+zlib1g-dev is already the newest version (1:1.2.11.dfsg-2+deb11u2).
+The following additional packages will be installed:
+  libonig5 libssl1.1
+Suggested packages:
+  libssl-doc
+The following NEW packages will be installed:
+  libonig-dev libonig5
+The following packages will be upgraded:
+  libssl-dev libssl1.1
+2 upgraded, 2 newly installed, 0 to remove and 136 not upgraded.
+Need to get 3667 kB of archives.
+After this operation, 904 kB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 libssl-dev amd64 1.1.1w-0+deb11u8 [1822 kB]
+Get:2 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 libssl1.1 amd64 1.1.1w-0+deb11u8 [1566 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bullseye/main amd64 libonig5 amd64 6.9.6-1.1 [185 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bullseye/main amd64 libonig-dev amd64 6.9.6-1.1 [94.2 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 3667 kB in 0s (9773 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29372 files and directories currently installed.)
+Preparing to unpack .../libssl-dev_1.1.1w-0+deb11u8_amd64.deb ...
+Unpacking libssl-dev:amd64 (1.1.1w-0+deb11u8) over (1.1.1w-0+deb11u1) ...
+Preparing to unpack .../libssl1.1_1.1.1w-0+deb11u8_amd64.deb ...
+Unpacking libssl1.1:amd64 (1.1.1w-0+deb11u8) over (1.1.1w-0+deb11u1) ...
+Setting up libssl1.1:amd64 (1.1.1w-0+deb11u8) ...
+debconf: unable to initialize frontend: Dialog
+debconf: (TERM is not set, so the dialog frontend is not usable.)
+debconf: falling back to frontend: Readline
+Selecting previously unselected package libonig5:amd64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29372 files and directories currently installed.)
+Preparing to unpack .../libonig5_6.9.6-1.1_amd64.deb ...
+Unpacking libonig5:amd64 (6.9.6-1.1) ...
+Selecting previously unselected package libonig-dev.
+Preparing to unpack .../libonig-dev_6.9.6-1.1_amd64.deb ...
+Unpacking libonig-dev (6.9.6-1.1) ...
+Setting up libssl-dev:amd64 (1.1.1w-0+deb11u8) ...
+Setting up libonig5:amd64 (6.9.6-1.1) ...
+Setting up libonig-dev (6.9.6-1.1) ...
+Processing triggers for libc-bin (2.31-13+deb11u10) ...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+cmake is already the newest version (3.18.4-2+deb11u1).
+zlib1g-dev is already the newest version (1:1.2.11.dfsg-2+deb11u2).
+0 upgraded, 0 newly installed, 0 to remove and 136 not upgraded.
+=== RUN FULL via /home/fix-run.sh (tee log) ===
+#!/bin/bash
+set -e
+
+cd /home/simdjson
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake -DSIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build .
+ctest
+
+=========================================
+>>> 修复 /home/simdjson/dependencies/import.cmake RENAME 问题...
+>>> 修复前内容:
+     1	set(dep_root "${simdjson_SOURCE_DIR}/dependencies/.cache")
+     2	if(DEFINED ENV{simdjson_DEPENDENCY_CACHE_DIR})
+     3	  set(dep_root "$ENV{simdjson_DEPENDENCY_CACHE_DIR}")
+     4	endif()
+     5	
+     6	function(import_dependency NAME GITHUB_REPO COMMIT)
+     7	  message(STATUS "Importing ${NAME} (${GITHUB_REPO}@${COMMIT})")
+     8	  set(target "${dep_root}/${NAME}")
+     9	
+    10	  # If the folder exists in the cache, then we assume that everything is as
+    11	  # should be and do nothing
+    12	  if(EXISTS "${target}")
+    13	    set("${NAME}_SOURCE_DIR" "${target}" PARENT_SCOPE)
+    14	    return()
+    15	  endif()
+    16	
+    17	  set(zip_url "https://github.com/${GITHUB_REPO}/archive/${COMMIT}.zip")
+    18	  set(archive "${dep_root}/archive.zip")
+    19	  set(dest "${dep_root}/_extract")
+    20	
+    21	  file(DOWNLOAD "${zip_url}" "${archive}")
+    22	  file(MAKE_DIRECTORY "${dest}")
+    23	  execute_process(
+    24	          WORKING_DIRECTORY "${dest}"
+    25	          COMMAND "${CMAKE_COMMAND}" -E tar xf "${archive}")
+    26	  file(REMOVE "${archive}")
+    27	
+    28	  # GitHub archives only ever have one folder component at the root, so this
+    29	  # will always match that single folder
+    30	  file(GLOB dir LIST_DIRECTORIES YES "${dest}/*")
+    31	
+    32	  file(RENAME "${dir}" "${target}")
+    33	
+    34	  set("${NAME}_SOURCE_DIR" "${target}" PARENT_SCOPE)
+    35	endfunction()
+    36	
+    37	# Delegates to the dependency
+    38	macro(add_dependency NAME)
+    39	  if(NOT DEFINED "${NAME}_SOURCE_DIR")
+    40	    message(FATAL_ERROR "Missing ${NAME}_SOURCE_DIR variable")
+    41	  endif()
+    42	
+    43	  add_subdirectory("${${NAME}_SOURCE_DIR}" "${PROJECT_BINARY_DIR}/_deps/${NAME}")
+    44	endmacro()
+    45	
+    46	function(set_off NAME)
+    47	  set("${NAME}" OFF CACHE INTERNAL "")
+    48	endfunction()
+>>> /home/simdjson/dependencies/import.cmake 已修复: RENAME -> copy_directory+REMOVE
+>>> 修复后内容:
+     1	set(dep_root "${simdjson_SOURCE_DIR}/dependencies/.cache")
+     2	if(DEFINED ENV{simdjson_DEPENDENCY_CACHE_DIR})
+     3	  set(dep_root "$ENV{simdjson_DEPENDENCY_CACHE_DIR}")
+     4	endif()
+     5	
+     6	function(import_dependency NAME GITHUB_REPO COMMIT)
+     7	  message(STATUS "Importing ${NAME} (${GITHUB_REPO}@${COMMIT})")
+     8	  set(target "${dep_root}/${NAME}")
+     9	
+    10	  # If the folder exists in the cache, then we assume that everything is as
+    11	  # should be and do nothing
+    12	  if(EXISTS "${target}")
+    13	    set("${NAME}_SOURCE_DIR" "${target}" PARENT_SCOPE)
+    14	    return()
+    15	  endif()
+    16	
+    17	  set(zip_url "https://github.com/${GITHUB_REPO}/archive/${COMMIT}.zip")
+    18	  set(archive "${dep_root}/archive.zip")
+    19	  set(dest "${dep_root}/_extract")
+    20	
+    21	  file(DOWNLOAD "${zip_url}" "${archive}")
+    22	  file(MAKE_DIRECTORY "${dest}")
+    23	  execute_process(
+    24	          WORKING_DIRECTORY "${dest}"
+    25	          COMMAND "${CMAKE_COMMAND}" -E tar xf "${archive}")
+    26	  file(REMOVE "${archive}")
+    27	
+    28	  # GitHub archives only ever have one folder component at the root, so this
+    29	  # will always match that single folder
+    30	  file(GLOB dir LIST_DIRECTORIES YES "${dest}/*")
+    31	
+    32	  execute_process(COMMAND "${CMAKE_COMMAND}" -E copy_directory "${dir}" "${target}")
+    33	  file(REMOVE_RECURSE "${dir}")
+    34	
+    35	  set("${NAME}_SOURCE_DIR" "${target}" PARENT_SCOPE)
+    36	endfunction()
+    37	
+    38	# Delegates to the dependency
+    39	macro(add_dependency NAME)
+    40	  if(NOT DEFINED "${NAME}_SOURCE_DIR")
+    41	    message(FATAL_ERROR "Missing ${NAME}_SOURCE_DIR variable")
+    42	  endif()
+    43	
+    44	  add_subdirectory("${${NAME}_SOURCE_DIR}" "${PROJECT_BINARY_DIR}/_deps/${NAME}")
+    45	endmacro()
+    46	
+    47	function(set_off NAME)
+    48	  set("${NAME}" OFF CACHE INTERNAL "")
+    49	endfunction()
+当前目录：/home
+当前目录内容：add_certificate_for_c.sh check_git_changes.sh fix-run.sh fix.patch prepare.sh run.sh simdjson test-run.sh test.patch
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages will be upgraded:
+  wget
+1 upgraded, 0 newly installed, 0 to remove and 135 not upgraded.
+Need to get 964 kB of archives.
+After this operation, 0 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 wget amd64 1.21-1+deb11u2 [964 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 964 kB in 0s (3115 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29414 files and directories currently installed.)
+Preparing to unpack .../wget_1.21-1+deb11u2_amd64.deb ...
+Unpacking wget (1.21-1+deb11u2) over (1.21-1+deb11u1) ...
+Setting up wget (1.21-1+deb11u2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libgpm2 vim-common vim-runtime xxd
+Suggested packages:
+  gpm ctags vim-doc vim-scripts
+The following NEW packages will be installed:
+  libgpm2 vim vim-common vim-runtime xxd
+0 upgraded, 5 newly installed, 0 to remove and 135 not upgraded.
+Need to get 8179 kB of archives.
+After this operation, 36.9 MB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 xxd amd64 2:8.2.2434-3+deb11u3 [193 kB]
+Get:2 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 vim-common all 2:8.2.2434-3+deb11u3 [227 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bullseye/main amd64 libgpm2 amd64 1.20.7-8 [35.6 kB]
+Get:4 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 vim-runtime all 2:8.2.2434-3+deb11u3 [6229 kB]
+Get:5 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 vim amd64 2:8.2.2434-3+deb11u3 [1496 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 8179 kB in 0s (18.8 MB/s)
+Selecting previously unselected package xxd.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29414 files and directories currently installed.)
+Preparing to unpack .../xxd_2%3a8.2.2434-3+deb11u3_amd64.deb ...
+Unpacking xxd (2:8.2.2434-3+deb11u3) ...
+Selecting previously unselected package vim-common.
+Preparing to unpack .../vim-common_2%3a8.2.2434-3+deb11u3_all.deb ...
+Unpacking vim-common (2:8.2.2434-3+deb11u3) ...
+Selecting previously unselected package libgpm2:amd64.
+Preparing to unpack .../libgpm2_1.20.7-8_amd64.deb ...
+Unpacking libgpm2:amd64 (1.20.7-8) ...
+Selecting previously unselected package vim-runtime.
+Preparing to unpack .../vim-runtime_2%3a8.2.2434-3+deb11u3_all.deb ...
+Adding 'diversion of /usr/share/vim/vim82/doc/help.txt to /usr/share/vim/vim82/doc/help.txt.vim-tiny by vim-runtime'
+Adding 'diversion of /usr/share/vim/vim82/doc/tags to /usr/share/vim/vim82/doc/tags.vim-tiny by vim-runtime'
+Unpacking vim-runtime (2:8.2.2434-3+deb11u3) ...
+Selecting previously unselected package vim.
+Preparing to unpack .../vim_2%3a8.2.2434-3+deb11u3_amd64.deb ...
+Unpacking vim (2:8.2.2434-3+deb11u3) ...
+Setting up libgpm2:amd64 (1.20.7-8) ...
+Setting up xxd (2:8.2.2434-3+deb11u3) ...
+Setting up vim-common (2:8.2.2434-3+deb11u3) ...
+Setting up vim-runtime (2:8.2.2434-3+deb11u3) ...
+Setting up vim (2:8.2.2434-3+deb11u3) ...
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vim (vim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vimdiff (vimdiff) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rvim (rvim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rview (rview) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vi (vi) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/view (view) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/ex (ex) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in auto mode
+Processing triggers for libc-bin (2.31-13+deb11u10) ...
+Processing triggers for hicolor-icon-theme (0.17-2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libcurl4 libcurl4-openssl-dev
+Suggested packages:
+  libcurl4-doc libidn11-dev libldap2-dev librtmp-dev libssh2-1-dev
+The following packages will be upgraded:
+  curl libcurl4 libcurl4-openssl-dev
+3 upgraded, 0 newly installed, 0 to remove and 132 not upgraded.
+Need to get 1057 kB of archives.
+After this operation, 0 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 libcurl4-openssl-dev amd64 7.74.0-1.3+deb11u16 [438 kB]
+Get:2 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 curl amd64 7.74.0-1.3+deb11u16 [272 kB]
+Get:3 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 libcurl4 amd64 7.74.0-1.3+deb11u16 [347 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 1057 kB in 0s (2572 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 31386 files and directories currently installed.)
+Preparing to unpack .../libcurl4-openssl-dev_7.74.0-1.3+deb11u16_amd64.deb ...
+Unpacking libcurl4-openssl-dev:amd64 (7.74.0-1.3+deb11u16) over (7.74.0-1.3+deb11u14) ...
+Preparing to unpack .../curl_7.74.0-1.3+deb11u16_amd64.deb ...
+Unpacking curl (7.74.0-1.3+deb11u16) over (7.74.0-1.3+deb11u14) ...
+Preparing to unpack .../libcurl4_7.74.0-1.3+deb11u16_amd64.deb ...
+Unpacking libcurl4:amd64 (7.74.0-1.3+deb11u16) over (7.74.0-1.3+deb11u14) ...
+Setting up libcurl4:amd64 (7.74.0-1.3+deb11u16) ...
+Setting up curl (7.74.0-1.3+deb11u16) ...
+Setting up libcurl4-openssl-dev:amd64 (7.74.0-1.3+deb11u16) ...
+Processing triggers for libc-bin (2.31-13+deb11u10) ...
+=== 配置证书 (abcert) ===
+[abcert][INFO] Created temporary directory .tmp.pems.uFSe4jiM
+[abcert][INFO] Operating system: Debian GNU/Linux 11 (bullseye)
+[abcert][INFO] Installing certificates
+'.tmp.pems.uFSe4jiM/HWBPITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWBPITEnterpriseCA1.crt'
+'.tmp.pems.uFSe4jiM/HWITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWITEnterpriseCA1.crt'
+'.tmp.pems.uFSe4jiM/HuaweiBPITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiBPITRootCA.crt'
+'.tmp.pems.uFSe4jiM/HuaweiITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiITRootCA.crt'
+'.tmp.pems.uFSe4jiM/HuaweiWebSecureInternetGatewayCA.pem' -> '/usr/local/share/ca-certificates/HuaweiWebSecureInternetGatewayCA.crt'
+Updating certificates in /etc/ssl/certs...
+5 added, 0 removed; done.
+Running hooks in /etc/ca-certificates/update.d...
+done.
+[abcert][INFO] Removed .tmp.pems.uFSe4jiM
+abcert 安装完成
+================git=====================
+http.version=HTTP/1.1
+http.postbuffer=524288000
+http.timeout=600
+================git=====================
+================env=====================
+HTTPS_PROXY=http://test:test@proxysg.huawei.com:8080/
+no_proxy=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+HOSTNAME=99d050837588
+GCC_MIRRORS=https://ftpmirror.gnu.org/gcc 		https://mirrors.kernel.org/gnu/gcc 		https://bigsearcher.com/mirrors/gcc/releases 		http://www.netgull.com/gcc/releases 		https://ftpmirror.gnu.org/gcc 		https://sourceware.org/pub/gcc/releases 		ftp://ftp.gnu.org/gnu/gcc
+HOME=/root
+OLDPWD=/home
+NO_PROXY=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+https_proxy=http://test:test@proxysg.huawei.com:8080/
+GPG_KEYS=B215C1633BCA0477615F1B35A5B3A004745C015A 	B3C42148A44E6983B3E4CC0793FA9B1AB75C61B8 	90AA470469D3965A87A5DCB494D03953902C9419 	80F98B2E0DAB6C8281BDF541A7C8C3B2F71EDF1C 	7F74F97C103468EE5D750B583AB00996FC26A641 	33C235A34C46AA3FFB293709A328C3A2C3C45C06 	D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62
+http_proxy=http://test:test@proxysg.huawei.com:8080/
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+GIT_SSL_NO_VERIFY=true
+PWD=/tmp/tmp.gMIwqdIV1G/abcert_install
+HTTP_PROXY=http://test:test@proxysg.huawei.com:8080/
+GCC_VERSION=11.5.0
+================env=====================
+#!/bin/bash
+# set -e
+
+cd /home/simdjson
+git ls-files --others --exclude-standard | xargs -I {} mv {} {}.bak
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake -DSIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build .
+ctest
+
+=========================================
+patching file tests/ondemand/ondemand_misc_tests.cpp
+patching file singleheader/simdjson.cpp
+patching file src/generic/stage2/stringparsing.h
+-- The CXX compiler identification is GNU 11.5.0
+-- The C compiler identification is GNU 11.5.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/local/bin/gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- No build type selected, default to Release
+-- Looking for fork
+-- Looking for fork - found
+-- Looking for wait
+-- Looking for wait - found
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Check if compiler accepts -pthread
+-- Check if compiler accepts -pthread - yes
+-- Found Threads: TRUE  
+-- Importing google_benchmarks (google/benchmark@f91b6b4)
+-- Failed to find LLVM FileCheck
+-- Found Git: /usr/bin/git (found version "2.30.2") 
+-- git version: v2.2.2-7-gd4ac1b51-dirty normalized to 2.2.2.7
+-- Version: 2.2.2.7
+-- Performing Test HAVE_CXX_FLAG_STD_CXX11
+-- Performing Test HAVE_CXX_FLAG_STD_CXX11 - Success
+-- Performing Test HAVE_CXX_FLAG_WALL
+-- Performing Test HAVE_CXX_FLAG_WALL - Success
+-- Performing Test HAVE_CXX_FLAG_WEXTRA
+-- Performing Test HAVE_CXX_FLAG_WEXTRA - Success
+-- Performing Test HAVE_CXX_FLAG_WSHADOW
+-- Performing Test HAVE_CXX_FLAG_WSHADOW - Success
+-- Performing Test HAVE_CXX_FLAG_WERROR
+-- Performing Test HAVE_CXX_FLAG_WERROR - Success
+-- Performing Test HAVE_CXX_FLAG_WSUGGEST_OVERRIDE
+-- Performing Test HAVE_CXX_FLAG_WSUGGEST_OVERRIDE - Success
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC - Success
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC_ERRORS
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC_ERRORS - Success
+-- Performing Test HAVE_CXX_FLAG_WSHORTEN_64_TO_32
+-- Performing Test HAVE_CXX_FLAG_WSHORTEN_64_TO_32 - Failed
+-- Performing Test HAVE_CXX_FLAG_FSTRICT_ALIASING
+-- Performing Test HAVE_CXX_FLAG_FSTRICT_ALIASING - Success
+-- Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED_DECLARATIONS
+-- Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED_DECLARATIONS - Success
+-- Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED
+-- Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED - Success
+-- Performing Test HAVE_CXX_FLAG_WSTRICT_ALIASING
+-- Performing Test HAVE_CXX_FLAG_WSTRICT_ALIASING - Success
+-- Performing Test HAVE_CXX_FLAG_WD654
+-- Performing Test HAVE_CXX_FLAG_WD654 - Failed
+-- Performing Test HAVE_CXX_FLAG_WTHREAD_SAFETY
+-- Performing Test HAVE_CXX_FLAG_WTHREAD_SAFETY - Failed
+-- Performing Test HAVE_CXX_FLAG_COVERAGE
+-- Performing Test HAVE_CXX_FLAG_COVERAGE - Success
+-- Performing Test HAVE_STD_REGEX
+-- Performing Test HAVE_STD_REGEX
+-- Performing Test HAVE_STD_REGEX -- success
+-- Performing Test HAVE_GNU_POSIX_REGEX
+-- Performing Test HAVE_GNU_POSIX_REGEX
+-- Performing Test HAVE_GNU_POSIX_REGEX -- failed to compile
+-- Performing Test HAVE_POSIX_REGEX
+-- Performing Test HAVE_POSIX_REGEX
+-- Performing Test HAVE_POSIX_REGEX -- success
+-- Performing Test HAVE_STEADY_CLOCK
+-- Performing Test HAVE_STEADY_CLOCK
+-- Performing Test HAVE_STEADY_CLOCK -- success
+-- Importing simdjson-data (simdjson/simdjson-data@a5b13babe65c1bba7186b41b43d4cbdc20a5c470)
+-- Performing Test USE_BOOST_JSON
+-- Performing Test USE_BOOST_JSON - Success
+-- Importing boostjson (boostorg/json@ee8d72d)
+-- Importing cjson (DaveGamble/cJSON@c69134d)
+-- Importing fastjson (mikeando/fastjson@485f994)
+-- Importing gason (vivkin/gason@7aee524)
+-- Importing jsmn (zserge/jsmn@18e9fe4)
+-- Importing json (nlohmann/json@v3.10.5)
+-- Importing json11 (dropbox/json11@ec4e452)
+-- Importing rapidjson (Tencent/rapidjson@f54b0e4)
+-- Importing sajson (chadaustin/sajson@2dcfd35)
+-- Importing ujson4c (esnme/ujson4c@e14f3fd)
+-- Importing yyjson (ibireme/yyjson@c385651)
+-- Importing cxxopts (jarro2783/cxxopts@794c975)
+-- cxxopts version 2.2.0
+-- We have cxxopts as a dependency and we are building the tools (e.g., json2json).
+-- Found Python3: /usr/bin/python3.9 (found version "3.9.2") found components: Interpreter 
+-- Including amalgamate_demo test. 
+-- Including simdjson-singleheader test.
+-- Including amalgamate_demo_direct_from_repository test.
+-- Either git is unavailable or else it is too old. We are disabling checkperf targets.
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/simdjson/build
+Scanning dependencies of target simdjson
+[  0%] Building CXX object CMakeFiles/simdjson.dir/src/simdjson.cpp.o
+[  1%] Linking CXX static library libsimdjson.a
+[  1%] Built target simdjson
+Scanning dependencies of target cjson
+[  1%] Building C object dependencies/CMakeFiles/cjson.dir/.cache/cjson/cJSON.c.o
+[  1%] Linking C static library libcjson.a
+[  1%] Built target cjson
+Scanning dependencies of target boostjson
+[  1%] Building CXX object dependencies/CMakeFiles/boostjson.dir/.cache/boostjson/src/src.cpp.o
+[  2%] Linking CXX static library libboostjson.a
+[  2%] Built target boostjson
+Scanning dependencies of target jsoncpp
+[  4%] Building CXX object dependencies/CMakeFiles/jsoncpp.dir/jsoncppdist/jsoncpp.cpp.o
+[  4%] Linking CXX static library libjsoncpp.a
+[  4%] Built target jsoncpp
+Scanning dependencies of target ujson4c
+[  5%] Building C object dependencies/CMakeFiles/ujson4c.dir/.cache/ujson4c/src/ujdecode.c.o
+[  5%] Building C object dependencies/CMakeFiles/ujson4c.dir/.cache/ujson4c/3rdparty/ultrajsondec.c.o
+[  5%] Linking C static library libujson4c.a
+[  5%] Built target ujson4c
+Scanning dependencies of target fastjson
+[  5%] Building CXX object dependencies/CMakeFiles/fastjson.dir/.cache/fastjson/src/fastjson.cpp.o
+[  5%] Building CXX object dependencies/CMakeFiles/fastjson.dir/.cache/fastjson/src/fastjson2.cpp.o
+[  6%] Building CXX object dependencies/CMakeFiles/fastjson.dir/.cache/fastjson/src/fastjson_dom.cpp.o
+[  6%] Linking CXX static library libfastjson.a
+[  6%] Built target fastjson
+Scanning dependencies of target gason
+[  8%] Building CXX object dependencies/CMakeFiles/gason.dir/.cache/gason/src/gason.cpp.o
+[  8%] Linking CXX static library libgason.a
+[  8%] Built target gason
+Scanning dependencies of target yyjson
+[  8%] Building C object dependencies/CMakeFiles/yyjson.dir/.cache/yyjson/src/yyjson.c.o
+[  9%] Linking C static library libyyjson.a
+[  9%] Built target yyjson
+Scanning dependencies of target jsmn
+[ 10%] Building C object dependencies/CMakeFiles/jsmn.dir/.cache/jsmn/jsmn.c.o
+[ 10%] Linking C static library libjsmn.a
+[ 10%] Built target jsmn
+Scanning dependencies of target json11
+[ 10%] Building CXX object dependencies/CMakeFiles/json11.dir/.cache/json11/json11.cpp.o
+[ 12%] Linking CXX static library libjson11.a
+[ 12%] Built target json11
+Scanning dependencies of target benchmark
+[ 12%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/benchmark.cc.o
+[ 12%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/benchmark_api_internal.cc.o
+[ 13%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/benchmark_name.cc.o
+[ 13%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/benchmark_register.cc.o
+[ 14%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/benchmark_runner.cc.o
+[ 14%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/colorprint.cc.o
+[ 14%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/commandlineflags.cc.o
+[ 16%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/complexity.cc.o
+[ 16%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/console_reporter.cc.o
+[ 17%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/counter.cc.o
+[ 17%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/csv_reporter.cc.o
+[ 17%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/json_reporter.cc.o
+[ 18%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/perf_counters.cc.o
+[ 18%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/reporter.cc.o
+[ 18%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/sleep.cc.o
+[ 20%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/statistics.cc.o
+[ 20%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/string_util.cc.o
+[ 21%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/sysinfo.cc.o
+[ 21%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark.dir/timers.cc.o
+[ 21%] Linking CXX static library libbenchmark.a
+[ 21%] Built target benchmark
+Scanning dependencies of target benchmark_main
+[ 22%] Building CXX object _deps/google_benchmarks/src/CMakeFiles/benchmark_main.dir/benchmark_main.cc.o
+[ 22%] Linking CXX static library libbenchmark_main.a
+[ 22%] Built target benchmark_main
+Scanning dependencies of target minify
+[ 24%] Building CXX object tools/CMakeFiles/minify.dir/minify.cpp.o
+[ 24%] Linking CXX executable minify
+[ 24%] Built target minify
+Scanning dependencies of target jsonpointer
+[ 24%] Building CXX object tools/CMakeFiles/jsonpointer.dir/jsonpointer.cpp.o
+[ 25%] Linking CXX executable jsonpointer
+[ 25%] Built target jsonpointer
+Scanning dependencies of target jsonstats
+[ 25%] Building CXX object tools/CMakeFiles/jsonstats.dir/jsonstats.cpp.o
+[ 26%] Linking CXX executable jsonstats
+[ 26%] Built target jsonstats
+Scanning dependencies of target json2json
+[ 26%] Building CXX object tools/CMakeFiles/json2json.dir/json2json.cpp.o
+[ 28%] Linking CXX executable json2json
+[ 28%] Built target json2json
+Scanning dependencies of target amalgamate_demo_direct_from_repository
+[ 28%] Building CXX object singleheader/CMakeFiles/amalgamate_demo_direct_from_repository.dir/amalgamate_demo.cpp.o
+[ 28%] Linking CXX executable amalgamate_demo_direct_from_repository
+[ 28%] Built target amalgamate_demo_direct_from_repository
+Scanning dependencies of target singleheader-files
+[ 28%] Generating simdjson.cpp, simdjson.h, amalgamate_demo.cpp, README.md
+SCRIPTPATH=/home/simdjson/singleheader PROJECTPATH=/home/simdjson
+We are about to amalgamate all simdjson files into one source file.
+See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/wiki/Single_Compilation_Unit for rationale.
+timestamp is 2022-09-27 23:22:47 -0400
+Creating /home/simdjson/build/singleheader/simdjson.h
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+Creating /home/simdjson/build/singleheader/simdjson.cpp
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+// #undef SIMDJSON_IMPLEMENTATION
+Done with all files generation.
+Files have been written to directory: /home/simdjson/build/singleheader/
+-rw-r--r-- 1 root root     170 Mar 18  2025 /home/simdjson/build/singleheader/README.md
+-rw-r--r-- 1 root root    2734 Mar 18  2025 /home/simdjson/build/singleheader/amalgamate_demo.cpp
+-rw-r--r-- 1 root root  661643 Jul 14 01:42 /home/simdjson/build/singleheader/simdjson.cpp
+-rw-r--r-- 1 root root 1261428 Jul 14 01:42 /home/simdjson/build/singleheader/simdjson.h
+Done with all files generation.
+
+Giving final instructions:
+Try :
+
+```
+
+c++ -O3 -std=c++17 -pthread -o amalgamate_demo amalgamate_demo.cpp  && ./amalgamate_demo ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson
+
+
+
+[ 28%] Built target singleheader-files
+Scanning dependencies of target amalgamate_demo
+[ 28%] Building CXX object singleheader/CMakeFiles/amalgamate_demo.dir/amalgamate_demo.cpp.o
+[ 29%] Linking CXX executable amalgamate_demo
+[ 29%] Built target amalgamate_demo
+Scanning dependencies of target generated-data
+[ 29%] Built target generated-data
+Scanning dependencies of target unicode_tests
+[ 30%] Building CXX object tests/CMakeFiles/unicode_tests.dir/unicode_tests.cpp.o
+[ 30%] Linking CXX executable unicode_tests
+[ 30%] Built target unicode_tests
+Scanning dependencies of target checkimplementation
+[ 30%] Building CXX object tests/CMakeFiles/checkimplementation.dir/checkimplementation.cpp.o
+[ 32%] Linking CXX executable checkimplementation
+[ 32%] Built target checkimplementation
+Scanning dependencies of target minify_tests
+[ 32%] Building CXX object tests/CMakeFiles/minify_tests.dir/minify_tests.cpp.o
+[ 33%] Linking CXX executable minify_tests
+[ 33%] Built target minify_tests
+Scanning dependencies of target padded_string_tests
+[ 34%] Building CXX object tests/CMakeFiles/padded_string_tests.dir/padded_string_tests.cpp.o
+[ 34%] Linking CXX executable padded_string_tests
+[ 34%] Built target padded_string_tests
+Scanning dependencies of target pointercheck
+[ 36%] Building CXX object tests/dom/CMakeFiles/pointercheck.dir/pointercheck.cpp.o
+[ 36%] Linking CXX executable pointercheck
+[ 36%] Built target pointercheck
+Scanning dependencies of target document_tests
+[ 36%] Building CXX object tests/dom/CMakeFiles/document_tests.dir/document_tests.cpp.o
+[ 36%] Linking CXX executable document_tests
+[ 36%] Built target document_tests
+Scanning dependencies of target numberparsingcheck
+[ 36%] Building CXX object tests/dom/CMakeFiles/numberparsingcheck.dir/numberparsingcheck.cpp.o
+[ 37%] Linking CXX executable numberparsingcheck
+[ 37%] Built target numberparsingcheck
+Scanning dependencies of target basictests
+[ 37%] Building CXX object tests/dom/CMakeFiles/basictests.dir/basictests.cpp.o
+[ 38%] Linking CXX executable basictests
+[ 38%] Built target basictests
+Scanning dependencies of target integer_tests
+[ 38%] Building CXX object tests/dom/CMakeFiles/integer_tests.dir/integer_tests.cpp.o
+[ 40%] Linking CXX executable integer_tests
+[ 40%] Built target integer_tests
+Scanning dependencies of target jsoncheck
+[ 40%] Building CXX object tests/dom/CMakeFiles/jsoncheck.dir/jsoncheck.cpp.o
+[ 40%] Linking CXX executable jsoncheck
+[ 40%] Built target jsoncheck
+Scanning dependencies of target document_stream_tests
+[ 40%] Building CXX object tests/dom/CMakeFiles/document_stream_tests.dir/document_stream_tests.cpp.o
+[ 41%] Linking CXX executable document_stream_tests
+[ 41%] Built target document_stream_tests
+Scanning dependencies of target minefieldcheck
+[ 41%] Building CXX object tests/dom/CMakeFiles/minefieldcheck.dir/minefieldcheck.cpp.o
+[ 41%] Linking CXX executable minefieldcheck
+[ 41%] Built target minefieldcheck
+Scanning dependencies of target parse_many_test
+[ 41%] Building CXX object tests/dom/CMakeFiles/parse_many_test.dir/parse_many_test.cpp.o
+[ 42%] Linking CXX executable parse_many_test
+[ 42%] Built target parse_many_test
+Scanning dependencies of target random_string_number_tests
+[ 44%] Building CXX object tests/dom/CMakeFiles/random_string_number_tests.dir/random_string_number_tests.cpp.o
+[ 44%] Linking CXX executable random_string_number_tests
+[ 44%] Built target random_string_number_tests
+Scanning dependencies of target trivially_copyable_test
+[ 44%] Building CXX object tests/dom/CMakeFiles/trivially_copyable_test.dir/trivially_copyable_test.cpp.o
+[ 44%] Linking CXX executable trivially_copyable_test
+[ 44%] Built target trivially_copyable_test
+Scanning dependencies of target extracting_values_example
+[ 44%] Building CXX object tests/dom/CMakeFiles/extracting_values_example.dir/extracting_values_example.cpp.o
+[ 45%] Linking CXX executable extracting_values_example
+[ 45%] Built target extracting_values_example
+Scanning dependencies of target stringparsingcheck
+[ 45%] Building CXX object tests/dom/CMakeFiles/stringparsingcheck.dir/stringparsingcheck.cpp.o
+[ 46%] Linking CXX executable stringparsingcheck
+[ 46%] Built target stringparsingcheck
+Scanning dependencies of target errortests
+[ 48%] Building CXX object tests/dom/CMakeFiles/errortests.dir/errortests.cpp.o
+[ 48%] Linking CXX executable errortests
+[ 48%] Built target errortests
+Scanning dependencies of target ondemand_object_error_tests
+[ 48%] Building CXX object tests/ondemand/CMakeFiles/ondemand_object_error_tests.dir/ondemand_object_error_tests.cpp.o
+[ 48%] Linking CXX executable ondemand_object_error_tests
+[ 48%] Built target ondemand_object_error_tests
+Scanning dependencies of target ondemand_misc_tests
+[ 49%] Building CXX object tests/ondemand/CMakeFiles/ondemand_misc_tests.dir/ondemand_misc_tests.cpp.o
+[ 49%] Linking CXX executable ondemand_misc_tests
+[ 49%] Built target ondemand_misc_tests
+Scanning dependencies of target ondemand_wrong_type_error_tests
+[ 49%] Building CXX object tests/ondemand/CMakeFiles/ondemand_wrong_type_error_tests.dir/ondemand_wrong_type_error_tests.cpp.o
+[ 49%] Linking CXX executable ondemand_wrong_type_error_tests
+[ 49%] Built target ondemand_wrong_type_error_tests
+Scanning dependencies of target ondemand_error_tests
+[ 49%] Building CXX object tests/ondemand/CMakeFiles/ondemand_error_tests.dir/ondemand_error_tests.cpp.o
+[ 50%] Linking CXX executable ondemand_error_tests
+[ 50%] Built target ondemand_error_tests
+Scanning dependencies of target ondemand_compilation_tests
+[ 50%] Building CXX object tests/ondemand/CMakeFiles/ondemand_compilation_tests.dir/ondemand_compilation_tests.cpp.o
+[ 50%] Linking CXX executable ondemand_compilation_tests
+[ 50%] Built target ondemand_compilation_tests
+Scanning dependencies of target ondemand_array_error_tests
+[ 52%] Building CXX object tests/ondemand/CMakeFiles/ondemand_array_error_tests.dir/ondemand_array_error_tests.cpp.o
+[ 52%] Linking CXX executable ondemand_array_error_tests
+[ 52%] Built target ondemand_array_error_tests
+Scanning dependencies of target ondemand_key_string_tests
+[ 53%] Building CXX object tests/ondemand/CMakeFiles/ondemand_key_string_tests.dir/ondemand_key_string_tests.cpp.o
+[ 53%] Linking CXX executable ondemand_key_string_tests
+[ 53%] Built target ondemand_key_string_tests
+Scanning dependencies of target ondemand_json_pointer_tests
+[ 53%] Building CXX object tests/ondemand/CMakeFiles/ondemand_json_pointer_tests.dir/ondemand_json_pointer_tests.cpp.o
+[ 53%] Linking CXX executable ondemand_json_pointer_tests
+[ 53%] Built target ondemand_json_pointer_tests
+Scanning dependencies of target ondemand_array_tests
+[ 54%] Building CXX object tests/ondemand/CMakeFiles/ondemand_array_tests.dir/ondemand_array_tests.cpp.o
+[ 54%] Linking CXX executable ondemand_array_tests
+[ 54%] Built target ondemand_array_tests
+Scanning dependencies of target ondemand_active_tests
+[ 54%] Building CXX object tests/ondemand/CMakeFiles/ondemand_active_tests.dir/ondemand_active_tests.cpp.o
+[ 54%] Linking CXX executable ondemand_active_tests
+[ 54%] Built target ondemand_active_tests
+Scanning dependencies of target ondemand_document_stream_tests
+[ 56%] Building CXX object tests/ondemand/CMakeFiles/ondemand_document_stream_tests.dir/ondemand_document_stream_tests.cpp.o
+[ 56%] Linking CXX executable ondemand_document_stream_tests
+[ 56%] Built target ondemand_document_stream_tests
+Scanning dependencies of target ondemand_object_tests
+[ 57%] Building CXX object tests/ondemand/CMakeFiles/ondemand_object_tests.dir/ondemand_object_tests.cpp.o
+[ 57%] Linking CXX executable ondemand_object_tests
+[ 57%] Built target ondemand_object_tests
+Scanning dependencies of target ondemand_tostring_tests
+[ 57%] Building CXX object tests/ondemand/CMakeFiles/ondemand_tostring_tests.dir/ondemand_tostring_tests.cpp.o
+[ 58%] Linking CXX executable ondemand_tostring_tests
+[ 58%] Built target ondemand_tostring_tests
+Scanning dependencies of target ondemand_number_in_string_tests
+[ 58%] Building CXX object tests/ondemand/CMakeFiles/ondemand_number_in_string_tests.dir/ondemand_number_in_string_tests.cpp.o
+[ 60%] Linking CXX executable ondemand_number_in_string_tests
+[ 60%] Built target ondemand_number_in_string_tests
+Scanning dependencies of target ondemand_ordering_tests
+[ 60%] Building CXX object tests/ondemand/CMakeFiles/ondemand_ordering_tests.dir/ondemand_ordering_tests.cpp.o
+[ 61%] Linking CXX executable ondemand_ordering_tests
+[ 61%] Built target ondemand_ordering_tests
+Scanning dependencies of target ondemand_error_location_tests
+[ 62%] Building CXX object tests/ondemand/CMakeFiles/ondemand_error_location_tests.dir/ondemand_error_location_tests.cpp.o
+[ 62%] Linking CXX executable ondemand_error_location_tests
+[ 62%] Built target ondemand_error_location_tests
+Scanning dependencies of target ondemand_readme_examples
+[ 62%] Building CXX object tests/ondemand/CMakeFiles/ondemand_readme_examples.dir/ondemand_readme_examples.cpp.o
+[ 62%] Linking CXX executable ondemand_readme_examples
+[ 62%] Built target ondemand_readme_examples
+Scanning dependencies of target ondemand_number_tests
+[ 62%] Building CXX object tests/ondemand/CMakeFiles/ondemand_number_tests.dir/ondemand_number_tests.cpp.o
+[ 64%] Linking CXX executable ondemand_number_tests
+[ 64%] Built target ondemand_number_tests
+Scanning dependencies of target ondemand_parse_api_tests
+[ 64%] Building CXX object tests/ondemand/CMakeFiles/ondemand_parse_api_tests.dir/ondemand_parse_api_tests.cpp.o
+[ 65%] Linking CXX executable ondemand_parse_api_tests
+[ 65%] Built target ondemand_parse_api_tests
+Scanning dependencies of target ondemand_twitter_tests
+[ 65%] Building CXX object tests/ondemand/CMakeFiles/ondemand_twitter_tests.dir/ondemand_twitter_tests.cpp.o
+[ 66%] Linking CXX executable ondemand_twitter_tests
+[ 66%] Built target ondemand_twitter_tests
+Scanning dependencies of target ondemand_scalar_tests
+[ 68%] Building CXX object tests/ondemand/CMakeFiles/ondemand_scalar_tests.dir/ondemand_scalar_tests.cpp.o
+[ 68%] Linking CXX executable ondemand_scalar_tests
+[ 68%] Built target ondemand_scalar_tests
+Scanning dependencies of target ondemand_assert_out_of_order_values
+[ 68%] Building CXX object tests/ondemand/CMakeFiles/ondemand_assert_out_of_order_values.dir/ondemand_assert_out_of_order_values.cpp.o
+[ 69%] Linking CXX executable ondemand_assert_out_of_order_values
+[ 69%] Built target ondemand_assert_out_of_order_values
+Scanning dependencies of target benchfeatures
+[ 69%] Building CXX object benchmark/CMakeFiles/benchfeatures.dir/benchfeatures.cpp.o
+[ 70%] Linking CXX executable benchfeatures
+[ 70%] Built target benchfeatures
+Scanning dependencies of target get_corpus_benchmark
+[ 72%] Building CXX object benchmark/CMakeFiles/get_corpus_benchmark.dir/get_corpus_benchmark.cpp.o
+[ 72%] Linking CXX executable get_corpus_benchmark
+[ 72%] Built target get_corpus_benchmark
+Scanning dependencies of target bench_parse_call
+[ 73%] Building CXX object benchmark/CMakeFiles/bench_parse_call.dir/bench_parse_call.cpp.o
+[ 73%] Linking CXX executable bench_parse_call
+[ 73%] Built target bench_parse_call
+Scanning dependencies of target bench_dom_api
+[ 73%] Building CXX object benchmark/CMakeFiles/bench_dom_api.dir/bench_dom_api.cpp.o
+[ 73%] Linking CXX executable bench_dom_api
+[ 73%] Built target bench_dom_api
+Scanning dependencies of target bench_ondemand
+[ 74%] Building CXX object benchmark/CMakeFiles/bench_ondemand.dir/bench_ondemand.cpp.o
+[ 74%] Linking CXX executable bench_ondemand
+[ 74%] Built target bench_ondemand
+Scanning dependencies of target perfdiff
+[ 74%] Building CXX object benchmark/dom/CMakeFiles/perfdiff.dir/perfdiff.cpp.o
+[ 74%] Linking CXX executable perfdiff
+[ 74%] Built target perfdiff
+Scanning dependencies of target parse_noutf8validation
+[ 76%] Building CXX object benchmark/dom/CMakeFiles/parse_noutf8validation.dir/parse.cpp.o
+[ 76%] Linking CXX executable parse_noutf8validation
+[ 76%] Built target parse_noutf8validation
+Scanning dependencies of target parse
+[ 76%] Building CXX object benchmark/dom/CMakeFiles/parse.dir/parse.cpp.o
+[ 77%] Linking CXX executable parse
+[ 77%] Built target parse
+Scanning dependencies of target parse_stream
+[ 77%] Building CXX object benchmark/dom/CMakeFiles/parse_stream.dir/parse_stream.cpp.o
+[ 78%] Linking CXX executable parse_stream
+[ 78%] Built target parse_stream
+Scanning dependencies of target statisticalmodel
+[ 78%] Building CXX object benchmark/dom/CMakeFiles/statisticalmodel.dir/statisticalmodel.cpp.o
+[ 80%] Linking CXX executable statisticalmodel
+[ 80%] Built target statisticalmodel
+Scanning dependencies of target parse_nonumberparsing
+[ 80%] Building CXX object benchmark/dom/CMakeFiles/parse_nonumberparsing.dir/parse.cpp.o
+[ 80%] Linking CXX executable parse_nonumberparsing
+[ 80%] Built target parse_nonumberparsing
+Scanning dependencies of target parse_nostringparsing
+[ 81%] Building CXX object benchmark/dom/CMakeFiles/parse_nostringparsing.dir/parse.cpp.o
+[ 81%] Linking CXX executable parse_nostringparsing
+[ 81%] Built target parse_nostringparsing
+Scanning dependencies of target fuzz_print_json
+[ 82%] Building CXX object fuzz/CMakeFiles/fuzz_print_json.dir/fuzz_print_json.cpp.o
+[ 82%] Building CXX object fuzz/CMakeFiles/fuzz_print_json.dir/main.cpp.o
+[ 82%] Linking CXX executable fuzz_print_json
+[ 82%] Built target fuzz_print_json
+Scanning dependencies of target fuzz_padded
+[ 82%] Building CXX object fuzz/CMakeFiles/fuzz_padded.dir/fuzz_padded.cpp.o
+[ 84%] Building CXX object fuzz/CMakeFiles/fuzz_padded.dir/main.cpp.o
+[ 84%] Linking CXX executable fuzz_padded
+[ 84%] Built target fuzz_padded
+Scanning dependencies of target fuzz_dump
+[ 84%] Building CXX object fuzz/CMakeFiles/fuzz_dump.dir/fuzz_dump.cpp.o
+[ 84%] Building CXX object fuzz/CMakeFiles/fuzz_dump.dir/main.cpp.o
+[ 85%] Linking CXX executable fuzz_dump
+[ 85%] Built target fuzz_dump
+Scanning dependencies of target fuzz_minifyimpl
+[ 86%] Building CXX object fuzz/CMakeFiles/fuzz_minifyimpl.dir/fuzz_minifyimpl.cpp.o
+[ 86%] Building CXX object fuzz/CMakeFiles/fuzz_minifyimpl.dir/main.cpp.o
+[ 88%] Linking CXX executable fuzz_minifyimpl
+[ 88%] Built target fuzz_minifyimpl
+Scanning dependencies of target fuzz_element
+[ 88%] Building CXX object fuzz/CMakeFiles/fuzz_element.dir/fuzz_element.cpp.o
+[ 89%] Building CXX object fuzz/CMakeFiles/fuzz_element.dir/main.cpp.o
+[ 89%] Linking CXX executable fuzz_element
+[ 89%] Built target fuzz_element
+Scanning dependencies of target fuzz_ondemand
+[ 89%] Building CXX object fuzz/CMakeFiles/fuzz_ondemand.dir/fuzz_ondemand.cpp.o
+[ 89%] Building CXX object fuzz/CMakeFiles/fuzz_ondemand.dir/main.cpp.o
+[ 90%] Linking CXX executable fuzz_ondemand
+[ 90%] Built target fuzz_ondemand
+Scanning dependencies of target fuzz_utf8
+[ 92%] Building CXX object fuzz/CMakeFiles/fuzz_utf8.dir/fuzz_utf8.cpp.o
+[ 92%] Building CXX object fuzz/CMakeFiles/fuzz_utf8.dir/main.cpp.o
+[ 92%] Linking CXX executable fuzz_utf8
+[ 92%] Built target fuzz_utf8
+Scanning dependencies of target fuzz_implementations
+[ 93%] Building CXX object fuzz/CMakeFiles/fuzz_implementations.dir/fuzz_implementations.cpp.o
+[ 93%] Building CXX object fuzz/CMakeFiles/fuzz_implementations.dir/main.cpp.o
+[ 93%] Linking CXX executable fuzz_implementations
+[ 93%] Built target fuzz_implementations
+Scanning dependencies of target fuzz_parser
+[ 93%] Building CXX object fuzz/CMakeFiles/fuzz_parser.dir/fuzz_parser.cpp.o
+[ 94%] Building CXX object fuzz/CMakeFiles/fuzz_parser.dir/main.cpp.o
+[ 94%] Linking CXX executable fuzz_parser
+[ 94%] Built target fuzz_parser
+Scanning dependencies of target fuzz_atpointer
+[ 94%] Building CXX object fuzz/CMakeFiles/fuzz_atpointer.dir/fuzz_atpointer.cpp.o
+[ 94%] Building CXX object fuzz/CMakeFiles/fuzz_atpointer.dir/main.cpp.o
+[ 96%] Linking CXX executable fuzz_atpointer
+[ 96%] Built target fuzz_atpointer
+Scanning dependencies of target fuzz_dump_raw_tape
+[ 96%] Building CXX object fuzz/CMakeFiles/fuzz_dump_raw_tape.dir/fuzz_dump_raw_tape.cpp.o
+[ 97%] Building CXX object fuzz/CMakeFiles/fuzz_dump_raw_tape.dir/main.cpp.o
+[ 97%] Linking CXX executable fuzz_dump_raw_tape
+[ 97%] Built target fuzz_dump_raw_tape
+Scanning dependencies of target fuzz_minify
+[ 98%] Building CXX object fuzz/CMakeFiles/fuzz_minify.dir/fuzz_minify.cpp.o
+[ 98%] Building CXX object fuzz/CMakeFiles/fuzz_minify.dir/main.cpp.o
+[ 98%] Linking CXX executable fuzz_minify
+[ 98%] Built target fuzz_minify
+Scanning dependencies of target fuzz_ndjson
+[ 98%] Building CXX object fuzz/CMakeFiles/fuzz_ndjson.dir/fuzz_ndjson.cpp.o
+[ 98%] Building CXX object fuzz/CMakeFiles/fuzz_ndjson.dir/main.cpp.o
+[100%] Linking CXX executable fuzz_ndjson
+[100%] Built target fuzz_ndjson
+Test project /home/simdjson/build
+      Start  1: avoid_abort
+ 1/93 Test  #1: avoid_abort ..........................................   Passed    0.00 sec
+      Start  2: avoid_cout
+ 2/93 Test  #2: avoid_cout ...........................................   Passed    0.00 sec
+      Start  3: avoid_cerr
+ 3/93 Test  #3: avoid_cerr ...........................................   Passed    0.00 sec
+      Start  4: avoid_printf
+ 4/93 Test  #4: avoid_printf .........................................   Passed    0.00 sec
+      Start  5: avoid_stdout
+ 5/93 Test  #5: avoid_stdout .........................................   Passed    0.00 sec
+      Start  6: avoid_stderr
+ 6/93 Test  #6: avoid_stderr .........................................   Passed    0.00 sec
+      Start  7: amalgamate_demo
+ 7/93 Test  #7: amalgamate_demo ......................................   Passed    0.00 sec
+      Start  8: simdjson-singleheader
+ 8/93 Test  #8: simdjson-singleheader ................................   Passed    6.62 sec
+      Start  9: amalgamate_demo_direct_from_repository
+ 9/93 Test  #9: amalgamate_demo_direct_from_repository ...............   Passed    0.00 sec
+      Start 10: unicode_tests
+10/93 Test #10: unicode_tests ........................................   Passed    0.05 sec
+      Start 11: minify_tests
+11/93 Test #11: minify_tests .........................................   Passed    0.11 sec
+      Start 12: padded_string_tests
+12/93 Test #12: padded_string_tests ..................................   Passed    0.00 sec
+      Start 13: checkimplementation
+13/93 Test #13: checkimplementation ..................................   Passed    0.00 sec
+      Start 14: random_string_number_tests
+14/93 Test #14: random_string_number_tests ...........................   Passed    1.01 sec
+      Start 15: basictests
+15/93 Test #15: basictests ...........................................   Passed    0.01 sec
+      Start 16: document_stream_tests
+16/93 Test #16: document_stream_tests ................................   Passed    0.26 sec
+      Start 17: document_tests
+17/93 Test #17: document_tests .......................................   Passed    0.00 sec
+      Start 18: errortests
+18/93 Test #18: errortests ...........................................   Passed    0.00 sec
+      Start 19: extracting_values_example
+19/93 Test #19: extracting_values_example ............................   Passed    0.00 sec
+      Start 20: integer_tests
+20/93 Test #20: integer_tests ........................................   Passed    0.00 sec
+      Start 21: jsoncheck
+21/93 Test #21: jsoncheck ............................................   Passed    0.00 sec
+      Start 22: minefieldcheck
+22/93 Test #22: minefieldcheck .......................................   Passed    0.01 sec
+      Start 23: numberparsingcheck
+23/93 Test #23: numberparsingcheck ...................................   Passed    0.03 sec
+      Start 24: parse_many_test
+24/93 Test #24: parse_many_test ......................................   Passed    0.00 sec
+      Start 25: pointercheck
+25/93 Test #25: pointercheck .........................................   Passed    0.00 sec
+      Start 26: stringparsingcheck
+26/93 Test #26: stringparsingcheck ...................................   Passed    0.04 sec
+      Start 27: trivially_copyable_test
+27/93 Test #27: trivially_copyable_test ..............................   Passed    0.00 sec
+      Start 29: json2json
+28/93 Test #29: json2json ............................................   Passed    0.01 sec
+      Start 28: testjson2json
+29/93 Test #28: testjson2json ........................................   Passed    0.71 sec
+      Start 30: simdjson_force_implementation_error
+30/93 Test #30: simdjson_force_implementation_error ..................   Passed    0.01 sec
+      Start 31: readme_examples
+31/93 Test #31: readme_examples ......................................   Passed    3.39 sec
+      Start 32: readme_examples11
+32/93 Test #32: readme_examples11 ....................................   Passed    3.39 sec
+      Start 33: readme_examples_noexceptions
+33/93 Test #33: readme_examples_noexceptions .........................   Passed    2.44 sec
+      Start 34: readme_examples_noexceptions11
+34/93 Test #34: readme_examples_noexceptions11 .......................   Passed    2.22 sec
+      Start 35: readme_examples_will_fail_with_exceptions_off
+35/93 Test #35: readme_examples_will_fail_with_exceptions_off ........   Passed    1.60 sec
+      Start 36: ondemand_tostring_tests
+36/93 Test #36: ondemand_tostring_tests ..............................   Passed    0.01 sec
+      Start 37: ondemand_active_tests
+37/93 Test #37: ondemand_active_tests ................................   Passed    0.00 sec
+      Start 38: ondemand_array_tests
+38/93 Test #38: ondemand_array_tests .................................   Passed    0.00 sec
+      Start 39: ondemand_array_error_tests
+39/93 Test #39: ondemand_array_error_tests ...........................   Passed    0.00 sec
+      Start 40: ondemand_compilation_tests
+40/93 Test #40: ondemand_compilation_tests ...........................   Passed    0.00 sec
+      Start 41: ondemand_document_stream_tests
+41/93 Test #41: ondemand_document_stream_tests .......................   Passed    0.03 sec
+      Start 42: ondemand_error_tests
+42/93 Test #42: ondemand_error_tests .................................   Passed    0.00 sec
+      Start 43: ondemand_error_location_tests
+43/93 Test #43: ondemand_error_location_tests ........................   Passed    0.00 sec
+      Start 44: ondemand_json_pointer_tests
+44/93 Test #44: ondemand_json_pointer_tests ..........................   Passed    0.00 sec
+      Start 45: ondemand_key_string_tests
+45/93 Test #45: ondemand_key_string_tests ............................   Passed    0.00 sec
+      Start 46: ondemand_misc_tests
+46/93 Test #46: ondemand_misc_tests ..................................   Passed    0.00 sec
+      Start 47: ondemand_number_tests
+47/93 Test #47: ondemand_number_tests ................................   Passed    0.01 sec
+      Start 48: ondemand_number_in_string_tests
+48/93 Test #48: ondemand_number_in_string_tests ......................   Passed    0.00 sec
+      Start 49: ondemand_object_tests
+49/93 Test #49: ondemand_object_tests ................................   Passed    0.00 sec
+      Start 50: ondemand_object_error_tests
+50/93 Test #50: ondemand_object_error_tests ..........................   Passed    0.00 sec
+      Start 51: ondemand_ordering_tests
+51/93 Test #51: ondemand_ordering_tests ..............................   Passed    0.00 sec
+      Start 52: ondemand_parse_api_tests
+52/93 Test #52: ondemand_parse_api_tests .............................   Passed    0.00 sec
+      Start 53: ondemand_readme_examples
+53/93 Test #53: ondemand_readme_examples .............................   Passed    0.00 sec
+      Start 54: ondemand_scalar_tests
+54/93 Test #54: ondemand_scalar_tests ................................   Passed    0.00 sec
+      Start 55: ondemand_twitter_tests
+55/93 Test #55: ondemand_twitter_tests ...............................   Passed    0.00 sec
+      Start 56: ondemand_wrong_type_error_tests
+56/93 Test #56: ondemand_wrong_type_error_tests ......................   Passed    0.00 sec
+      Start 57: ondemand_assert_out_of_order_values
+57/93 Test #57: ondemand_assert_out_of_order_values ..................   Passed    0.00 sec
+      Start 58: iterate_char_star_should_compile
+58/93 Test #58: iterate_char_star_should_compile .....................   Passed    1.72 sec
+      Start 59: iterate_char_star_should_not_compile
+59/93 Test #59: iterate_char_star_should_not_compile .................   Passed    1.62 sec
+      Start 60: iterate_string_view_should_compile
+60/93 Test #60: iterate_string_view_should_compile ...................   Passed    1.87 sec
+      Start 61: iterate_string_view_should_not_compile
+61/93 Test #61: iterate_string_view_should_not_compile ...............   Passed    1.53 sec
+      Start 62: iterate_temporary_buffer_should_compile
+62/93 Test #62: iterate_temporary_buffer_should_compile ..............   Passed    1.74 sec
+      Start 63: iterate_temporary_buffer_should_not_compile
+63/93 Test #63: iterate_temporary_buffer_should_not_compile ..........   Passed    1.57 sec
+      Start 64: first_second_access_should_compile
+64/93 Test #64: first_second_access_should_compile ...................   Passed    2.06 sec
+      Start 65: first_second_access_should_not_compile
+65/93 Test #65: first_second_access_should_not_compile ...............   Passed    1.65 sec
+      Start 66: example_compiletest_should_compile
+66/93 Test #66: example_compiletest_should_compile ...................   Passed    0.27 sec
+      Start 67: example_compiletest_should_not_compile
+67/93 Test #67: example_compiletest_should_not_compile ...............   Passed    0.17 sec
+      Start 68: bad_array_count_should_compile
+68/93 Test #68: bad_array_count_should_compile .......................   Passed    1.91 sec
+      Start 69: bad_array_count_should_not_compile
+69/93 Test #69: bad_array_count_should_not_compile ...................   Passed    1.59 sec
+      Start 70: dangling_parser_load_should_compile
+70/93 Test #70: dangling_parser_load_should_compile ..................   Passed    2.04 sec
+      Start 71: dangling_parser_load_should_not_compile
+71/93 Test #71: dangling_parser_load_should_not_compile ..............   Passed    1.59 sec
+      Start 72: dangling_parser_parse_uint8_should_compile
+72/93 Test #72: dangling_parser_parse_uint8_should_compile ...........   Passed    2.02 sec
+      Start 73: dangling_parser_parse_uint8_should_not_compile
+73/93 Test #73: dangling_parser_parse_uint8_should_not_compile .......   Passed    1.59 sec
+      Start 74: dangling_parser_parse_uchar_should_compile
+74/93 Test #74: dangling_parser_parse_uchar_should_compile ...........   Passed    2.02 sec
+      Start 75: dangling_parser_parse_uchar_should_not_compile
+75/93 Test #75: dangling_parser_parse_uchar_should_not_compile .......   Passed    1.74 sec
+      Start 76: dangling_parser_parse_stdstring_should_compile
+76/93 Test #76: dangling_parser_parse_stdstring_should_compile .......   Passed    2.00 sec
+      Start 77: dangling_parser_parse_stdstring_should_not_compile
+77/93 Test #77: dangling_parser_parse_stdstring_should_not_compile ...   Passed    1.56 sec
+      Start 78: dangling_parser_parse_padstring_should_compile
+78/93 Test #78: dangling_parser_parse_padstring_should_compile .......   Passed    1.97 sec
+      Start 79: dangling_parser_parse_padstring_should_not_compile
+79/93 Test #79: dangling_parser_parse_padstring_should_not_compile ...   Passed    1.57 sec
+      Start 80: unsafe_parse_many_should_compile
+80/93 Test #80: unsafe_parse_many_should_compile .....................   Passed    2.17 sec
+      Start 81: unsafe_parse_many_should_not_compile
+81/93 Test #81: unsafe_parse_many_should_not_compile .................   Passed    1.59 sec
+      Start 82: quickstart
+82/93 Test #82: quickstart ...........................................   Passed    3.57 sec
+      Start 83: quickstart11
+83/93 Test #83: quickstart11 .........................................   Passed    3.33 sec
+      Start 84: quickstart14
+84/93 Test #84: quickstart14 .........................................   Passed    3.36 sec
+      Start 85: quickstart_noexceptions
+85/93 Test #85: quickstart_noexceptions ..............................   Passed    3.52 sec
+      Start 86: quickstart_noexceptions11
+86/93 Test #86: quickstart_noexceptions11 ............................   Passed    3.26 sec
+      Start 87: quickstart2_noexceptions
+87/93 Test #87: quickstart2_noexceptions .............................   Passed    3.46 sec
+      Start 88: quickstart2_noexceptions11
+88/93 Test #88: quickstart2_noexceptions11 ...........................   Passed    3.20 sec
+      Start 89: quickstart_ondemand
+89/93 Test #89: quickstart_ondemand ..................................   Passed    3.54 sec
+      Start 90: quickstart_ondemand11
+90/93 Test #90: quickstart_ondemand11 ................................   Passed    3.33 sec
+      Start 91: quickstart_ondemand14
+91/93 Test #91: quickstart_ondemand14 ................................   Passed    3.30 sec
+      Start 92: quickstart_ondemand_noexceptions
+92/93 Test #92: quickstart_ondemand_noexceptions .....................   Passed    3.55 sec
+      Start 93: quickstart_ondemand_noexceptions11
+93/93 Test #93: quickstart_ondemand_noexceptions11 ...................   Passed    3.40 sec
+
+100% tests passed, 0 tests failed out of 93
+
+Label Time Summary:
+acceptance             =  56.73 sec*proc (63 tests)
+assert                 =   0.00 sec*proc (1 test)
+compile                =  40.83 sec*proc (12 tests)
+dom                    =   1.42 sec*proc (15 tests)
+explicitonly           =   0.00 sec*proc (1 test)
+no_mingw               =  80.38 sec*proc (36 tests)
+ondemand               =  13.86 sec*proc (30 tests)
+other                  =   0.11 sec*proc (3 tests)
+per_implementation     =   8.97 sec*proc (44 tests)
+quickstart             =  40.83 sec*proc (12 tests)
+quickstart_ondemand    =  17.12 sec*proc (5 tests)
+singleheader           =   6.63 sec*proc (3 tests)
+
+Total Test time (real) = 102.44 sec
+=================log=================
+cat: /home/ponyc/build/build_debug/CMakeFiles/CMakeOutput.log: No such file or directory

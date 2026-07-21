@@ -1,0 +1,429 @@
+检测到 Debian 12 系统
+进入12+系统
+替换系统源完成
+==============================================================================
+Get:1 http://mirrors.tools.huawei.com/debian bookworm InRelease [151 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm-updates InRelease [55.4 kB]
+Get:3 http://mirrors.tools.huawei.com/debian-security bookworm-security InRelease [48.0 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 Packages [8790 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm-updates/main amd64 Packages [6924 B]
+Get:6 http://mirrors.tools.huawei.com/debian-security bookworm-security/main amd64 Packages [316 kB]
+Fetched 9368 kB in 1s (6544 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+patch is already the newest version (2.7.6-7).
+build-essential is already the newest version (12.9).
+libpcre2-dev is already the newest version (10.42-1).
+libpcre2-dev set to manually installed.
+libncurses-dev is already the newest version (6.4-4).
+libncurses-dev set to manually installed.
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+The following additional packages will be installed:
+  libonig5 libssl3 openssl
+Suggested packages:
+  libssl-doc
+The following NEW packages will be installed:
+  libonig-dev libonig5
+The following packages will be upgraded:
+  libssl-dev libssl3 openssl
+3 upgraded, 2 newly installed, 0 to remove and 158 not upgraded.
+Need to get 6203 kB of archives.
+After this operation, 780 kB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig5 amd64 6.9.8-1 [188 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig-dev amd64 6.9.8-1 [96.7 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl-dev amd64 3.0.20-1~deb12u2 [2443 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl3 amd64 3.0.20-1~deb12u2 [2036 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 openssl amd64 3.0.20-1~deb12u2 [1439 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 6203 kB in 0s (16.0 MB/s)
+Selecting previously unselected package libonig5:amd64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 31854 files and directories currently installed.)
+Preparing to unpack .../libonig5_6.9.8-1_amd64.deb ...
+Unpacking libonig5:amd64 (6.9.8-1) ...
+Selecting previously unselected package libonig-dev.
+Preparing to unpack .../libonig-dev_6.9.8-1_amd64.deb ...
+Unpacking libonig-dev (6.9.8-1) ...
+Preparing to unpack .../libssl-dev_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl-dev:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../libssl3_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl3:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../openssl_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking openssl (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Setting up libssl3:amd64 (3.0.20-1~deb12u2) ...
+Setting up libssl-dev:amd64 (3.0.20-1~deb12u2) ...
+Setting up openssl (3.0.20-1~deb12u2) ...
+Setting up libonig5:amd64 (6.9.8-1) ...
+Setting up libonig-dev (6.9.8-1) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+cmake is already the newest version (3.25.1-1).
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+0 upgraded, 0 newly installed, 0 to remove and 158 not upgraded.
+=== RUN FULL via /home/fix-run.sh (tee log) ===
+#!/bin/bash
+set -e
+
+cd /home/Catch2
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake -DCATCH_DEVELOPMENT_BUILD=ON ..
+make
+ctest
+
+=========================================
+当前目录：/home
+当前目录内容：Catch2 add_certificate_for_c.sh check_git_changes.sh fix-run.sh fix.patch prepare.sh run.sh test-run.sh test.patch
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+wget is already the newest version (1.21.3-1+deb12u1).
+0 upgraded, 0 newly installed, 0 to remove and 158 not upgraded.
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libgpm2 libsodium23 vim-common vim-runtime xxd
+Suggested packages:
+  gpm ctags vim-doc vim-scripts
+The following NEW packages will be installed:
+  libgpm2 libsodium23 vim vim-common vim-runtime xxd
+0 upgraded, 6 newly installed, 0 to remove and 158 not upgraded.
+Need to get 8980 kB of archives.
+After this operation, 41.9 MB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-common all 2:9.0.1378-2+deb12u2 [125 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libgpm2 amd64 1.20.7-10+b1 [14.2 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libsodium23 amd64 1.0.18-1+deb12u1 [162 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-runtime all 2:9.0.1378-2+deb12u2 [7027 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim amd64 2:9.0.1378-2+deb12u2 [1568 kB]
+Get:6 http://mirrors.tools.huawei.com/debian bookworm/main amd64 xxd amd64 2:9.0.1378-2+deb12u2 [84.1 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 8980 kB in 0s (21.5 MB/s)
+Selecting previously unselected package vim-common.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 31897 files and directories currently installed.)
+Preparing to unpack .../0-vim-common_2%3a9.0.1378-2+deb12u2_all.deb ...
+Unpacking vim-common (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package libgpm2:amd64.
+Preparing to unpack .../1-libgpm2_1.20.7-10+b1_amd64.deb ...
+Unpacking libgpm2:amd64 (1.20.7-10+b1) ...
+Selecting previously unselected package libsodium23:amd64.
+Preparing to unpack .../2-libsodium23_1.0.18-1+deb12u1_amd64.deb ...
+Unpacking libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Selecting previously unselected package vim-runtime.
+Preparing to unpack .../3-vim-runtime_2%3a9.0.1378-2+deb12u2_all.deb ...
+Adding 'diversion of /usr/share/vim/vim90/doc/help.txt to /usr/share/vim/vim90/doc/help.txt.vim-tiny by vim-runtime'
+Adding 'diversion of /usr/share/vim/vim90/doc/tags to /usr/share/vim/vim90/doc/tags.vim-tiny by vim-runtime'
+Unpacking vim-runtime (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package vim.
+Preparing to unpack .../4-vim_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking vim (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package xxd.
+Preparing to unpack .../5-xxd_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking xxd (2:9.0.1378-2+deb12u2) ...
+Setting up libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Setting up libgpm2:amd64 (1.20.7-10+b1) ...
+Setting up xxd (2:9.0.1378-2+deb12u2) ...
+Setting up vim-common (2:9.0.1378-2+deb12u2) ...
+Setting up vim-runtime (2:9.0.1378-2+deb12u2) ...
+Setting up vim (2:9.0.1378-2+deb12u2) ...
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/ex (ex) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rview (rview) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rvim (rvim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vi (vi) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/view (view) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vim (vim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vimdiff (vimdiff) in auto mode
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Processing triggers for hicolor-icon-theme (0.17-2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libcurl3-gnutls libcurl3-nss libcurl4 libcurl4-openssl-dev
+Suggested packages:
+  libcurl4-doc libidn-dev libldap2-dev librtmp-dev libssh2-1-dev
+The following packages will be upgraded:
+  curl libcurl3-gnutls libcurl3-nss libcurl4 libcurl4-openssl-dev
+5 upgraded, 0 newly installed, 0 to remove and 153 not upgraded.
+Need to get 1982 kB of archives.
+After this operation, 5120 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4-openssl-dev amd64 7.88.1-10+deb12u15 [493 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 curl amd64 7.88.1-10+deb12u15 [316 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4 amd64 7.88.1-10+deb12u15 [392 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl3-gnutls amd64 7.88.1-10+deb12u15 [386 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl3-nss amd64 7.88.1-10+deb12u15 [396 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 1982 kB in 0s (5544 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 34054 files and directories currently installed.)
+Preparing to unpack .../libcurl4-openssl-dev_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../curl_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking curl (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl4_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl3-gnutls_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl3-nss_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl3-nss:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Setting up libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) ...
+Setting up libcurl3-nss:amd64 (7.88.1-10+deb12u15) ...
+Setting up libcurl4:amd64 (7.88.1-10+deb12u15) ...
+Setting up curl (7.88.1-10+deb12u15) ...
+Setting up libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+=== 配置证书 (abcert) ===
+[abcert][INFO] Created temporary directory .tmp.pems.VNACeaP6
+[abcert][INFO] Operating system: Debian GNU/Linux 12 (bookworm)
+[abcert][INFO] Installing certificates
+'.tmp.pems.VNACeaP6/HWBPITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWBPITEnterpriseCA1.crt'
+'.tmp.pems.VNACeaP6/HWITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWITEnterpriseCA1.crt'
+'.tmp.pems.VNACeaP6/HuaweiBPITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiBPITRootCA.crt'
+'.tmp.pems.VNACeaP6/HuaweiITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiITRootCA.crt'
+'.tmp.pems.VNACeaP6/HuaweiWebSecureInternetGatewayCA.pem' -> '/usr/local/share/ca-certificates/HuaweiWebSecureInternetGatewayCA.crt'
+Updating certificates in /etc/ssl/certs...
+rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+5 added, 0 removed; done.
+Running hooks in /etc/ca-certificates/update.d...
+done.
+[abcert][INFO] Removed .tmp.pems.VNACeaP6
+abcert 安装完成
+================git=====================
+http.version=HTTP/1.1
+http.postbuffer=524288000
+http.timeout=600
+================git=====================
+================env=====================
+HTTPS_PROXY=http://test:test@proxysg.huawei.com:8080/
+no_proxy=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+HOSTNAME=e86cafd6db45
+GCC_MIRRORS=https://ftpmirror.gnu.org/gcc 		https://mirrors.kernel.org/gnu/gcc 		https://bigsearcher.com/mirrors/gcc/releases 		http://www.netgull.com/gcc/releases 		https://ftpmirror.gnu.org/gcc 		https://sourceware.org/pub/gcc/releases 		ftp://ftp.gnu.org/gnu/gcc
+HOME=/root
+OLDPWD=/home
+NO_PROXY=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+https_proxy=http://test:test@proxysg.huawei.com:8080/
+GPG_KEYS=B215C1633BCA0477615F1B35A5B3A004745C015A 	B3C42148A44E6983B3E4CC0793FA9B1AB75C61B8 	90AA470469D3965A87A5DCB494D03953902C9419 	80F98B2E0DAB6C8281BDF541A7C8C3B2F71EDF1C 	7F74F97C103468EE5D750B583AB00996FC26A641 	33C235A34C46AA3FFB293709A328C3A2C3C45C06 	D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62
+http_proxy=http://test:test@proxysg.huawei.com:8080/
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+GIT_SSL_NO_VERIFY=true
+PWD=/tmp/tmp.p9Fd3bR38i/abcert_install
+HTTP_PROXY=http://test:test@proxysg.huawei.com:8080/
+GCC_VERSION=12.4.0
+================env=====================
+#!/bin/bash
+# set -e
+
+cd /home/Catch2
+git ls-files --others --exclude-standard | xargs -I {} mv {} {}.bak
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake -DCATCH_DEVELOPMENT_BUILD=ON ..
+make
+ctest
+
+=========================================
+patching file projects/SelfTest/UsageTests/Approx.tests.cpp
+patching file include/internal/catch_approx.h
+patching file single_include/catch2/catch.hpp
+-- The CXX compiler identification is GNU 12.4.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found PythonInterp: /usr/bin/python3 (found version "3.11.2") 
+-- Configuring done
+-- Generating done
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    CATCH_DEVELOPMENT_BUILD
+
+
+-- Build files have been written to: /home/Catch2/build
+[  0%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/TestMain.cpp.o
+[  1%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/CmdLine.tests.cpp.o
+[  2%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Details.tests.cpp.o
+[  3%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/GeneratorsImpl.tests.cpp.o
+[  4%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/InternalBenchmark.tests.cpp.o
+[  5%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/PartTracker.tests.cpp.o
+[  5%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/RandomNumberGeneration.tests.cpp.o
+[  6%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Tag.tests.cpp.o
+[  7%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/String.tests.cpp.o
+[  8%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/StringManip.tests.cpp.o
+[  9%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/Xml.tests.cpp.o
+[ 10%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/IntrospectiveTests/ToString.tests.cpp.o
+[ 11%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/TimingTests/Sleep.tests.cpp.o
+[ 11%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Approx.tests.cpp.o
+[ 12%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/BDD.tests.cpp.o
+[ 13%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Benchmark.tests.cpp.o
+[ 14%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Class.tests.cpp.o
+[ 15%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Compilation.tests.cpp.o
+[ 16%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Condition.tests.cpp.o
+[ 17%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Decomposition.tests.cpp.o
+[ 17%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/EnumToString.tests.cpp.o
+[ 18%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Exception.tests.cpp.o
+[ 19%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Generators.tests.cpp.o
+[ 20%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Message.tests.cpp.o
+[ 21%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Misc.tests.cpp.o
+[ 22%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringByte.tests.cpp.o
+[ 23%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringChrono.tests.cpp.o
+[ 23%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringGeneral.tests.cpp.o
+[ 24%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringOptional.tests.cpp.o
+[ 25%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringPair.tests.cpp.o
+[ 26%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringTuple.tests.cpp.o
+[ 27%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringVariant.tests.cpp.o
+[ 28%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringVector.tests.cpp.o
+[ 29%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/ToStringWhich.tests.cpp.o
+[ 29%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Tricky.tests.cpp.o
+[ 30%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/VariadicMacros.tests.cpp.o
+[ 31%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/UsageTests/Matchers.tests.cpp.o
+[ 32%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_approx.cpp.o
+[ 33%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_assertionhandler.cpp.o
+[ 34%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_assertionresult.cpp.o
+[ 35%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_capture_matchers.cpp.o
+[ 35%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_commandline.cpp.o
+[ 36%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_common.cpp.o
+[ 37%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_config.cpp.o
+[ 38%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_console_colour.cpp.o
+[ 39%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_context.cpp.o
+[ 40%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_debug_console.cpp.o
+[ 41%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_debugger.cpp.o
+[ 41%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_decomposer.cpp.o
+[ 42%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_enforce.cpp.o
+[ 43%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_enum_values_registry.cpp.o
+[ 44%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_errno_guard.cpp.o
+[ 45%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_exception_translator_registry.cpp.o
+[ 46%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_fatal_condition.cpp.o
+[ 47%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_generators.cpp.o
+[ 47%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_interfaces_capture.cpp.o
+[ 48%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_interfaces_config.cpp.o
+[ 49%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_interfaces_exception.cpp.o
+[ 50%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_interfaces_registry_hub.cpp.o
+[ 51%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_interfaces_runner.cpp.o
+[ 52%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_interfaces_testcase.cpp.o
+[ 52%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_list.cpp.o
+[ 53%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_leak_detector.cpp.o
+[ 54%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_matchers.cpp.o
+[ 55%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_matchers_exception.cpp.o
+[ 56%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_matchers_floating.cpp.o
+[ 57%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_matchers_generic.cpp.o
+[ 58%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_matchers_string.cpp.o
+[ 58%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_message.cpp.o
+[ 59%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_output_redirect.cpp.o
+[ 60%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_registry_hub.cpp.o
+[ 61%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_interfaces_reporter.cpp.o
+[ 62%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_polyfills.cpp.o
+[ 63%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_random_number_generator.cpp.o
+[ 64%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_reporter_registry.cpp.o
+[ 64%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_result_type.cpp.o
+[ 65%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_run_context.cpp.o
+[ 66%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_section.cpp.o
+[ 67%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_section_info.cpp.o
+[ 68%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_session.cpp.o
+[ 69%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_singletons.cpp.o
+[ 70%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_startup_exception_registry.cpp.o
+[ 70%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_stream.cpp.o
+[ 71%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_stringref.cpp.o
+[ 72%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_string_manip.cpp.o
+[ 73%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_tag_alias.cpp.o
+[ 74%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_tag_alias_autoregistrar.cpp.o
+[ 75%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_tag_alias_registry.cpp.o
+[ 76%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_test_case_info.cpp.o
+[ 76%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_test_case_registry_impl.cpp.o
+[ 77%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_test_case_tracker.cpp.o
+[ 78%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_test_registry.cpp.o
+[ 79%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_test_spec.cpp.o
+[ 80%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_test_spec_parser.cpp.o
+[ 81%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_timer.cpp.o
+[ 82%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_tostring.cpp.o
+[ 82%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_totals.cpp.o
+[ 83%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_uncaught_exceptions.cpp.o
+[ 84%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_version.cpp.o
+[ 85%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_wildcard_pattern.cpp.o
+[ 86%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/catch_xmlwriter.cpp.o
+[ 87%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/reporters/catch_reporter_bases.cpp.o
+[ 88%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/reporters/catch_reporter_compact.cpp.o
+[ 88%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/reporters/catch_reporter_console.cpp.o
+[ 89%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/reporters/catch_reporter_junit.cpp.o
+[ 90%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/reporters/catch_reporter_listening.cpp.o
+[ 91%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/reporters/catch_reporter_xml.cpp.o
+[ 92%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/SurrogateCpps/catch_console_colour.cpp.o
+[ 93%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/SurrogateCpps/catch_debugger.cpp.o
+[ 94%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/SurrogateCpps/catch_interfaces_reporter.cpp.o
+[ 94%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/SurrogateCpps/catch_option.cpp.o
+[ 95%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/SurrogateCpps/catch_stream.cpp.o
+[ 96%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/SurrogateCpps/catch_test_case_tracker.cpp.o
+[ 97%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/SurrogateCpps/catch_test_spec.cpp.o
+[ 98%] Building CXX object projects/CMakeFiles/SelfTest.dir/SelfTest/SurrogateCpps/catch_xmlwriter.cpp.o
+[ 99%] Building CXX object projects/CMakeFiles/SelfTest.dir/__/include/internal/benchmark/detail/catch_stats.cpp.o
+[100%] Linking CXX executable SelfTest
+[100%] Built target SelfTest
+Test project /home/Catch2/build
+      Start  1: RunTests
+ 1/24 Test  #1: RunTests .............................................   Passed    0.04 sec
+      Start  2: ListTests
+ 2/24 Test  #2: ListTests ............................................   Passed    0.01 sec
+      Start  3: ListTags
+ 3/24 Test  #3: ListTags .............................................   Passed    0.01 sec
+      Start  4: ListReporters
+ 4/24 Test  #4: ListReporters ........................................   Passed    0.00 sec
+      Start  5: ListTestNamesOnly
+ 5/24 Test  #5: ListTestNamesOnly ....................................   Passed    0.01 sec
+      Start  6: NoAssertions
+ 6/24 Test  #6: NoAssertions .........................................   Passed    0.04 sec
+      Start  7: NoTest
+ 7/24 Test  #7: NoTest ...............................................   Passed    0.01 sec
+      Start  8: WarnAboutNoTests
+ 8/24 Test  #8: WarnAboutNoTests .....................................   Passed    0.02 sec
+      Start  9: UnmatchedOutputFilter
+ 9/24 Test  #9: UnmatchedOutputFilter ................................   Passed    0.01 sec
+      Start 10: FilteredSection-1
+10/24 Test #10: FilteredSection-1 ....................................   Passed    0.01 sec
+      Start 11: FilteredSection-2
+11/24 Test #11: FilteredSection-2 ....................................   Passed    0.01 sec
+      Start 12: FilteredSection::GeneratorsDontCauseInfiniteLoop-1
+12/24 Test #12: FilteredSection::GeneratorsDontCauseInfiniteLoop-1 ...   Passed    0.01 sec
+      Start 13: FilteredSection::GeneratorsDontCauseInfiniteLoop-2
+13/24 Test #13: FilteredSection::GeneratorsDontCauseInfiniteLoop-2 ...   Passed    0.01 sec
+      Start 14: ApprovalTests
+14/24 Test #14: ApprovalTests ........................................   Passed    0.67 sec
+      Start 15: RegressionCheck-1670
+15/24 Test #15: RegressionCheck-1670 .................................   Passed    0.01 sec
+      Start 16: VersionCheck
+16/24 Test #16: VersionCheck .........................................   Passed    0.01 sec
+      Start 17: LibIdentityTest
+17/24 Test #17: LibIdentityTest ......................................   Passed    0.00 sec
+      Start 18: FilenameAsTagsTest
+18/24 Test #18: FilenameAsTagsTest ...................................   Passed    0.01 sec
+      Start 19: EscapeSpecialCharactersInTestNames
+19/24 Test #19: EscapeSpecialCharactersInTestNames ...................   Passed    0.01 sec
+      Start 20: TestsInFile::SimpleSpecs
+20/24 Test #20: TestsInFile::SimpleSpecs .............................   Passed    0.01 sec
+      Start 21: TestsInFile::EscapeSpecialCharacters
+21/24 Test #21: TestsInFile::EscapeSpecialCharacters .................   Passed    0.01 sec
+      Start 22: TestsInFile::InvalidTestNames-1
+22/24 Test #22: TestsInFile::InvalidTestNames-1 ......................   Passed    0.01 sec
+      Start 23: TestsInFile::InvalidTestNames-2
+23/24 Test #23: TestsInFile::InvalidTestNames-2 ......................   Passed    0.01 sec
+      Start 24: RandomTestOrdering
+24/24 Test #24: RandomTestOrdering ...................................   Passed    0.04 sec
+
+100% tests passed, 0 tests failed out of 24
+
+Total Test time (real) =   0.92 sec
+=================log=================
+cat: /home/ponyc/build/build_debug/CMakeFiles/CMakeOutput.log: No such file or directory

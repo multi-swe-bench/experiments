@@ -1,0 +1,24 @@
+diff --git a/include/nlohmann/detail/iterators/iter_impl.hpp b/include/nlohmann/detail/iterators/iter_impl.hpp
+index e9a394d4..b1a6313a 100644
+--- a/include/nlohmann/detail/iterators/iter_impl.hpp
++++ b/include/nlohmann/detail/iterators/iter_impl.hpp
+@@ -41,6 +41,7 @@ class iter_impl
+     /// allow basic_json to access private members
+     friend iter_impl<typename std::conditional<std::is_const<BasicJsonType>::value, typename std::remove_const<BasicJsonType>::type, const BasicJsonType>::type>;
+     friend BasicJsonType;
++    friend typename std::remove_const<BasicJsonType>::type;
+     friend iteration_proxy<iter_impl>;
+     friend iteration_proxy_value<iter_impl>;
+ 
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 7d107f21..d183c48a 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -10812,6 +10812,7 @@ class iter_impl
+     /// allow basic_json to access private members
+     friend iter_impl<typename std::conditional<std::is_const<BasicJsonType>::value, typename std::remove_const<BasicJsonType>::type, const BasicJsonType>::type>;
+     friend BasicJsonType;
++    friend typename std::remove_const<BasicJsonType>::type;
+     friend iteration_proxy<iter_impl>;
+     friend iteration_proxy_value<iter_impl>;
+ 

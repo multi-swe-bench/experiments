@@ -1,0 +1,62 @@
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index fb0f5fc1..379d14e5 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -3765,7 +3765,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+     /// @sa https://json.nlohmann.me/api/basic_json/operator_le/
+     friend bool operator<=(const_reference lhs, const_reference rhs) noexcept
+     {
+-        return !(rhs < lhs);
++        return lhs < rhs || lhs == rhs;
+     }
+ 
+     /// @brief comparison: less than or equal
+@@ -3790,7 +3790,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+     /// @sa https://json.nlohmann.me/api/basic_json/operator_gt/
+     friend bool operator>(const_reference lhs, const_reference rhs) noexcept
+     {
+-        return !(lhs <= rhs);
++        return rhs < lhs;
+     }
+ 
+     /// @brief comparison: greater than
+@@ -3815,7 +3815,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+     /// @sa https://json.nlohmann.me/api/basic_json/operator_ge/
+     friend bool operator>=(const_reference lhs, const_reference rhs) noexcept
+     {
+-        return !(lhs < rhs);
++        return rhs < lhs || lhs == rhs;
+     }
+ 
+     /// @brief comparison: greater than or equal
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 5993ce32..fa33757d 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -21925,7 +21925,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+     /// @sa https://json.nlohmann.me/api/basic_json/operator_le/
+     friend bool operator<=(const_reference lhs, const_reference rhs) noexcept
+     {
+-        return !(rhs < lhs);
++        return lhs < rhs || lhs == rhs;
+     }
+ 
+     /// @brief comparison: less than or equal
+@@ -21950,7 +21950,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+     /// @sa https://json.nlohmann.me/api/basic_json/operator_gt/
+     friend bool operator>(const_reference lhs, const_reference rhs) noexcept
+     {
+-        return !(lhs <= rhs);
++        return rhs < lhs;
+     }
+ 
+     /// @brief comparison: greater than
+@@ -21975,7 +21975,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+     /// @sa https://json.nlohmann.me/api/basic_json/operator_ge/
+     friend bool operator>=(const_reference lhs, const_reference rhs) noexcept
+     {
+-        return !(lhs < rhs);
++        return rhs < lhs || lhs == rhs;
+     }
+ 
+     /// @brief comparison: greater than or equal

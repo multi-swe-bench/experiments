@@ -1,0 +1,67 @@
+diff --git a/include/fmt/format.h b/include/fmt/format.h
+index 6ed7fc43..5ab70136 100644
+--- a/include/fmt/format.h
++++ b/include/fmt/format.h
+@@ -427,6 +427,15 @@ inline size_t count_code_points(basic_string_view<Char> s) {
+ }
+ 
+ // Counts the number of code points in a UTF-8 string.
++inline size_t count_code_points(basic_string_view<char> s) {
++  const char* data = s.data();
++  size_t num_code_points = 0;
++  for (size_t i = 0, size = s.size(); i != size; ++i) {
++    if ((data[i] & 0xc0) != 0x80) ++num_code_points;
++  }
++  return num_code_points;
++}
++
+ inline size_t count_code_points(basic_string_view<char8_t> s) {
+   const char8_t* data = s.data();
+   size_t num_code_points = 0;
+@@ -436,6 +445,34 @@ inline size_t count_code_points(basic_string_view<char8_t> s) {
+   return num_code_points;
+ }
+ 
++template <typename Char>
++inline size_t code_point_length(basic_string_view<Char> s, size_t num_code_points) {
++  return num_code_points < s.size() ? num_code_points : s.size();
++}
++
++inline size_t code_point_length(basic_string_view<char> s, size_t num_code_points) {
++  const char* data = s.data();
++  size_t i = 0, count = 0, size = s.size();
++  while (i != size && count != num_code_points) {
++    if ((data[i] & 0xc0) != 0x80) ++count;
++    ++i;
++  }
++  // Skip trailing continuation bytes to include the full last code point.
++  while (i != size && (data[i] & 0xc0) == 0x80) ++i;
++  return i;
++}
++
++inline size_t code_point_length(basic_string_view<char8_t> s, size_t num_code_points) {
++  const char8_t* data = s.data();
++  size_t i = 0, count = 0, size = s.size();
++  while (i != size && count != num_code_points) {
++    if ((data[i] & 0xc0) != 0x80) ++count;
++    ++i;
++  }
++  while (i != size && (data[i] & 0xc0) == 0x80) ++i;
++  return i;
++}
++
+ inline char8_t to_char8_t(char c) { return static_cast<char8_t>(c); }
+ 
+ template <typename InputIt, typename OutChar>
+@@ -1728,8 +1765,9 @@ template <typename Range> class basic_writer {
+              const format_specs& specs = format_specs()) {
+     const Char* data = s.data();
+     std::size_t size = s.size();
+-    if (specs.precision >= 0 && internal::to_unsigned(specs.precision) < size)
+-      size = internal::to_unsigned(specs.precision);
++    if (specs.precision >= 0 &&
++        internal::to_unsigned(specs.precision) < internal::count_code_points(s))
++      size = internal::code_point_length(s, internal::to_unsigned(specs.precision));
+     write(data, size, specs);
+   }
+ 

@@ -1,0 +1,112 @@
+diff --git a/include/nlohmann/detail/conversions/from_json.hpp b/include/nlohmann/detail/conversions/from_json.hpp
+index 8f8162ff..b6f8cdd2 100644
+--- a/include/nlohmann/detail/conversions/from_json.hpp
++++ b/include/nlohmann/detail/conversions/from_json.hpp
+@@ -136,6 +136,7 @@ void from_json(const BasicJsonType& j, std::forward_list<T, Allocator>& l)
+     {
+         JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
+     }
++    l.clear();
+     std::transform(j.rbegin(), j.rend(),
+                    std::front_inserter(l), [](const BasicJsonType & i)
+     {
+@@ -182,6 +183,7 @@ auto from_json_array_impl(const BasicJsonType& j, ConstructibleArrayType& arr, p
+ {
+     using std::end;
+ 
++    arr.clear();
+     arr.reserve(j.size());
+     std::transform(j.begin(), j.end(),
+                    std::inserter(arr, end(arr)), [](const BasicJsonType & i)
+@@ -198,6 +200,7 @@ void from_json_array_impl(const BasicJsonType& j, ConstructibleArrayType& arr,
+ {
+     using std::end;
+ 
++    arr.clear();
+     std::transform(
+         j.begin(), j.end(), std::inserter(arr, end(arr)),
+         [](const BasicJsonType & i)
+@@ -241,9 +244,10 @@ void from_json(const BasicJsonType& j, ConstructibleObjectType& obj)
+ 
+     auto inner_object = j.template get_ptr<const typename BasicJsonType::object_t*>();
+     using value_type = typename ConstructibleObjectType::value_type;
++    obj.clear();
+     std::transform(
+         inner_object->begin(), inner_object->end(),
+-        std::inserter(obj, obj.begin()),
++        std::inserter(obj, obj.end()),
+         [](typename BasicJsonType::object_t::value_type const & p)
+     {
+         return value_type(p.first, p.second.template get<typename ConstructibleObjectType::mapped_type>());
+@@ -319,6 +323,7 @@ void from_json(const BasicJsonType& j, std::map<Key, Value, Compare, Allocator>&
+     {
+         JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
+     }
++    m.clear();
+     for (const auto& p : j)
+     {
+         if (JSON_UNLIKELY(not p.is_array()))
+@@ -338,6 +343,7 @@ void from_json(const BasicJsonType& j, std::unordered_map<Key, Value, Hash, KeyE
+     {
+         JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
+     }
++    m.clear();
+     for (const auto& p : j)
+     {
+         if (JSON_UNLIKELY(not p.is_array()))
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 1f11538c..0d3f91a9 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -1411,6 +1411,7 @@ void from_json(const BasicJsonType& j, std::forward_list<T, Allocator>& l)
+     {
+         JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
+     }
++    l.clear();
+     std::transform(j.rbegin(), j.rend(),
+                    std::front_inserter(l), [](const BasicJsonType & i)
+     {
+@@ -1457,6 +1458,7 @@ auto from_json_array_impl(const BasicJsonType& j, ConstructibleArrayType& arr, p
+ {
+     using std::end;
+ 
++    arr.clear();
+     arr.reserve(j.size());
+     std::transform(j.begin(), j.end(),
+                    std::inserter(arr, end(arr)), [](const BasicJsonType & i)
+@@ -1473,6 +1475,7 @@ void from_json_array_impl(const BasicJsonType& j, ConstructibleArrayType& arr,
+ {
+     using std::end;
+ 
++    arr.clear();
+     std::transform(
+         j.begin(), j.end(), std::inserter(arr, end(arr)),
+         [](const BasicJsonType & i)
+@@ -1516,9 +1519,10 @@ void from_json(const BasicJsonType& j, ConstructibleObjectType& obj)
+ 
+     auto inner_object = j.template get_ptr<const typename BasicJsonType::object_t*>();
+     using value_type = typename ConstructibleObjectType::value_type;
++    obj.clear();
+     std::transform(
+         inner_object->begin(), inner_object->end(),
+-        std::inserter(obj, obj.begin()),
++        std::inserter(obj, obj.end()),
+         [](typename BasicJsonType::object_t::value_type const & p)
+     {
+         return value_type(p.first, p.second.template get<typename ConstructibleObjectType::mapped_type>());
+@@ -1594,6 +1598,7 @@ void from_json(const BasicJsonType& j, std::map<Key, Value, Compare, Allocator>&
+     {
+         JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
+     }
++    m.clear();
+     for (const auto& p : j)
+     {
+         if (JSON_UNLIKELY(not p.is_array()))
+@@ -1613,6 +1618,7 @@ void from_json(const BasicJsonType& j, std::unordered_map<Key, Value, Hash, KeyE
+     {
+         JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
+     }
++    m.clear();
+     for (const auto& p : j)
+     {
+         if (JSON_UNLIKELY(not p.is_array()))

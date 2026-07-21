@@ -1,0 +1,54 @@
+diff --git a/include/fmt/args.h b/include/fmt/args.h
+index b77a2d06..24618cc9 100644
+--- a/include/fmt/args.h
++++ b/include/fmt/args.h
+@@ -109,6 +109,12 @@ class dynamic_format_arg_store
+   // without relocation because items in data_ refer to it.
+   detail::dynamic_arg_list dynamic_args_;
+ 
++  // Tracks the number of positional (non-named) arguments to keep them
++  // contiguous at the beginning of the args array (after the sentinel),
++  // so that positional indexing via next_arg_id() works correctly when
++  // mixed with named arguments.
++  int num_positional_args_ = 0;
++
+   friend class basic_format_args<Context>;
+ 
+   auto get_types() const -> unsigned long long {
+@@ -123,7 +129,17 @@ class dynamic_format_arg_store
+   }
+ 
+   template <typename T> void emplace_arg(const T& arg) {
+-    data_.emplace_back(detail::make_arg<Context>(arg));
++    if (named_info_.empty()) {
++      data_.emplace_back(detail::make_arg<Context>(arg));
++    } else {
++      // Insert positional args before named args so that positional
++      // indexing (next_arg_id) doesn't hit named arg slots.
++      data_.insert(data_.begin() + 1 + num_positional_args_,
++                   detail::make_arg<Context>(arg));
++      // Shift all named arg indices since we inserted before them.
++      for (auto& info : named_info_) ++info.id;
++    }
++    ++num_positional_args_;
+   }
+ 
+   template <typename T>
+@@ -138,7 +154,8 @@ class dynamic_format_arg_store
+     };
+     std::unique_ptr<std::vector<basic_format_arg<Context>>, decltype(pop_one)>
+         guard{&data_, pop_one};
+-    named_info_.push_back({arg.name, static_cast<int>(data_.size() - 2u)});
++    named_info_.push_back(
++        {arg.name, num_positional_args_ + static_cast<int>(named_info_.size())});
+     data_[0].value_.named_args = {named_info_.data(), named_info_.size()};
+     guard.release();
+   }
+@@ -214,6 +231,7 @@ class dynamic_format_arg_store
+     data_.clear();
+     named_info_.clear();
+     dynamic_args_ = detail::dynamic_arg_list();
++    num_positional_args_ = 0;
+   }
+ 
+   /**

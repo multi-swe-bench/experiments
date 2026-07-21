@@ -1,0 +1,76 @@
+diff --git a/include/internal/catch_tostring.cpp b/include/internal/catch_tostring.cpp
+index b857d3fb..76f19781 100644
+--- a/include/internal/catch_tostring.cpp
++++ b/include/internal/catch_tostring.cpp
+@@ -234,11 +234,14 @@ std::string StringMaker<std::nullptr_t>::convert(std::nullptr_t) {
+     return "nullptr";
+ }
+ 
++int StringMaker<float>::precision = 5;
++int StringMaker<double>::precision = 10;
++
+ std::string StringMaker<float>::convert(float value) {
+-    return fpToString(value, 5) + 'f';
++    return fpToString(value, precision) + 'f';
+ }
+ std::string StringMaker<double>::convert(double value) {
+-    return fpToString(value, 10);
++    return fpToString(value, precision);
+ }
+ 
+ std::string ratio_string<std::atto>::symbol() { return "a"; }
+diff --git a/include/internal/catch_tostring.h b/include/internal/catch_tostring.h
+index 52634a8c..f3e18376 100644
+--- a/include/internal/catch_tostring.h
++++ b/include/internal/catch_tostring.h
+@@ -260,10 +260,14 @@ namespace Catch {
+ 
+     template<>
+     struct StringMaker<float> {
++        static int precision;
++        static void setPrecision(int newPrecision) { precision = newPrecision; }
+         static std::string convert(float value);
+     };
+     template<>
+     struct StringMaker<double> {
++        static int precision;
++        static void setPrecision(int newPrecision) { precision = newPrecision; }
+         static std::string convert(double value);
+     };
+ 
+diff --git a/single_include/catch2/catch.hpp b/single_include/catch2/catch.hpp
+index df14c357..f11e9f78 100644
+--- a/single_include/catch2/catch.hpp
++++ b/single_include/catch2/catch.hpp
+@@ -1450,10 +1450,14 @@ namespace Catch {
+ 
+     template<>
+     struct StringMaker<float> {
++        static int precision;
++        static void setPrecision(int newPrecision) { precision = newPrecision; }
+         static std::string convert(float value);
+     };
+     template<>
+     struct StringMaker<double> {
++        static int precision;
++        static void setPrecision(int newPrecision) { precision = newPrecision; }
+         static std::string convert(double value);
+     };
+ 
+@@ -12577,11 +12581,14 @@ std::string StringMaker<std::nullptr_t>::convert(std::nullptr_t) {
+     return "nullptr";
+ }
+ 
++int StringMaker<float>::precision = 5;
++int StringMaker<double>::precision = 10;
++
+ std::string StringMaker<float>::convert(float value) {
+-    return fpToString(value, 5) + 'f';
++    return fpToString(value, precision) + 'f';
+ }
+ std::string StringMaker<double>::convert(double value) {
+-    return fpToString(value, 10);
++    return fpToString(value, precision);
+ }
+ 
+ std::string ratio_string<std::atto>::symbol() { return "a"; }

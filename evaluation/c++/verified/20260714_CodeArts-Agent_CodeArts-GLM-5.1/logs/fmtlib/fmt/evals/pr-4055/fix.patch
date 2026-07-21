@@ -1,0 +1,35 @@
+diff --git a/include/fmt/format.h b/include/fmt/format.h
+index 7c2a19b4..a148ca0a 100644
+--- a/include/fmt/format.h
++++ b/include/fmt/format.h
+@@ -3990,12 +3990,28 @@ FMT_FORMAT_AS(long, detail::long_type);
+ FMT_FORMAT_AS(unsigned long, detail::ulong_type);
+ FMT_FORMAT_AS(Char*, const Char*);
+ FMT_FORMAT_AS(std::nullptr_t, const void*);
+-FMT_FORMAT_AS(detail::std_string_view<Char>, basic_string_view<Char>);
+ FMT_FORMAT_AS(void*, const void*);
+ 
++template <typename Char>
++struct formatter<detail::std_string_view<Char>, Char>
++    : formatter<basic_string_view<Char>, Char> {
++  template <typename FormatContext>
++  auto format(const detail::std_string_view<Char>& val, FormatContext& ctx) const
++      -> decltype(ctx.out()) {
++    return formatter<basic_string_view<Char>, Char>::format(val, ctx);
++  }
++};
++
+ template <typename Char, typename Traits, typename Allocator>
+ class formatter<std::basic_string<Char, Traits, Allocator>, Char>
+-    : public formatter<basic_string_view<Char>, Char> {};
++    : public formatter<basic_string_view<Char>, Char> {
++ public:
++  template <typename FormatContext>
++  auto format(const std::basic_string<Char, Traits, Allocator>& val,
++              FormatContext& ctx) const -> decltype(ctx.out()) {
++    return formatter<basic_string_view<Char>, Char>::format(val, ctx);
++  }
++};
+ 
+ template <typename Char, size_t N>
+ struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {};

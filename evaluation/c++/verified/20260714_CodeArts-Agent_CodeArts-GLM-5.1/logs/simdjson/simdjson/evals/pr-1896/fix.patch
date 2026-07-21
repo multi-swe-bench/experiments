@@ -1,0 +1,127 @@
+diff --git a/singleheader/simdjson.cpp b/singleheader/simdjson.cpp
+index 963f7121..10a6221b 100644
+--- a/singleheader/simdjson.cpp
++++ b/singleheader/simdjson.cpp
+@@ -4194,12 +4194,10 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+     }
+     uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+ 
+-    // if the first code point is invalid we will get here, as we will go past
+-    // the check for being outside the Basic Multilingual plane. If we don't
+-    // find a \u immediately afterwards we fail out anyhow, but if we do,
+-    // this check catches both the case of the first code point being invalid
+-    // or the second code point being invalid.
+-    if ((code_point | code_point_2) >> 16) {
++    // code_point_2 must be a low surrogate in the range U+DC00..U+DFFF.
++    // This also catches the case where hex_to_u32_nocheck returns high bits
++    // set due to invalid hex digits.
++    if ((code_point_2 - 0xdc00) >> 10) {
+       return false;
+     }
+ 
+@@ -5668,12 +5666,10 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+     }
+     uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+ 
+-    // if the first code point is invalid we will get here, as we will go past
+-    // the check for being outside the Basic Multilingual plane. If we don't
+-    // find a \u immediately afterwards we fail out anyhow, but if we do,
+-    // this check catches both the case of the first code point being invalid
+-    // or the second code point being invalid.
+-    if ((code_point | code_point_2) >> 16) {
++    // code_point_2 must be a low surrogate in the range U+DC00..U+DFFF.
++    // This also catches the case where hex_to_u32_nocheck returns high bits
++    // set due to invalid hex digits.
++    if ((code_point_2 - 0xdc00) >> 10) {
+       return false;
+     }
+ 
+@@ -8020,12 +8016,10 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+     }
+     uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+ 
+-    // if the first code point is invalid we will get here, as we will go past
+-    // the check for being outside the Basic Multilingual plane. If we don't
+-    // find a \u immediately afterwards we fail out anyhow, but if we do,
+-    // this check catches both the case of the first code point being invalid
+-    // or the second code point being invalid.
+-    if ((code_point | code_point_2) >> 16) {
++    // code_point_2 must be a low surrogate in the range U+DC00..U+DFFF.
++    // This also catches the case where hex_to_u32_nocheck returns high bits
++    // set due to invalid hex digits.
++    if ((code_point_2 - 0xdc00) >> 10) {
+       return false;
+     }
+ 
+@@ -10354,12 +10348,10 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+     }
+     uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+ 
+-    // if the first code point is invalid we will get here, as we will go past
+-    // the check for being outside the Basic Multilingual plane. If we don't
+-    // find a \u immediately afterwards we fail out anyhow, but if we do,
+-    // this check catches both the case of the first code point being invalid
+-    // or the second code point being invalid.
+-    if ((code_point | code_point_2) >> 16) {
++    // code_point_2 must be a low surrogate in the range U+DC00..U+DFFF.
++    // This also catches the case where hex_to_u32_nocheck returns high bits
++    // set due to invalid hex digits.
++    if ((code_point_2 - 0xdc00) >> 10) {
+       return false;
+     }
+ 
+@@ -12651,12 +12643,10 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+     }
+     uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+ 
+-    // if the first code point is invalid we will get here, as we will go past
+-    // the check for being outside the Basic Multilingual plane. If we don't
+-    // find a \u immediately afterwards we fail out anyhow, but if we do,
+-    // this check catches both the case of the first code point being invalid
+-    // or the second code point being invalid.
+-    if ((code_point | code_point_2) >> 16) {
++    // code_point_2 must be a low surrogate in the range U+DC00..U+DFFF.
++    // This also catches the case where hex_to_u32_nocheck returns high bits
++    // set due to invalid hex digits.
++    if ((code_point_2 - 0xdc00) >> 10) {
+       return false;
+     }
+ 
+@@ -14983,12 +14973,10 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+     }
+     uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+ 
+-    // if the first code point is invalid we will get here, as we will go past
+-    // the check for being outside the Basic Multilingual plane. If we don't
+-    // find a \u immediately afterwards we fail out anyhow, but if we do,
+-    // this check catches both the case of the first code point being invalid
+-    // or the second code point being invalid.
+-    if ((code_point | code_point_2) >> 16) {
++    // code_point_2 must be a low surrogate in the range U+DC00..U+DFFF.
++    // This also catches the case where hex_to_u32_nocheck returns high bits
++    // set due to invalid hex digits.
++    if ((code_point_2 - 0xdc00) >> 10) {
+       return false;
+     }
+ 
+diff --git a/src/generic/stage2/stringparsing.h b/src/generic/stage2/stringparsing.h
+index 47ecd025..3b6873b0 100644
+--- a/src/generic/stage2/stringparsing.h
++++ b/src/generic/stage2/stringparsing.h
+@@ -58,12 +58,10 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+     }
+     uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+ 
+-    // if the first code point is invalid we will get here, as we will go past
+-    // the check for being outside the Basic Multilingual plane. If we don't
+-    // find a \u immediately afterwards we fail out anyhow, but if we do,
+-    // this check catches both the case of the first code point being invalid
+-    // or the second code point being invalid.
+-    if ((code_point | code_point_2) >> 16) {
++    // code_point_2 must be a low surrogate in the range U+DC00..U+DFFF.
++    // This also catches the case where hex_to_u32_nocheck returns high bits
++    // set due to invalid hex digits.
++    if ((code_point_2 - 0xdc00) >> 10) {
+       return false;
+     }
+ 

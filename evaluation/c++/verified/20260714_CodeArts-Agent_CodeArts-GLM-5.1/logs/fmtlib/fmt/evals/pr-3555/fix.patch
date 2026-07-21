@@ -1,0 +1,25 @@
+diff --git a/include/fmt/format.h b/include/fmt/format.h
+index dfd5d78a..52630956 100644
+--- a/include/fmt/format.h
++++ b/include/fmt/format.h
+@@ -4286,13 +4286,19 @@ auto join(Range&& range, string_view sep)
+     std::string answer = fmt::to_string(42);
+   \endrst
+  */
+-template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
++template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value &&
++                                    !detail::has_format_as<T>::value)>
+ inline auto to_string(const T& value) -> std::string {
+   auto buffer = memory_buffer();
+   detail::write<char>(appender(buffer), value);
+   return {buffer.data(), buffer.size()};
+ }
+ 
++template <typename T, FMT_ENABLE_IF(detail::has_format_as<T>::value)>
++FMT_NODISCARD inline auto to_string(const T& value) -> std::string {
++  return vformat("{}", fmt::make_format_args<fmt::format_context>(value));
++}
++
+ template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
+ FMT_NODISCARD inline auto to_string(T value) -> std::string {
+   // The buffer should be large enough to store the number including the sign

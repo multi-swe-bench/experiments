@@ -1,0 +1,88 @@
+diff --git a/include/nlohmann/detail/macro_scope.hpp b/include/nlohmann/detail/macro_scope.hpp
+index 2be7581d..639cbecc 100644
+--- a/include/nlohmann/detail/macro_scope.hpp
++++ b/include/nlohmann/detail/macro_scope.hpp
+@@ -73,6 +73,18 @@
+     #define JSON_INTERNAL_CATCH JSON_INTERNAL_CATCH_USER
+ #endif
+ 
++namespace nlohmann
++{
++namespace detail
++{
++template<typename BasicJsonType>
++bool json_equals(const BasicJsonType& lhs, const BasicJsonType& rhs) noexcept
++{
++    return lhs == rhs;
++}
++}
++}
++
+ /*!
+ @brief macro to briefly define a mapping between an enum and JSON
+ @def NLOHMANN_JSON_SERIALIZE_ENUM
+@@ -85,7 +97,7 @@
+         static_assert(std::is_enum<ENUM_TYPE>::value, #ENUM_TYPE " must be an enum!");         \
+         static const std::pair<ENUM_TYPE, BasicJsonType> m[] = __VA_ARGS__;                    \
+         auto it = std::find_if(std::begin(m), std::end(m),                                     \
+-                               [e](const std::pair<ENUM_TYPE, BasicJsonType>& ej_pair) -> bool \
++                               [&e](const std::pair<ENUM_TYPE, BasicJsonType>& ej_pair) -> bool \
+         {                                                                                      \
+             return ej_pair.first == e;                                                         \
+         });                                                                                    \
+@@ -97,9 +109,9 @@
+         static_assert(std::is_enum<ENUM_TYPE>::value, #ENUM_TYPE " must be an enum!");         \
+         static const std::pair<ENUM_TYPE, BasicJsonType> m[] = __VA_ARGS__;                    \
+         auto it = std::find_if(std::begin(m), std::end(m),                                     \
+-                               [j](const std::pair<ENUM_TYPE, BasicJsonType>& ej_pair) -> bool \
++                               [&j](const std::pair<ENUM_TYPE, BasicJsonType>& ej_pair) -> bool \
+         {                                                                                      \
+-            return ej_pair.second == j;                                                        \
++            return nlohmann::detail::json_equals(ej_pair.second, j);                           \
+         });                                                                                    \
+         e = ((it != std::end(m)) ? it : std::begin(m))->first;                                 \
+     }
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index b959ec5e..1c9ebd24 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -1777,6 +1777,18 @@ JSON_HEDLEY_DIAGNOSTIC_POP
+     #define JSON_INTERNAL_CATCH JSON_INTERNAL_CATCH_USER
+ #endif
+ 
++namespace nlohmann
++{
++namespace detail
++{
++template<typename BasicJsonType>
++bool json_equals(const BasicJsonType& lhs, const BasicJsonType& rhs) noexcept
++{
++    return lhs == rhs;
++}
++}
++}
++
+ /*!
+ @brief macro to briefly define a mapping between an enum and JSON
+ @def NLOHMANN_JSON_SERIALIZE_ENUM
+@@ -1789,7 +1801,7 @@ JSON_HEDLEY_DIAGNOSTIC_POP
+         static_assert(std::is_enum<ENUM_TYPE>::value, #ENUM_TYPE " must be an enum!");         \
+         static const std::pair<ENUM_TYPE, BasicJsonType> m[] = __VA_ARGS__;                    \
+         auto it = std::find_if(std::begin(m), std::end(m),                                     \
+-                               [e](const std::pair<ENUM_TYPE, BasicJsonType>& ej_pair) -> bool \
++                               [&e](const std::pair<ENUM_TYPE, BasicJsonType>& ej_pair) -> bool \
+         {                                                                                      \
+             return ej_pair.first == e;                                                         \
+         });                                                                                    \
+@@ -1801,9 +1813,9 @@ JSON_HEDLEY_DIAGNOSTIC_POP
+         static_assert(std::is_enum<ENUM_TYPE>::value, #ENUM_TYPE " must be an enum!");         \
+         static const std::pair<ENUM_TYPE, BasicJsonType> m[] = __VA_ARGS__;                    \
+         auto it = std::find_if(std::begin(m), std::end(m),                                     \
+-                               [j](const std::pair<ENUM_TYPE, BasicJsonType>& ej_pair) -> bool \
++                               [&j](const std::pair<ENUM_TYPE, BasicJsonType>& ej_pair) -> bool \
+         {                                                                                      \
+-            return ej_pair.second == j;                                                        \
++            return nlohmann::detail::json_equals(ej_pair.second, j);                           \
+         });                                                                                    \
+         e = ((it != std::end(m)) ? it : std::begin(m))->first;                                 \
+     }

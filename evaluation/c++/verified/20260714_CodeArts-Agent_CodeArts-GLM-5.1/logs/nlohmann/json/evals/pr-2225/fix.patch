@@ -1,0 +1,212 @@
+diff --git a/build_single/include/test_data.hpp b/build_single/include/test_data.hpp
+new file mode 100644
+index 00000000..f66d182e
+--- /dev/null
++++ b/build_single/include/test_data.hpp
+@@ -0,0 +1 @@
++#define TEST_DATA_DIRECTORY "/home/json/build_single/json_test_data"
+diff --git a/include/nlohmann/detail/macro_scope.hpp b/include/nlohmann/detail/macro_scope.hpp
+index a48d18e8..9164b916 100644
+--- a/include/nlohmann/detail/macro_scope.hpp
++++ b/include/nlohmann/detail/macro_scope.hpp
+@@ -108,6 +108,80 @@
+         e = ((it != std::end(m)) ? it : std::begin(m))->first;                                  \
+     }
+ 
++// helper macros for NLOHMANN_DEFINE_TYPE_INTRUSIVE and NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE
++#define NLOHMANN_JSON_FROM(arg) j.at(#arg).get_to(t.arg);
++#define NLOHMANN_JSON_TO(arg) j[#arg] = t.arg;
++
++#define NLOHMANN_JSON_FROM1(arg1) NLOHMANN_JSON_FROM(arg1)
++#define NLOHMANN_JSON_FROM2(arg1, arg2) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2)
++#define NLOHMANN_JSON_FROM3(arg1, arg2, arg3) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3)
++#define NLOHMANN_JSON_FROM4(arg1, arg2, arg3, arg4) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3) NLOHMANN_JSON_FROM(arg4)
++#define NLOHMANN_JSON_FROM5(arg1, arg2, arg3, arg4, arg5) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3) NLOHMANN_JSON_FROM(arg4) NLOHMANN_JSON_FROM(arg5)
++#define NLOHMANN_JSON_FROM6(arg1, arg2, arg3, arg4, arg5, arg6) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3) NLOHMANN_JSON_FROM(arg4) NLOHMANN_JSON_FROM(arg5) NLOHMANN_JSON_FROM(arg6)
++#define NLOHMANN_JSON_FROM7(arg1, arg2, arg3, arg4, arg5, arg6, arg7) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3) NLOHMANN_JSON_FROM(arg4) NLOHMANN_JSON_FROM(arg5) NLOHMANN_JSON_FROM(arg6) NLOHMANN_JSON_FROM(arg7)
++#define NLOHMANN_JSON_FROM8(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3) NLOHMANN_JSON_FROM(arg4) NLOHMANN_JSON_FROM(arg5) NLOHMANN_JSON_FROM(arg6) NLOHMANN_JSON_FROM(arg7) NLOHMANN_JSON_FROM(arg8)
++#define NLOHMANN_JSON_FROM9(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3) NLOHMANN_JSON_FROM(arg4) NLOHMANN_JSON_FROM(arg5) NLOHMANN_JSON_FROM(arg6) NLOHMANN_JSON_FROM(arg7) NLOHMANN_JSON_FROM(arg8) NLOHMANN_JSON_FROM(arg9)
++
++#define NLOHMANN_JSON_TO1(arg1) NLOHMANN_JSON_TO(arg1)
++#define NLOHMANN_JSON_TO2(arg1, arg2) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2)
++#define NLOHMANN_JSON_TO3(arg1, arg2, arg3) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3)
++#define NLOHMANN_JSON_TO4(arg1, arg2, arg3, arg4) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3) NLOHMANN_JSON_TO(arg4)
++#define NLOHMANN_JSON_TO5(arg1, arg2, arg3, arg4, arg5) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3) NLOHMANN_JSON_TO(arg4) NLOHMANN_JSON_TO(arg5)
++#define NLOHMANN_JSON_TO6(arg1, arg2, arg3, arg4, arg5, arg6) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3) NLOHMANN_JSON_TO(arg4) NLOHMANN_JSON_TO(arg5) NLOHMANN_JSON_TO(arg6)
++#define NLOHMANN_JSON_TO7(arg1, arg2, arg3, arg4, arg5, arg6, arg7) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3) NLOHMANN_JSON_TO(arg4) NLOHMANN_JSON_TO(arg5) NLOHMANN_JSON_TO(arg6) NLOHMANN_JSON_TO(arg7)
++#define NLOHMANN_JSON_TO8(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3) NLOHMANN_JSON_TO(arg4) NLOHMANN_JSON_TO(arg5) NLOHMANN_JSON_TO(arg6) NLOHMANN_JSON_TO(arg7) NLOHMANN_JSON_TO(arg8)
++#define NLOHMANN_JSON_TO9(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3) NLOHMANN_JSON_TO(arg4) NLOHMANN_JSON_TO(arg5) NLOHMANN_JSON_TO(arg6) NLOHMANN_JSON_TO(arg7) NLOHMANN_JSON_TO(arg8) NLOHMANN_JSON_TO(arg9)
++
++#define NLOHMANN_JSON_NARG(...) NLOHMANN_JSON_NARG_(__VA_ARGS__, NLOHMANN_JSON_RSEQ_N())
++#define NLOHMANN_JSON_NARG_(...) NLOHMANN_JSON_ARG_N(__VA_ARGS__)
++#define NLOHMANN_JSON_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, _9, N, ...) N
++#define NLOHMANN_JSON_RSEQ_N() 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
++
++#define NLOHMANN_JSON_CONCAT(a, b) NLOHMANN_JSON_CONCAT_(a, b)
++#define NLOHMANN_JSON_CONCAT_(a, b) a##b
++
++#define NLOHMANN_JSON_EXPAND(x) x
++
++#define NLOHMANN_JSON_DISPATCH_FROM(...) NLOHMANN_JSON_DISPATCH_FROM_(NLOHMANN_JSON_NARG(__VA_ARGS__), __VA_ARGS__)
++#define NLOHMANN_JSON_DISPATCH_FROM_(n, ...) NLOHMANN_JSON_CONCAT(NLOHMANN_JSON_FROM, n)(__VA_ARGS__)
++
++#define NLOHMANN_JSON_DISPATCH_TO(...) NLOHMANN_JSON_DISPATCH_TO_(NLOHMANN_JSON_NARG(__VA_ARGS__), __VA_ARGS__)
++#define NLOHMANN_JSON_DISPATCH_TO_(n, ...) NLOHMANN_JSON_CONCAT(NLOHMANN_JSON_TO, n)(__VA_ARGS__)
++
++/*!
++@brief macro to define a mapping between a custom type and JSON (intrusive)
++@def NLOHMANN_DEFINE_TYPE_INTRUSIVE
++@since version 3.9.0
++*/
++#define NLOHMANN_DEFINE_TYPE_INTRUSIVE(Type, ...)                                                  \
++    template<typename BasicJsonType>                                                                \
++    friend void to_json(BasicJsonType& j, const Type& t)                                           \
++    {                                                                                               \
++        NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_DISPATCH_TO(__VA_ARGS__))                               \
++    }                                                                                               \
++    template<typename BasicJsonType>                                                                \
++    friend void from_json(const BasicJsonType& j, Type& t)                                         \
++    {                                                                                               \
++        NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_DISPATCH_FROM(__VA_ARGS__))                             \
++    }
++
++/*!
++@brief macro to define a mapping between a custom type and JSON (non-intrusive)
++@def NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE
++@since version 3.9.0
++*/
++#define NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Type, ...)                                              \
++    template<typename BasicJsonType>                                                                \
++    void to_json(BasicJsonType& j, const Type& t)                                                  \
++    {                                                                                               \
++        NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_DISPATCH_TO(__VA_ARGS__))                               \
++    }                                                                                               \
++    template<typename BasicJsonType>                                                                \
++    void from_json(const BasicJsonType& j, Type& t)                                                \
++    {                                                                                               \
++        NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_DISPATCH_FROM(__VA_ARGS__))                             \
++    }
++
+ // Ugly macros to avoid uglier copy-paste when specializing basic_json. They
+ // may be removed in the future once the class is split.
+ 
+diff --git a/include/nlohmann/detail/macro_unscope.hpp b/include/nlohmann/detail/macro_unscope.hpp
+index 80b293e7..76988a79 100644
+--- a/include/nlohmann/detail/macro_unscope.hpp
++++ b/include/nlohmann/detail/macro_unscope.hpp
+@@ -18,4 +18,14 @@
+ #undef NLOHMANN_BASIC_JSON_TPL_DECLARATION
+ #undef NLOHMANN_BASIC_JSON_TPL
+ 
++// DO NOT undef the following macros, as they are needed by the
++// NLOHMANN_DEFINE_TYPE_INTRUSIVE and NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE macros:
++// - NLOHMANN_JSON_FROM, NLOHMANN_JSON_TO
++// - NLOHMANN_JSON_FROM2..9, NLOHMANN_JSON_TO2..9
++// - NLOHMANN_JSON_NARG, NLOHMANN_JSON_NARG_, NLOHMANN_JSON_ARG_N, NLOHMANN_JSON_RSEQ_N
++// - NLOHMANN_JSON_CONCAT, NLOHMANN_JSON_CONCAT_
++// - NLOHMANN_JSON_EXPAND
++// - NLOHMANN_JSON_DISPATCH_FROM, NLOHMANN_JSON_DISPATCH_FROM_
++// - NLOHMANN_JSON_DISPATCH_TO, NLOHMANN_JSON_DISPATCH_TO_
++
+ #include <nlohmann/thirdparty/hedley/hedley_undef.hpp>
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 770418f4..8d67db33 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -2136,6 +2136,79 @@ JSON_HEDLEY_DIAGNOSTIC_POP
+         e = ((it != std::end(m)) ? it : std::begin(m))->first;                                  \
+     }
+ 
++#define NLOHMANN_JSON_FROM(arg) j.at(#arg).get_to(t.arg);
++#define NLOHMANN_JSON_TO(arg) j[#arg] = t.arg;
++
++#define NLOHMANN_JSON_FROM1(arg1) NLOHMANN_JSON_FROM(arg1)
++#define NLOHMANN_JSON_FROM2(arg1, arg2) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2)
++#define NLOHMANN_JSON_FROM3(arg1, arg2, arg3) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3)
++#define NLOHMANN_JSON_FROM4(arg1, arg2, arg3, arg4) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3) NLOHMANN_JSON_FROM(arg4)
++#define NLOHMANN_JSON_FROM5(arg1, arg2, arg3, arg4, arg5) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3) NLOHMANN_JSON_FROM(arg4) NLOHMANN_JSON_FROM(arg5)
++#define NLOHMANN_JSON_FROM6(arg1, arg2, arg3, arg4, arg5, arg6) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3) NLOHMANN_JSON_FROM(arg4) NLOHMANN_JSON_FROM(arg5) NLOHMANN_JSON_FROM(arg6)
++#define NLOHMANN_JSON_FROM7(arg1, arg2, arg3, arg4, arg5, arg6, arg7) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3) NLOHMANN_JSON_FROM(arg4) NLOHMANN_JSON_FROM(arg5) NLOHMANN_JSON_FROM(arg6) NLOHMANN_JSON_FROM(arg7)
++#define NLOHMANN_JSON_FROM8(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3) NLOHMANN_JSON_FROM(arg4) NLOHMANN_JSON_FROM(arg5) NLOHMANN_JSON_FROM(arg6) NLOHMANN_JSON_FROM(arg7) NLOHMANN_JSON_FROM(arg8)
++#define NLOHMANN_JSON_FROM9(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) NLOHMANN_JSON_FROM(arg1) NLOHMANN_JSON_FROM(arg2) NLOHMANN_JSON_FROM(arg3) NLOHMANN_JSON_FROM(arg4) NLOHMANN_JSON_FROM(arg5) NLOHMANN_JSON_FROM(arg6) NLOHMANN_JSON_FROM(arg7) NLOHMANN_JSON_FROM(arg8) NLOHMANN_JSON_FROM(arg9)
++
++#define NLOHMANN_JSON_TO1(arg1) NLOHMANN_JSON_TO(arg1)
++#define NLOHMANN_JSON_TO2(arg1, arg2) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2)
++#define NLOHMANN_JSON_TO3(arg1, arg2, arg3) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3)
++#define NLOHMANN_JSON_TO4(arg1, arg2, arg3, arg4) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3) NLOHMANN_JSON_TO(arg4)
++#define NLOHMANN_JSON_TO5(arg1, arg2, arg3, arg4, arg5) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3) NLOHMANN_JSON_TO(arg4) NLOHMANN_JSON_TO(arg5)
++#define NLOHMANN_JSON_TO6(arg1, arg2, arg3, arg4, arg5, arg6) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3) NLOHMANN_JSON_TO(arg4) NLOHMANN_JSON_TO(arg5) NLOHMANN_JSON_TO(arg6)
++#define NLOHMANN_JSON_TO7(arg1, arg2, arg3, arg4, arg5, arg6, arg7) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3) NLOHMANN_JSON_TO(arg4) NLOHMANN_JSON_TO(arg5) NLOHMANN_JSON_TO(arg6) NLOHMANN_JSON_TO(arg7)
++#define NLOHMANN_JSON_TO8(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3) NLOHMANN_JSON_TO(arg4) NLOHMANN_JSON_TO(arg5) NLOHMANN_JSON_TO(arg6) NLOHMANN_JSON_TO(arg7) NLOHMANN_JSON_TO(arg8)
++#define NLOHMANN_JSON_TO9(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) NLOHMANN_JSON_TO(arg1) NLOHMANN_JSON_TO(arg2) NLOHMANN_JSON_TO(arg3) NLOHMANN_JSON_TO(arg4) NLOHMANN_JSON_TO(arg5) NLOHMANN_JSON_TO(arg6) NLOHMANN_JSON_TO(arg7) NLOHMANN_JSON_TO(arg8) NLOHMANN_JSON_TO(arg9)
++
++#define NLOHMANN_JSON_NARG(...) NLOHMANN_JSON_NARG_(__VA_ARGS__, NLOHMANN_JSON_RSEQ_N())
++#define NLOHMANN_JSON_NARG_(...) NLOHMANN_JSON_ARG_N(__VA_ARGS__)
++#define NLOHMANN_JSON_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, _9, N, ...) N
++#define NLOHMANN_JSON_RSEQ_N() 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
++
++#define NLOHMANN_JSON_CONCAT(a, b) NLOHMANN_JSON_CONCAT_(a, b)
++#define NLOHMANN_JSON_CONCAT_(a, b) a##b
++
++#define NLOHMANN_JSON_EXPAND(x) x
++
++#define NLOHMANN_JSON_DISPATCH_FROM(...) NLOHMANN_JSON_DISPATCH_FROM_(NLOHMANN_JSON_NARG(__VA_ARGS__), __VA_ARGS__)
++#define NLOHMANN_JSON_DISPATCH_FROM_(n, ...) NLOHMANN_JSON_CONCAT(NLOHMANN_JSON_FROM, n)(__VA_ARGS__)
++
++#define NLOHMANN_JSON_DISPATCH_TO(...) NLOHMANN_JSON_DISPATCH_TO_(NLOHMANN_JSON_NARG(__VA_ARGS__), __VA_ARGS__)
++#define NLOHMANN_JSON_DISPATCH_TO_(n, ...) NLOHMANN_JSON_CONCAT(NLOHMANN_JSON_TO, n)(__VA_ARGS__)
++
++/*!
++@brief macro to define a mapping between a custom type and JSON (intrusive)
++@def NLOHMANN_DEFINE_TYPE_INTRUSIVE
++@since version 3.9.0
++*/
++#define NLOHMANN_DEFINE_TYPE_INTRUSIVE(Type, ...)                                                  \
++    template<typename BasicJsonType>                                                                \
++    friend void to_json(BasicJsonType& j, const Type& t)                                           \
++    {                                                                                               \
++        NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_DISPATCH_TO(__VA_ARGS__))                               \
++    }                                                                                               \
++    template<typename BasicJsonType>                                                                \
++    friend void from_json(const BasicJsonType& j, Type& t)                                         \
++    {                                                                                               \
++        NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_DISPATCH_FROM(__VA_ARGS__))                             \
++    }
++
++/*!
++@brief macro to define a mapping between a custom type and JSON (non-intrusive)
++@def NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE
++@since version 3.9.0
++*/
++#define NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Type, ...)                                              \
++    template<typename BasicJsonType>                                                                \
++    void to_json(BasicJsonType& j, const Type& t)                                                  \
++    {                                                                                               \
++        NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_DISPATCH_TO(__VA_ARGS__))                               \
++    }                                                                                               \
++    template<typename BasicJsonType>                                                                \
++    void from_json(const BasicJsonType& j, Type& t)                                                \
++    {                                                                                               \
++        NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_DISPATCH_FROM(__VA_ARGS__))                             \
++    }
++
+ // Ugly macros to avoid uglier copy-paste when specializing basic_json. They
+ // may be removed in the future once the class is split.
+ 
+@@ -24684,6 +24757,16 @@ inline nlohmann::json::json_pointer operator "" _json_pointer(const char* s, std
+ #undef NLOHMANN_BASIC_JSON_TPL_DECLARATION
+ #undef NLOHMANN_BASIC_JSON_TPL
+ 
++// DO NOT undef the following macros, as they are needed by the
++// NLOHMANN_DEFINE_TYPE_INTRUSIVE and NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE macros:
++// - NLOHMANN_JSON_FROM, NLOHMANN_JSON_TO
++// - NLOHMANN_JSON_FROM2..9, NLOHMANN_JSON_TO2..9
++// - NLOHMANN_JSON_NARG, NLOHMANN_JSON_NARG_, NLOHMANN_JSON_ARG_N, NLOHMANN_JSON_RSEQ_N
++// - NLOHMANN_JSON_CONCAT, NLOHMANN_JSON_CONCAT_
++// - NLOHMANN_JSON_EXPAND
++// - NLOHMANN_JSON_DISPATCH_FROM, NLOHMANN_JSON_DISPATCH_FROM_
++// - NLOHMANN_JSON_DISPATCH_TO, NLOHMANN_JSON_DISPATCH_TO_
++
+ // #include <nlohmann/thirdparty/hedley/hedley_undef.hpp>
+ #undef JSON_HEDLEY_ALWAYS_INLINE
+ #undef JSON_HEDLEY_ARM_VERSION

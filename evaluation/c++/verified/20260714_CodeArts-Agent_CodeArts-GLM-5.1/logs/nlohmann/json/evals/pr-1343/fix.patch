@@ -1,0 +1,46 @@
+diff --git a/include/nlohmann/detail/input/input_adapters.hpp b/include/nlohmann/detail/input/input_adapters.hpp
+index 79a19c17..6ab5efca 100644
+--- a/include/nlohmann/detail/input/input_adapters.hpp
++++ b/include/nlohmann/detail/input/input_adapters.hpp
+@@ -60,8 +60,16 @@ class input_stream_adapter : public input_adapter_protocol
+     ~input_stream_adapter() override
+     {
+         // clear stream flags; we use underlying streambuf I/O, do not
+-        // maintain ifstream flags
+-        is.clear();
++        // maintain ifstream flags, but set eofbit if the streambuf
++        // was exhausted, so callers can detect end-of-input
++        if (sb.sgetc() == std::char_traits<char>::eof())
++        {
++            is.clear(std::ios::eofbit);
++        }
++        else
++        {
++            is.clear();
++        }
+     }
+ 
+     explicit input_stream_adapter(std::istream& i)
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 931e7b36..0bf765c3 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -2109,8 +2109,16 @@ class input_stream_adapter : public input_adapter_protocol
+     ~input_stream_adapter() override
+     {
+         // clear stream flags; we use underlying streambuf I/O, do not
+-        // maintain ifstream flags
+-        is.clear();
++        // maintain ifstream flags, but set eofbit if the streambuf
++        // was exhausted, so callers can detect end-of-input
++        if (sb.sgetc() == std::char_traits<char>::eof())
++        {
++            is.clear(std::ios::eofbit);
++        }
++        else
++        {
++            is.clear();
++        }
+     }
+ 
+     explicit input_stream_adapter(std::istream& i)

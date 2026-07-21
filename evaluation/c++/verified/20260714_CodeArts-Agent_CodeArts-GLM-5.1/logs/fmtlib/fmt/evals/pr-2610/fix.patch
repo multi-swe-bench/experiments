@@ -1,0 +1,21 @@
+diff --git a/include/fmt/core.h b/include/fmt/core.h
+index bb56da7f..99f3fab8 100644
+--- a/include/fmt/core.h
++++ b/include/fmt/core.h
+@@ -1368,6 +1368,16 @@ template <typename Context> struct arg_mapper {
+     return val;
+   }
+ 
++  template <typename T,
++            FMT_ENABLE_IF(
++                std::is_function<T>::value ||
++                (std::is_pointer<T>::value &&
++                 std::is_function<typename std::remove_pointer<T>::type>::value) ||
++                std::is_member_pointer<T>::value)>
++  FMT_CONSTEXPR auto map(const T&) -> unformattable_pointer {
++    return {};
++  }
++
+   // We use SFINAE instead of a const T* parameter to avoid conflicting with
+   // the C array overload.
+   template <

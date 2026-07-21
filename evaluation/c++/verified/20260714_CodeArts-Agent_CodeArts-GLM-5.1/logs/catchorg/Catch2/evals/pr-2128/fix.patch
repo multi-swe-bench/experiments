@@ -1,0 +1,126 @@
+diff --git a/src/catch2/internal/catch_decomposer.hpp b/src/catch2/internal/catch_decomposer.hpp
+index 9af5c19f..bfb0b6d5 100644
+--- a/src/catch2/internal/catch_decomposer.hpp
++++ b/src/catch2/internal/catch_decomposer.hpp
+@@ -183,7 +183,7 @@ namespace Catch {
+     public:
+         explicit ExprLhs( LhsT lhs ) : m_lhs( lhs ) {}
+ 
+-        template<typename RhsT>
++        template<typename RhsT, std::enable_if_t<std::is_arithmetic<RhsT>::value, int> = 0>
+         auto operator == ( RhsT const& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
+             return { compareEqual( m_lhs, rhs ), m_lhs, "=="_sr, rhs };
+         }
+@@ -191,7 +191,7 @@ namespace Catch {
+             return { m_lhs == rhs, m_lhs, "=="_sr, rhs };
+         }
+ 
+-        template<typename RhsT>
++        template<typename RhsT, std::enable_if_t<std::is_arithmetic<RhsT>::value, int> = 0>
+         auto operator != ( RhsT const& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
+             return { compareNotEqual( m_lhs, rhs ), m_lhs, "!="_sr, rhs };
+         }
+@@ -199,31 +199,31 @@ namespace Catch {
+             return { m_lhs != rhs, m_lhs, "!="_sr, rhs };
+         }
+ 
+-        template<typename RhsT>
++        template<typename RhsT, std::enable_if_t<std::is_arithmetic<RhsT>::value, int> = 0>
+         auto operator > ( RhsT const& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
+             return { static_cast<bool>(m_lhs > rhs), m_lhs, ">"_sr, rhs };
+         }
+-        template<typename RhsT>
++        template<typename RhsT, std::enable_if_t<std::is_arithmetic<RhsT>::value, int> = 0>
+         auto operator < ( RhsT const& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
+             return { static_cast<bool>(m_lhs < rhs), m_lhs, "<"_sr, rhs };
+         }
+-        template<typename RhsT>
++        template<typename RhsT, std::enable_if_t<std::is_arithmetic<RhsT>::value, int> = 0>
+         auto operator >= ( RhsT const& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
+             return { static_cast<bool>(m_lhs >= rhs), m_lhs, ">="_sr, rhs };
+         }
+-        template<typename RhsT>
++        template<typename RhsT, std::enable_if_t<std::is_arithmetic<RhsT>::value, int> = 0>
+         auto operator <= ( RhsT const& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
+             return { static_cast<bool>(m_lhs <= rhs), m_lhs, "<="_sr, rhs };
+         }
+-        template <typename RhsT>
++        template <typename RhsT, std::enable_if_t<std::is_arithmetic<RhsT>::value, int> = 0>
+         auto operator | (RhsT const& rhs) -> BinaryExpr<LhsT, RhsT const&> const {
+             return { static_cast<bool>(m_lhs | rhs), m_lhs, "|"_sr, rhs };
+         }
+-        template <typename RhsT>
++        template <typename RhsT, std::enable_if_t<std::is_arithmetic<RhsT>::value, int> = 0>
+         auto operator & (RhsT const& rhs) -> BinaryExpr<LhsT, RhsT const&> const {
+             return { static_cast<bool>(m_lhs & rhs), m_lhs, "&"_sr, rhs };
+         }
+-        template <typename RhsT>
++        template <typename RhsT, std::enable_if_t<std::is_arithmetic<RhsT>::value, int> = 0>
+         auto operator ^ (RhsT const& rhs) -> BinaryExpr<LhsT, RhsT const&> const {
+             return { static_cast<bool>(m_lhs ^ rhs), m_lhs, "^"_sr, rhs };
+         }
+@@ -245,8 +245,64 @@ namespace Catch {
+         auto makeUnaryExpr() const -> UnaryExpr<LhsT> {
+             return UnaryExpr<LhsT>{ m_lhs };
+         }
++
++        template<typename T, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int>>
++        friend auto operator == ( ExprLhs<T>&&, RhsT&& ) -> BinaryExpr<T, RhsT const&> const;
++        template<typename T, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int>>
++        friend auto operator != ( ExprLhs<T>&&, RhsT&& ) -> BinaryExpr<T, RhsT const&> const;
++        template<typename T, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int>>
++        friend auto operator > ( ExprLhs<T>&&, RhsT&& ) -> BinaryExpr<T, RhsT const&> const;
++        template<typename T, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int>>
++        friend auto operator < ( ExprLhs<T>&&, RhsT&& ) -> BinaryExpr<T, RhsT const&> const;
++        template<typename T, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int>>
++        friend auto operator >= ( ExprLhs<T>&&, RhsT&& ) -> BinaryExpr<T, RhsT const&> const;
++        template<typename T, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int>>
++        friend auto operator <= ( ExprLhs<T>&&, RhsT&& ) -> BinaryExpr<T, RhsT const&> const;
++        template<typename T, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int>>
++        friend auto operator | ( ExprLhs<T>&&, RhsT&& ) -> BinaryExpr<T, RhsT const&> const;
++        template<typename T, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int>>
++        friend auto operator & ( ExprLhs<T>&&, RhsT&& ) -> BinaryExpr<T, RhsT const&> const;
++        template<typename T, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int>>
++        friend auto operator ^ ( ExprLhs<T>&&, RhsT&& ) -> BinaryExpr<T, RhsT const&> const;
+     };
+ 
++    template<typename LhsT, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int> = 0>
++    auto operator == ( ExprLhs<LhsT>&& lhs, RhsT&& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
++        return { compareEqual( lhs.m_lhs, rhs ), lhs.m_lhs, "=="_sr, rhs };
++    }
++    template<typename LhsT, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int> = 0>
++    auto operator != ( ExprLhs<LhsT>&& lhs, RhsT&& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
++        return { compareNotEqual( lhs.m_lhs, rhs ), lhs.m_lhs, "!="_sr, rhs };
++    }
++    template<typename LhsT, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int> = 0>
++    auto operator > ( ExprLhs<LhsT>&& lhs, RhsT&& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
++        return { static_cast<bool>(lhs.m_lhs > rhs), lhs.m_lhs, ">"_sr, rhs };
++    }
++    template<typename LhsT, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int> = 0>
++    auto operator < ( ExprLhs<LhsT>&& lhs, RhsT&& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
++        return { static_cast<bool>(lhs.m_lhs < rhs), lhs.m_lhs, "<"_sr, rhs };
++    }
++    template<typename LhsT, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int> = 0>
++    auto operator >= ( ExprLhs<LhsT>&& lhs, RhsT&& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
++        return { static_cast<bool>(lhs.m_lhs >= rhs), lhs.m_lhs, ">="_sr, rhs };
++    }
++    template<typename LhsT, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int> = 0>
++    auto operator <= ( ExprLhs<LhsT>&& lhs, RhsT&& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
++        return { static_cast<bool>(lhs.m_lhs <= rhs), lhs.m_lhs, "<="_sr, rhs };
++    }
++    template<typename LhsT, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int> = 0>
++    auto operator | ( ExprLhs<LhsT>&& lhs, RhsT&& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
++        return { static_cast<bool>(lhs.m_lhs | rhs), lhs.m_lhs, "|"_sr, rhs };
++    }
++    template<typename LhsT, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int> = 0>
++    auto operator & ( ExprLhs<LhsT>&& lhs, RhsT&& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
++        return { static_cast<bool>(lhs.m_lhs & rhs), lhs.m_lhs, "&"_sr, rhs };
++    }
++    template<typename LhsT, typename RhsT, std::enable_if_t<!std::is_arithmetic<std::decay_t<RhsT>>::value, int> = 0>
++    auto operator ^ ( ExprLhs<LhsT>&& lhs, RhsT&& rhs ) -> BinaryExpr<LhsT, RhsT const&> const {
++        return { static_cast<bool>(lhs.m_lhs ^ rhs), lhs.m_lhs, "^"_sr, rhs };
++    }
++
+     void handleExpression( ITransientExpression const& expr );
+ 
+     template<typename T>

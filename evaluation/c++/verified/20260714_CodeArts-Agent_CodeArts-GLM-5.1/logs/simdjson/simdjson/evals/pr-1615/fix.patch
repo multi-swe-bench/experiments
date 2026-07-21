@@ -1,0 +1,450 @@
+diff --git a/include/simdjson/generic/ondemand/array-inl.h b/include/simdjson/generic/ondemand/array-inl.h
+index c0fc42ce..f6bbb3d1 100644
+--- a/include/simdjson/generic/ondemand/array-inl.h
++++ b/include/simdjson/generic/ondemand/array-inl.h
+@@ -93,6 +93,54 @@ simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcep
+   return count;
+ }
+ 
++inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) & noexcept {
++  if(json_pointer.empty()) {
++    iter.move_at_start();
++    return value::start(iter);
++  }
++  if(json_pointer[0] != '/') {
++    return INVALID_JSON_POINTER;
++  }
++  json_pointer = json_pointer.substr(1);
++  // - means "the append position" or "the element after the end of the array"
++  // We don't support this, because we're returning a real element, not a position.
++  if(json_pointer == "-") { return INDEX_OUT_OF_BOUNDS; }
++
++  // Read the array index
++  size_t array_index = 0;
++  size_t i;
++  for(i = 0; i < json_pointer.length() && json_pointer[i] != '/'; i++) {
++    uint8_t digit = uint8_t(json_pointer[i] - '0');
++    if(digit > 9) { return INCORRECT_TYPE; }
++    array_index = array_index * 10 + digit;
++  }
++
++  // 0 followed by other digits is invalid
++  if(i > 1 && json_pointer[0] == '0') { return INVALID_JSON_POINTER; }
++
++  // Empty string is invalid; so is a "/" with no digits before it
++  if(i == 0) { return INVALID_JSON_POINTER; }
++
++  // Get the child at the given index
++  simdjson_result<value> child = INDEX_OUT_OF_BOUNDS;
++  size_t current_index = 0;
++  for(auto element : *this) {
++    if(current_index == array_index) {
++      child = element;
++      break;
++    }
++    current_index++;
++  }
++  if(child.error()) {
++    return child.error() == SUCCESS ? INDEX_OUT_OF_BOUNDS : child.error();
++  }
++  // If there is a /, we have to recurse and look up more of the path
++  if(i < json_pointer.length()) {
++    return child.at_pointer(json_pointer.substr(i));
++  }
++  return child;
++}
++
+ } // namespace ondemand
+ } // namespace SIMDJSON_IMPLEMENTATION
+ } // namespace simdjson
+@@ -126,4 +174,8 @@ simdjson_really_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEME
+   if (error()) { return error(); }
+   return first.count_elements();
+ }
++inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at_pointer(std::string_view json_pointer) & noexcept {
++  if (error()) { return error(); }
++  return first.at_pointer(json_pointer);
++}
+ } // namespace simdjson
+diff --git a/include/simdjson/generic/ondemand/array.h b/include/simdjson/generic/ondemand/array.h
+index 3336ccfd..058ab900 100644
+--- a/include/simdjson/generic/ondemand/array.h
++++ b/include/simdjson/generic/ondemand/array.h
+@@ -43,6 +43,24 @@ public:
+    * safe to continue.
+    */
+   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
++
++  /**
++   * Get the value associated with the given JSON pointer.  We use the RFC 6901
++   * https://tools.ietf.org/html/rfc6901 standard, interpreting the current node
++   * as the root of its own JSON document.
++   *
++   *   ondemand::parser parser;
++   *   auto a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])"_padded);
++   *   a.at_pointer("/0/foo/a/1") == 20
++   *   a.at_pointer("0")["foo"]["a"].at_pointer("/1") == 20
++   *
++   * @return The value associated with the given JSON pointer, or:
++   *         - NO_SUCH_FIELD if a field does not exist in an object
++   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
++   *         - INCORRECT_TYPE if a non-integer is used to access an array
++   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
++   */
++  inline simdjson_result<value> at_pointer(std::string_view json_pointer) & noexcept;
+ protected:
+   /**
+    * Begin array iteration.
+@@ -110,6 +128,7 @@ public:
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() noexcept;
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() noexcept;
+   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
++  inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) & noexcept;
+ };
+ 
+ } // namespace simdjson
+diff --git a/include/simdjson/generic/ondemand/document-inl.h b/include/simdjson/generic/ondemand/document-inl.h
+index a5c0877b..08d5824b 100644
+--- a/include/simdjson/generic/ondemand/document-inl.h
++++ b/include/simdjson/generic/ondemand/document-inl.h
+@@ -125,6 +125,13 @@ simdjson_really_inline simdjson_result<value> document::operator[](const char *k
+   return resume_value()[key];
+ }
+ 
++inline simdjson_result<value> document::at_pointer(std::string_view json_pointer) & noexcept {
++  if(json_pointer.empty()) {
++    return resume_value();
++  }
++  return resume_value().at_pointer(json_pointer);
++}
++
+ simdjson_really_inline simdjson_result<json_type> document::type() noexcept {
+   return get_root_value_iterator().type();
+ }
+@@ -180,6 +187,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
+   if (error()) { return error(); }
+   return first.find_field_unordered(key);
+ }
++inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::at_pointer(std::string_view json_pointer) & noexcept {
++  if (error()) { return error(); }
++  return first.at_pointer(json_pointer);
++}
+ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator[](std::string_view key) & noexcept {
+   if (error()) { return error(); }
+   return first[key];
+diff --git a/include/simdjson/generic/ondemand/document.h b/include/simdjson/generic/ondemand/document.h
+index 581d8a7c..e9af461d 100644
+--- a/include/simdjson/generic/ondemand/document.h
++++ b/include/simdjson/generic/ondemand/document.h
+@@ -274,6 +274,30 @@ public:
+   /** @overload simdjson_really_inline simdjson_result<value> find_field_unordered(std::string_view key) & noexcept; */
+   simdjson_really_inline simdjson_result<value> operator[](const char *key) & noexcept;
+ 
++  /**
++   * Get the value associated with the given JSON pointer.  We use the RFC 6901
++   * https://tools.ietf.org/html/rfc6901 standard, interpreting the current node
++   * as the root of its own JSON document.
++   *
++   *   ondemand::parser parser;
++   *   auto doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})"_padded);
++   *   doc.at_pointer("/foo/a/1") == 20
++   *   doc.at_pointer("/foo")["a"].at_pointer("/1") == 20
++   *
++   * It is allowed for a key to be the empty string:
++   *
++   *   ondemand::parser parser;
++   *   auto doc = parser.parse(R"({ "": { "a": [ 10, 20, 30 ] }})"_padded);
++   *   doc.at_pointer("//a/1") == 20
++   *
++   * @return The value associated with the given JSON pointer, or:
++   *         - NO_SUCH_FIELD if a field does not exist in an object
++   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
++   *         - INCORRECT_TYPE if a non-integer is used to access an array
++   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
++   */
++  inline simdjson_result<value> at_pointer(std::string_view json_pointer) & noexcept;
++
+   /**
+    * Get the type of this JSON value.
+    *
+@@ -392,6 +416,8 @@ public:
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) & noexcept;
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(const char *key) & noexcept;
+ 
++  inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) & noexcept;
++
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
+ 
+   /** @copydoc simdjson_really_inline std::string_view document::raw_json_token() const noexcept */
+diff --git a/include/simdjson/generic/ondemand/object-inl.h b/include/simdjson/generic/ondemand/object-inl.h
+index fa689590..bbf27625 100644
+--- a/include/simdjson/generic/ondemand/object-inl.h
++++ b/include/simdjson/generic/ondemand/object-inl.h
+@@ -2,6 +2,18 @@ namespace simdjson {
+ namespace SIMDJSON_IMPLEMENTATION {
+ namespace ondemand {
+ 
++simdjson_really_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
++  bool has_value;
++  SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
++  if (!has_value) { return NO_SUCH_FIELD; }
++  return value(iter.child());
++}
++simdjson_really_inline simdjson_result<value> object::find_field(const std::string_view key) && noexcept {
++  bool has_value;
++  SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
++  if (!has_value) { return NO_SUCH_FIELD; }
++  return value(iter.child());
++}
+ simdjson_really_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
+   bool has_value;
+   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
+@@ -20,17 +32,89 @@ simdjson_really_inline simdjson_result<value> object::operator[](const std::stri
+ simdjson_really_inline simdjson_result<value> object::operator[](const std::string_view key) && noexcept {
+   return std::forward<object>(*this).find_field_unordered(key);
+ }
+-simdjson_really_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
+-  bool has_value;
+-  SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
+-  if (!has_value) { return NO_SUCH_FIELD; }
+-  return value(iter.child());
++
++inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) & noexcept {
++  if(json_pointer.empty()) {
++    iter.move_at_start();
++    return value::start(iter);
++  }
++  if(json_pointer[0] != '/') {
++    return INVALID_JSON_POINTER;
++  }
++  json_pointer = json_pointer.substr(1);
++  size_t slash = json_pointer.find('/');
++  std::string_view key = json_pointer.substr(0, slash);
++
++  simdjson_result<value> child;
++  size_t escape = key.find('~');
++  if(escape != std::string_view::npos) {
++    std::string unescaped(key);
++    do {
++      switch(unescaped[escape+1]) {
++        case '0':
++          unescaped.replace(escape, 2, "~");
++          break;
++        case '1':
++          unescaped.replace(escape, 2, "/");
++          break;
++        default:
++          return INVALID_JSON_POINTER;
++      }
++      escape = unescaped.find('~', escape+1);
++    } while(escape != std::string::npos);
++    child = find_field_unordered(unescaped);
++  } else {
++    child = find_field_unordered(key);
++  }
++  if(child.error()) {
++    return child;
++  }
++  if(slash != std::string_view::npos) {
++    return child.at_pointer(json_pointer.substr(slash));
++  }
++  return child;
+ }
+-simdjson_really_inline simdjson_result<value> object::find_field(const std::string_view key) && noexcept {
+-  bool has_value;
+-  SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
+-  if (!has_value) { return NO_SUCH_FIELD; }
+-  return value(iter.child());
++
++inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) && noexcept {
++  if(json_pointer.empty()) {
++    iter.move_at_start();
++    return value::start(iter);
++  }
++  if(json_pointer[0] != '/') {
++    return INVALID_JSON_POINTER;
++  }
++  json_pointer = json_pointer.substr(1);
++  size_t slash = json_pointer.find('/');
++  std::string_view key = json_pointer.substr(0, slash);
++
++  simdjson_result<value> child;
++  size_t escape = key.find('~');
++  if(escape != std::string_view::npos) {
++    std::string unescaped(key);
++    do {
++      switch(unescaped[escape+1]) {
++        case '0':
++          unescaped.replace(escape, 2, "~");
++          break;
++        case '1':
++          unescaped.replace(escape, 2, "/");
++          break;
++        default:
++          return INVALID_JSON_POINTER;
++      }
++      escape = unescaped.find('~', escape+1);
++    } while(escape != std::string::npos);
++    child = std::forward<object>(*this).find_field_unordered(unescaped);
++  } else {
++    child = std::forward<object>(*this).find_field_unordered(key);
++  }
++  if(child.error()) {
++    return child;
++  }
++  if(slash != std::string_view::npos) {
++    return child.at_pointer(json_pointer.substr(slash));
++  }
++  return child;
+ }
+ 
+ simdjson_really_inline simdjson_result<object> object::start(value_iterator &iter) noexcept {
+@@ -112,4 +196,13 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
+   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first).find_field(key);
+ }
+ 
++inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::at_pointer(std::string_view key) & noexcept {
++  if (error()) { return error(); }
++  return first.at_pointer(key);
++}
++inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::at_pointer(std::string_view key) && noexcept {
++  if (error()) { return error(); }
++  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first).at_pointer(key);
++}
++
+ } // namespace simdjson
+diff --git a/include/simdjson/generic/ondemand/object.h b/include/simdjson/generic/ondemand/object.h
+index 5dd72fe9..1954cc30 100644
+--- a/include/simdjson/generic/ondemand/object.h
++++ b/include/simdjson/generic/ondemand/object.h
+@@ -74,6 +74,26 @@ public:
+   /** @overload simdjson_really_inline simdjson_result<value> find_field_unordered(std::string_view key) & noexcept; */
+   simdjson_really_inline simdjson_result<value> operator[](std::string_view key) && noexcept;
+ 
++  /**
++   * Get the value associated with the given JSON pointer.  We use the RFC 6901
++   * https://tools.ietf.org/html/rfc6901 standard, interpreting the current node
++   * as the root of its own JSON document.
++   *
++   *   ondemand::parser parser;
++   *   auto obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})"_padded);
++   *   obj.at_pointer("/foo/a/1") == 20
++   *   obj.at_pointer("/foo")["a"].at_pointer("/1") == 20
++   *
++   * @return The value associated with the given JSON pointer, or:
++   *         - NO_SUCH_FIELD if a field does not exist in an object
++   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
++   *         - INCORRECT_TYPE if a non-integer is used to access an array
++   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
++   */
++  inline simdjson_result<value> at_pointer(std::string_view json_pointer) & noexcept;
++  /** @overload inline simdjson_result<value> at_pointer(std::string_view json_pointer) & noexcept; */
++  inline simdjson_result<value> at_pointer(std::string_view json_pointer) && noexcept;
++
+ protected:
+   static simdjson_really_inline simdjson_result<object> start(value_iterator &iter) noexcept;
+   static simdjson_really_inline simdjson_result<object> start_root(value_iterator &iter) noexcept;
+@@ -111,6 +131,8 @@ public:
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) && noexcept;
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
++  inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view key) & noexcept;
++  inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view key) && noexcept;
+ };
+ 
+ } // namespace simdjson
+diff --git a/include/simdjson/generic/ondemand/value-inl.h b/include/simdjson/generic/ondemand/value-inl.h
+index 91ed6bac..f673aac2 100644
+--- a/include/simdjson/generic/ondemand/value-inl.h
++++ b/include/simdjson/generic/ondemand/value-inl.h
+@@ -127,6 +127,28 @@ simdjson_really_inline simdjson_result<value> value::operator[](const char *key)
+   return start_or_resume_object()[key];
+ }
+ 
++inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
++  if(json_pointer.empty()) {
++    return std::move(*this);
++  }
++  json_type t;
++  if(auto err = type().get(t)) { return err; }
++  switch(t) {
++    case json_type::object: {
++      object obj;
++      if(auto err = get_object().get(obj)) { return err; }
++      return obj.at_pointer(json_pointer);
++    }
++    case json_type::array: {
++      array arr;
++      if(auto err = get_array().get(arr)) { return err; }
++      return arr.at_pointer(json_pointer);
++    }
++    default:
++      return INVALID_JSON_POINTER;
++  }
++}
++
+ simdjson_really_inline simdjson_result<json_type> value::type() noexcept {
+   return iter.type();
+ }
+@@ -195,6 +217,11 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
+   return first[key];
+ }
+ 
++inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::at_pointer(std::string_view json_pointer) noexcept {
++  if (error()) { return error(); }
++  return first.at_pointer(json_pointer);
++}
++
+ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_array() noexcept {
+   if (error()) { return error(); }
+   return first.get_array();
+diff --git a/include/simdjson/generic/ondemand/value.h b/include/simdjson/generic/ondemand/value.h
+index a8a5f48d..2def266a 100644
+--- a/include/simdjson/generic/ondemand/value.h
++++ b/include/simdjson/generic/ondemand/value.h
+@@ -276,6 +276,24 @@ public:
+   /** @overload simdjson_really_inline simdjson_result<value> find_field_unordered(std::string_view key) noexcept; */
+   simdjson_really_inline simdjson_result<value> operator[](const char *key) noexcept;
+ 
++  /**
++   * Get the value associated with the given JSON pointer.  We use the RFC 6901
++   * https://tools.ietf.org/html/rfc6901 standard, interpreting the current node
++   * as the root of its own JSON document.
++   *
++   *   ondemand::parser parser;
++   *   auto doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})"_padded);
++   *   doc.at_pointer("/foo/a/1") == 20
++   *   doc.at_pointer("/foo")["a"].at_pointer("/1") == 20
++   *
++   * @return The value associated with the given JSON pointer, or:
++   *         - NO_SUCH_FIELD if a field does not exist in an object
++   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
++   *         - INCORRECT_TYPE if a non-integer is used to access an array
++   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
++   */
++  inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
++
+   /**
+    * Get the type of this JSON value.
+    *
+@@ -349,6 +367,7 @@ protected:
+ 
+   friend class document;
+   friend class array_iterator;
++  friend class array;
+   friend class field;
+   friend class object;
+   friend struct simdjson_result<value>;
+@@ -445,9 +464,11 @@ public:
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(const char *key) noexcept;
+   /** @overload simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) noexcept; */
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) noexcept;
+-  /** @overload simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) noexcept; */
++  /** @overload simdjson_really_inline simdjson_result<value> find_field_unordered(std::string_view key) noexcept; */
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) noexcept;
+ 
++  inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
++
+   /**
+    * Get the type of this JSON value.
+    *

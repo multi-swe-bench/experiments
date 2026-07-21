@@ -1,0 +1,40 @@
+diff --git a/src/json.hpp b/src/json.hpp
+index cbf12dc5..66b40b86 100644
+--- a/src/json.hpp
++++ b/src/json.hpp
+@@ -791,6 +791,13 @@ void to_json(BasicJsonType& j, const  CompatibleArrayType& arr)
+     external_constructor<value_t::array>::construct(j, arr);
+ }
+ 
++template<typename BasicJsonType, typename T, std::size_t N,
++         enable_if_t<not std::is_same<T, typename BasicJsonType::string_t::value_type>::value, int> = 0>
++void to_json(BasicJsonType& j, const T (&arr)[N])
++{
++    external_constructor<value_t::array>::construct(j, arr);
++}
++
+ template <
+     typename BasicJsonType, typename CompatibleObjectType,
+     enable_if_t<is_compatible_object_type<BasicJsonType, CompatibleObjectType>::value,
+@@ -961,6 +968,21 @@ void from_json(const BasicJsonType& j, CompatibleArrayType& arr)
+     from_json_array_impl(j, arr, priority_tag<1> {});
+ }
+ 
++template<typename BasicJsonType, typename T, std::size_t N,
++         enable_if_t<not std::is_same<T, typename BasicJsonType::string_t::value_type>::value, int> = 0>
++void from_json(const BasicJsonType& j, T (&arr)[N])
++{
++    if (not j.is_array())
++    {
++        JSON_THROW(type_error(302, "type must be array, but is " + j.type_name()));
++    }
++
++    for (std::size_t i = 0; i < N; ++i)
++    {
++        arr[i] = j[i].template get<T>();
++    }
++}
++
+ template<typename BasicJsonType, typename CompatibleObjectType,
+          enable_if_t<is_compatible_object_type<BasicJsonType, CompatibleObjectType>::value, int> = 0>
+ void from_json(const BasicJsonType& j, CompatibleObjectType& obj)

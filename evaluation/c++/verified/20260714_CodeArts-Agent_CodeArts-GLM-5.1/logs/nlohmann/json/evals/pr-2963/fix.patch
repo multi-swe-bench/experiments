@@ -1,0 +1,224 @@
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index b679febe..f364c4ee 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -1321,19 +1321,63 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         return it;
+     }
+ 
++    // helper trait to check if object_t has a capacity() method (e.g., ordered_map)
++    template<typename T, typename = void>
++    struct has_capacity : std::false_type {};
++
++    template<typename T>
++    struct has_capacity<T, typename std::enable_if<std::is_same<decltype(std::declval<const T&>().capacity()), std::size_t>::value>::type> : std::true_type {};
++
++    std::size_t get_object_capacity() const noexcept
++    {
++#if JSON_DIAGNOSTICS
++        return get_object_capacity_impl();
++#else
++        return std::size_t(-1);
++#endif
++    }
++
++#if JSON_DIAGNOSTICS
++    template<typename T = object_t,
++             typename std::enable_if<has_capacity<T>::value, int>::type = 0>
++    std::size_t get_object_capacity_impl() const noexcept
++    {
++        return m_value.object->capacity();
++    }
++
++    template<typename T = object_t,
++             typename std::enable_if<!has_capacity<T>::value, int>::type = 0>
++    std::size_t get_object_capacity_impl() const noexcept
++    {
++        return std::size_t(-1);
++    }
++#endif
++
+     reference set_parent(reference j, std::size_t old_capacity = std::size_t(-1))
+     {
+ #if JSON_DIAGNOSTICS
+         if (old_capacity != std::size_t(-1))
+         {
+             // see https://github.com/nlohmann/json/issues/2838
+-            JSON_ASSERT(type() == value_t::array);
+-            if (JSON_HEDLEY_UNLIKELY(m_value.array->capacity() != old_capacity))
++            // Account for capacity changes in array or ordered_map containers
++            if (is_array() && JSON_HEDLEY_UNLIKELY(m_value.array->capacity() != old_capacity))
+             {
+                 // capacity has changed: update all parents
+                 set_parents();
+                 return j;
+             }
++
++            // ordered_map objects also have capacity() (inherited from std::vector)
++            // and may reallocate, invalidating parent pointers
++            if (is_object())
++            {
++                auto cap = get_object_capacity();
++                if (cap != std::size_t(-1) && JSON_HEDLEY_UNLIKELY(cap != old_capacity))
++                {
++                    set_parents();
++                    return j;
++                }
++            }
+         }
+ 
+         j.m_parent = this;
+@@ -3767,7 +3811,8 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         // operator[] only works for objects
+         if (JSON_HEDLEY_LIKELY(is_object()))
+         {
+-            return set_parent(m_value.object->operator[](key));
++            const std::size_t old_capacity = get_object_capacity();
++            return set_parent(m_value.object->operator[](key), old_capacity);
+         }
+ 
+         JSON_THROW(type_error::create(305, "cannot use operator[] with a string argument with " + std::string(type_name()), *this));
+@@ -3857,7 +3902,8 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         // at only works for objects
+         if (JSON_HEDLEY_LIKELY(is_object()))
+         {
+-            return set_parent(m_value.object->operator[](key));
++            const std::size_t old_capacity = get_object_capacity();
++            return set_parent(m_value.object->operator[](key), old_capacity);
+         }
+ 
+         JSON_THROW(type_error::create(305, "cannot use operator[] with a string argument with " + std::string(type_name()), *this));
+@@ -5529,8 +5575,9 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         }
+ 
+         // add element to object
++        const std::size_t old_capacity = get_object_capacity();
+         auto res = m_value.object->insert(val);
+-        set_parent(res.first->second);
++        set_parent(res.first->second, old_capacity);
+     }
+ 
+     /*!
+@@ -5683,8 +5730,9 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         }
+ 
+         // add element to array (perfect forwarding)
++        const std::size_t old_capacity = get_object_capacity();
+         auto res = m_value.object->emplace(std::forward<Args>(args)...);
+-        set_parent(res.first->second);
++        set_parent(res.first->second, old_capacity);
+ 
+         // create result iterator and set iterator to the result of emplace
+         auto it = begin();
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 077338cb..3203cf79 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -18704,19 +18704,63 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         return it;
+     }
+ 
++    // helper trait to check if object_t has a capacity() method (e.g., ordered_map)
++    template<typename T, typename = void>
++    struct has_capacity : std::false_type {};
++
++    template<typename T>
++    struct has_capacity<T, typename std::enable_if<std::is_same<decltype(std::declval<const T&>().capacity()), std::size_t>::value>::type> : std::true_type {};
++
++    std::size_t get_object_capacity() const noexcept
++    {
++#if JSON_DIAGNOSTICS
++        return get_object_capacity_impl();
++#else
++        return std::size_t(-1);
++#endif
++    }
++
++#if JSON_DIAGNOSTICS
++    template<typename T = object_t,
++             typename std::enable_if<has_capacity<T>::value, int>::type = 0>
++    std::size_t get_object_capacity_impl() const noexcept
++    {
++        return m_value.object->capacity();
++    }
++
++    template<typename T = object_t,
++             typename std::enable_if<!has_capacity<T>::value, int>::type = 0>
++    std::size_t get_object_capacity_impl() const noexcept
++    {
++        return std::size_t(-1);
++    }
++#endif
++
+     reference set_parent(reference j, std::size_t old_capacity = std::size_t(-1))
+     {
+ #if JSON_DIAGNOSTICS
+         if (old_capacity != std::size_t(-1))
+         {
+             // see https://github.com/nlohmann/json/issues/2838
+-            JSON_ASSERT(type() == value_t::array);
+-            if (JSON_HEDLEY_UNLIKELY(m_value.array->capacity() != old_capacity))
++            // Account for capacity changes in array or ordered_map containers
++            if (is_array() && JSON_HEDLEY_UNLIKELY(m_value.array->capacity() != old_capacity))
+             {
+                 // capacity has changed: update all parents
+                 set_parents();
+                 return j;
+             }
++
++            // ordered_map objects also have capacity() (inherited from std::vector)
++            // and may reallocate, invalidating parent pointers
++            if (is_object())
++            {
++                auto cap = get_object_capacity();
++                if (cap != std::size_t(-1) && JSON_HEDLEY_UNLIKELY(cap != old_capacity))
++                {
++                    set_parents();
++                    return j;
++                }
++            }
+         }
+ 
+         j.m_parent = this;
+@@ -21150,7 +21194,8 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         // operator[] only works for objects
+         if (JSON_HEDLEY_LIKELY(is_object()))
+         {
+-            return set_parent(m_value.object->operator[](key));
++            const std::size_t old_capacity = get_object_capacity();
++            return set_parent(m_value.object->operator[](key), old_capacity);
+         }
+ 
+         JSON_THROW(type_error::create(305, "cannot use operator[] with a string argument with " + std::string(type_name()), *this));
+@@ -21240,7 +21285,8 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         // at only works for objects
+         if (JSON_HEDLEY_LIKELY(is_object()))
+         {
+-            return set_parent(m_value.object->operator[](key));
++            const std::size_t old_capacity = get_object_capacity();
++            return set_parent(m_value.object->operator[](key), old_capacity);
+         }
+ 
+         JSON_THROW(type_error::create(305, "cannot use operator[] with a string argument with " + std::string(type_name()), *this));
+@@ -22912,8 +22958,9 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         }
+ 
+         // add element to object
++        const std::size_t old_capacity = get_object_capacity();
+         auto res = m_value.object->insert(val);
+-        set_parent(res.first->second);
++        set_parent(res.first->second, old_capacity);
+     }
+ 
+     /*!
+@@ -23066,8 +23113,9 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         }
+ 
+         // add element to array (perfect forwarding)
++        const std::size_t old_capacity = get_object_capacity();
+         auto res = m_value.object->emplace(std::forward<Args>(args)...);
+-        set_parent(res.first->second);
++        set_parent(res.first->second, old_capacity);
+ 
+         // create result iterator and set iterator to the result of emplace
+         auto it = begin();

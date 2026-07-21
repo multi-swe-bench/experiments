@@ -1,0 +1,20 @@
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index e004e830..763fd957 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -1463,13 +1463,13 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+     /// get a pointer to the value (integer number)
+     number_integer_t* get_impl_ptr(number_integer_t* /*unused*/) noexcept
+     {
+-        return is_number_integer() ? &m_data.m_value.number_integer : nullptr;
++        return m_data.m_type == value_t::number_integer ? &m_data.m_value.number_integer : nullptr;
+     }
+ 
+     /// get a pointer to the value (integer number)
+     constexpr const number_integer_t* get_impl_ptr(const number_integer_t* /*unused*/) const noexcept
+     {
+-        return is_number_integer() ? &m_data.m_value.number_integer : nullptr;
++        return m_data.m_type == value_t::number_integer ? &m_data.m_value.number_integer : nullptr;
+     }
+ 
+     /// get a pointer to the value (unsigned number)

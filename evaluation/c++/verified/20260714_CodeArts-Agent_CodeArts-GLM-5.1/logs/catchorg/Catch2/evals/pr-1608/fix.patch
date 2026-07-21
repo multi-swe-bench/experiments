@@ -1,0 +1,38 @@
+diff --git a/include/internal/catch_message.cpp b/include/internal/catch_message.cpp
+index fa7e8746..8b4dda3d 100644
+--- a/include/internal/catch_message.cpp
++++ b/include/internal/catch_message.cpp
+@@ -96,6 +96,14 @@ namespace Catch {
+ //           case '>':
+                 openings.pop();
+                 break;
++            case '"':
++            case '\'':
++                if (openings.size() > 0 && openings.top() == c) {
++                    openings.pop();
++                } else {
++                    openings.push(c);
++                }
++                break;
+             case ',':
+                 if (start != pos && openings.size() == 0) {
+                     m_messages.emplace_back(macroName, lineInfo, resultType);
+diff --git a/single_include/catch2/catch.hpp b/single_include/catch2/catch.hpp
+index df14c357..e98237d9 100644
+--- a/single_include/catch2/catch.hpp
++++ b/single_include/catch2/catch.hpp
+@@ -9646,6 +9646,14 @@ namespace Catch {
+ //           case '>':
+                 openings.pop();
+                 break;
++            case '"':
++            case '\'':
++                if (openings.size() > 0 && openings.top() == c) {
++                    openings.pop();
++                } else {
++                    openings.push(c);
++                }
++                break;
+             case ',':
+                 if (start != pos && openings.size() == 0) {
+                     m_messages.emplace_back(macroName, lineInfo, resultType);

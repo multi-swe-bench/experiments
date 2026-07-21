@@ -1,0 +1,856 @@
+检测到 Debian 12 系统
+进入12+系统
+替换系统源完成
+==============================================================================
+Get:1 http://mirrors.tools.huawei.com/debian bookworm InRelease [151 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm-updates InRelease [55.4 kB]
+Get:3 http://mirrors.tools.huawei.com/debian-security bookworm-security InRelease [48.0 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 Packages [8790 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm-updates/main amd64 Packages [6924 B]
+Get:6 http://mirrors.tools.huawei.com/debian-security bookworm-security/main amd64 Packages [316 kB]
+Fetched 9368 kB in 1s (7402 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+patch is already the newest version (2.7.6-7).
+libpcre2-dev is already the newest version (10.42-1).
+libpcre2-dev set to manually installed.
+libncurses-dev is already the newest version (6.4-4).
+libncurses-dev set to manually installed.
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+The following additional packages will be installed:
+  libonig5 libssl3 openssl
+Suggested packages:
+  libssl-doc
+The following NEW packages will be installed:
+  build-essential libonig-dev libonig5
+The following packages will be upgraded:
+  libssl-dev libssl3 openssl
+3 upgraded, 3 newly installed, 0 to remove and 148 not upgraded.
+Need to get 6210 kB of archives.
+After this operation, 801 kB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 build-essential amd64 12.9 [7704 B]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig5 amd64 6.9.8-1 [188 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig-dev amd64 6.9.8-1 [96.7 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl-dev amd64 3.0.20-1~deb12u2 [2443 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl3 amd64 3.0.20-1~deb12u2 [2036 kB]
+Get:6 http://mirrors.tools.huawei.com/debian bookworm/main amd64 openssl amd64 3.0.20-1~deb12u2 [1439 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 6210 kB in 0s (16.0 MB/s)
+Selecting previously unselected package build-essential.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 26550 files and directories currently installed.)
+Preparing to unpack .../0-build-essential_12.9_amd64.deb ...
+Unpacking build-essential (12.9) ...
+Selecting previously unselected package libonig5:amd64.
+Preparing to unpack .../1-libonig5_6.9.8-1_amd64.deb ...
+Unpacking libonig5:amd64 (6.9.8-1) ...
+Selecting previously unselected package libonig-dev.
+Preparing to unpack .../2-libonig-dev_6.9.8-1_amd64.deb ...
+Unpacking libonig-dev (6.9.8-1) ...
+Preparing to unpack .../3-libssl-dev_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl-dev:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../4-libssl3_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl3:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../5-openssl_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking openssl (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Setting up libssl3:amd64 (3.0.20-1~deb12u2) ...
+Setting up libssl-dev:amd64 (3.0.20-1~deb12u2) ...
+Setting up build-essential (12.9) ...
+Setting up openssl (3.0.20-1~deb12u2) ...
+Setting up libonig5:amd64 (6.9.8-1) ...
+Setting up libonig-dev (6.9.8-1) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+cmake is already the newest version (3.25.1-1).
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+0 upgraded, 0 newly installed, 0 to remove and 148 not upgraded.
+=== RUN FULL via /home/fix-run.sh (tee log) ===
+#!/bin/bash
+set -e
+
+cd /home/fmt
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake ..  
+cmake --build .
+ctest
+
+=========================================
+当前目录：/home
+当前目录内容：add_certificate_for_c.sh check_git_changes.sh fix-run.sh fix.patch fmt prepare.sh run.sh test-run.sh test.patch
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+wget is already the newest version (1.21.3-1+deb12u1).
+0 upgraded, 0 newly installed, 0 to remove and 148 not upgraded.
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libgpm2 libsodium23 vim-common vim-runtime xxd
+Suggested packages:
+  gpm ctags vim-doc vim-scripts
+The following NEW packages will be installed:
+  libgpm2 libsodium23 vim vim-common vim-runtime xxd
+0 upgraded, 6 newly installed, 0 to remove and 148 not upgraded.
+Need to get 8980 kB of archives.
+After this operation, 41.9 MB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-common all 2:9.0.1378-2+deb12u2 [125 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libgpm2 amd64 1.20.7-10+b1 [14.2 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libsodium23 amd64 1.0.18-1+deb12u1 [162 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-runtime all 2:9.0.1378-2+deb12u2 [7027 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim amd64 2:9.0.1378-2+deb12u2 [1568 kB]
+Get:6 http://mirrors.tools.huawei.com/debian bookworm/main amd64 xxd amd64 2:9.0.1378-2+deb12u2 [84.1 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 8980 kB in 1s (15.2 MB/s)
+Selecting previously unselected package vim-common.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 26602 files and directories currently installed.)
+Preparing to unpack .../0-vim-common_2%3a9.0.1378-2+deb12u2_all.deb ...
+Unpacking vim-common (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package libgpm2:amd64.
+Preparing to unpack .../1-libgpm2_1.20.7-10+b1_amd64.deb ...
+Unpacking libgpm2:amd64 (1.20.7-10+b1) ...
+Selecting previously unselected package libsodium23:amd64.
+Preparing to unpack .../2-libsodium23_1.0.18-1+deb12u1_amd64.deb ...
+Unpacking libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Selecting previously unselected package vim-runtime.
+Preparing to unpack .../3-vim-runtime_2%3a9.0.1378-2+deb12u2_all.deb ...
+Adding 'diversion of /usr/share/vim/vim90/doc/help.txt to /usr/share/vim/vim90/doc/help.txt.vim-tiny by vim-runtime'
+Adding 'diversion of /usr/share/vim/vim90/doc/tags to /usr/share/vim/vim90/doc/tags.vim-tiny by vim-runtime'
+Unpacking vim-runtime (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package vim.
+Preparing to unpack .../4-vim_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking vim (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package xxd.
+Preparing to unpack .../5-xxd_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking xxd (2:9.0.1378-2+deb12u2) ...
+Setting up libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Setting up libgpm2:amd64 (1.20.7-10+b1) ...
+Setting up xxd (2:9.0.1378-2+deb12u2) ...
+Setting up vim-common (2:9.0.1378-2+deb12u2) ...
+Setting up vim-runtime (2:9.0.1378-2+deb12u2) ...
+Setting up vim (2:9.0.1378-2+deb12u2) ...
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/ex (ex) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rview (rview) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rvim (rvim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vi (vi) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/view (view) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vim (vim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vimdiff (vimdiff) in auto mode
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Processing triggers for hicolor-icon-theme (0.17-2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libcurl3-gnutls libcurl4 libcurl4-openssl-dev
+Suggested packages:
+  libcurl4-doc libidn-dev libldap2-dev librtmp-dev libssh2-1-dev
+The following packages will be upgraded:
+  curl libcurl3-gnutls libcurl4 libcurl4-openssl-dev
+4 upgraded, 0 newly installed, 0 to remove and 144 not upgraded.
+Need to get 1587 kB of archives.
+After this operation, 1024 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4-openssl-dev amd64 7.88.1-10+deb12u15 [493 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 curl amd64 7.88.1-10+deb12u15 [316 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4 amd64 7.88.1-10+deb12u15 [392 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl3-gnutls amd64 7.88.1-10+deb12u15 [386 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 1587 kB in 0s (5295 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 28760 files and directories currently installed.)
+Preparing to unpack .../libcurl4-openssl-dev_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../curl_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking curl (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl4_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl3-gnutls_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Setting up libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) ...
+Setting up libcurl4:amd64 (7.88.1-10+deb12u15) ...
+Setting up curl (7.88.1-10+deb12u15) ...
+Setting up libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+=== 配置证书 (abcert) ===
+[abcert][INFO] Created temporary directory .tmp.pems.LgRhsPx8
+[abcert][INFO] Operating system: Debian GNU/Linux 12 (bookworm)
+[abcert][INFO] Installing certificates
+'.tmp.pems.LgRhsPx8/HWBPITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWBPITEnterpriseCA1.crt'
+'.tmp.pems.LgRhsPx8/HWITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWITEnterpriseCA1.crt'
+'.tmp.pems.LgRhsPx8/HuaweiBPITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiBPITRootCA.crt'
+'.tmp.pems.LgRhsPx8/HuaweiITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiITRootCA.crt'
+'.tmp.pems.LgRhsPx8/HuaweiWebSecureInternetGatewayCA.pem' -> '/usr/local/share/ca-certificates/HuaweiWebSecureInternetGatewayCA.crt'
+Updating certificates in /etc/ssl/certs...
+rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+5 added, 0 removed; done.
+Running hooks in /etc/ca-certificates/update.d...
+done.
+[abcert][INFO] Removed .tmp.pems.LgRhsPx8
+abcert 安装完成
+================git=====================
+http.version=HTTP/1.1
+http.postbuffer=524288000
+http.timeout=600
+================git=====================
+================env=====================
+HTTPS_PROXY=http://test:test@proxysg.huawei.com:8080/
+no_proxy=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+HOSTNAME=cec70e82a449
+GCC_MIRRORS=https://ftpmirror.gnu.org/gcc 		https://mirrors.kernel.org/gnu/gcc 		https://bigsearcher.com/mirrors/gcc/releases 		http://www.netgull.com/gcc/releases 		https://ftpmirror.gnu.org/gcc 		https://sourceware.org/pub/gcc/releases 		ftp://ftp.gnu.org/gnu/gcc
+HOME=/root
+OLDPWD=/home
+NO_PROXY=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+https_proxy=http://test:test@proxysg.huawei.com:8080/
+GPG_KEYS=B215C1633BCA0477615F1B35A5B3A004745C015A 	B3C42148A44E6983B3E4CC0793FA9B1AB75C61B8 	90AA470469D3965A87A5DCB494D03953902C9419 	80F98B2E0DAB6C8281BDF541A7C8C3B2F71EDF1C 	7F74F97C103468EE5D750B583AB00996FC26A641 	33C235A34C46AA3FFB293709A328C3A2C3C45C06 	D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62
+http_proxy=http://test:test@proxysg.huawei.com:8080/
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+GIT_SSL_NO_VERIFY=true
+LANG=C.UTF-8
+DEBIAN_FRONTEND=noninteractive
+LC_ALL=C.UTF-8
+PWD=/tmp/tmp.Xz60JX2Hvq/abcert_install
+HTTP_PROXY=http://test:test@proxysg.huawei.com:8080/
+GCC_VERSION=14.2.0
+================env=====================
+#!/bin/bash
+# set -e
+
+cd /home/fmt
+git ls-files --others --exclude-standard | xargs -I {} mv {} {}.bak
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake ..  
+cmake --build .
+ctest
+
+=========================================
+patching file test/format-impl-test.cc
+patching file include/fmt/color.h
+-- CMake version: 3.25.1
+-- The C compiler identification is GNU 14.2.0
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Version: 5.2.2
+-- Build type: Release
+-- CXX_STANDARD: 11
+-- Performing Test has_std_11_flag
+-- Performing Test has_std_11_flag - Success
+-- Performing Test has_std_0x_flag
+-- Performing Test has_std_0x_flag - Success
+-- Performing Test SUPPORTS_VARIADIC_TEMPLATES
+-- Performing Test SUPPORTS_VARIADIC_TEMPLATES - Success
+-- Performing Test SUPPORTS_INITIALIZER_LIST
+-- Performing Test SUPPORTS_INITIALIZER_LIST - Success
+-- Performing Test SUPPORTS_ENUM_BASE
+-- Performing Test SUPPORTS_ENUM_BASE - Success
+-- Performing Test SUPPORTS_TYPE_TRAITS
+-- Performing Test SUPPORTS_TYPE_TRAITS - Success
+-- Performing Test SUPPORTS_USER_DEFINED_LITERALS
+-- Performing Test SUPPORTS_USER_DEFINED_LITERALS - Success
+-- Looking for open
+-- Looking for open - found
+-- Target 'doc' disabled (requires doxygen)
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Performing Test HAVE_FNO_DELETE_NULL_POINTER_CHECKS
+-- Performing Test HAVE_FNO_DELETE_NULL_POINTER_CHECKS - Success
+-- Performing Test HAVE_FNO_EXCEPTIONS_FLAG
+-- Performing Test HAVE_FNO_EXCEPTIONS_FLAG - Success
+-- FMT_PEDANTIC: OFF
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/fmt/build
+[  2%] Building CXX object CMakeFiles/fmt.dir/src/format.cc.o
+[  4%] Building CXX object CMakeFiles/fmt.dir/src/posix.cc.o
+[  6%] Linking CXX static library libfmt.a
+[  6%] Built target fmt
+[  8%] Building CXX object test/CMakeFiles/gmock.dir/gmock-gtest-all.cc.o
+[ 11%] Linking CXX static library libgmock.a
+[ 11%] Built target gmock
+[ 13%] Building CXX object test/CMakeFiles/test-main.dir/test-main.cc.o
+[ 15%] Building CXX object test/CMakeFiles/test-main.dir/gtest-extra.cc.o
+[ 17%] Building CXX object test/CMakeFiles/test-main.dir/util.cc.o
+[ 20%] Linking CXX static library libtest-main.a
+[ 20%] Built target test-main
+[ 22%] Building CXX object test/CMakeFiles/assert-test.dir/assert-test.cc.o
+[ 24%] Linking CXX executable ../bin/assert-test
+[ 24%] Built target assert-test
+[ 26%] Building CXX object test/CMakeFiles/core-test.dir/core-test.cc.o
+[ 28%] Linking CXX executable ../bin/core-test
+[ 28%] Built target core-test
+[ 31%] Building CXX object test/CMakeFiles/gtest-extra-test.dir/gtest-extra-test.cc.o
+[ 33%] Linking CXX executable ../bin/gtest-extra-test
+[ 33%] Built target gtest-extra-test
+[ 35%] Building CXX object test/CMakeFiles/format-test.dir/format-test.cc.o
+[ 37%] Linking CXX executable ../bin/format-test
+[ 37%] Built target format-test
+[ 40%] Building CXX object test/CMakeFiles/format-impl-test.dir/format-impl-test.cc.o
+In file included from /home/fmt/include/fmt/format.h:60,
+                 from /home/fmt/include/fmt/format-inl.h:11,
+                 from /home/fmt/test/../src/format.cc:8,
+                 from /home/fmt/test/format-impl-test.cc:13:
+/home/fmt/include/fmt/core.h: In instantiation of ‘fmt::v5::enable_if_string_t<S, void> fmt::v5::print(const S&, const Args& ...) [with S = _IO_FILE*; Args = {emphasis, char [11]}; enable_if_string_t<S, void> = void]’:
+/home/fmt/test/format-impl-test.cc:231:3:   required from here
+  231 |   EXPECT_WRITE(stderr, fmt::print(stderr, fmt::emphasis::bold, "bold error"),
+      |                        ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:1502:9: error: no matching function for call to ‘vprint(fmt::v5::basic_string_view<_IO_FILE>, fmt::v5::internal::checked_args<_IO_FILE*, fmt::v5::emphasis, char [11]>)’
+ 1502 |   vprint(to_string_view(format_str),
+      |   ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 1503 |          internal::checked_args<S, Args...>(format_str, args...));
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/fmt/include/fmt/printf.h:14,
+                 from /home/fmt/test/format-impl-test.cc:15:
+/home/fmt/include/fmt/ostream.h:128:13: note: candidate: ‘template<class Char> void fmt::v5::vprint(std::basic_ostream<Char>&, basic_string_view<Char>, basic_format_args<typename buffer_context<Char>::type>)’
+  128 | inline void vprint(std::basic_ostream<Char> &os,
+      |             ^~~~~~
+/home/fmt/include/fmt/ostream.h:128:13: note:   candidate expects 3 arguments, 2 provided
+In file included from /home/fmt/test/format-impl-test.cc:14:
+/home/fmt/include/fmt/color.h:430:6: note: candidate: ‘template<class S, class Char> void fmt::v5::vprint(const text_style&, FILE*, const S&, basic_format_args<typename buffer_context<Char>::type>)’
+  430 | void vprint(const text_style &tf, std::FILE *f, const S &format,
+      |      ^~~~~~
+/home/fmt/include/fmt/color.h:430:6: note:   candidate expects 4 arguments, 2 provided
+/home/fmt/include/fmt/format-inl.h:945:15: note: candidate: ‘void fmt::v5::vprint(FILE*, string_view, format_args)’
+  945 | FMT_FUNC void vprint(std::FILE *f, string_view format_str, format_args args) {
+      |               ^~~~~~
+/home/fmt/include/fmt/format-inl.h:945:15: note:   candidate expects 3 arguments, 2 provided
+/home/fmt/include/fmt/format-inl.h:952:15: note: candidate: ‘void fmt::v5::vprint(FILE*, wstring_view, wformat_args)’
+  952 | FMT_FUNC void vprint(std::FILE *f, wstring_view format_str, wformat_args args) {
+      |               ^~~~~~
+/home/fmt/include/fmt/format-inl.h:952:15: note:   candidate expects 3 arguments, 2 provided
+/home/fmt/include/fmt/format-inl.h:958:15: note: candidate: ‘void fmt::v5::vprint(string_view, format_args)’
+  958 | FMT_FUNC void vprint(string_view format_str, format_args args) {
+      |               ^~~~~~
+/home/fmt/include/fmt/format-inl.h:958:34: note:   no known conversion for argument 1 from ‘basic_string_view<_IO_FILE>’ to ‘basic_string_view<char>’
+  958 | FMT_FUNC void vprint(string_view format_str, format_args args) {
+      |                      ~~~~~~~~~~~~^~~~~~~~~~
+/home/fmt/include/fmt/format-inl.h:962:15: note: candidate: ‘void fmt::v5::vprint(wstring_view, wformat_args)’
+  962 | FMT_FUNC void vprint(wstring_view format_str, wformat_args args) {
+      |               ^~~~~~
+/home/fmt/include/fmt/format-inl.h:962:35: note:   no known conversion for argument 1 from ‘basic_string_view<_IO_FILE>’ to ‘basic_string_view<wchar_t>’
+  962 | FMT_FUNC void vprint(wstring_view format_str, wformat_args args) {
+      |                      ~~~~~~~~~~~~~^~~~~~~~~~
+/home/fmt/include/fmt/core.h: In instantiation of ‘fmt::v5::enable_if_string_t<S, void> fmt::v5::print(const S&, const Args& ...) [with S = _IO_FILE*; Args = {text_style, char [9]}; enable_if_string_t<S, void> = void]’:
+/home/fmt/test/format-impl-test.cc:233:3:   required from here
+  233 |   EXPECT_WRITE(stderr, fmt::print(stderr, fg(fmt::color::blue), "blue log"),
+      |                        ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:1502:9: error: no matching function for call to ‘vprint(fmt::v5::basic_string_view<_IO_FILE>, fmt::v5::internal::checked_args<_IO_FILE*, fmt::v5::text_style, char [9]>)’
+ 1502 |   vprint(to_string_view(format_str),
+      |   ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 1503 |          internal::checked_args<S, Args...>(format_str, args...));
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/ostream.h:128:13: note: candidate: ‘template<class Char> void fmt::v5::vprint(std::basic_ostream<Char>&, basic_string_view<Char>, basic_format_args<typename buffer_context<Char>::type>)’
+  128 | inline void vprint(std::basic_ostream<Char> &os,
+      |             ^~~~~~
+/home/fmt/include/fmt/ostream.h:128:13: note:   candidate expects 3 arguments, 2 provided
+/home/fmt/include/fmt/color.h:430:6: note: candidate: ‘template<class S, class Char> void fmt::v5::vprint(const text_style&, FILE*, const S&, basic_format_args<typename buffer_context<Char>::type>)’
+  430 | void vprint(const text_style &tf, std::FILE *f, const S &format,
+      |      ^~~~~~
+/home/fmt/include/fmt/color.h:430:6: note:   candidate expects 4 arguments, 2 provided
+/home/fmt/include/fmt/format-inl.h:945:15: note: candidate: ‘void fmt::v5::vprint(FILE*, string_view, format_args)’
+  945 | FMT_FUNC void vprint(std::FILE *f, string_view format_str, format_args args) {
+      |               ^~~~~~
+/home/fmt/include/fmt/format-inl.h:945:15: note:   candidate expects 3 arguments, 2 provided
+/home/fmt/include/fmt/format-inl.h:952:15: note: candidate: ‘void fmt::v5::vprint(FILE*, wstring_view, wformat_args)’
+  952 | FMT_FUNC void vprint(std::FILE *f, wstring_view format_str, wformat_args args) {
+      |               ^~~~~~
+/home/fmt/include/fmt/format-inl.h:952:15: note:   candidate expects 3 arguments, 2 provided
+/home/fmt/include/fmt/format-inl.h:958:15: note: candidate: ‘void fmt::v5::vprint(string_view, format_args)’
+  958 | FMT_FUNC void vprint(string_view format_str, format_args args) {
+      |               ^~~~~~
+/home/fmt/include/fmt/format-inl.h:958:34: note:   no known conversion for argument 1 from ‘basic_string_view<_IO_FILE>’ to ‘basic_string_view<char>’
+  958 | FMT_FUNC void vprint(string_view format_str, format_args args) {
+      |                      ~~~~~~~~~~~~^~~~~~~~~~
+/home/fmt/include/fmt/format-inl.h:962:15: note: candidate: ‘void fmt::v5::vprint(wstring_view, wformat_args)’
+  962 | FMT_FUNC void vprint(wstring_view format_str, wformat_args args) {
+      |               ^~~~~~
+/home/fmt/include/fmt/format-inl.h:962:35: note:   no known conversion for argument 1 from ‘basic_string_view<_IO_FILE>’ to ‘basic_string_view<wchar_t>’
+  962 | FMT_FUNC void vprint(wstring_view format_str, wformat_args args) {
+      |                      ~~~~~~~~~~~~~^~~~~~~~~~
+/home/fmt/include/fmt/core.h: In instantiation of ‘typename std::enable_if<IS_PACKED, fmt::v5::internal::value<Context> >::type fmt::v5::internal::make_arg(const T&) [with bool IS_PACKED = true; Context = fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE>; T = char [11]; typename std::enable_if<IS_PACKED, value<Context> >::type = value<fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE> >]’:
+/home/fmt/include/fmt/core.h:1179:51:   required from ‘fmt::v5::format_arg_store<Context, Args>::format_arg_store(const Args& ...) [with Context = fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE>; Args = {fmt::v5::emphasis, char [11]}]’
+ 1179 |     : data_{internal::make_arg<IS_PACKED, Context>(args)...} {}
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~
+/home/fmt/include/fmt/core.h:1368:47:   required from ‘fmt::v5::internal::checked_args<S, Args>::checked_args(const S&, const Args& ...) [with S = _IO_FILE*; Args = {fmt::v5::emphasis, char [11]}]’
+ 1368 |     format_arg_store<context, Args...>(args...) {
+      |                                               ^
+/home/fmt/include/fmt/core.h:1503:20:   required from ‘fmt::v5::enable_if_string_t<S, void> fmt::v5::print(const S&, const Args& ...) [with S = _IO_FILE*; Args = {emphasis, char [11]}; enable_if_string_t<S, void> = void]’
+ 1503 |          internal::checked_args<S, Args...>(format_str, args...));
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/test/format-impl-test.cc:231:3:   required from here
+  231 |   EXPECT_WRITE(stderr, fmt::print(stderr, fmt::emphasis::bold, "bold error"),
+      |                        ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:1068:29: error: could not convert ‘fmt::v5::internal::make_value<fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE>, char>(((const char*)value))’ from ‘std::enable_if<true, void>::type’ {aka ‘void’} to ‘std::enable_if<true, fmt::v5::internal::value<fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE> > >::type’ {aka ‘fmt::v5::internal::value<fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE> >’}
+ 1068 |   return make_value<Context>(value);
+      |          ~~~~~~~~~~~~~~~~~~~^~~~~~~
+      |                             |
+      |                             std::enable_if<true, void>::type {aka void}
+/home/fmt/include/fmt/core.h: In instantiation of ‘typename std::enable_if<IS_PACKED, fmt::v5::internal::value<Context> >::type fmt::v5::internal::make_arg(const T&) [with bool IS_PACKED = true; Context = fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE>; T = char [9]; typename std::enable_if<IS_PACKED, value<Context> >::type = value<fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE> >]’:
+/home/fmt/include/fmt/core.h:1179:51:   required from ‘fmt::v5::format_arg_store<Context, Args>::format_arg_store(const Args& ...) [with Context = fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE>; Args = {fmt::v5::text_style, char [9]}]’
+ 1179 |     : data_{internal::make_arg<IS_PACKED, Context>(args)...} {}
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~
+/home/fmt/include/fmt/core.h:1368:47:   required from ‘fmt::v5::internal::checked_args<S, Args>::checked_args(const S&, const Args& ...) [with S = _IO_FILE*; Args = {fmt::v5::text_style, char [9]}]’
+ 1368 |     format_arg_store<context, Args...>(args...) {
+      |                                               ^
+/home/fmt/include/fmt/core.h:1503:20:   required from ‘fmt::v5::enable_if_string_t<S, void> fmt::v5::print(const S&, const Args& ...) [with S = _IO_FILE*; Args = {text_style, char [9]}; enable_if_string_t<S, void> = void]’
+ 1503 |          internal::checked_args<S, Args...>(format_str, args...));
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/test/format-impl-test.cc:233:3:   required from here
+  233 |   EXPECT_WRITE(stderr, fmt::print(stderr, fg(fmt::color::blue), "blue log"),
+      |                        ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:1068:29: error: could not convert ‘fmt::v5::internal::make_value<fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE>, char>(((const char*)value))’ from ‘std::enable_if<true, void>::type’ {aka ‘void’} to ‘std::enable_if<true, fmt::v5::internal::value<fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE> > >::type’ {aka ‘fmt::v5::internal::value<fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE> >’}
+ 1068 |   return make_value<Context>(value);
+      |          ~~~~~~~~~~~~~~~~~~~^~~~~~~
+      |                             |
+      |                             std::enable_if<true, void>::type {aka void}
+In file included from /usr/local/include/c++/14.2.0/string:42,
+                 from /usr/local/include/c++/14.2.0/stdexcept:39,
+                 from /home/fmt/test/test-assert.h:11,
+                 from /home/fmt/test/format-impl-test.cc:10:
+/usr/local/include/c++/14.2.0/bits/char_traits.h: In instantiation of ‘static constexpr bool __gnu_cxx::char_traits<_CharT>::eq(const char_type&, const char_type&) [with _CharT = _IO_FILE; char_type = __gnu_cxx::char_traits<_IO_FILE>::char_type]’:
+/usr/local/include/c++/14.2.0/bits/char_traits.h:203:17:   required from ‘static std::size_t __gnu_cxx::char_traits<_CharT>::length(const char_type*) [with _CharT = _IO_FILE; std::size_t = long unsigned int; char_type = __gnu_cxx::char_traits<_IO_FILE>::char_type]’
+  203 |       while (!eq(__p[__i], char_type()))
+      |               ~~^~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:372:53:   required from ‘fmt::v5::basic_string_view<Char>::basic_string_view(const Char*) [with Char = _IO_FILE]’
+  372 |     : data_(s), size_(std::char_traits<Char>::length(s)) {}
+      |                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/fmt/include/fmt/core.h:462:71:   required from ‘fmt::v5::basic_string_view<Char> fmt::v5::to_string_view(const Char*) [with Char = _IO_FILE]’
+  462 | inline basic_string_view<Char> to_string_view(const Char *s) { return s; }
+      |                                                                       ^
+/home/fmt/include/fmt/core.h:1502:24:   required from ‘fmt::v5::enable_if_string_t<S, void> fmt::v5::print(const S&, const Args& ...) [with S = _IO_FILE*; Args = {emphasis, char [11]}; enable_if_string_t<S, void> = void]’
+ 1502 |   vprint(to_string_view(format_str),
+      |          ~~~~~~~~~~~~~~^~~~~~~~~~~~
+/home/fmt/test/format-impl-test.cc:231:3:   required from here
+  231 |   EXPECT_WRITE(stderr, fmt::print(stderr, fmt::emphasis::bold, "bold error"),
+      |                        ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/local/include/c++/14.2.0/bits/char_traits.h:137:21: error: no match for ‘operator==’ (operand types are ‘const __gnu_cxx::char_traits<_IO_FILE>::char_type’ and ‘const __gnu_cxx::char_traits<_IO_FILE>::char_type’)
+  137 |       { return __c1 == __c2; }
+      |                ~~~~~^~~~~~~
+/home/fmt/include/fmt/core.h: In instantiation of ‘typename std::enable_if<(! std::is_same<T, typename C::char_type>::value)>::type fmt::v5::internal::make_value(const T*) [with C = fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE>; T = char; typename std::enable_if<(! std::is_same<T, typename C::char_type>::value)>::type = void; typename C::char_type = _IO_FILE]’:
+/home/fmt/include/fmt/core.h:1068:29:   required from ‘typename std::enable_if<IS_PACKED, fmt::v5::internal::value<Context> >::type fmt::v5::internal::make_arg(const T&) [with bool IS_PACKED = true; Context = fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE>; T = char [11]; typename std::enable_if<IS_PACKED, value<Context> >::type = value<fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE> >]’
+ 1068 |   return make_value<Context>(value);
+      |          ~~~~~~~~~~~~~~~~~~~^~~~~~~
+/home/fmt/include/fmt/core.h:1179:51:   required from ‘fmt::v5::format_arg_store<Context, Args>::format_arg_store(const Args& ...) [with Context = fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE>; Args = {fmt::v5::emphasis, char [11]}]’
+ 1179 |     : data_{internal::make_arg<IS_PACKED, Context>(args)...} {}
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~
+/home/fmt/include/fmt/core.h:1368:47:   required from ‘fmt::v5::internal::checked_args<S, Args>::checked_args(const S&, const Args& ...) [with S = _IO_FILE*; Args = {fmt::v5::emphasis, char [11]}]’
+ 1368 |     format_arg_store<context, Args...>(args...) {
+      |                                               ^
+/home/fmt/include/fmt/core.h:1503:20:   required from ‘fmt::v5::enable_if_string_t<S, void> fmt::v5::print(const S&, const Args& ...) [with S = _IO_FILE*; Args = {emphasis, char [11]}; enable_if_string_t<S, void> = void]’
+ 1503 |          internal::checked_args<S, Args...>(format_str, args...));
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/test/format-impl-test.cc:231:3:   required from here
+  231 |   EXPECT_WRITE(stderr, fmt::print(stderr, fmt::emphasis::bold, "bold error"),
+      |                        ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:721:18: error: static assertion failed: formatting of non-void pointers is disallowed
+  721 |   static_assert(!sizeof(T), "formatting of non-void pointers is disallowed");
+      |                  ^~~~~~~~~
+/home/fmt/include/fmt/core.h:721:18: note: the comparison reduces to ‘(1 == 0)’
+/home/fmt/include/fmt/core.h: In instantiation of ‘struct fmt::v5::formatter<fmt::v5::emphasis, _IO_FILE, void>’:
+/home/fmt/include/fmt/core.h:622:56:   required from ‘static void fmt::v5::internal::value<Context>::format_custom_arg(const void*, Context&) [with T = fmt::v5::emphasis; Context = fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE>]’
+  622 |     typename Context::template formatter_type<T>::type f;
+      |                                                        ^
+/home/fmt/include/fmt/core.h:608:21:   required from ‘fmt::v5::internal::value<Context>::value(const T&) [with T = fmt::v5::emphasis; Context = fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE>]’
+  608 |     custom.format = &format_custom_arg<T>;
+      |                     ^~~~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:636:58:   required from ‘fmt::v5::internal::init<Context, T, TYPE>::operator fmt::v5::internal::value<Context>() const [with Context = fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE>; T = const fmt::v5::emphasis&; fmt::v5::internal::type TYPE = fmt::v5::internal::custom_type]’
+  636 |   FMT_CONSTEXPR operator value<Context>() const { return value<Context>(val); }
+      |                                                          ^~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:1068:29:   required from ‘typename std::enable_if<IS_PACKED, fmt::v5::internal::value<Context> >::type fmt::v5::internal::make_arg(const T&) [with bool IS_PACKED = true; Context = fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE>; T = fmt::v5::emphasis; typename std::enable_if<IS_PACKED, value<Context> >::type = value<fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE> >]’
+ 1068 |   return make_value<Context>(value);
+      |          ~~~~~~~~~~~~~~~~~~~^~~~~~~
+/home/fmt/include/fmt/core.h:1179:51:   required from ‘fmt::v5::format_arg_store<Context, Args>::format_arg_store(const Args& ...) [with Context = fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE>; Args = {fmt::v5::emphasis, char [11]}]’
+ 1179 |     : data_{internal::make_arg<IS_PACKED, Context>(args)...} {}
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~
+/home/fmt/include/fmt/core.h:1368:47:   required from ‘fmt::v5::internal::checked_args<S, Args>::checked_args(const S&, const Args& ...) [with S = _IO_FILE*; Args = {fmt::v5::emphasis, char [11]}]’
+ 1368 |     format_arg_store<context, Args...>(args...) {
+      |                                               ^
+/home/fmt/include/fmt/core.h:1503:20:   required from ‘fmt::v5::enable_if_string_t<S, void> fmt::v5::print(const S&, const Args& ...) [with S = _IO_FILE*; Args = {emphasis, char [11]}; enable_if_string_t<S, void> = void]’
+ 1503 |          internal::checked_args<S, Args...>(format_str, args...));
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/test/format-impl-test.cc:231:3:   required from here
+  231 |   EXPECT_WRITE(stderr, fmt::print(stderr, fmt::emphasis::bold, "bold error"),
+      |                        ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:492:50: error: static assertion failed: don't know how to format the type, include fmt/ostream.h if it provides an operator<< that should be used
+  492 |   static_assert(internal::no_formatter_error<T>::value,
+      |                                                  ^~~~~
+/home/fmt/include/fmt/core.h:492:50: note: ‘std::integral_constant<bool, false>::value’ evaluates to false
+/home/fmt/include/fmt/core.h: In instantiation of ‘struct fmt::v5::formatter<fmt::v5::text_style, _IO_FILE, void>’:
+/home/fmt/include/fmt/core.h:622:56:   required from ‘static void fmt::v5::internal::value<Context>::format_custom_arg(const void*, Context&) [with T = fmt::v5::text_style; Context = fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE>]’
+  622 |     typename Context::template formatter_type<T>::type f;
+      |                                                        ^
+/home/fmt/include/fmt/core.h:608:21:   required from ‘fmt::v5::internal::value<Context>::value(const T&) [with T = fmt::v5::text_style; Context = fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE>]’
+  608 |     custom.format = &format_custom_arg<T>;
+      |                     ^~~~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:636:58:   required from ‘fmt::v5::internal::init<Context, T, TYPE>::operator fmt::v5::internal::value<Context>() const [with Context = fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE>; T = const fmt::v5::text_style&; fmt::v5::internal::type TYPE = fmt::v5::internal::custom_type]’
+  636 |   FMT_CONSTEXPR operator value<Context>() const { return value<Context>(val); }
+      |                                                          ^~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:1068:29:   required from ‘typename std::enable_if<IS_PACKED, fmt::v5::internal::value<Context> >::type fmt::v5::internal::make_arg(const T&) [with bool IS_PACKED = true; Context = fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE>; T = fmt::v5::text_style; typename std::enable_if<IS_PACKED, value<Context> >::type = value<fmt::v5::basic_format_context<std::back_insert_iterator<basic_buffer<_IO_FILE> >, _IO_FILE> >]’
+ 1068 |   return make_value<Context>(value);
+      |          ~~~~~~~~~~~~~~~~~~~^~~~~~~
+/home/fmt/include/fmt/core.h:1179:51:   required from ‘fmt::v5::format_arg_store<Context, Args>::format_arg_store(const Args& ...) [with Context = fmt::v5::basic_format_context<std::back_insert_iterator<fmt::v5::internal::basic_buffer<_IO_FILE> >, _IO_FILE>; Args = {fmt::v5::text_style, char [9]}]’
+ 1179 |     : data_{internal::make_arg<IS_PACKED, Context>(args)...} {}
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~
+/home/fmt/include/fmt/core.h:1368:47:   required from ‘fmt::v5::internal::checked_args<S, Args>::checked_args(const S&, const Args& ...) [with S = _IO_FILE*; Args = {fmt::v5::text_style, char [9]}]’
+ 1368 |     format_arg_store<context, Args...>(args...) {
+      |                                               ^
+/home/fmt/include/fmt/core.h:1503:20:   required from ‘fmt::v5::enable_if_string_t<S, void> fmt::v5::print(const S&, const Args& ...) [with S = _IO_FILE*; Args = {text_style, char [9]}; enable_if_string_t<S, void> = void]’
+ 1503 |          internal::checked_args<S, Args...>(format_str, args...));
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/test/format-impl-test.cc:233:3:   required from here
+  233 |   EXPECT_WRITE(stderr, fmt::print(stderr, fg(fmt::color::blue), "blue log"),
+      |                        ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:492:50: error: static assertion failed: don't know how to format the type, include fmt/ostream.h if it provides an operator<< that should be used
+  492 |   static_assert(internal::no_formatter_error<T>::value,
+      |                                                  ^~~~~
+/home/fmt/include/fmt/core.h:492:50: note: ‘std::integral_constant<bool, false>::value’ evaluates to false
+gmake[2]: *** [test/CMakeFiles/format-impl-test.dir/build.make:76: test/CMakeFiles/format-impl-test.dir/format-impl-test.cc.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:343: test/CMakeFiles/format-impl-test.dir/all] Error 2
+gmake: *** [Makefile:166: all] Error 2
+Test project /home/fmt/build
+      Start  1: assert-test
+ 1/13 Test  #1: assert-test ......................   Passed    0.00 sec
+      Start  2: core-test
+ 2/13 Test  #2: core-test ........................   Passed    0.00 sec
+      Start  3: gtest-extra-test
+ 3/13 Test  #3: gtest-extra-test .................   Passed    0.00 sec
+      Start  4: format-test
+ 4/13 Test  #4: format-test ......................   Passed    0.01 sec
+      Start  5: format-impl-test
+Unable to find executable: /home/fmt/build/bin/format-impl-test
+Could not find executable /home/fmt/build/bin/format-impl-test
+Looked in the following places:
+/home/fmt/build/bin/format-impl-test
+/home/fmt/build/bin/format-impl-test
+/home/fmt/build/bin/Release/format-impl-test
+/home/fmt/build/bin/Release/format-impl-test
+/home/fmt/build/bin/Debug/format-impl-test
+/home/fmt/build/bin/Debug/format-impl-test
+/home/fmt/build/bin/MinSizeRel/format-impl-test
+/home/fmt/build/bin/MinSizeRel/format-impl-test
+/home/fmt/build/bin/RelWithDebInfo/format-impl-test
+/home/fmt/build/bin/RelWithDebInfo/format-impl-test
+/home/fmt/build/bin/Deployment/format-impl-test
+/home/fmt/build/bin/Deployment/format-impl-test
+/home/fmt/build/bin/Development/format-impl-test
+/home/fmt/build/bin/Development/format-impl-test
+home/fmt/build/bin/format-impl-test
+home/fmt/build/bin/format-impl-test
+home/fmt/build/bin/Release/format-impl-test
+home/fmt/build/bin/Release/format-impl-test
+home/fmt/build/bin/Debug/format-impl-test
+home/fmt/build/bin/Debug/format-impl-test
+home/fmt/build/bin/MinSizeRel/format-impl-test
+home/fmt/build/bin/MinSizeRel/format-impl-test
+home/fmt/build/bin/RelWithDebInfo/format-impl-test
+home/fmt/build/bin/RelWithDebInfo/format-impl-test
+home/fmt/build/bin/Deployment/format-impl-test
+home/fmt/build/bin/Deployment/format-impl-test
+home/fmt/build/bin/Development/format-impl-test
+home/fmt/build/bin/Development/format-impl-test
+ 5/13 Test  #5: format-impl-test .................***Not Run   0.00 sec
+      Start  6: locale-test
+Unable to find executable: /home/fmt/build/bin/locale-test
+Could not find executable /home/fmt/build/bin/locale-test
+Looked in the following places:
+/home/fmt/build/bin/locale-test
+/home/fmt/build/bin/locale-test
+/home/fmt/build/bin/Release/locale-test
+/home/fmt/build/bin/Release/locale-test
+/home/fmt/build/bin/Debug/locale-test
+/home/fmt/build/bin/Debug/locale-test
+/home/fmt/build/bin/MinSizeRel/locale-test
+/home/fmt/build/bin/MinSizeRel/locale-test
+/home/fmt/build/bin/RelWithDebInfo/locale-test
+/home/fmt/build/bin/RelWithDebInfo/locale-test
+/home/fmt/build/bin/Deployment/locale-test
+/home/fmt/build/bin/Deployment/locale-test
+/home/fmt/build/bin/Development/locale-test
+/home/fmt/build/bin/Development/locale-test
+home/fmt/build/bin/locale-test
+home/fmt/build/bin/locale-test
+home/fmt/build/bin/Release/locale-test
+home/fmt/build/bin/Release/locale-test
+home/fmt/build/bin/Debug/locale-test
+home/fmt/build/bin/Debug/locale-test
+home/fmt/build/bin/MinSizeRel/locale-test
+home/fmt/build/bin/MinSizeRel/locale-test
+home/fmt/build/bin/RelWithDebInfo/locale-test
+home/fmt/build/bin/RelWithDebInfo/locale-test
+home/fmt/build/bin/Deployment/locale-test
+home/fmt/build/bin/Deployment/locale-test
+home/fmt/build/bin/Development/locale-test
+home/fmt/build/bin/Development/locale-test
+ 6/13 Test  #6: locale-test ......................***Not Run   0.00 sec
+      Start  7: ostream-test
+Could not find executable /home/fmt/build/bin/ostream-test
+Looked in the following places:
+Unable to find executable: /home/fmt/build/bin/ostream-test
+/home/fmt/build/bin/ostream-test
+/home/fmt/build/bin/ostream-test
+/home/fmt/build/bin/Release/ostream-test
+/home/fmt/build/bin/Release/ostream-test
+/home/fmt/build/bin/Debug/ostream-test
+/home/fmt/build/bin/Debug/ostream-test
+/home/fmt/build/bin/MinSizeRel/ostream-test
+/home/fmt/build/bin/MinSizeRel/ostream-test
+/home/fmt/build/bin/RelWithDebInfo/ostream-test
+/home/fmt/build/bin/RelWithDebInfo/ostream-test
+/home/fmt/build/bin/Deployment/ostream-test
+/home/fmt/build/bin/Deployment/ostream-test
+/home/fmt/build/bin/Development/ostream-test
+/home/fmt/build/bin/Development/ostream-test
+home/fmt/build/bin/ostream-test
+home/fmt/build/bin/ostream-test
+home/fmt/build/bin/Release/ostream-test
+home/fmt/build/bin/Release/ostream-test
+home/fmt/build/bin/Debug/ostream-test
+home/fmt/build/bin/Debug/ostream-test
+home/fmt/build/bin/MinSizeRel/ostream-test
+home/fmt/build/bin/MinSizeRel/ostream-test
+home/fmt/build/bin/RelWithDebInfo/ostream-test
+home/fmt/build/bin/RelWithDebInfo/ostream-test
+home/fmt/build/bin/Deployment/ostream-test
+home/fmt/build/bin/Deployment/ostream-test
+home/fmt/build/bin/Development/ostream-test
+home/fmt/build/bin/Development/ostream-test
+ 7/13 Test  #7: ostream-test .....................***Not Run   0.00 sec
+      Start  8: printf-test
+Could not find executable /home/fmt/build/bin/printf-test
+Looked in the following places:
+/home/fmt/build/bin/printf-test
+/home/fmt/build/bin/printf-test
+/home/fmt/build/bin/Release/printf-test
+/home/fmt/build/bin/Release/printf-test
+/home/fmt/build/bin/Debug/printf-test
+/home/fmt/build/bin/Debug/printf-test
+/home/fmt/build/bin/MinSizeRel/printf-test
+/home/fmt/build/bin/MinSizeRel/printf-test
+/home/fmt/build/bin/RelWithDebInfo/printf-test
+/home/fmt/build/bin/RelWithDebInfo/printf-test
+/home/fmt/build/bin/Deployment/printf-test
+/home/fmt/build/bin/Deployment/printf-test
+/home/fmt/build/bin/Development/printf-test
+/home/fmt/build/bin/Development/printf-test
+home/fmt/build/bin/printf-test
+home/fmt/build/bin/printf-test
+home/fmt/build/bin/Release/printf-test
+home/fmt/build/bin/Release/printf-test
+home/fmt/build/bin/Debug/printf-test
+home/fmt/build/bin/Debug/printf-test
+home/fmt/build/bin/MinSizeRel/printf-test
+home/fmt/build/bin/MinSizeRel/printf-test
+home/fmt/build/bin/RelWithDebInfo/printf-test
+home/fmt/build/bin/RelWithDebInfo/printf-test
+home/fmt/build/bin/Deployment/printf-test
+home/fmt/build/bin/Deployment/printf-test
+home/fmt/build/bin/Development/printf-test
+home/fmt/build/bin/Development/printf-test
+ 8/13 Test  #8: printf-test ......................***Not Run   0.00 sec
+      Start  9: time-test
+Could not find executable /home/fmt/build/bin/time-test
+Looked in the following places:
+/home/fmt/build/bin/time-test
+/home/fmt/build/bin/time-test
+/home/fmt/build/bin/Release/time-test
+/home/fmt/build/bin/Release/time-test
+/home/fmt/build/bin/Debug/time-test
+/home/fmt/build/bin/Debug/time-test
+/home/fmt/build/bin/MinSizeRel/time-test
+/home/fmt/build/bin/MinSizeRel/time-test
+/home/fmt/build/bin/RelWithDebInfo/time-test
+/home/fmt/build/bin/RelWithDebInfo/time-test
+/home/fmt/build/bin/Deployment/time-test
+/home/fmt/build/bin/Deployment/time-test
+/home/fmt/build/bin/Development/time-test
+/home/fmt/build/bin/Development/time-test
+home/fmt/build/bin/time-test
+home/fmt/build/bin/time-test
+home/fmt/build/bin/Release/time-test
+home/fmt/build/bin/Release/time-test
+home/fmt/build/bin/Debug/time-test
+Unable to find executable: /home/fmt/build/bin/printf-test
+home/fmt/build/bin/Debug/time-test
+home/fmt/build/bin/MinSizeRel/time-test
+home/fmt/build/bin/MinSizeRel/time-test
+Unable to find executable: /home/fmt/build/bin/time-test
+Unable to find executable: /home/fmt/build/bin/custom-formatter-test
+home/fmt/build/bin/RelWithDebInfo/time-test
+home/fmt/build/bin/RelWithDebInfo/time-test
+home/fmt/build/bin/Deployment/time-test
+home/fmt/build/bin/Deployment/time-test
+home/fmt/build/bin/Development/time-test
+home/fmt/build/bin/Development/time-test
+ 9/13 Test  #9: time-test ........................***Not Run   0.00 sec
+      Start 10: custom-formatter-test
+Could not find executable /home/fmt/build/bin/custom-formatter-test
+Looked in the following places:
+/home/fmt/build/bin/custom-formatter-test
+/home/fmt/build/bin/custom-formatter-test
+/home/fmt/build/bin/Release/custom-formatter-test
+/home/fmt/build/bin/Release/custom-formatter-test
+/home/fmt/build/bin/Debug/custom-formatter-test
+/home/fmt/build/bin/Debug/custom-formatter-test
+/home/fmt/build/bin/MinSizeRel/custom-formatter-test
+/home/fmt/build/bin/MinSizeRel/custom-formatter-test
+/home/fmt/build/bin/RelWithDebInfo/custom-formatter-test
+/home/fmt/build/bin/RelWithDebInfo/custom-formatter-test
+/home/fmt/build/bin/Deployment/custom-formatter-test
+/home/fmt/build/bin/Deployment/custom-formatter-test
+/home/fmt/build/bin/Development/custom-formatter-test
+/home/fmt/build/bin/Development/custom-formatter-test
+home/fmt/build/bin/custom-formatter-test
+home/fmt/build/bin/custom-formatter-test
+home/fmt/build/bin/Release/custom-formatter-test
+home/fmt/build/bin/Release/custom-formatter-test
+home/fmt/build/bin/Debug/custom-formatter-test
+home/fmt/build/bin/Debug/custom-formatter-test
+home/fmt/build/bin/MinSizeRel/custom-formatter-test
+home/fmt/build/bin/MinSizeRel/custom-formatter-test
+home/fmt/build/bin/RelWithDebInfo/custom-formatter-test
+home/fmt/build/bin/RelWithDebInfo/custom-formatter-test
+home/fmt/build/bin/Deployment/custom-formatter-test
+home/fmt/build/bin/Deployment/custom-formatter-test
+home/fmt/build/bin/Development/custom-formatter-test
+home/fmt/build/bin/Development/custom-formatter-test
+10/13 Test #10: custom-formatter-test ............***Not Run   0.00 sec
+      Start 11: ranges-test
+Unable to find executable: /home/fmt/build/bin/ranges-test
+Could not find executable /home/fmt/build/bin/ranges-test
+Looked in the following places:
+/home/fmt/build/bin/ranges-test
+/home/fmt/build/bin/ranges-test
+/home/fmt/build/bin/Release/ranges-test
+/home/fmt/build/bin/Release/ranges-test
+/home/fmt/build/bin/Debug/ranges-test
+/home/fmt/build/bin/Debug/ranges-test
+/home/fmt/build/bin/MinSizeRel/ranges-test
+/home/fmt/build/bin/MinSizeRel/ranges-test
+/home/fmt/build/bin/RelWithDebInfo/ranges-test
+/home/fmt/build/bin/RelWithDebInfo/ranges-test
+/home/fmt/build/bin/Deployment/ranges-test
+/home/fmt/build/bin/Deployment/ranges-test
+/home/fmt/build/bin/Development/ranges-test
+/home/fmt/build/bin/Development/ranges-test
+home/fmt/build/bin/ranges-test
+home/fmt/build/bin/ranges-test
+home/fmt/build/bin/Release/ranges-test
+home/fmt/build/bin/Release/ranges-test
+home/fmt/build/bin/Debug/ranges-test
+home/fmt/build/bin/Debug/ranges-test
+home/fmt/build/bin/MinSizeRel/ranges-test
+home/fmt/build/bin/MinSizeRel/ranges-test
+home/fmt/build/bin/RelWithDebInfo/ranges-test
+home/fmt/build/bin/RelWithDebInfo/ranges-test
+home/fmt/build/bin/Deployment/ranges-test
+home/fmt/build/bin/Deployment/ranges-test
+home/fmt/build/bin/Development/ranges-test
+home/fmt/build/bin/Development/ranges-test
+11/13 Test #11: ranges-test ......................***Not Run   0.00 sec
+      Start 12: posix-mock-test
+Could not find executable /home/fmt/build/bin/posix-mock-test
+Looked in the following places:
+/home/fmt/build/bin/posix-mock-test
+/home/fmt/build/bin/posix-mock-test
+/home/fmt/build/bin/Release/posix-mock-test
+/home/fmt/build/bin/Release/posix-mock-test
+/home/fmt/build/bin/Debug/posix-mock-test
+/home/fmt/build/bin/Debug/posix-mock-test
+/home/fmt/build/bin/MinSizeRel/posix-mock-test
+Unable to find executable: /home/fmt/build/bin/posix-mock-test
+/home/fmt/build/bin/MinSizeRel/posix-mock-test
+/home/fmt/build/bin/RelWithDebInfo/posix-mock-test
+/home/fmt/build/bin/RelWithDebInfo/posix-mock-test
+/home/fmt/build/bin/Deployment/posix-mock-test
+/home/fmt/build/bin/Deployment/posix-mock-test
+/home/fmt/build/bin/Development/posix-mock-test
+/home/fmt/build/bin/Development/posix-mock-test
+home/fmt/build/bin/posix-mock-test
+home/fmt/build/bin/posix-mock-test
+home/fmt/build/bin/Release/posix-mock-test
+home/fmt/build/bin/Release/posix-mock-test
+home/fmt/build/bin/Debug/posix-mock-test
+home/fmt/build/bin/Debug/posix-mock-test
+home/fmt/build/bin/MinSizeRel/posix-mock-test
+home/fmt/build/bin/MinSizeRel/posix-mock-test
+home/fmt/build/bin/RelWithDebInfo/posix-mock-test
+home/fmt/build/bin/RelWithDebInfo/posix-mock-test
+home/fmt/build/bin/Deployment/posix-mock-test
+home/fmt/build/bin/Deployment/posix-mock-test
+home/fmt/build/bin/Development/posix-mock-test
+home/fmt/build/bin/Development/posix-mock-test
+12/13 Test #12: posix-mock-test ..................***Not Run   0.00 sec
+      Start 13: posix-test
+Could not find executable /home/fmt/build/bin/posix-test
+Looked in the following places:
+/home/fmt/build/bin/posix-test
+/home/fmt/build/bin/posix-test
+/home/fmt/build/bin/Release/posix-test
+/home/fmt/build/bin/Release/posix-test
+/home/fmt/build/bin/Debug/posix-test
+/home/fmt/build/bin/Debug/posix-test
+/home/fmt/build/bin/MinSizeRel/posix-test
+/home/fmt/build/bin/MinSizeRel/posix-test
+/home/fmt/build/bin/RelWithDebInfo/posix-test
+/home/fmt/build/bin/RelWithDebInfo/posix-test
+/home/fmt/build/bin/Deployment/posix-test
+/home/fmt/build/bin/Deployment/posix-test
+/home/fmt/build/bin/Development/posix-test
+/home/fmt/build/bin/Development/posix-test
+home/fmt/build/bin/posix-test
+Unable to find executable: /home/fmt/build/bin/posix-test
+home/fmt/build/bin/posix-test
+home/fmt/build/bin/Release/posix-test
+home/fmt/build/bin/Release/posix-test
+home/fmt/build/bin/Debug/posix-test
+home/fmt/build/bin/Debug/posix-test
+home/fmt/build/bin/MinSizeRel/posix-test
+home/fmt/build/bin/MinSizeRel/posix-test
+home/fmt/build/bin/RelWithDebInfo/posix-test
+home/fmt/build/bin/RelWithDebInfo/posix-test
+home/fmt/build/bin/Deployment/posix-test
+home/fmt/build/bin/Deployment/posix-test
+home/fmt/build/bin/Development/posix-test
+home/fmt/build/bin/Development/posix-test
+13/13 Test #13: posix-test .......................***Not Run   0.00 sec
+
+31% tests passed, 9 tests failed out of 13
+
+Total Test time (real) =   0.02 sec
+
+The following tests FAILED:
+	  5 - format-impl-test (Not Run)
+	  6 - locale-test (Not Run)
+	  7 - ostream-test (Not Run)
+	  8 - printf-test (Not Run)
+	  9 - time-test (Not Run)
+	 10 - custom-formatter-test (Not Run)
+	 11 - ranges-test (Not Run)
+	 12 - posix-mock-test (Not Run)
+	 13 - posix-test (Not Run)
+Errors while running CTest
+Output from these tests are in: /home/fmt/build/Testing/Temporary/LastTest.log
+Use "--rerun-failed --output-on-failure" to re-run the failed cases verbosely.

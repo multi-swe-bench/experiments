@@ -1,0 +1,807 @@
+检测到 Debian 12 系统
+进入12+系统
+替换系统源完成
+==============================================================================
+Get:1 http://mirrors.tools.huawei.com/debian bookworm InRelease [151 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm-updates InRelease [55.4 kB]
+Get:3 http://mirrors.tools.huawei.com/debian-security bookworm-security InRelease [48.0 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 Packages [8790 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm-updates/main amd64 Packages [6924 B]
+Get:6 http://mirrors.tools.huawei.com/debian-security bookworm-security/main amd64 Packages [316 kB]
+Fetched 9368 kB in 1s (7064 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+patch is already the newest version (2.7.6-7).
+libpcre2-dev is already the newest version (10.42-1).
+libpcre2-dev set to manually installed.
+libncurses-dev is already the newest version (6.4-4).
+libncurses-dev set to manually installed.
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+The following additional packages will be installed:
+  libonig5 libssl3 openssl
+Suggested packages:
+  libssl-doc
+The following NEW packages will be installed:
+  build-essential libonig-dev libonig5
+The following packages will be upgraded:
+  libssl-dev libssl3 openssl
+3 upgraded, 3 newly installed, 0 to remove and 148 not upgraded.
+Need to get 6210 kB of archives.
+After this operation, 801 kB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 build-essential amd64 12.9 [7704 B]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig5 amd64 6.9.8-1 [188 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig-dev amd64 6.9.8-1 [96.7 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl-dev amd64 3.0.20-1~deb12u2 [2443 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl3 amd64 3.0.20-1~deb12u2 [2036 kB]
+Get:6 http://mirrors.tools.huawei.com/debian bookworm/main amd64 openssl amd64 3.0.20-1~deb12u2 [1439 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 6210 kB in 0s (15.9 MB/s)
+Selecting previously unselected package build-essential.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 26550 files and directories currently installed.)
+Preparing to unpack .../0-build-essential_12.9_amd64.deb ...
+Unpacking build-essential (12.9) ...
+Selecting previously unselected package libonig5:amd64.
+Preparing to unpack .../1-libonig5_6.9.8-1_amd64.deb ...
+Unpacking libonig5:amd64 (6.9.8-1) ...
+Selecting previously unselected package libonig-dev.
+Preparing to unpack .../2-libonig-dev_6.9.8-1_amd64.deb ...
+Unpacking libonig-dev (6.9.8-1) ...
+Preparing to unpack .../3-libssl-dev_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl-dev:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../4-libssl3_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl3:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../5-openssl_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking openssl (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Setting up libssl3:amd64 (3.0.20-1~deb12u2) ...
+Setting up libssl-dev:amd64 (3.0.20-1~deb12u2) ...
+Setting up build-essential (12.9) ...
+Setting up openssl (3.0.20-1~deb12u2) ...
+Setting up libonig5:amd64 (6.9.8-1) ...
+Setting up libonig-dev (6.9.8-1) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+cmake is already the newest version (3.25.1-1).
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+0 upgraded, 0 newly installed, 0 to remove and 148 not upgraded.
+=== RUN FULL via /home/fix-run.sh (tee log) ===
+#!/bin/bash
+set -e
+
+cd /home/fmt
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake ..  
+cmake --build .
+ctest
+
+=========================================
+当前目录：/home
+当前目录内容：add_certificate_for_c.sh check_git_changes.sh fix-run.sh fix.patch fmt prepare.sh run.sh test-run.sh test.patch
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+wget is already the newest version (1.21.3-1+deb12u1).
+0 upgraded, 0 newly installed, 0 to remove and 148 not upgraded.
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libgpm2 libsodium23 vim-common vim-runtime xxd
+Suggested packages:
+  gpm ctags vim-doc vim-scripts
+The following NEW packages will be installed:
+  libgpm2 libsodium23 vim vim-common vim-runtime xxd
+0 upgraded, 6 newly installed, 0 to remove and 148 not upgraded.
+Need to get 8980 kB of archives.
+After this operation, 41.9 MB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-common all 2:9.0.1378-2+deb12u2 [125 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libgpm2 amd64 1.20.7-10+b1 [14.2 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libsodium23 amd64 1.0.18-1+deb12u1 [162 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-runtime all 2:9.0.1378-2+deb12u2 [7027 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim amd64 2:9.0.1378-2+deb12u2 [1568 kB]
+Get:6 http://mirrors.tools.huawei.com/debian bookworm/main amd64 xxd amd64 2:9.0.1378-2+deb12u2 [84.1 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 8980 kB in 0s (20.5 MB/s)
+Selecting previously unselected package vim-common.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 26602 files and directories currently installed.)
+Preparing to unpack .../0-vim-common_2%3a9.0.1378-2+deb12u2_all.deb ...
+Unpacking vim-common (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package libgpm2:amd64.
+Preparing to unpack .../1-libgpm2_1.20.7-10+b1_amd64.deb ...
+Unpacking libgpm2:amd64 (1.20.7-10+b1) ...
+Selecting previously unselected package libsodium23:amd64.
+Preparing to unpack .../2-libsodium23_1.0.18-1+deb12u1_amd64.deb ...
+Unpacking libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Selecting previously unselected package vim-runtime.
+Preparing to unpack .../3-vim-runtime_2%3a9.0.1378-2+deb12u2_all.deb ...
+Adding 'diversion of /usr/share/vim/vim90/doc/help.txt to /usr/share/vim/vim90/doc/help.txt.vim-tiny by vim-runtime'
+Adding 'diversion of /usr/share/vim/vim90/doc/tags to /usr/share/vim/vim90/doc/tags.vim-tiny by vim-runtime'
+Unpacking vim-runtime (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package vim.
+Preparing to unpack .../4-vim_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking vim (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package xxd.
+Preparing to unpack .../5-xxd_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking xxd (2:9.0.1378-2+deb12u2) ...
+Setting up libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Setting up libgpm2:amd64 (1.20.7-10+b1) ...
+Setting up xxd (2:9.0.1378-2+deb12u2) ...
+Setting up vim-common (2:9.0.1378-2+deb12u2) ...
+Setting up vim-runtime (2:9.0.1378-2+deb12u2) ...
+Setting up vim (2:9.0.1378-2+deb12u2) ...
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/ex (ex) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rview (rview) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rvim (rvim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vi (vi) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/view (view) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vim (vim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vimdiff (vimdiff) in auto mode
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Processing triggers for hicolor-icon-theme (0.17-2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libcurl3-gnutls libcurl4 libcurl4-openssl-dev
+Suggested packages:
+  libcurl4-doc libidn-dev libldap2-dev librtmp-dev libssh2-1-dev
+The following packages will be upgraded:
+  curl libcurl3-gnutls libcurl4 libcurl4-openssl-dev
+4 upgraded, 0 newly installed, 0 to remove and 144 not upgraded.
+Need to get 1587 kB of archives.
+After this operation, 1024 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4-openssl-dev amd64 7.88.1-10+deb12u15 [493 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 curl amd64 7.88.1-10+deb12u15 [316 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4 amd64 7.88.1-10+deb12u15 [392 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl3-gnutls amd64 7.88.1-10+deb12u15 [386 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 1587 kB in 0s (5065 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 28760 files and directories currently installed.)
+Preparing to unpack .../libcurl4-openssl-dev_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../curl_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking curl (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl4_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl3-gnutls_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Setting up libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) ...
+Setting up libcurl4:amd64 (7.88.1-10+deb12u15) ...
+Setting up curl (7.88.1-10+deb12u15) ...
+Setting up libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+=== 配置证书 (abcert) ===
+[abcert][INFO] Created temporary directory .tmp.pems.gd39sQqK
+[abcert][INFO] Operating system: Debian GNU/Linux 12 (bookworm)
+[abcert][INFO] Installing certificates
+'.tmp.pems.gd39sQqK/HWBPITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWBPITEnterpriseCA1.crt'
+'.tmp.pems.gd39sQqK/HWITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWITEnterpriseCA1.crt'
+'.tmp.pems.gd39sQqK/HuaweiBPITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiBPITRootCA.crt'
+'.tmp.pems.gd39sQqK/HuaweiITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiITRootCA.crt'
+'.tmp.pems.gd39sQqK/HuaweiWebSecureInternetGatewayCA.pem' -> '/usr/local/share/ca-certificates/HuaweiWebSecureInternetGatewayCA.crt'
+Updating certificates in /etc/ssl/certs...
+rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+5 added, 0 removed; done.
+Running hooks in /etc/ca-certificates/update.d...
+done.
+[abcert][INFO] Removed .tmp.pems.gd39sQqK
+abcert 安装完成
+================git=====================
+http.version=HTTP/1.1
+http.postbuffer=524288000
+http.timeout=600
+================git=====================
+================env=====================
+HTTPS_PROXY=http://test:test@proxysg.huawei.com:8080/
+no_proxy=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+HOSTNAME=fa36628ad769
+GCC_MIRRORS=https://ftpmirror.gnu.org/gcc 		https://mirrors.kernel.org/gnu/gcc 		https://bigsearcher.com/mirrors/gcc/releases 		http://www.netgull.com/gcc/releases 		https://ftpmirror.gnu.org/gcc 		https://sourceware.org/pub/gcc/releases 		ftp://ftp.gnu.org/gnu/gcc
+HOME=/root
+OLDPWD=/home
+NO_PROXY=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+https_proxy=http://test:test@proxysg.huawei.com:8080/
+GPG_KEYS=B215C1633BCA0477615F1B35A5B3A004745C015A 	B3C42148A44E6983B3E4CC0793FA9B1AB75C61B8 	90AA470469D3965A87A5DCB494D03953902C9419 	80F98B2E0DAB6C8281BDF541A7C8C3B2F71EDF1C 	7F74F97C103468EE5D750B583AB00996FC26A641 	33C235A34C46AA3FFB293709A328C3A2C3C45C06 	D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62
+http_proxy=http://test:test@proxysg.huawei.com:8080/
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+GIT_SSL_NO_VERIFY=true
+LANG=C.UTF-8
+DEBIAN_FRONTEND=noninteractive
+LC_ALL=C.UTF-8
+PWD=/tmp/tmp.fRVmv1XjDd/abcert_install
+HTTP_PROXY=http://test:test@proxysg.huawei.com:8080/
+GCC_VERSION=14.2.0
+================env=====================
+#!/bin/bash
+# set -e
+
+cd /home/fmt
+git ls-files --others --exclude-standard | xargs -I {} mv {} {}.bak
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake ..  
+cmake --build .
+ctest
+
+=========================================
+patching file test/ranges-test.cc
+patching file include/fmt/std.h
+-- CMake version: 3.25.1
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Module support is disabled.
+-- Version: 9.1.1
+-- Build type: Release
+-- Target 'doc' disabled (requires doxygen)
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Looking for strptime
+-- Looking for strptime - found
+-- FMT_PEDANTIC: OFF
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/fmt/build
+[  1%] Building CXX object CMakeFiles/fmt.dir/src/format.cc.o
+[  2%] Building CXX object CMakeFiles/fmt.dir/src/os.cc.o
+[  4%] Linking CXX static library libfmt.a
+[  4%] Built target fmt
+[  5%] Building CXX object test/gtest/CMakeFiles/gtest.dir/gmock-gtest-all.cc.o
+[  7%] Linking CXX static library libgtest.a
+[  7%] Built target gtest
+[  8%] Building CXX object test/CMakeFiles/test-main.dir/test-main.cc.o
+[ 10%] Building CXX object test/CMakeFiles/test-main.dir/gtest-extra.cc.o
+[ 11%] Building CXX object test/CMakeFiles/test-main.dir/util.cc.o
+[ 13%] Linking CXX static library libtest-main.a
+[ 13%] Built target test-main
+[ 14%] Building CXX object test/CMakeFiles/args-test.dir/args-test.cc.o
+[ 16%] Linking CXX executable ../bin/args-test
+[ 16%] Built target args-test
+[ 17%] Building CXX object test/CMakeFiles/assert-test.dir/assert-test.cc.o
+[ 19%] Linking CXX executable ../bin/assert-test
+[ 19%] Built target assert-test
+[ 20%] Building CXX object test/CMakeFiles/chrono-test.dir/chrono-test.cc.o
+[ 22%] Linking CXX executable ../bin/chrono-test
+[ 22%] Built target chrono-test
+[ 23%] Building CXX object test/CMakeFiles/color-test.dir/color-test.cc.o
+[ 25%] Linking CXX executable ../bin/color-test
+[ 25%] Built target color-test
+[ 26%] Building CXX object test/CMakeFiles/core-test.dir/core-test.cc.o
+[ 28%] Linking CXX executable ../bin/core-test
+[ 28%] Built target core-test
+[ 29%] Building CXX object test/CMakeFiles/gtest-extra-test.dir/gtest-extra-test.cc.o
+[ 31%] Linking CXX executable ../bin/gtest-extra-test
+[ 31%] Built target gtest-extra-test
+[ 32%] Building CXX object test/CMakeFiles/format-test.dir/format-test.cc.o
+[ 34%] Linking CXX executable ../bin/format-test
+[ 34%] Built target format-test
+[ 35%] Building CXX object test/CMakeFiles/format-impl-test.dir/format-impl-test.cc.o
+[ 37%] Building CXX object test/CMakeFiles/format-impl-test.dir/header-only-test.cc.o
+[ 38%] Building CXX object test/CMakeFiles/format-impl-test.dir/test-main.cc.o
+[ 40%] Building CXX object test/CMakeFiles/format-impl-test.dir/gtest-extra.cc.o
+[ 41%] Building CXX object test/CMakeFiles/format-impl-test.dir/util.cc.o
+[ 43%] Building CXX object test/CMakeFiles/format-impl-test.dir/__/src/os.cc.o
+[ 44%] Linking CXX executable ../bin/format-impl-test
+[ 44%] Built target format-impl-test
+[ 46%] Building CXX object test/CMakeFiles/ostream-test.dir/ostream-test.cc.o
+[ 47%] Linking CXX executable ../bin/ostream-test
+[ 47%] Built target ostream-test
+[ 49%] Building CXX object test/CMakeFiles/compile-test.dir/compile-test.cc.o
+[ 50%] Linking CXX executable ../bin/compile-test
+[ 50%] Built target compile-test
+[ 52%] Building CXX object test/CMakeFiles/compile-fp-test.dir/compile-fp-test.cc.o
+[ 53%] Building CXX object test/CMakeFiles/compile-fp-test.dir/test-main.cc.o
+[ 55%] Building CXX object test/CMakeFiles/compile-fp-test.dir/gtest-extra.cc.o
+[ 56%] Building CXX object test/CMakeFiles/compile-fp-test.dir/util.cc.o
+[ 58%] Building CXX object test/CMakeFiles/compile-fp-test.dir/__/src/os.cc.o
+[ 59%] Linking CXX executable ../bin/compile-fp-test
+[ 59%] Built target compile-fp-test
+[ 61%] Building CXX object test/CMakeFiles/printf-test.dir/printf-test.cc.o
+[ 62%] Linking CXX executable ../bin/printf-test
+[ 62%] Built target printf-test
+[ 64%] Building CXX object test/CMakeFiles/ranges-test.dir/ranges-test.cc.o
+/home/fmt/test/ranges-test.cc: In member function ‘virtual void ranges_test_container_adaptor_Test::TestBody()’:
+/home/fmt/test/ranges-test.cc:414:24: error: ‘is_container_adaptor_like’ has not been declared in ‘fmt::v9::detail’
+  414 |     using fmt::detail::is_container_adaptor_like;
+      |                        ^~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/test/ranges-test.cc:416:19: error: ‘is_container_adaptor_like’ was not declared in this scope
+  416 |     static_assert(is_container_adaptor_like<std::stack<T>>::value, "");
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/test/ranges-test.cc:416:57: error: expected primary-expression before ‘>’ token
+  416 |     static_assert(is_container_adaptor_like<std::stack<T>>::value, "");
+      |                                                         ^~
+/home/fmt/test/ranges-test.cc:416:61: error: ‘::value’ has not been declared
+  416 |     static_assert(is_container_adaptor_like<std::stack<T>>::value, "");
+      |                                                             ^~~~~
+/home/fmt/test/ranges-test.cc:417:57: error: expected primary-expression before ‘>’ token
+  417 |     static_assert(is_container_adaptor_like<std::queue<T>>::value, "");
+      |                                                         ^~
+/home/fmt/test/ranges-test.cc:417:61: error: ‘::value’ has not been declared
+  417 |     static_assert(is_container_adaptor_like<std::queue<T>>::value, "");
+      |                                                             ^~~~~
+/home/fmt/test/ranges-test.cc:418:66: error: expected primary-expression before ‘>’ token
+  418 |     static_assert(is_container_adaptor_like<std::priority_queue<T>>::value, "");
+      |                                                                  ^~
+/home/fmt/test/ranges-test.cc:418:70: error: ‘::value’ has not been declared
+  418 |     static_assert(is_container_adaptor_like<std::priority_queue<T>>::value, "");
+      |                                                                      ^~~~~
+/home/fmt/test/ranges-test.cc:419:59: error: expected primary-expression before ‘>’ token
+  419 |     static_assert(!is_container_adaptor_like<std::vector<T>>::value, "");
+      |                                                           ^~
+/home/fmt/test/ranges-test.cc:419:63: error: ‘::value’ has not been declared
+  419 |     static_assert(!is_container_adaptor_like<std::vector<T>>::value, "");
+      |                                                               ^~~~~
+In file included from /home/fmt/include/fmt/format.h:49,
+                 from /home/fmt/include/fmt/ranges.h:19,
+                 from /home/fmt/test/ranges-test.cc:12:
+/home/fmt/include/fmt/core.h: In instantiation of ‘constexpr fmt::v9::detail::value<Context> fmt::v9::detail::make_value(T&&) [with Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; T = std::stack<int>&]’:
+/home/fmt/include/fmt/core.h:1775:29:   required from ‘constexpr fmt::v9::detail::value<Context> fmt::v9::detail::make_arg(T&&) [with bool IS_PACKED = true; Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; type <anonymous> = fmt::v9::detail::type::custom_type; T = std::stack<int>&; typename std::enable_if<IS_PACKED, int>::type <anonymous> = 0]’
+ 1775 |   return make_value<Context>(val);
+      |          ~~~~~~~~~~~~~~~~~~~^~~~~
+/home/fmt/include/fmt/core.h:1892:77:   required from ‘constexpr fmt::v9::format_arg_store<Context, Args>::format_arg_store(T&& ...) [with T = {std::stack<int, std::deque<int, std::allocator<int> > >&}; Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; Args = {std::stack<int, std::deque<int, std::allocator<int> > >}]’
+ 1890 |         data_{detail::make_arg<
+      |               ~~~~~~~~~~~~~~~~~                                              
+ 1891 |             is_packed, Context,
+      |             ~~~~~~~~~~~~~~~~~~~                                              
+ 1892 |             detail::mapped_type_constant<remove_cvref_t<T>, Context>::value>(
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+ 1893 |             FMT_FORWARD(args))...} {
+      |             ~~~~~~~~~~~~~~~~~~                                               
+/home/fmt/include/fmt/core.h:1909:31:   required from ‘std::string fmt::v9::format(format_string<T ...>, T&& ...) [with T = {std::stack<int, std::deque<int, std::allocator<int> > >&}; std::string = std::__cxx11::basic_string<char>; format_string<T ...> = basic_format_string<char, std::stack<int, std::deque<int, std::allocator<int> > >&>]’
+ 1909 |   return {FMT_FORWARD(args)...};
+      |                               ^
+/home/fmt/test/ranges-test.cc:426:5:   required from here
+  426 |     EXPECT_EQ(fmt::format("{}", s), "[1, 2]");
+      |               ~~~~~~~~~~~^~~~~~~~~
+/home/fmt/include/fmt/core.h:2895:44:   in ‘constexpr’ expansion of ‘fmt::v9::make_format_args<>(args#0)’
+/home/fmt/include/fmt/core.h:1755:7: error: static assertion failed: Cannot format an argument. To make type T formattable provide a formatter<T> specialization: https://fmt.dev/latest/api.html#udt
+ 1755 |       formattable,
+      |       ^~~~~~~~~~~
+/home/fmt/include/fmt/core.h:1755:7: note: ‘formattable’ evaluates to false
+/home/fmt/include/fmt/core.h: In instantiation of ‘constexpr fmt::v9::detail::value<Context> fmt::v9::detail::make_value(T&&) [with Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; T = const std::stack<int>&]’:
+/home/fmt/include/fmt/core.h:1775:29:   required from ‘constexpr fmt::v9::detail::value<Context> fmt::v9::detail::make_arg(T&&) [with bool IS_PACKED = true; Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; type <anonymous> = fmt::v9::detail::type::custom_type; T = const std::stack<int>&; typename std::enable_if<IS_PACKED, int>::type <anonymous> = 0]’
+ 1775 |   return make_value<Context>(val);
+      |          ~~~~~~~~~~~~~~~~~~~^~~~~
+/home/fmt/include/fmt/core.h:1892:77:   required from ‘constexpr fmt::v9::format_arg_store<Context, Args>::format_arg_store(T&& ...) [with T = {const std::stack<int, std::deque<int, std::allocator<int> > >&}; Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; Args = {std::stack<int, std::deque<int, std::allocator<int> > >}]’
+ 1890 |         data_{detail::make_arg<
+      |               ~~~~~~~~~~~~~~~~~                                              
+ 1891 |             is_packed, Context,
+      |             ~~~~~~~~~~~~~~~~~~~                                              
+ 1892 |             detail::mapped_type_constant<remove_cvref_t<T>, Context>::value>(
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+ 1893 |             FMT_FORWARD(args))...} {
+      |             ~~~~~~~~~~~~~~~~~~                                               
+/home/fmt/include/fmt/core.h:1909:31:   required from ‘std::string fmt::v9::format(format_string<T ...>, T&& ...) [with T = {const std::stack<int, std::deque<int, std::allocator<int> > >&}; std::string = std::__cxx11::basic_string<char>; format_string<T ...> = basic_format_string<char, const std::stack<int, std::deque<int, std::allocator<int> > >&>]’
+ 1909 |   return {FMT_FORWARD(args)...};
+      |                               ^
+/home/fmt/test/ranges-test.cc:427:5:   required from here
+  427 |     EXPECT_EQ(fmt::format("{}", const_cast<const decltype(s)&>(s)), "[1, 2]");
+      |               ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/fmt/include/fmt/core.h:2895:44:   in ‘constexpr’ expansion of ‘fmt::v9::make_format_args<>(args#0)’
+/home/fmt/include/fmt/core.h:1755:7: error: static assertion failed: Cannot format an argument. To make type T formattable provide a formatter<T> specialization: https://fmt.dev/latest/api.html#udt
+ 1755 |       formattable,
+      |       ^~~~~~~~~~~
+/home/fmt/include/fmt/core.h:1755:7: note: ‘formattable’ evaluates to false
+/home/fmt/include/fmt/core.h: In instantiation of ‘constexpr fmt::v9::detail::value<Context> fmt::v9::detail::make_value(T&&) [with Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; T = std::queue<int>&]’:
+/home/fmt/include/fmt/core.h:1775:29:   required from ‘constexpr fmt::v9::detail::value<Context> fmt::v9::detail::make_arg(T&&) [with bool IS_PACKED = true; Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; type <anonymous> = fmt::v9::detail::type::custom_type; T = std::queue<int>&; typename std::enable_if<IS_PACKED, int>::type <anonymous> = 0]’
+ 1775 |   return make_value<Context>(val);
+      |          ~~~~~~~~~~~~~~~~~~~^~~~~
+/home/fmt/include/fmt/core.h:1892:77:   required from ‘constexpr fmt::v9::format_arg_store<Context, Args>::format_arg_store(T&& ...) [with T = {std::queue<int, std::deque<int, std::allocator<int> > >&}; Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; Args = {std::queue<int, std::deque<int, std::allocator<int> > >}]’
+ 1890 |         data_{detail::make_arg<
+      |               ~~~~~~~~~~~~~~~~~                                              
+ 1891 |             is_packed, Context,
+      |             ~~~~~~~~~~~~~~~~~~~                                              
+ 1892 |             detail::mapped_type_constant<remove_cvref_t<T>, Context>::value>(
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+ 1893 |             FMT_FORWARD(args))...} {
+      |             ~~~~~~~~~~~~~~~~~~                                               
+/home/fmt/include/fmt/core.h:1909:31:   required from ‘std::string fmt::v9::format(format_string<T ...>, T&& ...) [with T = {std::queue<int, std::deque<int, std::allocator<int> > >&}; std::string = std::__cxx11::basic_string<char>; format_string<T ...> = basic_format_string<char, std::queue<int, std::deque<int, std::allocator<int> > >&>]’
+ 1909 |   return {FMT_FORWARD(args)...};
+      |                               ^
+/home/fmt/test/ranges-test.cc:434:5:   required from here
+  434 |     EXPECT_EQ(fmt::format("{}", q), "[1, 2]");
+      |               ~~~~~~~~~~~^~~~~~~~~
+/home/fmt/include/fmt/core.h:2895:44:   in ‘constexpr’ expansion of ‘fmt::v9::make_format_args<>(args#0)’
+/home/fmt/include/fmt/core.h:1755:7: error: static assertion failed: Cannot format an argument. To make type T formattable provide a formatter<T> specialization: https://fmt.dev/latest/api.html#udt
+ 1755 |       formattable,
+      |       ^~~~~~~~~~~
+/home/fmt/include/fmt/core.h:1755:7: note: ‘formattable’ evaluates to false
+/home/fmt/include/fmt/core.h: In instantiation of ‘constexpr fmt::v9::detail::value<Context> fmt::v9::detail::make_value(T&&) [with Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; T = std::priority_queue<int>&]’:
+/home/fmt/include/fmt/core.h:1775:29:   required from ‘constexpr fmt::v9::detail::value<Context> fmt::v9::detail::make_arg(T&&) [with bool IS_PACKED = true; Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; type <anonymous> = fmt::v9::detail::type::custom_type; T = std::priority_queue<int>&; typename std::enable_if<IS_PACKED, int>::type <anonymous> = 0]’
+ 1775 |   return make_value<Context>(val);
+      |          ~~~~~~~~~~~~~~~~~~~^~~~~
+/home/fmt/include/fmt/core.h:1892:77:   required from ‘constexpr fmt::v9::format_arg_store<Context, Args>::format_arg_store(T&& ...) [with T = {std::priority_queue<int, std::vector<int, std::allocator<int> >, std::less<int> >&}; Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; Args = {std::priority_queue<int, std::vector<int, std::allocator<int> >, std::less<int> >}]’
+ 1890 |         data_{detail::make_arg<
+      |               ~~~~~~~~~~~~~~~~~                                              
+ 1891 |             is_packed, Context,
+      |             ~~~~~~~~~~~~~~~~~~~                                              
+ 1892 |             detail::mapped_type_constant<remove_cvref_t<T>, Context>::value>(
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+ 1893 |             FMT_FORWARD(args))...} {
+      |             ~~~~~~~~~~~~~~~~~~                                               
+/home/fmt/include/fmt/core.h:1909:31:   required from ‘std::string fmt::v9::format(format_string<T ...>, T&& ...) [with T = {std::priority_queue<int, std::vector<int, std::allocator<int> >, std::less<int> >&}; std::string = std::__cxx11::basic_string<char>; format_string<T ...> = basic_format_string<char, std::priority_queue<int, std::vector<int, std::allocator<int> >, std::less<int> >&>]’
+ 1909 |   return {FMT_FORWARD(args)...};
+      |                               ^
+/home/fmt/test/ranges-test.cc:443:5:   required from here
+  443 |     EXPECT_EQ(fmt::format("{}", q), "[4, 3, 2, 1]");
+      |               ~~~~~~~~~~~^~~~~~~~~
+/home/fmt/include/fmt/core.h:2895:44:   in ‘constexpr’ expansion of ‘fmt::v9::make_format_args<>(args#0)’
+/home/fmt/include/fmt/core.h:1755:7: error: static assertion failed: Cannot format an argument. To make type T formattable provide a formatter<T> specialization: https://fmt.dev/latest/api.html#udt
+ 1755 |       formattable,
+      |       ^~~~~~~~~~~
+/home/fmt/include/fmt/core.h:1755:7: note: ‘formattable’ evaluates to false
+/home/fmt/include/fmt/core.h: In instantiation of ‘constexpr fmt::v9::detail::value<Context> fmt::v9::detail::make_value(T&&) [with Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; T = std::stack<char, std::__cxx11::basic_string<char> >&]’:
+/home/fmt/include/fmt/core.h:1775:29:   required from ‘constexpr fmt::v9::detail::value<Context> fmt::v9::detail::make_arg(T&&) [with bool IS_PACKED = true; Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; type <anonymous> = fmt::v9::detail::type::custom_type; T = std::stack<char, std::__cxx11::basic_string<char> >&; typename std::enable_if<IS_PACKED, int>::type <anonymous> = 0]’
+ 1775 |   return make_value<Context>(val);
+      |          ~~~~~~~~~~~~~~~~~~~^~~~~
+/home/fmt/include/fmt/core.h:1892:77:   required from ‘constexpr fmt::v9::format_arg_store<Context, Args>::format_arg_store(T&& ...) [with T = {std::stack<char, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >&}; Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; Args = {std::stack<char, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >}]’
+ 1890 |         data_{detail::make_arg<
+      |               ~~~~~~~~~~~~~~~~~                                              
+ 1891 |             is_packed, Context,
+      |             ~~~~~~~~~~~~~~~~~~~                                              
+ 1892 |             detail::mapped_type_constant<remove_cvref_t<T>, Context>::value>(
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+ 1893 |             FMT_FORWARD(args))...} {
+      |             ~~~~~~~~~~~~~~~~~~                                               
+/home/fmt/include/fmt/core.h:1909:31:   required from ‘std::string fmt::v9::format(format_string<T ...>, T&& ...) [with T = {std::stack<char, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >&}; std::string = std::__cxx11::basic_string<char>; format_string<T ...> = basic_format_string<char, std::stack<char, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >&>]’
+ 1909 |   return {FMT_FORWARD(args)...};
+      |                               ^
+/home/fmt/test/ranges-test.cc:453:5:   required from here
+  453 |     EXPECT_EQ(fmt::format("{}", s), "ab");
+      |               ~~~~~~~~~~~^~~~~~~~~
+/home/fmt/include/fmt/core.h:2895:44:   in ‘constexpr’ expansion of ‘fmt::v9::make_format_args<>(args#0)’
+/home/fmt/include/fmt/core.h:1755:7: error: static assertion failed: Cannot format an argument. To make type T formattable provide a formatter<T> specialization: https://fmt.dev/latest/api.html#udt
+ 1755 |       formattable,
+      |       ^~~~~~~~~~~
+/home/fmt/include/fmt/core.h:1755:7: note: ‘formattable’ evaluates to false
+/home/fmt/include/fmt/core.h: In instantiation of ‘constexpr fmt::v9::detail::value<Context> fmt::v9::detail::make_value(T&&) [with Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; T = ranges_test_container_adaptor_Test::TestBody()::my_container_adaptor&]’:
+/home/fmt/include/fmt/core.h:1775:29:   required from ‘constexpr fmt::v9::detail::value<Context> fmt::v9::detail::make_arg(T&&) [with bool IS_PACKED = true; Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; type <anonymous> = fmt::v9::detail::type::custom_type; T = ranges_test_container_adaptor_Test::TestBody()::my_container_adaptor&; typename std::enable_if<IS_PACKED, int>::type <anonymous> = 0]’
+ 1775 |   return make_value<Context>(val);
+      |          ~~~~~~~~~~~~~~~~~~~^~~~~
+/home/fmt/include/fmt/core.h:1892:77:   required from ‘constexpr fmt::v9::format_arg_store<Context, Args>::format_arg_store(T&& ...) [with T = {ranges_test_container_adaptor_Test::TestBody()::my_container_adaptor&}; Context = fmt::v9::basic_format_context<fmt::v9::appender, char>; Args = {ranges_test_container_adaptor_Test::TestBody()::my_container_adaptor}]’
+ 1890 |         data_{detail::make_arg<
+      |               ~~~~~~~~~~~~~~~~~                                              
+ 1891 |             is_packed, Context,
+      |             ~~~~~~~~~~~~~~~~~~~                                              
+ 1892 |             detail::mapped_type_constant<remove_cvref_t<T>, Context>::value>(
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+ 1893 |             FMT_FORWARD(args))...} {
+      |             ~~~~~~~~~~~~~~~~~~                                               
+/home/fmt/include/fmt/core.h:1909:31:   required from ‘std::string fmt::v9::format(format_string<T ...>, T&& ...) [with T = {ranges_test_container_adaptor_Test::TestBody()::my_container_adaptor&}; std::string = std::__cxx11::basic_string<char>; format_string<T ...> = basic_format_string<char, ranges_test_container_adaptor_Test::TestBody()::my_container_adaptor&>]’
+ 1909 |   return {FMT_FORWARD(args)...};
+      |                               ^
+/home/fmt/test/ranges-test.cc:469:5:   required from here
+  469 |     EXPECT_EQ(fmt::format("{}", m), "[1, 2]");
+      |               ~~~~~~~~~~~^~~~~~~~~
+/home/fmt/include/fmt/core.h:2895:44:   in ‘constexpr’ expansion of ‘fmt::v9::make_format_args<>(args#0)’
+/home/fmt/include/fmt/core.h:1755:7: error: static assertion failed: Cannot format an argument. To make type T formattable provide a formatter<T> specialization: https://fmt.dev/latest/api.html#udt
+ 1755 |       formattable,
+      |       ^~~~~~~~~~~
+/home/fmt/include/fmt/core.h:1755:7: note: ‘formattable’ evaluates to false
+gmake[2]: *** [test/CMakeFiles/ranges-test.dir/build.make:76: test/CMakeFiles/ranges-test.dir/ranges-test.cc.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:562: test/CMakeFiles/ranges-test.dir/all] Error 2
+gmake: *** [Makefile:166: all] Error 2
+Test project /home/fmt/build
+      Start  1: args-test
+ 1/20 Test  #1: args-test ........................   Passed    0.00 sec
+      Start  2: assert-test
+ 2/20 Test  #2: assert-test ......................   Passed    0.00 sec
+      Start  3: chrono-test
+ 3/20 Test  #3: chrono-test ......................   Passed    0.06 sec
+      Start  4: color-test
+ 4/20 Test  #4: color-test .......................   Passed    0.00 sec
+      Start  5: core-test
+ 5/20 Test  #5: core-test ........................   Passed    0.00 sec
+      Start  6: gtest-extra-test
+ 6/20 Test  #6: gtest-extra-test .................   Passed    0.00 sec
+      Start  7: format-test
+ 7/20 Test  #7: format-test ......................   Passed    0.01 sec
+      Start  8: format-impl-test
+ 8/20 Test  #8: format-impl-test .................   Passed    0.02 sec
+      Start  9: ostream-test
+ 9/20 Test  #9: ostream-test .....................   Passed    0.00 sec
+      Start 10: compile-test
+10/20 Test #10: compile-test .....................   Passed    0.00 sec
+      Start 11: compile-fp-test
+11/20 Test #11: compile-fp-test ..................   Passed    0.00 sec
+      Start 12: printf-test
+12/20 Test #12: printf-test ......................   Passed    0.00 sec
+      Start 13: ranges-test
+Could not find executable /home/fmt/build/bin/ranges-test
+Looked in the following places:
+/home/fmt/build/bin/ranges-test
+/home/fmt/build/bin/ranges-test
+/home/fmt/build/bin/Release/ranges-test
+/home/fmt/build/bin/Release/ranges-test
+/home/fmt/build/bin/Debug/ranges-test
+/home/fmt/build/bin/Debug/ranges-test
+/home/fmt/build/bin/MinSizeRel/ranges-test
+/home/fmt/build/bin/MinSizeRel/ranges-test
+/home/fmt/build/bin/RelWithDebInfo/ranges-test
+/home/fmt/build/bin/RelWithDebInfo/ranges-test
+/home/fmt/build/bin/Deployment/ranges-test
+/home/fmt/build/bin/Deployment/ranges-test
+/home/fmt/build/bin/Development/ranges-test
+/home/fmt/build/bin/Development/ranges-test
+home/fmt/build/bin/ranges-test
+home/fmt/build/bin/ranges-test
+home/fmt/build/bin/Release/ranges-test
+Unable to find executable: /home/fmt/build/bin/ranges-test
+home/fmt/build/bin/Release/ranges-test
+home/fmt/build/bin/Debug/ranges-test
+home/fmt/build/bin/Debug/ranges-test
+home/fmt/build/bin/MinSizeRel/ranges-test
+home/fmt/build/bin/MinSizeRel/ranges-test
+home/fmt/build/bin/RelWithDebInfo/ranges-test
+home/fmt/build/bin/RelWithDebInfo/ranges-test
+home/fmt/build/bin/Deployment/ranges-test
+home/fmt/build/bin/Deployment/ranges-test
+home/fmt/build/bin/Development/ranges-test
+home/fmt/build/bin/Development/ranges-test
+13/20 Test #13: ranges-test ......................***Not Run   0.00 sec
+      Start 14: scan-test
+Could not find executable /home/fmt/build/bin/scan-test
+Looked in the following places:
+/home/fmt/build/bin/scan-test
+/home/fmt/build/bin/scan-test
+/home/fmt/build/bin/Release/scan-test
+/home/fmt/build/bin/Release/scan-test
+/home/fmt/build/bin/Debug/scan-test
+/home/fmt/build/bin/Debug/scan-test
+/home/fmt/build/bin/MinSizeRel/scan-test
+/home/fmt/build/bin/MinSizeRel/scan-test
+/home/fmt/build/bin/RelWithDebInfo/scan-test
+Unable to find executable: /home/fmt/build/bin/scan-test
+/home/fmt/build/bin/RelWithDebInfo/scan-test
+/home/fmt/build/bin/Deployment/scan-test
+/home/fmt/build/bin/Deployment/scan-test
+/home/fmt/build/bin/Development/scan-test
+/home/fmt/build/bin/Development/scan-test
+home/fmt/build/bin/scan-test
+home/fmt/build/bin/scan-test
+home/fmt/build/bin/Release/scan-test
+home/fmt/build/bin/Release/scan-test
+home/fmt/build/bin/Debug/scan-test
+home/fmt/build/bin/Debug/scan-test
+home/fmt/build/bin/MinSizeRel/scan-test
+home/fmt/build/bin/MinSizeRel/scan-test
+home/fmt/build/bin/RelWithDebInfo/scan-test
+home/fmt/build/bin/RelWithDebInfo/scan-test
+home/fmt/build/bin/Deployment/scan-test
+home/fmt/build/bin/Deployment/scan-test
+home/fmt/build/bin/Development/scan-test
+home/fmt/build/bin/Development/scan-test
+14/20 Test #14: scan-test ........................***Not Run   0.00 sec
+      Start 15: std-test
+Could not find executable /home/fmt/build/bin/std-test
+Looked in the following places:
+Unable to find executable: /home/fmt/build/bin/std-test
+/home/fmt/build/bin/std-test
+/home/fmt/build/bin/std-test
+/home/fmt/build/bin/Release/std-test
+/home/fmt/build/bin/Release/std-test
+/home/fmt/build/bin/Debug/std-test
+/home/fmt/build/bin/Debug/std-test
+/home/fmt/build/bin/MinSizeRel/std-test
+/home/fmt/build/bin/MinSizeRel/std-test
+/home/fmt/build/bin/RelWithDebInfo/std-test
+/home/fmt/build/bin/RelWithDebInfo/std-test
+/home/fmt/build/bin/Deployment/std-test
+/home/fmt/build/bin/Deployment/std-test
+/home/fmt/build/bin/Development/std-test
+/home/fmt/build/bin/Development/std-test
+home/fmt/build/bin/std-test
+home/fmt/build/bin/std-test
+home/fmt/build/bin/Release/std-test
+home/fmt/build/bin/Release/std-test
+home/fmt/build/bin/Debug/std-test
+home/fmt/build/bin/Debug/std-test
+Unable to find executable: /home/fmt/build/bin/unicode-test
+home/fmt/build/bin/MinSizeRel/std-test
+home/fmt/build/bin/MinSizeRel/std-test
+home/fmt/build/bin/RelWithDebInfo/std-test
+home/fmt/build/bin/RelWithDebInfo/std-test
+home/fmt/build/bin/Deployment/std-test
+home/fmt/build/bin/Deployment/std-test
+home/fmt/build/bin/Development/std-test
+home/fmt/build/bin/Development/std-test
+15/20 Test #15: std-test .........................***Not Run   0.00 sec
+      Start 16: unicode-test
+Could not find executable /home/fmt/build/bin/unicode-test
+Looked in the following places:
+/home/fmt/build/bin/unicode-test
+/home/fmt/build/bin/unicode-test
+/home/fmt/build/bin/Release/unicode-test
+/home/fmt/build/bin/Release/unicode-test
+/home/fmt/build/bin/Debug/unicode-test
+/home/fmt/build/bin/Debug/unicode-test
+/home/fmt/build/bin/MinSizeRel/unicode-test
+Unable to find executable: /home/fmt/build/bin/xchar-test
+/home/fmt/build/bin/MinSizeRel/unicode-test
+/home/fmt/build/bin/RelWithDebInfo/unicode-test
+/home/fmt/build/bin/RelWithDebInfo/unicode-test
+/home/fmt/build/bin/Deployment/unicode-test
+/home/fmt/build/bin/Deployment/unicode-test
+/home/fmt/build/bin/Development/unicode-test
+/home/fmt/build/bin/Development/unicode-test
+home/fmt/build/bin/unicode-test
+home/fmt/build/bin/unicode-test
+home/fmt/build/bin/Release/unicode-test
+home/fmt/build/bin/Release/unicode-test
+home/fmt/build/bin/Debug/unicode-test
+home/fmt/build/bin/Debug/unicode-test
+home/fmt/build/bin/MinSizeRel/unicode-test
+home/fmt/build/bin/MinSizeRel/unicode-test
+home/fmt/build/bin/RelWithDebInfo/unicode-test
+home/fmt/build/bin/RelWithDebInfo/unicode-test
+home/fmt/build/bin/Deployment/unicode-test
+home/fmt/build/bin/Deployment/unicode-test
+home/fmt/build/bin/Development/unicode-test
+home/fmt/build/bin/Development/unicode-test
+16/20 Test #16: unicode-test .....................***Not Run   0.00 sec
+      Start 17: xchar-test
+Could not find executable /home/fmt/build/bin/xchar-test
+Looked in the following places:
+/home/fmt/build/bin/xchar-test
+/home/fmt/build/bin/xchar-test
+/home/fmt/build/bin/Release/xchar-test
+/home/fmt/build/bin/Release/xchar-test
+/home/fmt/build/bin/Debug/xchar-test
+/home/fmt/build/bin/Debug/xchar-test
+/home/fmt/build/bin/MinSizeRel/xchar-test
+/home/fmt/build/bin/MinSizeRel/xchar-test
+/home/fmt/build/bin/RelWithDebInfo/xchar-test
+/home/fmt/build/bin/RelWithDebInfo/xchar-test
+/home/fmt/build/bin/Deployment/xchar-test
+/home/fmt/build/bin/Deployment/xchar-test
+/home/fmt/build/bin/Development/xchar-test
+/home/fmt/build/bin/Development/xchar-test
+home/fmt/build/bin/xchar-test
+home/fmt/build/bin/xchar-test
+home/fmt/build/bin/Release/xchar-test
+home/fmt/build/bin/Release/xchar-test
+home/fmt/build/bin/Debug/xchar-test
+home/fmt/build/bin/Debug/xchar-test
+home/fmt/build/bin/MinSizeRel/xchar-test
+home/fmt/build/bin/MinSizeRel/xchar-test
+home/fmt/build/bin/RelWithDebInfo/xchar-test
+home/fmt/build/bin/RelWithDebInfo/xchar-test
+home/fmt/build/bin/Deployment/xchar-test
+home/fmt/build/bin/Deployment/xchar-test
+home/fmt/build/bin/Development/xchar-test
+home/fmt/build/bin/Development/xchar-test
+17/20 Test #17: xchar-test .......................***Not Run   0.00 sec
+Unable to find executable: /home/fmt/build/bin/enforce-checks-test
+      Start 18: enforce-checks-test
+Unable to find executable: /home/fmt/build/bin/posix-mock-test
+Could not find executable /home/fmt/build/bin/enforce-checks-test
+Looked in the following places:
+/home/fmt/build/bin/enforce-checks-test
+/home/fmt/build/bin/enforce-checks-test
+/home/fmt/build/bin/Release/enforce-checks-test
+/home/fmt/build/bin/Release/enforce-checks-test
+/home/fmt/build/bin/Debug/enforce-checks-test
+/home/fmt/build/bin/Debug/enforce-checks-test
+/home/fmt/build/bin/MinSizeRel/enforce-checks-test
+Unable to find executable: /home/fmt/build/bin/os-test
+/home/fmt/build/bin/MinSizeRel/enforce-checks-test
+/home/fmt/build/bin/RelWithDebInfo/enforce-checks-test
+/home/fmt/build/bin/RelWithDebInfo/enforce-checks-test
+/home/fmt/build/bin/Deployment/enforce-checks-test
+/home/fmt/build/bin/Deployment/enforce-checks-test
+/home/fmt/build/bin/Development/enforce-checks-test
+/home/fmt/build/bin/Development/enforce-checks-test
+home/fmt/build/bin/enforce-checks-test
+home/fmt/build/bin/enforce-checks-test
+home/fmt/build/bin/Release/enforce-checks-test
+home/fmt/build/bin/Release/enforce-checks-test
+home/fmt/build/bin/Debug/enforce-checks-test
+home/fmt/build/bin/Debug/enforce-checks-test
+home/fmt/build/bin/MinSizeRel/enforce-checks-test
+home/fmt/build/bin/MinSizeRel/enforce-checks-test
+home/fmt/build/bin/RelWithDebInfo/enforce-checks-test
+home/fmt/build/bin/RelWithDebInfo/enforce-checks-test
+home/fmt/build/bin/Deployment/enforce-checks-test
+home/fmt/build/bin/Deployment/enforce-checks-test
+home/fmt/build/bin/Development/enforce-checks-test
+home/fmt/build/bin/Development/enforce-checks-test
+18/20 Test #18: enforce-checks-test ..............***Not Run   0.00 sec
+      Start 19: posix-mock-test
+Could not find executable /home/fmt/build/bin/posix-mock-test
+Looked in the following places:
+/home/fmt/build/bin/posix-mock-test
+/home/fmt/build/bin/posix-mock-test
+/home/fmt/build/bin/Release/posix-mock-test
+/home/fmt/build/bin/Release/posix-mock-test
+/home/fmt/build/bin/Debug/posix-mock-test
+/home/fmt/build/bin/Debug/posix-mock-test
+/home/fmt/build/bin/MinSizeRel/posix-mock-test
+/home/fmt/build/bin/MinSizeRel/posix-mock-test
+/home/fmt/build/bin/RelWithDebInfo/posix-mock-test
+/home/fmt/build/bin/RelWithDebInfo/posix-mock-test
+/home/fmt/build/bin/Deployment/posix-mock-test
+/home/fmt/build/bin/Deployment/posix-mock-test
+/home/fmt/build/bin/Development/posix-mock-test
+/home/fmt/build/bin/Development/posix-mock-test
+home/fmt/build/bin/posix-mock-test
+home/fmt/build/bin/posix-mock-test
+home/fmt/build/bin/Release/posix-mock-test
+home/fmt/build/bin/Release/posix-mock-test
+home/fmt/build/bin/Debug/posix-mock-test
+home/fmt/build/bin/Debug/posix-mock-test
+home/fmt/build/bin/MinSizeRel/posix-mock-test
+home/fmt/build/bin/MinSizeRel/posix-mock-test
+home/fmt/build/bin/RelWithDebInfo/posix-mock-test
+home/fmt/build/bin/RelWithDebInfo/posix-mock-test
+home/fmt/build/bin/Deployment/posix-mock-test
+home/fmt/build/bin/Deployment/posix-mock-test
+home/fmt/build/bin/Development/posix-mock-test
+home/fmt/build/bin/Development/posix-mock-test
+19/20 Test #19: posix-mock-test ..................***Not Run   0.00 sec
+      Start 20: os-test
+Could not find executable /home/fmt/build/bin/os-test
+Looked in the following places:
+/home/fmt/build/bin/os-test
+/home/fmt/build/bin/os-test
+/home/fmt/build/bin/Release/os-test
+/home/fmt/build/bin/Release/os-test
+/home/fmt/build/bin/Debug/os-test
+/home/fmt/build/bin/Debug/os-test
+/home/fmt/build/bin/MinSizeRel/os-test
+/home/fmt/build/bin/MinSizeRel/os-test
+/home/fmt/build/bin/RelWithDebInfo/os-test
+/home/fmt/build/bin/RelWithDebInfo/os-test
+/home/fmt/build/bin/Deployment/os-test
+/home/fmt/build/bin/Deployment/os-test
+/home/fmt/build/bin/Development/os-test
+/home/fmt/build/bin/Development/os-test
+home/fmt/build/bin/os-test
+home/fmt/build/bin/os-test
+home/fmt/build/bin/Release/os-test
+home/fmt/build/bin/Release/os-test
+home/fmt/build/bin/Debug/os-test
+home/fmt/build/bin/Debug/os-test
+home/fmt/build/bin/MinSizeRel/os-test
+home/fmt/build/bin/MinSizeRel/os-test
+home/fmt/build/bin/RelWithDebInfo/os-test
+home/fmt/build/bin/RelWithDebInfo/os-test
+home/fmt/build/bin/Deployment/os-test
+home/fmt/build/bin/Deployment/os-test
+home/fmt/build/bin/Development/os-test
+home/fmt/build/bin/Development/os-test
+20/20 Test #20: os-test ..........................***Not Run   0.00 sec
+
+60% tests passed, 8 tests failed out of 20
+
+Total Test time (real) =   0.11 sec
+
+The following tests FAILED:
+	 13 - ranges-test (Not Run)
+	 14 - scan-test (Not Run)
+	 15 - std-test (Not Run)
+	 16 - unicode-test (Not Run)
+	 17 - xchar-test (Not Run)
+	 18 - enforce-checks-test (Not Run)
+	 19 - posix-mock-test (Not Run)
+	 20 - os-test (Not Run)
+Errors while running CTest
+Output from these tests are in: /home/fmt/build/Testing/Temporary/LastTest.log
+Use "--rerun-failed --output-on-failure" to re-run the failed cases verbosely.

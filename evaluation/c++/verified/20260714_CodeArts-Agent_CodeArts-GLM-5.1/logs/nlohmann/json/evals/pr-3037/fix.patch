@@ -1,0 +1,62 @@
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index 053be8f7..afccde22 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -3695,14 +3695,23 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+             if (idx >= m_value.array->size())
+             {
+ #if JSON_DIAGNOSTICS
+-                // remember array size before resizing
++                // remember array capacity and size before resizing
++                const auto old_capacity = m_value.array->capacity();
+                 const auto previous_size = m_value.array->size();
+ #endif
+                 m_value.array->resize(idx + 1);
+ 
+ #if JSON_DIAGNOSTICS
+-                // set parent for values added above
+-                set_parents(begin() + static_cast<typename iterator::difference_type>(previous_size), static_cast<typename iterator::difference_type>(idx + 1 - previous_size));
++                // set parent for values added above; if capacity changed,
++                // all elements were moved and need new parent pointers
++                if (m_value.array->capacity() != old_capacity)
++                {
++                    set_parents();
++                }
++                else
++                {
++                    set_parents(begin() + static_cast<typename iterator::difference_type>(previous_size), static_cast<typename iterator::difference_type>(idx + 1 - previous_size));
++                }
+ #endif
+             }
+ 
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 9c27aabb..1fa60b0e 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -21101,14 +21101,23 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+             if (idx >= m_value.array->size())
+             {
+ #if JSON_DIAGNOSTICS
+-                // remember array size before resizing
++                // remember array capacity and size before resizing
++                const auto old_capacity = m_value.array->capacity();
+                 const auto previous_size = m_value.array->size();
+ #endif
+                 m_value.array->resize(idx + 1);
+ 
+ #if JSON_DIAGNOSTICS
+-                // set parent for values added above
+-                set_parents(begin() + static_cast<typename iterator::difference_type>(previous_size), static_cast<typename iterator::difference_type>(idx + 1 - previous_size));
++                // set parent for values added above; if capacity changed,
++                // all elements were moved and need new parent pointers
++                if (m_value.array->capacity() != old_capacity)
++                {
++                    set_parents();
++                }
++                else
++                {
++                    set_parents(begin() + static_cast<typename iterator::difference_type>(previous_size), static_cast<typename iterator::difference_type>(idx + 1 - previous_size));
++                }
+ #endif
+             }
+ 

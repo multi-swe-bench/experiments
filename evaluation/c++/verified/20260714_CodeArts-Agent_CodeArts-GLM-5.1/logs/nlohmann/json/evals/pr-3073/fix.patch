@@ -1,0 +1,44 @@
+diff --git a/include/nlohmann/detail/meta/type_traits.hpp b/include/nlohmann/detail/meta/type_traits.hpp
+index ca6051e7..06c58483 100644
+--- a/include/nlohmann/detail/meta/type_traits.hpp
++++ b/include/nlohmann/detail/meta/type_traits.hpp
+@@ -355,7 +355,8 @@ struct is_compatible_array_type_impl <
+     BasicJsonType, CompatibleArrayType,
+     enable_if_t <
+     is_detected<iterator_t, CompatibleArrayType>::value&&
+-    is_iterator_traits<iterator_traits<detected_t<iterator_t, CompatibleArrayType>>>::value >>
++    is_iterator_traits<iterator_traits<detected_t<iterator_t, CompatibleArrayType>>>::value&&
++    !std::is_same<CompatibleArrayType, detected_t<range_value_t, CompatibleArrayType>>::value >>
+ {
+     static constexpr bool value =
+         is_constructible<BasicJsonType,
+@@ -382,6 +383,7 @@ struct is_constructible_array_type_impl <
+     enable_if_t < !std::is_same<ConstructibleArrayType,
+     typename BasicJsonType::value_type>::value&&
+     !is_compatible_string_type<BasicJsonType, ConstructibleArrayType>::value&&
++    !std::is_same<ConstructibleArrayType, detected_t<range_value_t, ConstructibleArrayType>>::value&&
+     is_default_constructible<ConstructibleArrayType>::value&&
+ (std::is_move_assignable<ConstructibleArrayType>::value ||
+  std::is_copy_assignable<ConstructibleArrayType>::value)&&
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 25c6983b..1c3ca369 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -3829,7 +3829,8 @@ struct is_compatible_array_type_impl <
+     BasicJsonType, CompatibleArrayType,
+     enable_if_t <
+     is_detected<iterator_t, CompatibleArrayType>::value&&
+-    is_iterator_traits<iterator_traits<detected_t<iterator_t, CompatibleArrayType>>>::value >>
++    is_iterator_traits<iterator_traits<detected_t<iterator_t, CompatibleArrayType>>>::value&&
++    !std::is_same<CompatibleArrayType, detected_t<range_value_t, CompatibleArrayType>>::value >>
+ {
+     static constexpr bool value =
+         is_constructible<BasicJsonType,
+@@ -3856,6 +3857,7 @@ struct is_constructible_array_type_impl <
+     enable_if_t < !std::is_same<ConstructibleArrayType,
+     typename BasicJsonType::value_type>::value&&
+     !is_compatible_string_type<BasicJsonType, ConstructibleArrayType>::value&&
++    !std::is_same<ConstructibleArrayType, detected_t<range_value_t, ConstructibleArrayType>>::value&&
+     is_default_constructible<ConstructibleArrayType>::value&&
+ (std::is_move_assignable<ConstructibleArrayType>::value ||
+  std::is_copy_assignable<ConstructibleArrayType>::value)&&

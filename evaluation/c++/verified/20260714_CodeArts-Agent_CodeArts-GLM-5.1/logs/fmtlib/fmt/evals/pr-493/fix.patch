@@ -1,0 +1,74 @@
+diff --git a/build/test/test b/build/test/test
+new file mode 100644
+index 00000000..50a6f636
+--- /dev/null
++++ b/build/test/test
+@@ -0,0 +1 @@
++there must be something here
+\ No newline at end of file
+diff --git a/build/test/test-file b/build/test/test-file
+new file mode 100644
+index 00000000..2810a093
+--- /dev/null
++++ b/build/test/test-file
+@@ -0,0 +1 @@
++Don't panic!
+\ No newline at end of file
+diff --git a/fmt/ostream.h b/fmt/ostream.h
+index 7e13a5a7..b5833a5f 100644
+--- a/fmt/ostream.h
++++ b/fmt/ostream.h
+@@ -25,25 +25,29 @@ class FormatBuf : public std::basic_streambuf<Char> {
+ 
+   Buffer<Char> &buffer_;
+   Char *start_;
++  std::size_t initial_size_;
+ 
+  public:
+-  FormatBuf(Buffer<Char> &buffer) : buffer_(buffer), start_(&buffer[0]) {
++  FormatBuf(Buffer<Char> &buffer) : buffer_(buffer), initial_size_(0) {
++    start_ = &buffer_[0];
+     this->setp(start_, start_ + buffer_.capacity());
+   }
+ 
+-  FormatBuf(Buffer<Char> &buffer, Char *start) : buffer_(buffer) , start_(start) {
+-    this->setp(start_, start_ + buffer_.capacity());
++  FormatBuf(Buffer<Char> &buffer, Char *start)
++    : buffer_(buffer), initial_size_(buffer.size()) {
++    start_ = start;
++    this->setp(start_, &buffer_[0] + buffer_.capacity());
+   }
+ 
+   int_type overflow(int_type ch = traits_type::eof()) FMT_OVERRIDE {
+     if (!traits_type::eq_int_type(ch, traits_type::eof())) {
+       size_t buf_size = size();
+-      buffer_.resize(buf_size);
+-      buffer_.reserve(buf_size * 2);
++      buffer_.resize(initial_size_ + buf_size + 1);
++      buffer_.reserve(initial_size_ + (buf_size + 1) * 2);
+ 
+-      start_ = &buffer_[0];
++      start_ = &buffer_[0] + initial_size_;
+       start_[buf_size] = traits_type::to_char_type(ch);
+-      this->setp(start_+ buf_size + 1, start_ + buf_size * 2);
++      this->setp(start_ + buf_size + 1, &buffer_[0] + buffer_.capacity());
+     }
+     return ch;
+   }
+@@ -129,13 +133,14 @@ operator<<(BasicWriter<Char> &writer, const T &value) {
+   FMT_STATIC_ASSERT(internal::is_streamable<T>::value, "T must be Streamable");
+ 
+   auto &buffer = writer.buffer();
+-  Char *start = &buffer[0] + buffer.size();
++  std::size_t initial_size = buffer.size();
++  Char *start = &buffer[0] + initial_size;
+ 
+   internal::FormatBuf<Char> format_buf(buffer, start);
+   std::basic_ostream<Char> output(&format_buf);
+   output << value;
+ 
+-  buffer.resize(buffer.size() + format_buf.size());
++  buffer.resize(initial_size + format_buf.size());
+   return writer;
+ }
+ #endif

@@ -1,0 +1,48 @@
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index 49188b31..f9c9b4b6 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -2302,7 +2302,8 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+     }
+ 
+     template < class ValueType, class BasicJsonType, detail::enable_if_t <
+-                   detail::is_getable<basic_json_t, ValueType>::value, int> = 0 >
++                   detail::is_getable<basic_json_t, ValueType>::value
++                   && detail::is_basic_json<BasicJsonType>::value, int> = 0 >
+     JSON_HEDLEY_DEPRECATED_FOR(3.11.0, basic_json::json_pointer or nlohmann::json_pointer<basic_json::string_t>) // NOLINT(readability/alt_tokens)
+     ValueType value(const ::nlohmann::json_pointer<BasicJsonType>& ptr, const ValueType& default_value) const
+     {
+@@ -2318,7 +2319,8 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         return value(ptr, string_t(default_value));
+     }
+ 
+-    template<typename BasicJsonType>
++    template<typename BasicJsonType, detail::enable_if_t<
++                   detail::is_basic_json<BasicJsonType>::value, int> = 0>
+     JSON_HEDLEY_DEPRECATED_FOR(3.11.0, basic_json::json_pointer or nlohmann::json_pointer<basic_json::string_t>) // NOLINT(readability/alt_tokens)
+     JSON_HEDLEY_NON_NULL(3)
+     string_t value(const typename ::nlohmann::json_pointer<BasicJsonType>& ptr, const char* default_value) const
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index beee0136..64b0d167 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -21376,7 +21376,8 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+     }
+ 
+     template < class ValueType, class BasicJsonType, detail::enable_if_t <
+-                   detail::is_getable<basic_json_t, ValueType>::value, int> = 0 >
++                   detail::is_getable<basic_json_t, ValueType>::value
++                   && detail::is_basic_json<BasicJsonType>::value, int> = 0 >
+     JSON_HEDLEY_DEPRECATED_FOR(3.11.0, basic_json::json_pointer or nlohmann::json_pointer<basic_json::string_t>) // NOLINT(readability/alt_tokens)
+     ValueType value(const ::nlohmann::json_pointer<BasicJsonType>& ptr, const ValueType& default_value) const
+     {
+@@ -21392,7 +21393,8 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
+         return value(ptr, string_t(default_value));
+     }
+ 
+-    template<typename BasicJsonType>
++    template<typename BasicJsonType, detail::enable_if_t<
++                   detail::is_basic_json<BasicJsonType>::value, int> = 0>
+     JSON_HEDLEY_DEPRECATED_FOR(3.11.0, basic_json::json_pointer or nlohmann::json_pointer<basic_json::string_t>) // NOLINT(readability/alt_tokens)
+     JSON_HEDLEY_NON_NULL(3)
+     string_t value(const typename ::nlohmann::json_pointer<BasicJsonType>& ptr, const char* default_value) const

@@ -1,0 +1,161 @@
+diff --git a/include/fmt/format-inl.h b/include/fmt/format-inl.h
+index 30de39b2..7095f454 100644
+--- a/include/fmt/format-inl.h
++++ b/include/fmt/format-inl.h
+@@ -364,6 +364,10 @@ class fp {
+       std::numeric_limits<double>::digits - 1;
+   static FMT_CONSTEXPR_DECL const uint64_t implicit_bit =
+       1ull << double_significand_size;
++  static FMT_CONSTEXPR_DECL const int float_significand_size =
++      std::numeric_limits<float>::digits - 1;
++  static FMT_CONSTEXPR_DECL const uint64_t float_implicit_bit =
++      1ull << float_significand_size;
+ 
+  public:
+   significand_type f;
+@@ -395,6 +399,24 @@ class fp {
+     e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
+   }
+ 
++  // Constructs fp from an IEEE754 single-precision float.
++  explicit fp(float f32) {
++    using limits = std::numeric_limits<float>;
++    const int exponent_size = bits<float>::value - float_significand_size - 1;
++    const uint32_t significand_mask =
++        static_cast<uint32_t>(float_implicit_bit - 1);
++    const uint32_t exponent_mask = (~0u >> 1) & ~significand_mask;
++    const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
++    auto u = bit_cast<uint32_t>(f32);
++    auto biased_e = (u & exponent_mask) >> float_significand_size;
++    f = u & significand_mask;
++    if (biased_e != 0)
++      f += float_implicit_bit;
++    else
++      biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
++    e = static_cast<int>(biased_e - exponent_bias - float_significand_size);
++  }
++
+   // Normalizes the value converted from double and multiplied by (1 << SHIFT).
+   template <int SHIFT> friend fp normalize(fp value) {
+     // Handle subnormals.
+@@ -423,6 +445,16 @@ class fp {
+     lower.f <<= lower.e - upper.e;
+     lower.e = upper.e;
+   }
++
++  // Computes lower and upper boundaries for a single-precision float.
++  void compute_float_boundaries(fp& lower, fp& upper) const {
++    lower = f == float_implicit_bit
++                ? fp((f << 2) - 1, e - 2)
++                : fp((f << 1) - 1, e - 1);
++    upper = normalize<1>(fp((f << 1) + 1, e - 1));
++    lower.f <<= lower.e - upper.e;
++    lower.e = upper.e;
++  }
+ };
+ 
+ // Returns an fp number representing x - y. Result may not be normalized.
+@@ -1083,6 +1115,74 @@ bool grisu_format(Double value, buffer<char>& buf, int precision,
+   return true;
+ }
+ 
++template <typename Float,
++          enable_if_t<(sizeof(Float) == sizeof(uint32_t)), int>>
++bool grisu_format(Float value, buffer<char>& buf, int precision,
++                  unsigned options, int& exp) {
++  FMT_ASSERT(value >= 0, "value is negative");
++  const bool fixed = (options & grisu_options::fixed) != 0;
++  if (value <= 0) {  // <= instead of == to silence a warning.
++    if (precision <= 0 || !fixed) {
++      exp = 0;
++      buf.push_back('0');
++    } else {
++      exp = -precision;
++      buf.resize(to_unsigned(precision));
++      std::uninitialized_fill_n(buf.data(), precision, '0');
++    }
++    return true;
++  }
++
++  const fp fp_value(value);
++  const int min_exp = -60;  // alpha in Grisu.
++  int cached_exp10 = 0;     // K in Grisu.
++  if (precision != -1) {
++    if (precision > 17) return false;
++    fp normalized = normalize(fp_value);
++    const auto cached_pow = get_cached_power(
++        min_exp - (normalized.e + fp::significand_size), cached_exp10);
++    normalized = normalized * cached_pow;
++    fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
++    if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error)
++      return false;
++    buf.resize(to_unsigned(handler.size));
++  } else {
++    fp lower, upper;  // w^- and w^+ in the Grisu paper.
++    fp_value.compute_float_boundaries(lower, upper);
++    const auto cached_pow = get_cached_power(
++        min_exp - (upper.e + fp::significand_size), cached_exp10);
++    fp normalized = normalize(fp_value);
++    normalized = normalized * cached_pow;
++    lower = lower * cached_pow;
++    upper = upper * cached_pow;
++    assert(min_exp <= upper.e && upper.e <= -32);
++    auto result = digits::result();
++    int size = 0;
++    if ((options & grisu_options::grisu2) != 0) {
++      ++lower.f;
++      --upper.f;
++      grisu_shortest_handler<2> handler{buf.data(), 0, (upper - normalized).f};
++      result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
++      size = handler.size;
++      assert(result != digits::error);
++    } else {
++      --lower.f;
++      ++upper.f;
++      grisu_shortest_handler<3> handler{buf.data(), 0, (upper - normalized).f};
++      result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
++      size = handler.size;
++      if (result == digits::error) {
++        exp = exp + size - cached_exp10 - 1;
++        fallback_format(static_cast<double>(value), buf, exp);
++        return true;
++      }
++    }
++    buf.resize(to_unsigned(size));
++  }
++  exp -= cached_exp10;
++  return true;
++}
++
+ template <typename Double>
+ char* sprintf_format(Double value, internal::buffer<char>& buf,
+                      sprintf_specs specs) {
+diff --git a/include/fmt/format.h b/include/fmt/format.h
+index 007fe8f2..e6f2cf51 100644
+--- a/include/fmt/format.h
++++ b/include/fmt/format.h
+@@ -1118,7 +1118,10 @@ enum { fixed = 1, grisu2 = 2 };
+ // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
+ template <typename Double, FMT_ENABLE_IF(sizeof(Double) == sizeof(uint64_t))>
+ FMT_API bool grisu_format(Double, buffer<char>&, int, unsigned, int&);
+-template <typename Double, FMT_ENABLE_IF(sizeof(Double) != sizeof(uint64_t))>
++template <typename Float, FMT_ENABLE_IF(sizeof(Float) == sizeof(uint32_t))>
++FMT_API bool grisu_format(Float, buffer<char>&, int, unsigned, int&);
++template <typename Double, FMT_ENABLE_IF(sizeof(Double) != sizeof(uint64_t) &&
++                                         sizeof(Double) != sizeof(uint32_t))>
+ inline bool grisu_format(Double, buffer<char>&, int, unsigned, int&) {
+   return false;
+ }
+@@ -2812,9 +2815,9 @@ void internal::basic_writer<Range>::write_fp(T value,
+   bool use_grisu = USE_GRISU &&
+                    (specs.type != 'a' && specs.type != 'A' &&
+                     specs.type != 'e' && specs.type != 'E') &&
+-                   internal::grisu_format(
+-                       static_cast<double>(value), buffer, precision,
+-                       handler.fixed ? internal::grisu_options::fixed : 0, exp);
++                    internal::grisu_format(
++                        value, buffer, precision,
++                        handler.fixed ? internal::grisu_options::fixed : 0, exp);
+   char* decimal_point_pos = nullptr;
+   if (!use_grisu)
+     decimal_point_pos = internal::sprintf_format(value, buffer, specs);

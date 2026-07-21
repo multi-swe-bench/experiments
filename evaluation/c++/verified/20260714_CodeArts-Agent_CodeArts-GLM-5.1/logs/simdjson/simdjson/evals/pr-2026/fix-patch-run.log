@@ -1,0 +1,1549 @@
+检测到 Debian 11 系统
+进入debian其他系统
+替换系统源完成
+==============================================================================
+Get:1 http://mirrors.tools.huawei.com/debian bullseye InRelease [75.1 kB]
+Get:2 http://mirrors.tools.huawei.com/debian-security bullseye-security InRelease [27.2 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bullseye-updates InRelease [44.0 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bullseye/main amd64 Packages [8066 kB]
+Get:5 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 Packages [464 kB]
+Get:6 http://mirrors.tools.huawei.com/debian bullseye-updates/main amd64 Packages [18.8 kB]
+Fetched 8695 kB in 1s (5933 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+build-essential is already the newest version (12.9).
+libncurses-dev is already the newest version (6.2+20201114-2+deb11u2).
+libncurses-dev set to manually installed.
+patch is already the newest version (2.7.6-7).
+libpcre2-dev is already the newest version (10.36-2+deb11u1).
+libpcre2-dev set to manually installed.
+zlib1g-dev is already the newest version (1:1.2.11.dfsg-2+deb11u2).
+The following additional packages will be installed:
+  libonig5 libssl1.1
+Suggested packages:
+  libssl-doc
+The following NEW packages will be installed:
+  libonig-dev libonig5
+The following packages will be upgraded:
+  libssl-dev libssl1.1
+2 upgraded, 2 newly installed, 0 to remove and 136 not upgraded.
+Need to get 3667 kB of archives.
+After this operation, 904 kB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 libssl-dev amd64 1.1.1w-0+deb11u8 [1822 kB]
+Get:2 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 libssl1.1 amd64 1.1.1w-0+deb11u8 [1566 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bullseye/main amd64 libonig5 amd64 6.9.6-1.1 [185 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bullseye/main amd64 libonig-dev amd64 6.9.6-1.1 [94.2 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 3667 kB in 0s (8339 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29372 files and directories currently installed.)
+Preparing to unpack .../libssl-dev_1.1.1w-0+deb11u8_amd64.deb ...
+Unpacking libssl-dev:amd64 (1.1.1w-0+deb11u8) over (1.1.1w-0+deb11u1) ...
+Preparing to unpack .../libssl1.1_1.1.1w-0+deb11u8_amd64.deb ...
+Unpacking libssl1.1:amd64 (1.1.1w-0+deb11u8) over (1.1.1w-0+deb11u1) ...
+Setting up libssl1.1:amd64 (1.1.1w-0+deb11u8) ...
+debconf: unable to initialize frontend: Dialog
+debconf: (TERM is not set, so the dialog frontend is not usable.)
+debconf: falling back to frontend: Readline
+Selecting previously unselected package libonig5:amd64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29372 files and directories currently installed.)
+Preparing to unpack .../libonig5_6.9.6-1.1_amd64.deb ...
+Unpacking libonig5:amd64 (6.9.6-1.1) ...
+Selecting previously unselected package libonig-dev.
+Preparing to unpack .../libonig-dev_6.9.6-1.1_amd64.deb ...
+Unpacking libonig-dev (6.9.6-1.1) ...
+Setting up libssl-dev:amd64 (1.1.1w-0+deb11u8) ...
+Setting up libonig5:amd64 (6.9.6-1.1) ...
+Setting up libonig-dev (6.9.6-1.1) ...
+Processing triggers for libc-bin (2.31-13+deb11u10) ...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+cmake is already the newest version (3.18.4-2+deb11u1).
+zlib1g-dev is already the newest version (1:1.2.11.dfsg-2+deb11u2).
+0 upgraded, 0 newly installed, 0 to remove and 136 not upgraded.
+=== RUN FULL via /home/fix-run.sh (tee log) ===
+#!/bin/bash
+set -e
+
+cd /home/simdjson
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake -DSIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build .
+ctest
+
+=========================================
+>>> 修复 /home/simdjson/dependencies/import.cmake RENAME 问题...
+>>> 修复前内容:
+     1	set(dep_root "${simdjson_SOURCE_DIR}/dependencies/.cache")
+     2	if(DEFINED ENV{simdjson_DEPENDENCY_CACHE_DIR})
+     3	  set(dep_root "$ENV{simdjson_DEPENDENCY_CACHE_DIR}")
+     4	endif()
+     5	
+     6	function(import_dependency NAME GITHUB_REPO COMMIT)
+     7	  message(STATUS "Importing ${NAME} (${GITHUB_REPO}@${COMMIT})")
+     8	  set(target "${dep_root}/${NAME}")
+     9	
+    10	  # If the folder exists in the cache, then we assume that everything is as
+    11	  # should be and do nothing
+    12	  if(EXISTS "${target}")
+    13	    set("${NAME}_SOURCE_DIR" "${target}" PARENT_SCOPE)
+    14	    return()
+    15	  endif()
+    16	
+    17	  set(zip_url "https://github.com/${GITHUB_REPO}/archive/${COMMIT}.zip")
+    18	  set(archive "${dep_root}/archive.zip")
+    19	  set(dest "${dep_root}/_extract")
+    20	
+    21	  file(DOWNLOAD "${zip_url}" "${archive}")
+    22	  file(MAKE_DIRECTORY "${dest}")
+    23	  execute_process(
+    24	          WORKING_DIRECTORY "${dest}"
+    25	          COMMAND "${CMAKE_COMMAND}" -E tar xf "${archive}")
+    26	  file(REMOVE "${archive}")
+    27	
+    28	  # GitHub archives only ever have one folder component at the root, so this
+    29	  # will always match that single folder
+    30	  file(GLOB dir LIST_DIRECTORIES YES "${dest}/*")
+    31	
+    32	  file(RENAME "${dir}" "${target}")
+    33	
+    34	  set("${NAME}_SOURCE_DIR" "${target}" PARENT_SCOPE)
+    35	endfunction()
+    36	
+    37	# Delegates to the dependency
+    38	macro(add_dependency NAME)
+    39	  if(NOT DEFINED "${NAME}_SOURCE_DIR")
+    40	    message(FATAL_ERROR "Missing ${NAME}_SOURCE_DIR variable")
+    41	  endif()
+    42	
+    43	  add_subdirectory("${${NAME}_SOURCE_DIR}" "${PROJECT_BINARY_DIR}/_deps/${NAME}" EXCLUDE_FROM_ALL)
+    44	endmacro()
+    45	
+    46	function(set_off NAME)
+    47	  set("${NAME}" OFF CACHE INTERNAL "")
+    48	endfunction()
+>>> /home/simdjson/dependencies/import.cmake 已修复: RENAME -> copy_directory+REMOVE
+>>> 修复后内容:
+     1	set(dep_root "${simdjson_SOURCE_DIR}/dependencies/.cache")
+     2	if(DEFINED ENV{simdjson_DEPENDENCY_CACHE_DIR})
+     3	  set(dep_root "$ENV{simdjson_DEPENDENCY_CACHE_DIR}")
+     4	endif()
+     5	
+     6	function(import_dependency NAME GITHUB_REPO COMMIT)
+     7	  message(STATUS "Importing ${NAME} (${GITHUB_REPO}@${COMMIT})")
+     8	  set(target "${dep_root}/${NAME}")
+     9	
+    10	  # If the folder exists in the cache, then we assume that everything is as
+    11	  # should be and do nothing
+    12	  if(EXISTS "${target}")
+    13	    set("${NAME}_SOURCE_DIR" "${target}" PARENT_SCOPE)
+    14	    return()
+    15	  endif()
+    16	
+    17	  set(zip_url "https://github.com/${GITHUB_REPO}/archive/${COMMIT}.zip")
+    18	  set(archive "${dep_root}/archive.zip")
+    19	  set(dest "${dep_root}/_extract")
+    20	
+    21	  file(DOWNLOAD "${zip_url}" "${archive}")
+    22	  file(MAKE_DIRECTORY "${dest}")
+    23	  execute_process(
+    24	          WORKING_DIRECTORY "${dest}"
+    25	          COMMAND "${CMAKE_COMMAND}" -E tar xf "${archive}")
+    26	  file(REMOVE "${archive}")
+    27	
+    28	  # GitHub archives only ever have one folder component at the root, so this
+    29	  # will always match that single folder
+    30	  file(GLOB dir LIST_DIRECTORIES YES "${dest}/*")
+    31	
+    32	  execute_process(COMMAND "${CMAKE_COMMAND}" -E copy_directory "${dir}" "${target}")
+    33	  file(REMOVE_RECURSE "${dir}")
+    34	
+    35	  set("${NAME}_SOURCE_DIR" "${target}" PARENT_SCOPE)
+    36	endfunction()
+    37	
+    38	# Delegates to the dependency
+    39	macro(add_dependency NAME)
+    40	  if(NOT DEFINED "${NAME}_SOURCE_DIR")
+    41	    message(FATAL_ERROR "Missing ${NAME}_SOURCE_DIR variable")
+    42	  endif()
+    43	
+    44	  add_subdirectory("${${NAME}_SOURCE_DIR}" "${PROJECT_BINARY_DIR}/_deps/${NAME}" EXCLUDE_FROM_ALL)
+    45	endmacro()
+    46	
+    47	function(set_off NAME)
+    48	  set("${NAME}" OFF CACHE INTERNAL "")
+    49	endfunction()
+当前目录：/home
+当前目录内容：add_certificate_for_c.sh check_git_changes.sh fix-run.sh fix.patch prepare.sh run.sh simdjson test-run.sh test.patch
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages will be upgraded:
+  wget
+1 upgraded, 0 newly installed, 0 to remove and 135 not upgraded.
+Need to get 964 kB of archives.
+After this operation, 0 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 wget amd64 1.21-1+deb11u2 [964 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 964 kB in 0s (3432 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29414 files and directories currently installed.)
+Preparing to unpack .../wget_1.21-1+deb11u2_amd64.deb ...
+Unpacking wget (1.21-1+deb11u2) over (1.21-1+deb11u1) ...
+Setting up wget (1.21-1+deb11u2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libgpm2 vim-common vim-runtime xxd
+Suggested packages:
+  gpm ctags vim-doc vim-scripts
+The following NEW packages will be installed:
+  libgpm2 vim vim-common vim-runtime xxd
+0 upgraded, 5 newly installed, 0 to remove and 135 not upgraded.
+Need to get 8179 kB of archives.
+After this operation, 36.9 MB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 xxd amd64 2:8.2.2434-3+deb11u3 [193 kB]
+Get:2 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 vim-common all 2:8.2.2434-3+deb11u3 [227 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bullseye/main amd64 libgpm2 amd64 1.20.7-8 [35.6 kB]
+Get:4 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 vim-runtime all 2:8.2.2434-3+deb11u3 [6229 kB]
+Get:5 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 vim amd64 2:8.2.2434-3+deb11u3 [1496 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 8179 kB in 0s (18.6 MB/s)
+Selecting previously unselected package xxd.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 29414 files and directories currently installed.)
+Preparing to unpack .../xxd_2%3a8.2.2434-3+deb11u3_amd64.deb ...
+Unpacking xxd (2:8.2.2434-3+deb11u3) ...
+Selecting previously unselected package vim-common.
+Preparing to unpack .../vim-common_2%3a8.2.2434-3+deb11u3_all.deb ...
+Unpacking vim-common (2:8.2.2434-3+deb11u3) ...
+Selecting previously unselected package libgpm2:amd64.
+Preparing to unpack .../libgpm2_1.20.7-8_amd64.deb ...
+Unpacking libgpm2:amd64 (1.20.7-8) ...
+Selecting previously unselected package vim-runtime.
+Preparing to unpack .../vim-runtime_2%3a8.2.2434-3+deb11u3_all.deb ...
+Adding 'diversion of /usr/share/vim/vim82/doc/help.txt to /usr/share/vim/vim82/doc/help.txt.vim-tiny by vim-runtime'
+Adding 'diversion of /usr/share/vim/vim82/doc/tags to /usr/share/vim/vim82/doc/tags.vim-tiny by vim-runtime'
+Unpacking vim-runtime (2:8.2.2434-3+deb11u3) ...
+Selecting previously unselected package vim.
+Preparing to unpack .../vim_2%3a8.2.2434-3+deb11u3_amd64.deb ...
+Unpacking vim (2:8.2.2434-3+deb11u3) ...
+Setting up libgpm2:amd64 (1.20.7-8) ...
+Setting up xxd (2:8.2.2434-3+deb11u3) ...
+Setting up vim-common (2:8.2.2434-3+deb11u3) ...
+Setting up vim-runtime (2:8.2.2434-3+deb11u3) ...
+Setting up vim (2:8.2.2434-3+deb11u3) ...
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vim (vim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vimdiff (vimdiff) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rvim (rvim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rview (rview) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vi (vi) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/view (view) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/ex (ex) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in auto mode
+Processing triggers for libc-bin (2.31-13+deb11u10) ...
+Processing triggers for hicolor-icon-theme (0.17-2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libcurl4 libcurl4-openssl-dev
+Suggested packages:
+  libcurl4-doc libidn11-dev libldap2-dev librtmp-dev libssh2-1-dev
+The following packages will be upgraded:
+  curl libcurl4 libcurl4-openssl-dev
+3 upgraded, 0 newly installed, 0 to remove and 132 not upgraded.
+Need to get 1057 kB of archives.
+After this operation, 0 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 libcurl4-openssl-dev amd64 7.74.0-1.3+deb11u16 [438 kB]
+Get:2 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 curl amd64 7.74.0-1.3+deb11u16 [272 kB]
+Get:3 http://mirrors.tools.huawei.com/debian-security bullseye-security/main amd64 libcurl4 amd64 7.74.0-1.3+deb11u16 [347 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 1057 kB in 0s (3197 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 31386 files and directories currently installed.)
+Preparing to unpack .../libcurl4-openssl-dev_7.74.0-1.3+deb11u16_amd64.deb ...
+Unpacking libcurl4-openssl-dev:amd64 (7.74.0-1.3+deb11u16) over (7.74.0-1.3+deb11u14) ...
+Preparing to unpack .../curl_7.74.0-1.3+deb11u16_amd64.deb ...
+Unpacking curl (7.74.0-1.3+deb11u16) over (7.74.0-1.3+deb11u14) ...
+Preparing to unpack .../libcurl4_7.74.0-1.3+deb11u16_amd64.deb ...
+Unpacking libcurl4:amd64 (7.74.0-1.3+deb11u16) over (7.74.0-1.3+deb11u14) ...
+Setting up libcurl4:amd64 (7.74.0-1.3+deb11u16) ...
+Setting up curl (7.74.0-1.3+deb11u16) ...
+Setting up libcurl4-openssl-dev:amd64 (7.74.0-1.3+deb11u16) ...
+Processing triggers for libc-bin (2.31-13+deb11u10) ...
+=== 配置证书 (abcert) ===
+[abcert][INFO] Created temporary directory .tmp.pems.YlacUoqm
+[abcert][INFO] Operating system: Debian GNU/Linux 11 (bullseye)
+[abcert][INFO] Installing certificates
+'.tmp.pems.YlacUoqm/HWBPITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWBPITEnterpriseCA1.crt'
+'.tmp.pems.YlacUoqm/HWITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWITEnterpriseCA1.crt'
+'.tmp.pems.YlacUoqm/HuaweiBPITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiBPITRootCA.crt'
+'.tmp.pems.YlacUoqm/HuaweiITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiITRootCA.crt'
+'.tmp.pems.YlacUoqm/HuaweiWebSecureInternetGatewayCA.pem' -> '/usr/local/share/ca-certificates/HuaweiWebSecureInternetGatewayCA.crt'
+Updating certificates in /etc/ssl/certs...
+5 added, 0 removed; done.
+Running hooks in /etc/ca-certificates/update.d...
+done.
+[abcert][INFO] Removed .tmp.pems.YlacUoqm
+abcert 安装完成
+================git=====================
+http.version=HTTP/1.1
+http.postbuffer=524288000
+http.timeout=600
+================git=====================
+================env=====================
+HTTPS_PROXY=http://test:test@proxysg.huawei.com:8080/
+no_proxy=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+HOSTNAME=80ea4b15a3ef
+GCC_MIRRORS=https://ftpmirror.gnu.org/gcc 		https://mirrors.kernel.org/gnu/gcc 		https://bigsearcher.com/mirrors/gcc/releases 		http://www.netgull.com/gcc/releases 		https://ftpmirror.gnu.org/gcc 		https://sourceware.org/pub/gcc/releases 		ftp://ftp.gnu.org/gnu/gcc
+HOME=/root
+OLDPWD=/home
+NO_PROXY=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+https_proxy=http://test:test@proxysg.huawei.com:8080/
+GPG_KEYS=B215C1633BCA0477615F1B35A5B3A004745C015A 	B3C42148A44E6983B3E4CC0793FA9B1AB75C61B8 	90AA470469D3965A87A5DCB494D03953902C9419 	80F98B2E0DAB6C8281BDF541A7C8C3B2F71EDF1C 	7F74F97C103468EE5D750B583AB00996FC26A641 	33C235A34C46AA3FFB293709A328C3A2C3C45C06 	D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62
+http_proxy=http://test:test@proxysg.huawei.com:8080/
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+GIT_SSL_NO_VERIFY=true
+PWD=/tmp/tmp.9oqpNoPzef/abcert_install
+HTTP_PROXY=http://test:test@proxysg.huawei.com:8080/
+GCC_VERSION=11.5.0
+================env=====================
+#!/bin/bash
+# set -e
+
+cd /home/simdjson
+git ls-files --others --exclude-standard | xargs -I {} mv {} {}.bak
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake -DSIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build .
+ctest
+
+=========================================
+patching file tests/CMakeLists.txt
+patching file tests/prettify_tests.cpp
+patching file include/simdjson/dom/serialization-inl.h
+patching file include/simdjson/dom/serialization.h
+patching file singleheader/simdjson.cpp
+patching file singleheader/simdjson.h
+-- The CXX compiler identification is GNU 11.5.0
+-- The C compiler identification is GNU 11.5.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/local/bin/gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- No build type selected, default to Release
+-- Looking for fork
+-- Looking for fork - found
+-- Looking for wait
+-- Looking for wait - found
+-- Adding -Og to compile flag
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Check if compiler accepts -pthread
+-- Check if compiler accepts -pthread - yes
+-- Found Threads: TRUE  
+-- Importing google_benchmarks (google/benchmark@v1.7.1)
+-- Failed to find LLVM FileCheck
+-- Found Git: /usr/bin/git (found version "2.30.2") 
+-- git version: v3.2.1-dirty normalized to 3.2.1
+-- Version: 3.2.1
+-- Looking for shm_open in rt
+-- Looking for shm_open in rt - found
+-- Performing Test HAVE_CXX_FLAG_WALL
+-- Performing Test HAVE_CXX_FLAG_WALL - Success
+-- Performing Test HAVE_CXX_FLAG_WEXTRA
+-- Performing Test HAVE_CXX_FLAG_WEXTRA - Success
+-- Performing Test HAVE_CXX_FLAG_WSHADOW
+-- Performing Test HAVE_CXX_FLAG_WSHADOW - Success
+-- Performing Test HAVE_CXX_FLAG_WFLOAT_EQUAL
+-- Performing Test HAVE_CXX_FLAG_WFLOAT_EQUAL - Success
+-- Performing Test HAVE_CXX_FLAG_WSUGGEST_OVERRIDE
+-- Performing Test HAVE_CXX_FLAG_WSUGGEST_OVERRIDE - Success
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC - Success
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC_ERRORS
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC_ERRORS - Success
+-- Performing Test HAVE_CXX_FLAG_WSHORTEN_64_TO_32
+-- Performing Test HAVE_CXX_FLAG_WSHORTEN_64_TO_32 - Failed
+-- Performing Test HAVE_CXX_FLAG_FSTRICT_ALIASING
+-- Performing Test HAVE_CXX_FLAG_FSTRICT_ALIASING - Success
+-- Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED_DECLARATIONS
+-- Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED_DECLARATIONS - Success
+-- Performing Test HAVE_CXX_FLAG_WSTRICT_ALIASING
+-- Performing Test HAVE_CXX_FLAG_WSTRICT_ALIASING - Success
+-- Performing Test HAVE_CXX_FLAG_WD654
+-- Performing Test HAVE_CXX_FLAG_WD654 - Failed
+-- Performing Test HAVE_CXX_FLAG_WTHREAD_SAFETY
+-- Performing Test HAVE_CXX_FLAG_WTHREAD_SAFETY - Failed
+-- Performing Test HAVE_CXX_FLAG_COVERAGE
+-- Performing Test HAVE_CXX_FLAG_COVERAGE - Success
+-- Compiling and running to test HAVE_STD_REGEX
+-- Performing Test HAVE_STD_REGEX -- success
+-- Compiling and running to test HAVE_GNU_POSIX_REGEX
+-- Performing Test HAVE_GNU_POSIX_REGEX -- failed to compile
+-- Compiling and running to test HAVE_POSIX_REGEX
+-- Performing Test HAVE_POSIX_REGEX -- success
+-- Compiling and running to test HAVE_STEADY_CLOCK
+-- Performing Test HAVE_STEADY_CLOCK -- success
+-- Importing simdjson-data (simdjson/simdjson-data@a5b13babe65c1bba7186b41b43d4cbdc20a5c470)
+-- Performing Test USE_BOOST_JSON
+-- Performing Test USE_BOOST_JSON - Success
+-- Importing boostjson (boostorg/json@ee8d72d)
+-- Importing cjson (DaveGamble/cJSON@c69134d)
+-- Importing fastjson (mikeando/fastjson@485f994)
+-- Importing gason (vivkin/gason@7aee524)
+-- Importing jsmn (zserge/jsmn@18e9fe4)
+-- Importing json (nlohmann/json@v3.10.5)
+-- Importing json11 (dropbox/json11@ec4e452)
+-- Importing rapidjson (Tencent/rapidjson@f54b0e4)
+-- Check if the system is big endian
+-- Searching 16 bit integer
+-- Looking for sys/types.h
+-- Looking for sys/types.h - found
+-- Looking for stdint.h
+-- Looking for stdint.h - found
+-- Looking for stddef.h
+-- Looking for stddef.h - found
+-- Check size of unsigned short
+-- Check size of unsigned short - done
+-- Searching 16 bit integer - Using unsigned short
+-- Check if the system is big endian - little endian
+-- Importing sajson (chadaustin/sajson@2dcfd35)
+-- Importing ujson4c (esnme/ujson4c@e14f3fd)
+-- Importing yyjson (ibireme/yyjson@c385651)
+-- Importing cxxopts (jarro2783/cxxopts@794c975)
+-- cxxopts version 2.2.0
+-- We have cxxopts as a dependency and we are building the tools (e.g., json2json).
+-- Found Python3: /usr/bin/python3.9 (found version "3.9.2") found components: Interpreter 
+-- Including amalgamate_demo test. 
+-- Including simdjson-singleheader test.
+-- Including amalgamate_demo_direct_from_repository test.
+-- Either git is unavailable or else it is too old. We are disabling checkperf targets.
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/simdjson/build
+Scanning dependencies of target simdjson
+[  0%] Building CXX object CMakeFiles/simdjson.dir/src/simdjson.cpp.o
+[  1%] Linking CXX static library libsimdjson.a
+[  1%] Built target simdjson
+Scanning dependencies of target cjson
+[  2%] Building C object dependencies/CMakeFiles/cjson.dir/.cache/cjson/cJSON.c.o
+[  2%] Linking C static library libcjson.a
+[  2%] Built target cjson
+Scanning dependencies of target boostjson
+[  2%] Building CXX object dependencies/CMakeFiles/boostjson.dir/.cache/boostjson/src/src.cpp.o
+[  4%] Linking CXX static library libboostjson.a
+[  4%] Built target boostjson
+Scanning dependencies of target jsoncpp
+[  4%] Building CXX object dependencies/CMakeFiles/jsoncpp.dir/jsoncppdist/jsoncpp.cpp.o
+[  4%] Linking CXX static library libjsoncpp.a
+[  4%] Built target jsoncpp
+Scanning dependencies of target ujson4c
+[  5%] Building C object dependencies/CMakeFiles/ujson4c.dir/.cache/ujson4c/src/ujdecode.c.o
+[  5%] Building C object dependencies/CMakeFiles/ujson4c.dir/.cache/ujson4c/3rdparty/ultrajsondec.c.o
+[  6%] Linking C static library libujson4c.a
+[  6%] Built target ujson4c
+Scanning dependencies of target fastjson
+[  6%] Building CXX object dependencies/CMakeFiles/fastjson.dir/.cache/fastjson/src/fastjson.cpp.o
+[  8%] Building CXX object dependencies/CMakeFiles/fastjson.dir/.cache/fastjson/src/fastjson2.cpp.o
+[  8%] Building CXX object dependencies/CMakeFiles/fastjson.dir/.cache/fastjson/src/fastjson_dom.cpp.o
+[  8%] Linking CXX static library libfastjson.a
+[  8%] Built target fastjson
+Scanning dependencies of target gason
+[  9%] Building CXX object dependencies/CMakeFiles/gason.dir/.cache/gason/src/gason.cpp.o
+[  9%] Linking CXX static library libgason.a
+[  9%] Built target gason
+Scanning dependencies of target yyjson
+[  9%] Building C object dependencies/CMakeFiles/yyjson.dir/.cache/yyjson/src/yyjson.c.o
+[ 10%] Linking C static library libyyjson.a
+[ 10%] Built target yyjson
+Scanning dependencies of target jsmn
+[ 10%] Building C object dependencies/CMakeFiles/jsmn.dir/.cache/jsmn/jsmn.c.o
+[ 12%] Linking C static library libjsmn.a
+[ 12%] Built target jsmn
+Scanning dependencies of target json11
+[ 12%] Building CXX object dependencies/CMakeFiles/json11.dir/.cache/json11/json11.cpp.o
+[ 12%] Linking CXX static library libjson11.a
+[ 12%] Built target json11
+Scanning dependencies of target minify
+[ 12%] Building CXX object tools/CMakeFiles/minify.dir/minify.cpp.o
+[ 12%] Linking CXX executable minify
+[ 12%] Built target minify
+Scanning dependencies of target jsonpointer
+[ 13%] Building CXX object tools/CMakeFiles/jsonpointer.dir/jsonpointer.cpp.o
+[ 13%] Linking CXX executable jsonpointer
+[ 13%] Built target jsonpointer
+Scanning dependencies of target jsonstats
+[ 14%] Building CXX object tools/CMakeFiles/jsonstats.dir/jsonstats.cpp.o
+[ 14%] Linking CXX executable jsonstats
+[ 14%] Built target jsonstats
+Scanning dependencies of target json2json
+[ 16%] Building CXX object tools/CMakeFiles/json2json.dir/json2json.cpp.o
+[ 16%] Linking CXX executable json2json
+[ 16%] Built target json2json
+Scanning dependencies of target amalgamate_demo_direct_from_repository
+[ 16%] Building CXX object singleheader/CMakeFiles/amalgamate_demo_direct_from_repository.dir/amalgamate_demo.cpp.o
+[ 16%] Linking CXX executable amalgamate_demo_direct_from_repository
+[ 16%] Built target amalgamate_demo_direct_from_repository
+Scanning dependencies of target singleheader-files
+[ 16%] Generating simdjson.cpp, simdjson.h, amalgamate_demo.cpp, README.md
+SCRIPTPATH=/home/simdjson/singleheader PROJECTPATH=/home/simdjson
+We are about to amalgamate all simdjson files into one source file.
+See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/wiki/Single_Compilation_Unit for rationale.
+the commandline is ['git', 'show', '-s', '--format=%ci', 'HEAD']
+timestamp is 2023-07-06 21:48:59 -0400
+Creating /home/simdjson/build/singleheader/simdjson.h
+Creating /home/simdjson/build/singleheader/simdjson.cpp
+Done with all files generation.
+Files have been written to directory: /home/simdjson/build/singleheader/
+-rw-r--r-- 1 root root     170 Mar 18  2025 /home/simdjson/build/singleheader/README.md
+-rw-r--r-- 1 root root    2734 Mar 18  2025 /home/simdjson/build/singleheader/amalgamate_demo.cpp
+-rw-r--r-- 1 root root  690133 Jul 14 01:41 /home/simdjson/build/singleheader/simdjson.cpp
+-rw-r--r-- 1 root root 1304818 Jul 14 01:41 /home/simdjson/build/singleheader/simdjson.h
+Done with all files generation.
+
+Giving final instructions:
+Try :
+
+```
+
+c++ -O3 -std=c++17 -pthread -o amalgamate_demo amalgamate_demo.cpp  && ./amalgamate_demo ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson
+
+
+
+[ 16%] Built target singleheader-files
+Scanning dependencies of target amalgamate_demo
+[ 16%] Building CXX object singleheader/CMakeFiles/amalgamate_demo.dir/amalgamate_demo.cpp.o
+[ 17%] Linking CXX executable amalgamate_demo
+[ 17%] Built target amalgamate_demo
+Scanning dependencies of target generated-data
+[ 17%] Built target generated-data
+Scanning dependencies of target unicode_tests
+[ 17%] Building CXX object tests/CMakeFiles/unicode_tests.dir/unicode_tests.cpp.o
+[ 17%] Linking CXX executable unicode_tests
+[ 17%] Built target unicode_tests
+Scanning dependencies of target prettify_tests
+[ 17%] Building CXX object tests/CMakeFiles/prettify_tests.dir/prettify_tests.cpp.o
+/home/simdjson/tests/prettify_tests.cpp: In function 'bool load_prettify(const char*)':
+/home/simdjson/tests/prettify_tests.cpp:36:28: error: 'prettify' is not a member of 'simdjson'; did you mean 'pretty'?
+   36 |   auto serial1 = simdjson::prettify(doc);
+      |                            ^~~~~~~~
+      |                            pretty
+/home/simdjson/tests/prettify_tests.cpp:39:28: error: 'prettify' is not a member of 'simdjson'; did you mean 'pretty'?
+   39 |   auto serial2 = simdjson::prettify(doc);
+      |                            ^~~~~~~~
+      |                            pretty
+gmake[2]: *** [tests/CMakeFiles/prettify_tests.dir/build.make:82: tests/CMakeFiles/prettify_tests.dir/prettify_tests.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:1531: tests/CMakeFiles/prettify_tests.dir/all] Error 2
+gmake: *** [Makefile:182: all] Error 2
+Test project /home/simdjson/build
+      Start  1: avoid_abort
+ 1/97 Test  #1: avoid_abort ..........................................   Passed    0.00 sec
+      Start  2: avoid_cout
+ 2/97 Test  #2: avoid_cout ...........................................   Passed    0.00 sec
+      Start  3: avoid_cerr
+ 3/97 Test  #3: avoid_cerr ...........................................   Passed    0.00 sec
+      Start  4: avoid_printf
+ 4/97 Test  #4: avoid_printf .........................................   Passed    0.00 sec
+      Start  5: avoid_stdout
+ 5/97 Test  #5: avoid_stdout .........................................   Passed    0.00 sec
+      Start  6: avoid_stderr
+ 6/97 Test  #6: avoid_stderr .........................................   Passed    0.00 sec
+      Start  7: amalgamate_demo
+ 7/97 Test  #7: amalgamate_demo ......................................   Passed    0.00 sec
+      Start  8: simdjson-singleheader
+ 8/97 Test  #8: simdjson-singleheader ................................   Passed    6.90 sec
+      Start  9: amalgamate_demo_direct_from_repository
+ 9/97 Test  #9: amalgamate_demo_direct_from_repository ...............   Passed    0.00 sec
+      Start 10: unicode_tests
+10/97 Test #10: unicode_tests ........................................   Passed    0.05 sec
+      Start 11: minify_tests
+Could not find executable minify_tests
+Looked in the following places:
+minify_tests
+minify_tests
+Release/minify_tests
+Unable to find executable: minify_tests
+Release/minify_tests
+Debug/minify_tests
+Debug/minify_tests
+MinSizeRel/minify_tests
+MinSizeRel/minify_tests
+RelWithDebInfo/minify_tests
+RelWithDebInfo/minify_tests
+Deployment/minify_tests
+Deployment/minify_tests
+Development/minify_tests
+Development/minify_tests
+11/97 Test #11: minify_tests .........................................***Not Run   0.00 sec
+      Start 12: padded_string_tests
+Could not find executable padded_string_tests
+Looked in the following places:
+padded_string_tests
+padded_string_tests
+Release/padded_string_tests
+Release/padded_string_tests
+Debug/padded_string_tests
+Debug/padded_string_tests
+MinSizeRel/padded_string_tests
+MinSizeRel/padded_string_tests
+RelWithDebInfo/padded_string_tests
+RelWithDebInfo/padded_string_tests
+Deployment/padded_string_tests
+Deployment/padded_string_tests
+Development/padded_string_tests
+Development/padded_string_tests
+Unable to find executable: padded_string_tests
+12/97 Test #12: padded_string_tests ..................................***Not Run   0.00 sec
+      Start 13: prettify_tests
+Unable to find executable: prettify_tests
+Could not find executable prettify_tests
+Looked in the following places:
+prettify_tests
+prettify_tests
+Release/prettify_tests
+Release/prettify_tests
+Debug/prettify_tests
+Debug/prettify_tests
+MinSizeRel/prettify_tests
+MinSizeRel/prettify_tests
+RelWithDebInfo/prettify_tests
+RelWithDebInfo/prettify_tests
+Deployment/prettify_tests
+Deployment/prettify_tests
+Development/prettify_tests
+Development/prettify_tests
+13/97 Test #13: prettify_tests .......................................***Not Run   0.00 sec
+      Start 14: checkimplementation
+Unable to find executable: checkimplementation
+Could not find executable checkimplementation
+Looked in the following places:
+checkimplementation
+checkimplementation
+Release/checkimplementation
+Release/checkimplementation
+Debug/checkimplementation
+Debug/checkimplementation
+MinSizeRel/checkimplementation
+MinSizeRel/checkimplementation
+RelWithDebInfo/checkimplementation
+RelWithDebInfo/checkimplementation
+Deployment/checkimplementation
+Deployment/checkimplementation
+Development/checkimplementation
+Development/checkimplementation
+14/97 Test #14: checkimplementation ..................................***Not Run   0.00 sec
+      Start 15: random_string_number_tests
+Unable to find executable: random_string_number_tests
+Could not find executable random_string_number_tests
+Looked in the following places:
+random_string_number_tests
+random_string_number_tests
+Release/random_string_number_tests
+Release/random_string_number_tests
+Debug/random_string_number_tests
+Debug/random_string_number_tests
+MinSizeRel/random_string_number_tests
+MinSizeRel/random_string_number_tests
+RelWithDebInfo/random_string_number_tests
+RelWithDebInfo/random_string_number_tests
+Deployment/random_string_number_tests
+Deployment/random_string_number_tests
+Development/random_string_number_tests
+Development/random_string_number_tests
+15/97 Test #15: random_string_number_tests ...........................***Not Run   0.00 sec
+      Start 16: basictests
+Could not find executable basictests
+Looked in the following places:
+basictests
+basictests
+Release/basictests
+Release/basictests
+Debug/basictests
+Debug/basictests
+MinSizeRel/basictests
+MinSizeRel/basictests
+RelWithDebInfo/basictests
+RelWithDebInfo/basictests
+Deployment/basictests
+Deployment/basictests
+Development/basictests
+Development/basictests
+16/97 Test #16: basictests ...........................................***Not Run   0.00 sec
+Unable to find executable: basictests
+      Start 17: document_stream_tests
+Could not find executable document_stream_tests
+Looked in the following places:
+document_stream_tests
+document_stream_tests
+Release/document_stream_tests
+Release/document_stream_tests
+Debug/document_stream_tests
+Debug/document_stream_tests
+MinSizeRel/document_stream_tests
+MinSizeRel/document_stream_tests
+RelWithDebInfo/document_stream_tests
+RelWithDebInfo/document_stream_tests
+Unable to find executable: document_stream_tests
+Deployment/document_stream_tests
+Deployment/document_stream_tests
+Development/document_stream_tests
+Development/document_stream_tests
+17/97 Test #17: document_stream_tests ................................***Not Run   0.00 sec
+      Start 18: document_tests
+Unable to find executable: document_tests
+Could not find executable document_tests
+Looked in the following places:
+document_tests
+document_tests
+Release/document_tests
+Release/document_tests
+Debug/document_tests
+Debug/document_tests
+MinSizeRel/document_tests
+MinSizeRel/document_tests
+RelWithDebInfo/document_tests
+RelWithDebInfo/document_tests
+Deployment/document_tests
+Deployment/document_tests
+Development/document_tests
+Development/document_tests
+18/97 Test #18: document_tests .......................................***Not Run   0.00 sec
+      Start 19: errortests
+Could not find executable errortests
+Looked in the following places:
+errortests
+errortests
+Release/errortests
+Release/errortests
+Debug/errortests
+Debug/errortests
+MinSizeRel/errortests
+MinSizeRel/errortests
+RelWithDebInfo/errortests
+RelWithDebInfo/errortests
+Deployment/errortests
+Deployment/errortests
+Development/errortests
+Development/errortests
+19/97 Test #19: errortests ...........................................***Not Run   0.00 sec
+      Start 20: extracting_values_example
+Unable to find executable: errortests
+Could not find executable extracting_values_example
+Looked in the following places:
+extracting_values_example
+extracting_values_example
+Release/extracting_values_example
+Release/extracting_values_example
+Debug/extracting_values_example
+Debug/extracting_values_example
+MinSizeRel/extracting_values_example
+MinSizeRel/extracting_values_example
+RelWithDebInfo/extracting_values_example
+RelWithDebInfo/extracting_values_example
+Deployment/extracting_values_example
+Deployment/extracting_values_example
+Development/extracting_values_example
+Development/extracting_values_example
+20/97 Test #20: extracting_values_example ............................***Not Run   0.00 sec
+Unable to find executable: extracting_values_example
+      Start 21: integer_tests
+Could not find executable integer_tests
+Looked in the following places:
+integer_tests
+integer_tests
+Release/integer_tests
+Release/integer_tests
+Debug/integer_tests
+Debug/integer_tests
+MinSizeRel/integer_tests
+MinSizeRel/integer_tests
+RelWithDebInfo/integer_tests
+RelWithDebInfo/integer_tests
+Deployment/integer_tests
+Unable to find executable: integer_tests
+Deployment/integer_tests
+Development/integer_tests
+Development/integer_tests
+21/97 Test #21: integer_tests ........................................***Not Run   0.00 sec
+      Start 22: jsoncheck
+Could not find executable jsoncheck
+Looked in the following places:
+jsoncheck
+jsoncheck
+Release/jsoncheck
+Release/jsoncheck
+Debug/jsoncheck
+Debug/jsoncheck
+MinSizeRel/jsoncheck
+MinSizeRel/jsoncheck
+RelWithDebInfo/jsoncheck
+RelWithDebInfo/jsoncheck
+Deployment/jsoncheck
+Unable to find executable: jsoncheck
+Deployment/jsoncheck
+Development/jsoncheck
+Development/jsoncheck
+22/97 Test #22: jsoncheck ............................................***Not Run   0.00 sec
+      Start 23: minefieldcheck
+Could not find executable minefieldcheck
+Looked in the following places:
+minefieldcheck
+minefieldcheck
+Release/minefieldcheck
+Unable to find executable: minefieldcheck
+Release/minefieldcheck
+Debug/minefieldcheck
+Debug/minefieldcheck
+MinSizeRel/minefieldcheck
+MinSizeRel/minefieldcheck
+RelWithDebInfo/minefieldcheck
+RelWithDebInfo/minefieldcheck
+Deployment/minefieldcheck
+Deployment/minefieldcheck
+Development/minefieldcheck
+Development/minefieldcheck
+23/97 Test #23: minefieldcheck .......................................***Not Run   0.00 sec
+      Start 24: numberparsingcheck
+Could not find executable numberparsingcheck
+Looked in the following places:
+numberparsingcheck
+numberparsingcheck
+Release/numberparsingcheck
+Release/numberparsingcheck
+Debug/numberparsingcheck
+Debug/numberparsingcheck
+MinSizeRel/numberparsingcheck
+MinSizeRel/numberparsingcheck
+RelWithDebInfo/numberparsingcheck
+RelWithDebInfo/numberparsingcheck
+Deployment/numberparsingcheck
+Deployment/numberparsingcheck
+Development/numberparsingcheck
+Development/numberparsingcheck
+Unable to find executable: numberparsingcheck
+24/97 Test #24: numberparsingcheck ...................................***Not Run   0.00 sec
+      Start 25: parse_many_test
+Unable to find executable: parse_many_test
+Could not find executable parse_many_test
+Looked in the following places:
+parse_many_test
+parse_many_test
+Release/parse_many_test
+Release/parse_many_test
+Debug/parse_many_test
+Debug/parse_many_test
+MinSizeRel/parse_many_test
+MinSizeRel/parse_many_test
+RelWithDebInfo/parse_many_test
+RelWithDebInfo/parse_many_test
+Deployment/parse_many_test
+Deployment/parse_many_test
+Development/parse_many_test
+Development/parse_many_test
+25/97 Test #25: parse_many_test ......................................***Not Run   0.00 sec
+      Start 26: pointercheck
+Could not find executable pointercheck
+Looked in the following places:
+pointercheck
+pointercheck
+Release/pointercheck
+Release/pointercheck
+Debug/pointercheck
+Debug/pointercheck
+MinSizeRel/pointercheck
+MinSizeRel/pointercheck
+RelWithDebInfo/pointercheck
+RelWithDebInfo/pointercheck
+Deployment/pointercheck
+Deployment/pointercheck
+Development/pointercheck
+Development/pointercheck
+26/97 Test #26: pointercheck .........................................***Not Run   0.00 sec
+Unable to find executable: pointercheck
+      Start 27: stringparsingcheck
+Could not find executable stringparsingcheck
+Looked in the following places:
+stringparsingcheck
+stringparsingcheck
+Release/stringparsingcheck
+Release/stringparsingcheck
+Debug/stringparsingcheck
+Debug/stringparsingcheck
+MinSizeRel/stringparsingcheck
+MinSizeRel/stringparsingcheck
+RelWithDebInfo/stringparsingcheck
+RelWithDebInfo/stringparsingcheck
+Deployment/stringparsingcheck
+Deployment/stringparsingcheck
+Unable to find executable: stringparsingcheck
+Development/stringparsingcheck
+Development/stringparsingcheck
+27/97 Test #27: stringparsingcheck ...................................***Not Run   0.00 sec
+      Start 28: trivially_copyable_test
+Could not find executable trivially_copyable_test
+Looked in the following places:
+trivially_copyable_test
+trivially_copyable_test
+Release/trivially_copyable_test
+Unable to find executable: trivially_copyable_test
+Release/trivially_copyable_test
+Debug/trivially_copyable_test
+Debug/trivially_copyable_test
+MinSizeRel/trivially_copyable_test
+MinSizeRel/trivially_copyable_test
+RelWithDebInfo/trivially_copyable_test
+RelWithDebInfo/trivially_copyable_test
+Deployment/trivially_copyable_test
+Deployment/trivially_copyable_test
+Development/trivially_copyable_test
+Development/trivially_copyable_test
+28/97 Test #28: trivially_copyable_test ..............................***Not Run   0.00 sec
+      Start 30: json2json
+29/97 Test #30: json2json ............................................   Passed    0.01 sec
+      Start 29: testjson2json
+30/97 Test #29: testjson2json ........................................   Passed    0.69 sec
+      Start 31: simdjson_force_implementation_error
+31/97 Test #31: simdjson_force_implementation_error ..................   Passed    0.01 sec
+      Start 32: readme_examples
+32/97 Test #32: readme_examples ......................................   Passed    3.50 sec
+      Start 33: readme_examples11
+33/97 Test #33: readme_examples11 ....................................   Passed    3.43 sec
+      Start 34: readme_examples_noexceptions
+34/97 Test #34: readme_examples_noexceptions .........................   Passed    2.47 sec
+      Start 35: readme_examples_noexceptions11
+35/97 Test #35: readme_examples_noexceptions11 .......................   Passed    2.29 sec
+      Start 36: readme_examples_will_fail_with_exceptions_off
+36/97 Test #36: readme_examples_will_fail_with_exceptions_off ........   Passed    1.64 sec
+      Start 37: ondemand_log_tests
+Could not find executable ondemand_log_tests
+Unable to find executable: ondemand_log_tests
+Looked in the following places:
+ondemand_log_tests
+ondemand_log_tests
+Release/ondemand_log_tests
+Release/ondemand_log_tests
+Debug/ondemand_log_tests
+Debug/ondemand_log_tests
+MinSizeRel/ondemand_log_tests
+MinSizeRel/ondemand_log_tests
+RelWithDebInfo/ondemand_log_tests
+RelWithDebInfo/ondemand_log_tests
+Deployment/ondemand_log_tests
+Deployment/ondemand_log_tests
+Development/ondemand_log_tests
+Development/ondemand_log_tests
+37/97 Test #37: ondemand_log_tests ...................................***Not Run   0.00 sec
+      Start 38: ondemand_log_error_tests
+Could not find executable ondemand_log_error_tests
+Looked in the following places:
+ondemand_log_error_tests
+ondemand_log_error_tests
+Unable to find executable: ondemand_log_error_tests
+Release/ondemand_log_error_tests
+Release/ondemand_log_error_tests
+Debug/ondemand_log_error_tests
+Debug/ondemand_log_error_tests
+MinSizeRel/ondemand_log_error_tests
+MinSizeRel/ondemand_log_error_tests
+RelWithDebInfo/ondemand_log_error_tests
+RelWithDebInfo/ondemand_log_error_tests
+Deployment/ondemand_log_error_tests
+Deployment/ondemand_log_error_tests
+Development/ondemand_log_error_tests
+Development/ondemand_log_error_tests
+38/97 Test #38: ondemand_log_error_tests .............................***Not Run   0.00 sec
+      Start 39: ondemand_tostring_tests
+Could not find executable ondemand_tostring_tests
+Looked in the following places:
+ondemand_tostring_tests
+ondemand_tostring_tests
+Release/ondemand_tostring_tests
+Release/ondemand_tostring_tests
+Debug/ondemand_tostring_tests
+Debug/ondemand_tostring_tests
+MinSizeRel/ondemand_tostring_tests
+MinSizeRel/ondemand_tostring_tests
+RelWithDebInfo/ondemand_tostring_tests
+RelWithDebInfo/ondemand_tostring_tests
+Deployment/ondemand_tostring_tests
+Deployment/ondemand_tostring_tests
+Development/ondemand_tostring_tests
+Development/ondemand_tostring_tests
+Unable to find executable: ondemand_tostring_tests
+39/97 Test #39: ondemand_tostring_tests ..............................***Not Run   0.00 sec
+      Start 40: ondemand_active_tests
+Unable to find executable: ondemand_active_tests
+Could not find executable ondemand_active_tests
+Looked in the following places:
+ondemand_active_tests
+ondemand_active_tests
+Release/ondemand_active_tests
+Release/ondemand_active_tests
+Debug/ondemand_active_tests
+Debug/ondemand_active_tests
+MinSizeRel/ondemand_active_tests
+MinSizeRel/ondemand_active_tests
+RelWithDebInfo/ondemand_active_tests
+RelWithDebInfo/ondemand_active_tests
+Deployment/ondemand_active_tests
+Deployment/ondemand_active_tests
+Development/ondemand_active_tests
+Development/ondemand_active_tests
+40/97 Test #40: ondemand_active_tests ................................***Not Run   0.00 sec
+      Start 41: ondemand_array_tests
+Could not find executable ondemand_array_tests
+Looked in the following places:
+ondemand_array_tests
+ondemand_array_tests
+Release/ondemand_array_tests
+Release/ondemand_array_tests
+Debug/ondemand_array_tests
+Debug/ondemand_array_tests
+MinSizeRel/ondemand_array_tests
+MinSizeRel/ondemand_array_tests
+RelWithDebInfo/ondemand_array_tests
+RelWithDebInfo/ondemand_array_tests
+Deployment/ondemand_array_tests
+Deployment/ondemand_array_tests
+Development/ondemand_array_tests
+Development/ondemand_array_tests
+Unable to find executable: ondemand_array_tests
+41/97 Test #41: ondemand_array_tests .................................***Not Run   0.00 sec
+      Start 42: ondemand_array_error_tests
+Could not find executable ondemand_array_error_tests
+Looked in the following places:
+ondemand_array_error_tests
+ondemand_array_error_tests
+Release/ondemand_array_error_tests
+Release/ondemand_array_error_tests
+Debug/ondemand_array_error_tests
+Debug/ondemand_array_error_tests
+Unable to find executable: ondemand_array_error_tests
+MinSizeRel/ondemand_array_error_tests
+MinSizeRel/ondemand_array_error_tests
+RelWithDebInfo/ondemand_array_error_tests
+RelWithDebInfo/ondemand_array_error_tests
+Deployment/ondemand_array_error_tests
+Deployment/ondemand_array_error_tests
+Development/ondemand_array_error_tests
+Development/ondemand_array_error_tests
+42/97 Test #42: ondemand_array_error_tests ...........................***Not Run   0.00 sec
+      Start 43: ondemand_compilation_tests
+Could not find executable ondemand_compilation_tests
+Looked in the following places:
+ondemand_compilation_tests
+ondemand_compilation_tests
+Release/ondemand_compilation_tests
+Release/ondemand_compilation_tests
+Debug/ondemand_compilation_tests
+Debug/ondemand_compilation_tests
+Unable to find executable: ondemand_compilation_tests
+MinSizeRel/ondemand_compilation_tests
+MinSizeRel/ondemand_compilation_tests
+RelWithDebInfo/ondemand_compilation_tests
+RelWithDebInfo/ondemand_compilation_tests
+Deployment/ondemand_compilation_tests
+Deployment/ondemand_compilation_tests
+Development/ondemand_compilation_tests
+Development/ondemand_compilation_tests
+43/97 Test #43: ondemand_compilation_tests ...........................***Not Run   0.00 sec
+      Start 44: ondemand_document_stream_tests
+Unable to find executable: ondemand_document_stream_tests
+Could not find executable ondemand_document_stream_tests
+Looked in the following places:
+ondemand_document_stream_tests
+ondemand_document_stream_tests
+Release/ondemand_document_stream_tests
+Release/ondemand_document_stream_tests
+Debug/ondemand_document_stream_tests
+Debug/ondemand_document_stream_tests
+MinSizeRel/ondemand_document_stream_tests
+MinSizeRel/ondemand_document_stream_tests
+RelWithDebInfo/ondemand_document_stream_tests
+RelWithDebInfo/ondemand_document_stream_tests
+Deployment/ondemand_document_stream_tests
+Deployment/ondemand_document_stream_tests
+Development/ondemand_document_stream_tests
+Development/ondemand_document_stream_tests
+44/97 Test #44: ondemand_document_stream_tests .......................***Not Run   0.00 sec
+      Start 45: ondemand_error_tests
+Could not find executable ondemand_error_tests
+Looked in the following places:
+ondemand_error_tests
+ondemand_error_tests
+Release/ondemand_error_tests
+Release/ondemand_error_tests
+Debug/ondemand_error_tests
+Debug/ondemand_error_tests
+MinSizeRel/ondemand_error_tests
+MinSizeRel/ondemand_error_tests
+RelWithDebInfo/ondemand_error_tests
+RelWithDebInfo/ondemand_error_tests
+Deployment/ondemand_error_tests
+Deployment/ondemand_error_tests
+Development/ondemand_error_tests
+Development/ondemand_error_tests
+Unable to find executable: ondemand_error_tests
+45/97 Test #45: ondemand_error_tests .................................***Not Run   0.00 sec
+      Start 46: ondemand_error_location_tests
+Could not find executable ondemand_error_location_tests
+Looked in the following places:
+ondemand_error_location_tests
+ondemand_error_location_tests
+Release/ondemand_error_location_tests
+Release/ondemand_error_location_tests
+Debug/ondemand_error_location_tests
+Debug/ondemand_error_location_tests
+MinSizeRel/ondemand_error_location_tests
+Unable to find executable: ondemand_error_location_tests
+MinSizeRel/ondemand_error_location_tests
+RelWithDebInfo/ondemand_error_location_tests
+RelWithDebInfo/ondemand_error_location_tests
+Deployment/ondemand_error_location_tests
+Deployment/ondemand_error_location_tests
+Development/ondemand_error_location_tests
+Development/ondemand_error_location_tests
+46/97 Test #46: ondemand_error_location_tests ........................***Not Run   0.00 sec
+      Start 47: ondemand_json_pointer_tests
+Could not find executable ondemand_json_pointer_tests
+Looked in the following places:
+ondemand_json_pointer_tests
+ondemand_json_pointer_tests
+Release/ondemand_json_pointer_tests
+Release/ondemand_json_pointer_tests
+Debug/ondemand_json_pointer_tests
+Debug/ondemand_json_pointer_tests
+MinSizeRel/ondemand_json_pointer_tests
+MinSizeRel/ondemand_json_pointer_tests
+RelWithDebInfo/ondemand_json_pointer_tests
+RelWithDebInfo/ondemand_json_pointer_tests
+Deployment/ondemand_json_pointer_tests
+Deployment/ondemand_json_pointer_tests
+Unable to find executable: ondemand_json_pointer_tests
+Development/ondemand_json_pointer_tests
+Development/ondemand_json_pointer_tests
+47/97 Test #47: ondemand_json_pointer_tests ..........................***Not Run   0.00 sec
+      Start 48: ondemand_key_string_tests
+Could not find executable ondemand_key_string_tests
+Looked in the following places:
+ondemand_key_string_tests
+ondemand_key_string_tests
+Release/ondemand_key_string_tests
+Release/ondemand_key_string_tests
+Debug/ondemand_key_string_tests
+Debug/ondemand_key_string_tests
+MinSizeRel/ondemand_key_string_tests
+MinSizeRel/ondemand_key_string_tests
+RelWithDebInfo/ondemand_key_string_tests
+RelWithDebInfo/ondemand_key_string_tests
+Deployment/ondemand_key_string_tests
+Deployment/ondemand_key_string_tests
+Development/ondemand_key_string_tests
+Development/ondemand_key_string_tests
+Unable to find executable: ondemand_key_string_tests
+48/97 Test #48: ondemand_key_string_tests ............................***Not Run   0.00 sec
+      Start 49: ondemand_misc_tests
+Could not find executable ondemand_misc_tests
+Unable to find executable: ondemand_misc_tests
+Looked in the following places:
+ondemand_misc_tests
+ondemand_misc_tests
+Release/ondemand_misc_tests
+Release/ondemand_misc_tests
+Debug/ondemand_misc_tests
+Debug/ondemand_misc_tests
+MinSizeRel/ondemand_misc_tests
+MinSizeRel/ondemand_misc_tests
+RelWithDebInfo/ondemand_misc_tests
+RelWithDebInfo/ondemand_misc_tests
+Deployment/ondemand_misc_tests
+Deployment/ondemand_misc_tests
+Development/ondemand_misc_tests
+Development/ondemand_misc_tests
+49/97 Test #49: ondemand_misc_tests ..................................***Not Run   0.00 sec
+      Start 50: ondemand_number_tests
+Could not find executable ondemand_number_tests
+Looked in the following places:
+ondemand_number_tests
+ondemand_number_tests
+Release/ondemand_number_tests
+Release/ondemand_number_tests
+Debug/ondemand_number_tests
+Debug/ondemand_number_tests
+MinSizeRel/ondemand_number_tests
+MinSizeRel/ondemand_number_tests
+RelWithDebInfo/ondemand_number_tests
+RelWithDebInfo/ondemand_number_tests
+Deployment/ondemand_number_tests
+Deployment/ondemand_number_tests
+Development/ondemand_number_tests
+Development/ondemand_number_tests
+50/97 Test #50: ondemand_number_tests ................................***Not Run   0.00 sec
+Unable to find executable: ondemand_number_tests
+      Start 51: ondemand_number_in_string_tests
+Could not find executable ondemand_number_in_string_tests
+Looked in the following places:
+ondemand_number_in_string_tests
+ondemand_number_in_string_tests
+Release/ondemand_number_in_string_tests
+Release/ondemand_number_in_string_tests
+Debug/ondemand_number_in_string_tests
+Debug/ondemand_number_in_string_tests
+MinSizeRel/ondemand_number_in_string_tests
+MinSizeRel/ondemand_number_in_string_tests
+RelWithDebInfo/ondemand_number_in_string_tests
+RelWithDebInfo/ondemand_number_in_string_tests
+Deployment/ondemand_number_in_string_tests
+Deployment/ondemand_number_in_string_tests
+Development/ondemand_number_in_string_tests
+Development/ondemand_number_in_string_tests
+51/97 Test #51: ondemand_number_in_string_tests ......................***Not Run   0.00 sec
+Unable to find executable: ondemand_number_in_string_tests
+      Start 52: ondemand_object_tests
+Could not find executable ondemand_object_tests
+Looked in the following places:
+ondemand_object_tests
+ondemand_object_tests
+Release/ondemand_object_tests
+Release/ondemand_object_tests
+Unable to find executable: ondemand_object_tests
+Debug/ondemand_object_tests
+Debug/ondemand_object_tests
+MinSizeRel/ondemand_object_tests
+MinSizeRel/ondemand_object_tests
+RelWithDebInfo/ondemand_object_tests
+RelWithDebInfo/ondemand_object_tests
+Deployment/ondemand_object_tests
+Deployment/ondemand_object_tests
+Development/ondemand_object_tests
+Development/ondemand_object_tests
+52/97 Test #52: ondemand_object_tests ................................***Not Run   0.00 sec
+      Start 53: ondemand_object_error_tests
+Could not find executable ondemand_object_error_tests
+Looked in the following places:
+ondemand_object_error_tests
+ondemand_object_error_tests
+Release/ondemand_object_error_tests
+Release/ondemand_object_error_tests
+Debug/ondemand_object_error_tests
+Debug/ondemand_object_error_tests
+MinSizeRel/ondemand_object_error_tests
+Unable to find executable: ondemand_object_error_tests
+MinSizeRel/ondemand_object_error_tests
+RelWithDebInfo/ondemand_object_error_tests
+RelWithDebInfo/ondemand_object_error_tests
+Deployment/ondemand_object_error_tests
+Deployment/ondemand_object_error_tests
+Development/ondemand_object_error_tests
+Development/ondemand_object_error_tests
+53/97 Test #53: ondemand_object_error_tests ..........................***Not Run   0.00 sec
+      Start 54: ondemand_ordering_tests
+Could not find executable ondemand_ordering_tests
+Looked in the following places:
+Unable to find executable: ondemand_ordering_tests
+ondemand_ordering_tests
+ondemand_ordering_tests
+Release/ondemand_ordering_tests
+Release/ondemand_ordering_tests
+Debug/ondemand_ordering_tests
+Debug/ondemand_ordering_tests
+MinSizeRel/ondemand_ordering_tests
+MinSizeRel/ondemand_ordering_tests
+RelWithDebInfo/ondemand_ordering_tests
+RelWithDebInfo/ondemand_ordering_tests
+Deployment/ondemand_ordering_tests
+Deployment/ondemand_ordering_tests
+Development/ondemand_ordering_tests
+Development/ondemand_ordering_tests
+54/97 Test #54: ondemand_ordering_tests ..............................***Not Run   0.00 sec
+      Start 55: ondemand_parse_api_tests
+Could not find executable ondemand_parse_api_tests
+Looked in the following places:
+Unable to find executable: ondemand_parse_api_tests
+ondemand_parse_api_tests
+ondemand_parse_api_tests
+Release/ondemand_parse_api_tests
+Release/ondemand_parse_api_tests
+Debug/ondemand_parse_api_tests
+Debug/ondemand_parse_api_tests
+MinSizeRel/ondemand_parse_api_tests
+MinSizeRel/ondemand_parse_api_tests
+RelWithDebInfo/ondemand_parse_api_tests
+RelWithDebInfo/ondemand_parse_api_tests
+Deployment/ondemand_parse_api_tests
+Deployment/ondemand_parse_api_tests
+Development/ondemand_parse_api_tests
+Development/ondemand_parse_api_tests
+55/97 Test #55: ondemand_parse_api_tests .............................***Not Run   0.00 sec
+      Start 56: ondemand_readme_examples
+Could not find executable ondemand_readme_examples
+Looked in the following places:
+ondemand_readme_examples
+ondemand_readme_examples
+Release/ondemand_readme_examples
+Release/ondemand_readme_examples
+Debug/ondemand_readme_examples
+Debug/ondemand_readme_examples
+MinSizeRel/ondemand_readme_examples
+MinSizeRel/ondemand_readme_examples
+RelWithDebInfo/ondemand_readme_examples
+RelWithDebInfo/ondemand_readme_examples
+Deployment/ondemand_readme_examples
+Deployment/ondemand_readme_examples
+Development/ondemand_readme_examples
+Development/ondemand_readme_examples
+56/97 Test #56: ondemand_readme_examples .............................***Not Run   0.00 sec
+      Start 57: ondemand_scalar_tests
+Unable to find executable: ondemand_readme_examples
+Could not find executable ondemand_scalar_tests
+Looked in the following places:
+ondemand_scalar_tests
+ondemand_scalar_tests
+Release/ondemand_scalar_tests
+Release/ondemand_scalar_tests
+Debug/ondemand_scalar_tests
+Debug/ondemand_scalar_tests
+MinSizeRel/ondemand_scalar_tests
+MinSizeRel/ondemand_scalar_tests
+RelWithDebInfo/ondemand_scalar_tests
+RelWithDebInfo/ondemand_scalar_tests
+Deployment/ondemand_scalar_tests
+Deployment/ondemand_scalar_tests
+Development/ondemand_scalar_tests
+Development/ondemand_scalar_tests
+57/97 Test #57: ondemand_scalar_tests ................................***Not Run   0.00 sec
+      Start 58: ondemand_twitter_tests
+Unable to find executable: ondemand_scalar_tests
+Could not find executable ondemand_twitter_tests
+Looked in the following places:
+ondemand_twitter_tests
+ondemand_twitter_tests
+Release/ondemand_twitter_tests
+Release/ondemand_twitter_tests
+Debug/ondemand_twitter_tests
+Debug/ondemand_twitter_tests
+MinSizeRel/ondemand_twitter_tests
+MinSizeRel/ondemand_twitter_tests
+RelWithDebInfo/ondemand_twitter_tests
+RelWithDebInfo/ondemand_twitter_tests
+Deployment/ondemand_twitter_tests
+Deployment/ondemand_twitter_tests
+Development/ondemand_twitter_tests
+Development/ondemand_twitter_tests
+Unable to find executable: ondemand_twitter_tests
+58/97 Test #58: ondemand_twitter_tests ...............................***Not Run   0.00 sec
+      Start 59: ondemand_wrong_type_error_tests
+Unable to find executable: ondemand_wrong_type_error_tests
+Could not find executable ondemand_wrong_type_error_tests
+Looked in the following places:
+ondemand_wrong_type_error_tests
+ondemand_wrong_type_error_tests
+Release/ondemand_wrong_type_error_tests
+Release/ondemand_wrong_type_error_tests
+Debug/ondemand_wrong_type_error_tests
+Debug/ondemand_wrong_type_error_tests
+MinSizeRel/ondemand_wrong_type_error_tests
+MinSizeRel/ondemand_wrong_type_error_tests
+RelWithDebInfo/ondemand_wrong_type_error_tests
+RelWithDebInfo/ondemand_wrong_type_error_tests
+Deployment/ondemand_wrong_type_error_tests
+Deployment/ondemand_wrong_type_error_tests
+Development/ondemand_wrong_type_error_tests
+Development/ondemand_wrong_type_error_tests
+59/97 Test #59: ondemand_wrong_type_error_tests ......................***Not Run   0.00 sec
+      Start 60: ondemand_iterate_many_csv
+Could not find executable ondemand_iterate_many_csv
+Looked in the following places:
+ondemand_iterate_many_csv
+ondemand_iterate_many_csv
+Release/ondemand_iterate_many_csv
+Release/ondemand_iterate_many_csv
+Debug/ondemand_iterate_many_csv
+Debug/ondemand_iterate_many_csv
+MinSizeRel/ondemand_iterate_many_csv
+MinSizeRel/ondemand_iterate_many_csv
+RelWithDebInfo/ondemand_iterate_many_csv
+Unable to find executable: ondemand_iterate_many_csv
+RelWithDebInfo/ondemand_iterate_many_csv
+Deployment/ondemand_iterate_many_csv
+Deployment/ondemand_iterate_many_csv
+Development/ondemand_iterate_many_csv
+Development/ondemand_iterate_many_csv
+60/97 Test #60: ondemand_iterate_many_csv ............................***Not Run   0.00 sec
+      Start 61: ondemand_assert_out_of_order_values
+Unable to find executable: ondemand_assert_out_of_order_values
+Could not find executable ondemand_assert_out_of_order_values
+Looked in the following places:
+ondemand_assert_out_of_order_values
+ondemand_assert_out_of_order_values
+Release/ondemand_assert_out_of_order_values
+Release/ondemand_assert_out_of_order_values
+Debug/ondemand_assert_out_of_order_values
+Debug/ondemand_assert_out_of_order_values
+MinSizeRel/ondemand_assert_out_of_order_values
+MinSizeRel/ondemand_assert_out_of_order_values
+RelWithDebInfo/ondemand_assert_out_of_order_values
+RelWithDebInfo/ondemand_assert_out_of_order_values
+Deployment/ondemand_assert_out_of_order_values
+Deployment/ondemand_assert_out_of_order_values
+Development/ondemand_assert_out_of_order_values
+Development/ondemand_assert_out_of_order_values
+61/97 Test #61: ondemand_assert_out_of_order_values ..................***Not Run   0.00 sec
+      Start 62: iterate_char_star_should_compile
+62/97 Test #62: iterate_char_star_should_compile .....................   Passed    1.77 sec
+      Start 63: iterate_char_star_should_not_compile
+63/97 Test #63: iterate_char_star_should_not_compile .................   Passed    1.66 sec
+      Start 64: iterate_string_view_should_compile
+64/97 Test #64: iterate_string_view_should_compile ...................   Passed    1.81 sec
+      Start 65: iterate_string_view_should_not_compile
+65/97 Test #65: iterate_string_view_should_not_compile ...............   Passed    1.61 sec
+      Start 66: iterate_temporary_buffer_should_compile
+66/97 Test #66: iterate_temporary_buffer_should_compile ..............   Passed    1.78 sec
+      Start 67: iterate_temporary_buffer_should_not_compile
+67/97 Test #67: iterate_temporary_buffer_should_not_compile ..........   Passed    1.59 sec
+      Start 68: first_second_access_should_compile
+68/97 Test #68: first_second_access_should_compile ...................   Passed    2.09 sec
+      Start 69: first_second_access_should_not_compile
+69/97 Test #69: first_second_access_should_not_compile ...............   Passed    1.62 sec
+      Start 70: example_compiletest_should_compile
+70/97 Test #70: example_compiletest_should_compile ...................   Passed    0.28 sec
+      Start 71: example_compiletest_should_not_compile
+71/97 Test #71: example_compiletest_should_not_compile ...............   Passed    0.18 sec
+      Start 72: bad_array_count_should_compile
+72/97 Test #72: bad_array_count_should_compile .......................   Passed    1.97 sec
+      Start 73: bad_array_count_should_not_compile
+73/97 Test #73: bad_array_count_should_not_compile ...................   Passed    1.62 sec
+      Start 74: dangling_parser_load_should_compile
+74/97 Test #74: dangling_parser_load_should_compile ..................   Passed    2.08 sec
+      Start 75: dangling_parser_load_should_not_compile
+75/97 Test #75: dangling_parser_load_should_not_compile ..............   Passed    1.64 sec
+      Start 76: dangling_parser_parse_uint8_should_compile
+76/97 Test #76: dangling_parser_parse_uint8_should_compile ...........   Passed    2.07 sec
+      Start 77: dangling_parser_parse_uint8_should_not_compile
+77/97 Test #77: dangling_parser_parse_uint8_should_not_compile .......   Passed    1.61 sec
+      Start 78: dangling_parser_parse_uchar_should_compile
+78/97 Test #78: dangling_parser_parse_uchar_should_compile ...........   Passed    2.06 sec
+      Start 79: dangling_parser_parse_uchar_should_not_compile
+79/97 Test #79: dangling_parser_parse_uchar_should_not_compile .......   Passed    1.61 sec
+      Start 80: dangling_parser_parse_stdstring_should_compile
+80/97 Test #80: dangling_parser_parse_stdstring_should_compile .......   Passed    2.04 sec
+      Start 81: dangling_parser_parse_stdstring_should_not_compile
+81/97 Test #81: dangling_parser_parse_stdstring_should_not_compile ...   Passed    1.60 sec
+      Start 82: dangling_parser_parse_padstring_should_compile
+82/97 Test #82: dangling_parser_parse_padstring_should_compile .......   Passed    2.03 sec
+      Start 83: dangling_parser_parse_padstring_should_not_compile
+83/97 Test #83: dangling_parser_parse_padstring_should_not_compile ...   Passed    1.60 sec
+      Start 84: unsafe_parse_many_should_compile
+84/97 Test #84: unsafe_parse_many_should_compile .....................   Passed    2.20 sec
+      Start 85: unsafe_parse_many_should_not_compile
+85/97 Test #85: unsafe_parse_many_should_not_compile .................   Passed    1.63 sec
+      Start 86: quickstart
+86/97 Test #86: quickstart ...........................................   Passed    3.70 sec
+      Start 87: quickstart11
+87/97 Test #87: quickstart11 .........................................   Passed    3.45 sec
+      Start 88: quickstart14
+88/97 Test #88: quickstart14 .........................................   Passed    3.47 sec
+      Start 89: quickstart_noexceptions
+89/97 Test #89: quickstart_noexceptions ..............................   Passed    3.65 sec
+      Start 90: quickstart_noexceptions11
+90/97 Test #90: quickstart_noexceptions11 ............................   Passed    3.41 sec
+      Start 91: quickstart2_noexceptions
+91/97 Test #91: quickstart2_noexceptions .............................   Passed    3.56 sec
+      Start 92: quickstart2_noexceptions11
+92/97 Test #92: quickstart2_noexceptions11 ...........................   Passed    3.32 sec
+      Start 93: quickstart_ondemand
+93/97 Test #93: quickstart_ondemand ..................................   Passed    3.69 sec
+      Start 94: quickstart_ondemand11
+94/97 Test #94: quickstart_ondemand11 ................................   Passed    3.42 sec
+      Start 95: quickstart_ondemand14
+95/97 Test #95: quickstart_ondemand14 ................................   Passed    3.47 sec
+      Start 96: quickstart_ondemand_noexceptions
+96/97 Test #96: quickstart_ondemand_noexceptions .....................   Passed    3.71 sec
+      Start 97: quickstart_ondemand_noexceptions11
+97/97 Test #97: quickstart_ondemand_noexceptions11 ...................   Passed    3.37 sec
+
+56% tests passed, 43 tests failed out of 97
+
+Label Time Summary:
+acceptance             =  56.55 sec*proc (67 tests)
+assert                 =   0.00 sec*proc (1 test)
+compile                =  42.24 sec*proc (12 tests)
+dom                    =   0.05 sec*proc (15 tests)
+explicitonly           =   0.00 sec*proc (1 test)
+no_mingw               =  82.40 sec*proc (36 tests)
+ondemand               =  13.93 sec*proc (33 tests)
+other                  =   0.00 sec*proc (4 tests)
+per_implementation     =   7.65 sec*proc (48 tests)
+quickstart             =  42.24 sec*proc (12 tests)
+quickstart_ondemand    =  17.67 sec*proc (5 tests)
+singleheader           =   6.91 sec*proc (3 tests)
+
+Total Test time (real) = 103.44 sec
+
+The following tests FAILED:
+	 11 - minify_tests (Not Run)
+	 12 - padded_string_tests (Not Run)
+	 13 - prettify_tests (Not Run)
+	 14 - checkimplementation (Not Run)
+	 15 - random_string_number_tests (Not Run)
+	 16 - basictests (Not Run)
+	 17 - document_stream_tests (Not Run)
+	 18 - document_tests (Not Run)
+	 19 - errortests (Not Run)
+	 20 - extracting_values_example (Not Run)
+	 21 - integer_tests (Not Run)
+	 22 - jsoncheck (Not Run)
+	 23 - minefieldcheck (Not Run)
+	 24 - numberparsingcheck (Not Run)
+	 25 - parse_many_test (Not Run)
+	 26 - pointercheck (Not Run)
+	 27 - stringparsingcheck (Not Run)
+	 28 - trivially_copyable_test (Not Run)
+	 37 - ondemand_log_tests (Not Run)
+	 38 - ondemand_log_error_tests (Not Run)
+	 39 - ondemand_tostring_tests (Not Run)
+	 40 - ondemand_active_tests (Not Run)
+	 41 - ondemand_array_tests (Not Run)
+	 42 - ondemand_array_error_tests (Not Run)
+	 43 - ondemand_compilation_tests (Not Run)
+	 44 - ondemand_document_stream_tests (Not Run)
+	 45 - ondemand_error_tests (Not Run)
+	 46 - ondemand_error_location_tests (Not Run)
+	 47 - ondemand_json_pointer_tests (Not Run)
+	 48 - ondemand_key_string_tests (Not Run)
+	 49 - ondemand_misc_tests (Not Run)
+	 50 - ondemand_number_tests (Not Run)
+	 51 - ondemand_number_in_string_tests (Not Run)
+	 52 - ondemand_object_tests (Not Run)
+	 53 - ondemand_object_error_tests (Not Run)
+	 54 - ondemand_ordering_tests (Not Run)
+	 55 - ondemand_parse_api_tests (Not Run)
+	 56 - ondemand_readme_examples (Not Run)
+	 57 - ondemand_scalar_tests (Not Run)
+	 58 - ondemand_twitter_tests (Not Run)
+	 59 - ondemand_wrong_type_error_tests (Not Run)
+	 60 - ondemand_iterate_many_csv (Not Run)
+	 61 - ondemand_assert_out_of_order_values (Not Run)
+Errors while running CTest

@@ -1,0 +1,521 @@
+diff --git a/include/simdjson/dom/element-inl.h b/include/simdjson/dom/element-inl.h
+index ef48891f..b56c3b3e 100644
+--- a/include/simdjson/dom/element-inl.h
++++ b/include/simdjson/dom/element-inl.h
+@@ -70,6 +70,18 @@ simdjson_really_inline simdjson_result<double> simdjson_result<dom::element>::ge
+   if (error()) { return error(); }
+   return first.get_double();
+ }
++simdjson_really_inline simdjson_result<double> simdjson_result<dom::element>::get_double_from_string() const noexcept {
++  if (error()) { return error(); }
++  return first.get_double_from_string();
++}
++simdjson_really_inline simdjson_result<uint64_t> simdjson_result<dom::element>::get_uint64_from_string() const noexcept {
++  if (error()) { return error(); }
++  return first.get_uint64_from_string();
++}
++simdjson_really_inline simdjson_result<int64_t> simdjson_result<dom::element>::get_int64_from_string() const noexcept {
++  if (error()) { return error(); }
++  return first.get_int64_from_string();
++}
+ simdjson_really_inline simdjson_result<bool> simdjson_result<dom::element>::get_bool() const noexcept {
+   if (error()) { return error(); }
+   return first.get_bool();
+@@ -272,6 +284,112 @@ inline simdjson_result<double> element::get_double() const noexcept {
+   // this is common:
+   return tape.next_tape_value<double>();
+ }
++inline simdjson_result<double> element::get_double_from_string() const noexcept {
++  if(simdjson_unlikely(!tape.is_double())) {
++    if(tape.is_uint64()) {
++      return double(tape.next_tape_value<uint64_t>());
++    } else if(tape.is_int64()) {
++      return double(tape.next_tape_value<int64_t>());
++    } else if(tape.tape_ref_type() == internal::tape_type::STRING) {
++      std::string_view str = tape.get_string_view();
++      // Validate the string is a valid number representation
++      const char *p = str.data();
++      const char *end = p + str.length();
++      if (*p == '-') { p++; }
++      if (p == end || *p < '0' || *p > '9') { return INCORRECT_TYPE; }
++      bool leading_zero = (*p == '0');
++      while (p != end && *p >= '0' && *p <= '9') { p++; }
++      if (leading_zero && p - str.data() - (str[0] == '-' ? 1 : 0) > 1) { return NUMBER_ERROR; }
++      if (p != end && *p == '.') {
++        p++;
++        if (p == end || *p < '0' || *p > '9') { return NUMBER_ERROR; }
++        while (p != end && *p >= '0' && *p <= '9') { p++; }
++      }
++      if (p != end && (*p == 'e' || *p == 'E')) {
++        p++;
++        if (p != end && (*p == '+' || *p == '-')) { p++; }
++        if (p == end || *p < '0' || *p > '9') { return NUMBER_ERROR; }
++        while (p != end && *p >= '0' && *p <= '9') { p++; }
++      }
++      if (p != end) { return INCORRECT_TYPE; }
++      double d = simdjson::internal::from_chars(str.data(), str.data() + str.length());
++      if(d > (std::numeric_limits<double>::max)() || d < std::numeric_limits<double>::lowest()) {
++        return NUMBER_ERROR;
++      }
++      return d;
++    }
++    return INCORRECT_TYPE;
++  }
++  return tape.next_tape_value<double>();
++}
++inline simdjson_result<uint64_t> element::get_uint64_from_string() const noexcept {
++  if(simdjson_unlikely(!tape.is_uint64())) {
++    if(tape.is_int64()) {
++      int64_t result = tape.next_tape_value<int64_t>();
++      if (result < 0) {
++        return NUMBER_OUT_OF_RANGE;
++      }
++      return uint64_t(result);
++    } else if(tape.tape_ref_type() == internal::tape_type::STRING) {
++      std::string_view str = tape.get_string_view();
++      // Parse the string as a uint64_t
++      const uint8_t *src = reinterpret_cast<const uint8_t*>(str.data());
++      const uint8_t *const src_end = src + str.length();
++      const uint8_t *p = src;
++      const uint8_t *const start_digits = p;
++      uint64_t i = 0;
++      while ((p != src_end) && (*p >= '0') && (*p <= '9')) {
++        i = 10 * i + (*p - '0');
++        p++;
++      }
++      size_t digit_count = size_t(p - start_digits);
++      if ((digit_count == 0) || (digit_count > 20)) { return INCORRECT_TYPE; }
++      if (('0' == *start_digits) && (digit_count > 1)) { return NUMBER_ERROR; }
++      if (p != src_end) { return INCORRECT_TYPE; }
++      if (digit_count == 20) {
++        if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_OUT_OF_RANGE; }
++      }
++      return i;
++    }
++    return INCORRECT_TYPE;
++  }
++  return tape.next_tape_value<int64_t>();
++}
++inline simdjson_result<int64_t> element::get_int64_from_string() const noexcept {
++  if(simdjson_unlikely(!tape.is_int64())) {
++    if(tape.is_uint64()) {
++      uint64_t result = tape.next_tape_value<uint64_t>();
++      if (result > uint64_t((std::numeric_limits<int64_t>::max)())) {
++        return NUMBER_OUT_OF_RANGE;
++      }
++      return static_cast<int64_t>(result);
++    } else if(tape.tape_ref_type() == internal::tape_type::STRING) {
++      std::string_view str = tape.get_string_view();
++      const uint8_t *src = reinterpret_cast<const uint8_t*>(str.data());
++      const uint8_t *const src_end = src + str.length();
++      bool negative = (*src == '-');
++      if (negative) { src++; }
++      const uint8_t *start_digits = src;
++      uint64_t i = 0;
++      while ((src != src_end) && (*src >= '0') && (*src <= '9')) {
++        i = 10 * i + (*src - '0');
++        src++;
++      }
++      size_t digit_count = size_t(src - start_digits);
++      if ((digit_count == 0) || (digit_count > 19)) { return INCORRECT_TYPE; }
++      if (('0' == *start_digits) && (digit_count > 1)) { return NUMBER_ERROR; }
++      if (src != src_end) { return INCORRECT_TYPE; }
++      if (negative) {
++        if (i > uint64_t(INT64_MAX) + 1) { return NUMBER_OUT_OF_RANGE; }
++        return -static_cast<int64_t>(i);
++      }
++      if (i > uint64_t(INT64_MAX)) { return NUMBER_OUT_OF_RANGE; }
++      return static_cast<int64_t>(i);
++    }
++    return INCORRECT_TYPE;
++  }
++  return tape.next_tape_value<int64_t>();
++}
+ inline simdjson_result<array> element::get_array() const noexcept {
+   switch (tape.tape_ref_type()) {
+     case internal::tape_type::START_ARRAY:
+diff --git a/include/simdjson/dom/element.h b/include/simdjson/dom/element.h
+index 186fb1f7..6cdc07a1 100644
+--- a/include/simdjson/dom/element.h
++++ b/include/simdjson/dom/element.h
+@@ -104,6 +104,15 @@ public:
+    *          if it is negative.
+    */
+   inline simdjson_result<int64_t> get_int64() const noexcept;
++  /**
++   * Cast this element (which must be a string) to a signed integer.
++   *
++   * The string must contain a valid signed integer (e.g., "-42", "100").
++   *
++   * @returns A signed 64-bit integer parsed from the string content.
++   *          Returns INCORRECT_TYPE if the JSON element is not a string, or the string is not a valid integer.
++   */
++  inline simdjson_result<int64_t> get_int64_from_string() const noexcept;
+   /**
+    * Cast this element to an unsigned integer.
+    *
+@@ -112,6 +121,15 @@ public:
+    *          if it is too large.
+    */
+   inline simdjson_result<uint64_t> get_uint64() const noexcept;
++  /**
++   * Cast this element (which must be a string) to an unsigned integer.
++   *
++   * The string must contain a valid unsigned integer (e.g., "42").
++   *
++   * @returns An unsigned 64-bit integer parsed from the string content.
++   *          Returns INCORRECT_TYPE if the JSON element is not a string, or the string is not a valid unsigned integer.
++   */
++  inline simdjson_result<uint64_t> get_uint64_from_string() const noexcept;
+   /**
+    * Cast this element to a double floating-point.
+    *
+@@ -119,6 +137,15 @@ public:
+    *          Returns INCORRECT_TYPE if the JSON element is not a number.
+    */
+   inline simdjson_result<double> get_double() const noexcept;
++  /**
++   * Cast this element (which must be a string) to a double floating-point.
++   *
++   * The string must contain a valid floating-point number (e.g., "1.5", "-3.14e2").
++   *
++   * @returns A double value parsed from the string content.
++   *          Returns INCORRECT_TYPE if the JSON element is not a string, or the string is not a valid number.
++   */
++  inline simdjson_result<double> get_double_from_string() const noexcept;
+   /**
+    * Cast this element to a bool.
+    *
+@@ -501,6 +528,9 @@ public:
+   simdjson_really_inline simdjson_result<int64_t> get_int64() const noexcept;
+   simdjson_really_inline simdjson_result<uint64_t> get_uint64() const noexcept;
+   simdjson_really_inline simdjson_result<double> get_double() const noexcept;
++  simdjson_really_inline simdjson_result<int64_t> get_int64_from_string() const noexcept;
++  simdjson_really_inline simdjson_result<uint64_t> get_uint64_from_string() const noexcept;
++  simdjson_really_inline simdjson_result<double> get_double_from_string() const noexcept;
+   simdjson_really_inline simdjson_result<bool> get_bool() const noexcept;
+ 
+   simdjson_really_inline bool is_array() const noexcept;
+diff --git a/include/simdjson/generic/ondemand/document-inl.h b/include/simdjson/generic/ondemand/document-inl.h
+index 045411d5..710c0294 100644
+--- a/include/simdjson/generic/ondemand/document-inl.h
++++ b/include/simdjson/generic/ondemand/document-inl.h
+@@ -70,6 +70,15 @@ simdjson_really_inline simdjson_result<int64_t> document::get_int64() noexcept {
+ simdjson_really_inline simdjson_result<double> document::get_double() noexcept {
+   return get_root_value_iterator().get_root_double();
+ }
++simdjson_really_inline simdjson_result<double> document::get_double_from_string() noexcept {
++  return get_root_value_iterator().get_root_double_from_string();
++}
++simdjson_really_inline simdjson_result<uint64_t> document::get_uint64_from_string() noexcept {
++  return get_root_value_iterator().get_root_uint64_from_string();
++}
++simdjson_really_inline simdjson_result<int64_t> document::get_int64_from_string() noexcept {
++  return get_root_value_iterator().get_root_int64_from_string();
++}
+ simdjson_really_inline simdjson_result<std::string_view> document::get_string() noexcept {
+   return get_root_value_iterator().get_root_string();
+ }
+@@ -274,6 +283,18 @@ simdjson_really_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMEN
+   if (error()) { return error(); }
+   return first.get_double();
+ }
++simdjson_really_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_uint64_from_string() noexcept {
++  if (error()) { return error(); }
++  return first.get_uint64_from_string();
++}
++simdjson_really_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_int64_from_string() noexcept {
++  if (error()) { return error(); }
++  return first.get_int64_from_string();
++}
++simdjson_really_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_double_from_string() noexcept {
++  if (error()) { return error(); }
++  return first.get_double_from_string();
++}
+ simdjson_really_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_string() noexcept {
+   if (error()) { return error(); }
+   return first.get_string();
+diff --git a/include/simdjson/generic/ondemand/document.h b/include/simdjson/generic/ondemand/document.h
+index 2d65fc9c..d3252577 100644
+--- a/include/simdjson/generic/ondemand/document.h
++++ b/include/simdjson/generic/ondemand/document.h
+@@ -53,6 +53,15 @@ public:
+    * @returns INCORRECT_TYPE If the JSON value is not a 64-bit unsigned integer.
+    */
+   simdjson_really_inline simdjson_result<uint64_t> get_uint64() noexcept;
++  /**
++   * Cast this JSON string to an unsigned integer.
++   *
++   * The string must contain a valid unsigned integer (e.g., "42").
++   *
++   * @returns A uint64_t parsed from the string content.
++   * @returns INCORRECT_TYPE If the JSON value is not a string, or the string is not a valid unsigned integer.
++   */
++  simdjson_really_inline simdjson_result<uint64_t> get_uint64_from_string() noexcept;
+   /**
+    * Cast this JSON value to a signed integer.
+    *
+@@ -60,6 +69,15 @@ public:
+    * @returns INCORRECT_TYPE If the JSON value is not a 64-bit integer.
+    */
+   simdjson_really_inline simdjson_result<int64_t> get_int64() noexcept;
++  /**
++   * Cast this JSON string to a signed integer.
++   *
++   * The string must contain a valid signed integer (e.g., "-42", "100").
++   *
++   * @returns An int64_t parsed from the string content.
++   * @returns INCORRECT_TYPE If the JSON value is not a string, or the string is not a valid integer.
++   */
++  simdjson_really_inline simdjson_result<int64_t> get_int64_from_string() noexcept;
+   /**
+    * Cast this JSON value to a double.
+    *
+@@ -67,6 +85,15 @@ public:
+    * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
+    */
+   simdjson_really_inline simdjson_result<double> get_double() noexcept;
++  /**
++   * Cast this JSON string to a double.
++   *
++   * The string must contain a valid floating-point number (e.g., "1.5", "-3.14e2").
++   *
++   * @returns A double parsed from the string content.
++   * @returns INCORRECT_TYPE If the JSON value is not a string, or the string is not a valid number.
++   */
++  simdjson_really_inline simdjson_result<double> get_double_from_string() noexcept;
+   /**
+    * Cast this JSON value to a string.
+    *
+@@ -408,6 +435,9 @@ public:
+   simdjson_really_inline simdjson_result<uint64_t> get_uint64() noexcept;
+   simdjson_really_inline simdjson_result<int64_t> get_int64() noexcept;
+   simdjson_really_inline simdjson_result<double> get_double() noexcept;
++  simdjson_really_inline simdjson_result<uint64_t> get_uint64_from_string() noexcept;
++  simdjson_really_inline simdjson_result<int64_t> get_int64_from_string() noexcept;
++  simdjson_really_inline simdjson_result<double> get_double_from_string() noexcept;
+   simdjson_really_inline simdjson_result<std::string_view> get_string() noexcept;
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
+   simdjson_really_inline simdjson_result<bool> get_bool() noexcept;
+diff --git a/include/simdjson/generic/ondemand/value-inl.h b/include/simdjson/generic/ondemand/value-inl.h
+index 5b6e4fbc..ef2135ab 100644
+--- a/include/simdjson/generic/ondemand/value-inl.h
++++ b/include/simdjson/generic/ondemand/value-inl.h
+@@ -36,6 +36,15 @@ simdjson_really_inline simdjson_result<std::string_view> value::get_string() noe
+ simdjson_really_inline simdjson_result<double> value::get_double() noexcept {
+   return iter.get_double();
+ }
++simdjson_really_inline simdjson_result<uint64_t> value::get_uint64_from_string() noexcept {
++  return iter.get_uint64_from_string();
++}
++simdjson_really_inline simdjson_result<int64_t> value::get_int64_from_string() noexcept {
++  return iter.get_int64_from_string();
++}
++simdjson_really_inline simdjson_result<double> value::get_double_from_string() noexcept {
++  return iter.get_double_from_string();
++}
+ simdjson_really_inline simdjson_result<uint64_t> value::get_uint64() noexcept {
+   return iter.get_uint64();
+ }
+@@ -229,6 +238,18 @@ simdjson_really_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMEN
+   if (error()) { return error(); }
+   return first.get_double();
+ }
++simdjson_really_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_uint64_from_string() noexcept {
++  if (error()) { return error(); }
++  return first.get_uint64_from_string();
++}
++simdjson_really_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_int64_from_string() noexcept {
++  if (error()) { return error(); }
++  return first.get_int64_from_string();
++}
++simdjson_really_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_double_from_string() noexcept {
++  if (error()) { return error(); }
++  return first.get_double_from_string();
++}
+ simdjson_really_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_string() noexcept {
+   if (error()) { return error(); }
+   return first.get_string();
+diff --git a/include/simdjson/generic/ondemand/value.h b/include/simdjson/generic/ondemand/value.h
+index 65de6bc6..7db3fdcc 100644
+--- a/include/simdjson/generic/ondemand/value.h
++++ b/include/simdjson/generic/ondemand/value.h
+@@ -74,6 +74,16 @@ public:
+    */
+   simdjson_really_inline simdjson_result<uint64_t> get_uint64() noexcept;
+ 
++  /**
++   * Cast this JSON string to an unsigned integer.
++   *
++   * The string must contain a valid unsigned integer (e.g., "42").
++   *
++   * @returns A uint64_t parsed from the string content.
++   * @returns INCORRECT_TYPE If the JSON value is not a string, or the string is not a valid unsigned integer.
++   */
++  simdjson_really_inline simdjson_result<uint64_t> get_uint64_from_string() noexcept;
++
+   /**
+    * Cast this JSON value to a signed integer.
+    *
+@@ -82,6 +92,16 @@ public:
+    */
+   simdjson_really_inline simdjson_result<int64_t> get_int64() noexcept;
+ 
++  /**
++   * Cast this JSON string to a signed integer.
++   *
++   * The string must contain a valid signed integer (e.g., "-42", "100").
++   *
++   * @returns An int64_t parsed from the string content.
++   * @returns INCORRECT_TYPE If the JSON value is not a string, or the string is not a valid integer.
++   */
++  simdjson_really_inline simdjson_result<int64_t> get_int64_from_string() noexcept;
++
+   /**
+    * Cast this JSON value to a double.
+    *
+@@ -90,6 +110,16 @@ public:
+    */
+   simdjson_really_inline simdjson_result<double> get_double() noexcept;
+ 
++  /**
++   * Cast this JSON string to a double.
++   *
++   * The string must contain a valid floating-point number (e.g., "1.5", "-3.14e2").
++   *
++   * @returns A double parsed from the string content.
++   * @returns INCORRECT_TYPE If the JSON value is not a string, or the string is not a valid number.
++   */
++  simdjson_really_inline simdjson_result<double> get_double_from_string() noexcept;
++
+   /**
+    * Cast this JSON value to a string.
+    *
+@@ -418,6 +448,9 @@ public:
+   simdjson_really_inline simdjson_result<uint64_t> get_uint64() noexcept;
+   simdjson_really_inline simdjson_result<int64_t> get_int64() noexcept;
+   simdjson_really_inline simdjson_result<double> get_double() noexcept;
++  simdjson_really_inline simdjson_result<uint64_t> get_uint64_from_string() noexcept;
++  simdjson_really_inline simdjson_result<int64_t> get_int64_from_string() noexcept;
++  simdjson_really_inline simdjson_result<double> get_double_from_string() noexcept;
+   simdjson_really_inline simdjson_result<std::string_view> get_string() noexcept;
+   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
+   simdjson_really_inline simdjson_result<bool> get_bool() noexcept;
+diff --git a/include/simdjson/generic/ondemand/value_iterator-inl.h b/include/simdjson/generic/ondemand/value_iterator-inl.h
+index 258e75cf..f7b1494b 100644
+--- a/include/simdjson/generic/ondemand/value_iterator-inl.h
++++ b/include/simdjson/generic/ondemand/value_iterator-inl.h
+@@ -473,6 +473,43 @@ simdjson_really_inline bool value_iterator::is_null() noexcept {
+   return result;
+ }
+ 
++simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_double_from_string() noexcept {
++  std::string_view str;
++  auto err = get_string().get(str);
++  if (err) { return err; }
++#ifdef SIMDJSON_SKIPNUMBERPARSING
++  return 0;
++#else
++  const uint8_t *src = reinterpret_cast<const uint8_t*>(str.data());
++  const uint8_t *const src_end = src + str.length();
++  return numberparsing::parse_double(src, src_end);
++#endif
++}
++simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::get_uint64_from_string() noexcept {
++  std::string_view str;
++  auto err = get_string().get(str);
++  if (err) { return err; }
++#ifdef SIMDJSON_SKIPNUMBERPARSING
++  return 0;
++#else
++  const uint8_t *src = reinterpret_cast<const uint8_t*>(str.data());
++  const uint8_t *const src_end = src + str.length();
++  return numberparsing::parse_unsigned(src, src_end);
++#endif
++}
++simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::get_int64_from_string() noexcept {
++  std::string_view str;
++  auto err = get_string().get(str);
++  if (err) { return err; }
++#ifdef SIMDJSON_SKIPNUMBERPARSING
++  return 0;
++#else
++  const uint8_t *src = reinterpret_cast<const uint8_t*>(str.data());
++  const uint8_t *const src_end = src + str.length();
++  return numberparsing::parse_integer(src, src_end);
++#endif
++}
++
+ constexpr const uint32_t MAX_INT_LENGTH = 1024;
+ 
+ simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> value_iterator::get_root_string() noexcept {
+@@ -538,6 +575,43 @@ simdjson_really_inline bool value_iterator::is_root_null() noexcept {
+   return result;
+ }
+ 
++simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_root_double_from_string() noexcept {
++  std::string_view str;
++  auto err = get_root_string().get(str);
++  if (err) { return err; }
++#ifdef SIMDJSON_SKIPNUMBERPARSING
++  return 0;
++#else
++  const uint8_t *src = reinterpret_cast<const uint8_t*>(str.data());
++  const uint8_t *const src_end = src + str.length();
++  return numberparsing::parse_double(src, src_end);
++#endif
++}
++simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_from_string() noexcept {
++  std::string_view str;
++  auto err = get_root_string().get(str);
++  if (err) { return err; }
++#ifdef SIMDJSON_SKIPNUMBERPARSING
++  return 0;
++#else
++  const uint8_t *src = reinterpret_cast<const uint8_t*>(str.data());
++  const uint8_t *const src_end = src + str.length();
++  return numberparsing::parse_unsigned(src, src_end);
++#endif
++}
++simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::get_root_int64_from_string() noexcept {
++  std::string_view str;
++  auto err = get_root_string().get(str);
++  if (err) { return err; }
++#ifdef SIMDJSON_SKIPNUMBERPARSING
++  return 0;
++#else
++  const uint8_t *src = reinterpret_cast<const uint8_t*>(str.data());
++  const uint8_t *const src_end = src + str.length();
++  return numberparsing::parse_integer(src, src_end);
++#endif
++}
++
+ simdjson_warn_unused simdjson_really_inline error_code value_iterator::skip_child() noexcept {
+   SIMDJSON_ASSUME( _json_iter->token._position > _start_position );
+   SIMDJSON_ASSUME( _json_iter->_depth >= _depth );
+diff --git a/include/simdjson/generic/ondemand/value_iterator.h b/include/simdjson/generic/ondemand/value_iterator.h
+index e742198a..59f12d26 100644
+--- a/include/simdjson/generic/ondemand/value_iterator.h
++++ b/include/simdjson/generic/ondemand/value_iterator.h
+@@ -288,6 +288,10 @@ public:
+   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> get_bool() noexcept;
+   simdjson_really_inline bool is_null() noexcept;
+ 
++  simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> get_uint64_from_string() noexcept;
++  simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> get_int64_from_string() noexcept;
++  simdjson_warn_unused simdjson_really_inline simdjson_result<double> get_double_from_string() noexcept;
++
+   simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> get_root_string() noexcept;
+   simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> get_root_raw_json_string() noexcept;
+   simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> get_root_uint64() noexcept;
+@@ -296,6 +300,10 @@ public:
+   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> get_root_bool() noexcept;
+   simdjson_really_inline bool is_root_null() noexcept;
+ 
++  simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> get_root_uint64_from_string() noexcept;
++  simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> get_root_int64_from_string() noexcept;
++  simdjson_warn_unused simdjson_really_inline simdjson_result<double> get_root_double_from_string() noexcept;
++
+   simdjson_really_inline error_code error() const noexcept;
+   simdjson_really_inline uint8_t *&string_buf_loc() noexcept;
+   simdjson_really_inline const json_iterator &json_iter() const noexcept;

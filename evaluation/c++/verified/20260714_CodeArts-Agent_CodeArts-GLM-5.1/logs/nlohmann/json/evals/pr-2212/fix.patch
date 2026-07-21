@@ -1,0 +1,492 @@
+diff --git a/include/nlohmann/detail/input/lexer.hpp b/include/nlohmann/detail/input/lexer.hpp
+index 0ff0c736..3f265eac 100644
+--- a/include/nlohmann/detail/input/lexer.hpp
++++ b/include/nlohmann/detail/input/lexer.hpp
+@@ -112,8 +112,8 @@ class lexer : public lexer_base<BasicJsonType>
+   public:
+     using token_type = typename lexer_base<BasicJsonType>::token_type;
+ 
+-    explicit lexer(InputAdapterType&& adapter)
+-        : ia(std::move(adapter)), decimal_point_char(static_cast<char_int_type>(get_decimal_point())) {}
++    explicit lexer(InputAdapterType&& adapter, bool allow_comments_ = false)
++        : ia(std::move(adapter)), decimal_point_char(static_cast<char_int_type>(get_decimal_point())), allow_comments(allow_comments_) {}
+ 
+     // delete because of pointer members
+     lexer(const lexer&) = delete;
+@@ -1431,6 +1431,74 @@ scan_number_done:
+         }
+         while (current == ' ' or current == '\t' or current == '\n' or current == '\r');
+ 
++        if (allow_comments and current == '/')
++        {
++            // we have read a single '/', need to check the next character
++            const auto next = get();
++            if (next == '/')
++            {
++                // single-line comment: skip until end of line
++                while (true)
++                {
++                    const auto c = get();
++                    if (c == '\n' or c == std::char_traits<char_type>::eof())
++                    {
++                        break;
++                    }
++                }
++                // after skipping the comment, scan again for the next token
++                return scan();
++            }
++            else if (next == '*')
++            {
++                // multi-line comment: skip until */
++                while (true)
++                {
++                    const auto c = get();
++                    if (c == std::char_traits<char_type>::eof())
++                    {
++                        error_message = "invalid comment: missing closing '*/'";
++                        return token_type::parse_error;
++                    }
++                    if (c == '*')
++                    {
++                        const auto c2 = get();
++                        if (c2 == '/')
++                        {
++                            break;
++                        }
++                        // if not followed by '/', we need to check if c2 is '*' again
++                        // but since we already consumed it, we just continue
++                        // however, we need to handle the case where c2 is '*' for patterns like **/
++                        // we need to re-check, so we "unget" would be ideal but let's handle differently
++                        // Actually, we consumed c2 which might be '*' so let's check
++                        if (c2 == '*')
++                        {
++                            // The '*' we just read might be the start of a closing '*/'
++                            // We need to read the next char to check
++                            const auto c3 = get();
++                            if (c3 == '/')
++                            {
++                                break;
++                            }
++                            // not a closing, continue
++                        }
++                    }
++                }
++                // after skipping the comment, scan again for the next token
++                return scan();
++            }
++            else
++            {
++                // not a comment, '/' followed by something else
++                // this is an invalid character in JSON
++                unget(); // unget the character after '/'
++                // current is still '/'
++                error_message = "invalid literal";
++                return token_type::parse_error;
++            }
++        }
++
+         switch (current)
+         {
+             // structural characters
+@@ -1524,6 +1592,9 @@ scan_number_done:
+ 
+     /// the decimal point
+     const char_int_type decimal_point_char = '.';
++
++    /// whether comments are allowed and should be skipped
++    bool allow_comments = false;
+ };
+ }  // namespace detail
+ }  // namespace nlohmann
+diff --git a/include/nlohmann/detail/input/parser.hpp b/include/nlohmann/detail/input/parser.hpp
+index 0546b88c..1daa85cb 100644
+--- a/include/nlohmann/detail/input/parser.hpp
++++ b/include/nlohmann/detail/input/parser.hpp
+@@ -63,8 +63,9 @@ class parser
+     /// a parser reading from an input adapter
+     explicit parser(InputAdapterType&& adapter,
+                     const parser_callback_t<BasicJsonType> cb = nullptr,
+-                    const bool allow_exceptions_ = true)
+-        : callback(cb), m_lexer(std::move(adapter)), allow_exceptions(allow_exceptions_)
++                    const bool allow_exceptions_ = true,
++                    const bool allow_comments_ = false)
++        : callback(cb), m_lexer(std::move(adapter), allow_comments_), allow_exceptions(allow_exceptions_)
+     {
+         // read first token
+         get_token();
+diff --git a/include/nlohmann/json.hpp b/include/nlohmann/json.hpp
+index 8f95a797..3990fe9f 100644
+--- a/include/nlohmann/json.hpp
++++ b/include/nlohmann/json.hpp
+@@ -196,10 +196,11 @@ class basic_json
+     static ::nlohmann::detail::parser<basic_json, InputAdapterType> parser(
+         InputAdapterType adapter,
+         detail::parser_callback_t<basic_json>cb = nullptr,
+-        bool allow_exceptions = true
++        bool allow_exceptions = true,
++        bool allow_comments = false
+     )
+     {
+-        return ::nlohmann::detail::parser<basic_json, InputAdapterType>(std::move(adapter), std::move(cb), allow_exceptions);
++        return ::nlohmann::detail::parser<basic_json, InputAdapterType>(std::move(adapter), std::move(cb), allow_exceptions, allow_comments);
+     }
+ 
+     using primitive_iterator_t = ::nlohmann::detail::primitive_iterator_t;
+@@ -6625,10 +6626,11 @@ class basic_json
+     JSON_HEDLEY_WARN_UNUSED_RESULT
+     static basic_json parse(InputType&& i,
+                             const parser_callback_t cb = nullptr,
+-                            const bool allow_exceptions = true)
++                            const bool allow_exceptions = true,
++                            const bool allow_comments = false)
+     {
+         basic_json result;
+-        parser(detail::input_adapter(std::forward<InputType>(i)), cb, allow_exceptions).parse(true, result);
++        parser(detail::input_adapter(std::forward<InputType>(i)), cb, allow_exceptions, allow_comments).parse(true, result);
+         return result;
+     }
+ 
+@@ -6660,10 +6662,11 @@ class basic_json
+     static basic_json parse(IteratorType first,
+                             IteratorType last,
+                             const parser_callback_t cb = nullptr,
+-                            const bool allow_exceptions = true)
++                            const bool allow_exceptions = true,
++                            const bool allow_comments = false)
+     {
+         basic_json result;
+-        parser(detail::input_adapter(std::move(first), std::move(last)), cb, allow_exceptions).parse(true, result);
++        parser(detail::input_adapter(std::move(first), std::move(last)), cb, allow_exceptions, allow_comments).parse(true, result);
+         return result;
+     }
+ 
+@@ -6671,10 +6674,11 @@ class basic_json
+     JSON_HEDLEY_DEPRECATED_FOR(3.8.0, parse(ptr, ptr + len))
+     static basic_json parse(detail::span_input_adapter&& i,
+                             const parser_callback_t cb = nullptr,
+-                            const bool allow_exceptions = true)
++                            const bool allow_exceptions = true,
++                            const bool allow_comments = false)
+     {
+         basic_json result;
+-        parser(i.get(), cb, allow_exceptions).parse(true, result);
++        parser(i.get(), cb, allow_exceptions, allow_comments).parse(true, result);
+         return result;
+     }
+ 
+@@ -6706,22 +6710,22 @@ class basic_json
+     from a string.,accept__string}
+     */
+     template<typename InputType>
+-    static bool accept(InputType&& i)
++    static bool accept(InputType&& i, const bool allow_comments = false)
+     {
+-        return parser(detail::input_adapter(std::forward<InputType>(i))).accept(true);
++        return parser(detail::input_adapter(std::forward<InputType>(i)), nullptr, true, allow_comments).accept(true);
+     }
+ 
+     template<typename IteratorType>
+-    static bool accept(IteratorType first, IteratorType last)
++    static bool accept(IteratorType first, IteratorType last, const bool allow_comments = false)
+     {
+-        return parser(detail::input_adapter(std::move(first), std::move(last))).accept(true);
++        return parser(detail::input_adapter(std::move(first), std::move(last)), nullptr, true, allow_comments).accept(true);
+     }
+ 
+     JSON_HEDLEY_WARN_UNUSED_RESULT
+     JSON_HEDLEY_DEPRECATED_FOR(3.8.0, accept(ptr, ptr + len))
+-    static bool accept(detail::span_input_adapter&& i)
++    static bool accept(detail::span_input_adapter&& i, const bool allow_comments = false)
+     {
+-        return parser(i.get()).accept(true);
++        return parser(i.get(), nullptr, true, allow_comments).accept(true);
+     }
+ 
+     /*!
+@@ -6765,11 +6769,12 @@ class basic_json
+     JSON_HEDLEY_NON_NULL(2)
+     static bool sax_parse(InputType&& i, SAX* sax,
+                           input_format_t format = input_format_t::json,
+-                          const bool strict = true)
++                          const bool strict = true,
++                          const bool allow_comments = false)
+     {
+         auto ia = detail::input_adapter(std::forward<InputType>(i));
+         return format == input_format_t::json
+-               ? parser(std::move(ia)).sax_parse(sax, strict)
++               ? parser(std::move(ia), nullptr, true, allow_comments).sax_parse(sax, strict)
+                : detail::binary_reader<basic_json, decltype(ia), SAX>(std::move(ia)).sax_parse(format, sax, strict);
+     }
+ 
+@@ -6777,11 +6782,12 @@ class basic_json
+     JSON_HEDLEY_NON_NULL(3)
+     static bool sax_parse(IteratorType first, IteratorType last, SAX* sax,
+                           input_format_t format = input_format_t::json,
+-                          const bool strict = true)
++                          const bool strict = true,
++                          const bool allow_comments = false)
+     {
+         auto ia = detail::input_adapter(std::move(first), std::move(last));
+         return format == input_format_t::json
+-               ? parser(std::move(ia)).sax_parse(sax, strict)
++               ? parser(std::move(ia), nullptr, true, allow_comments).sax_parse(sax, strict)
+                : detail::binary_reader<basic_json, decltype(ia), SAX>(std::move(ia)).sax_parse(format, sax, strict);
+     }
+ 
+@@ -6790,11 +6796,12 @@ class basic_json
+     JSON_HEDLEY_NON_NULL(2)
+     static bool sax_parse(detail::span_input_adapter&& i, SAX* sax,
+                           input_format_t format = input_format_t::json,
+-                          const bool strict = true)
++                          const bool strict = true,
++                          const bool allow_comments = false)
+     {
+         auto ia = i.get();
+         return format == input_format_t::json
+-               ? parser(std::move(ia)).sax_parse(sax, strict)
++               ? parser(std::move(ia), nullptr, true, allow_comments).sax_parse(sax, strict)
+                : detail::binary_reader<basic_json, decltype(ia), SAX>(std::move(ia)).sax_parse(format, sax, strict);
+     }
+ 
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 74f2d09d..e3c9f2af 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -8183,8 +8183,8 @@ class lexer : public lexer_base<BasicJsonType>
+   public:
+     using token_type = typename lexer_base<BasicJsonType>::token_type;
+ 
+-    explicit lexer(InputAdapterType&& adapter)
+-        : ia(std::move(adapter)), decimal_point_char(static_cast<char_int_type>(get_decimal_point())) {}
++    explicit lexer(InputAdapterType&& adapter, bool allow_comments_ = false)
++        : ia(std::move(adapter)), decimal_point_char(static_cast<char_int_type>(get_decimal_point())), allow_comments(allow_comments_) {}
+ 
+     // delete because of pointer members
+     lexer(const lexer&) = delete;
+@@ -9502,6 +9502,74 @@ scan_number_done:
+         }
+         while (current == ' ' or current == '\t' or current == '\n' or current == '\r');
+ 
++        if (allow_comments and current == '/')
++        {
++            // we have read a single '/', need to check the next character
++            const auto next = get();
++            if (next == '/')
++            {
++                // single-line comment: skip until end of line
++                while (true)
++                {
++                    const auto c = get();
++                    if (c == '\n' or c == std::char_traits<char_type>::eof())
++                    {
++                        break;
++                    }
++                }
++                // after skipping the comment, scan again for the next token
++                return scan();
++            }
++            else if (next == '*')
++            {
++                // multi-line comment: skip until */
++                while (true)
++                {
++                    const auto c = get();
++                    if (c == std::char_traits<char_type>::eof())
++                    {
++                        error_message = "invalid comment: missing closing '*/'";
++                        return token_type::parse_error;
++                    }
++                    if (c == '*')
++                    {
++                        const auto c2 = get();
++                        if (c2 == '/')
++                        {
++                            break;
++                        }
++                        // if not followed by '/', we need to check if c2 is '*' again
++                        // but since we already consumed it, we just continue
++                        // however, we need to handle the case where c2 is '*' for patterns like **/
++                        // we need to re-check, so we "unget" would be ideal but let's handle differently
++                        // Actually, we consumed c2 which might be '*' so let's check
++                        if (c2 == '*')
++                        {
++                            // The '*' we just read might be the start of a closing '*/'
++                            // We need to read the next char to check
++                            const auto c3 = get();
++                            if (c3 == '/')
++                            {
++                                break;
++                            }
++                            // not a closing, continue
++                        }
++                    }
++                }
++                // after skipping the comment, scan again for the next token
++                return scan();
++            }
++            else
++            {
++                // not a comment, '/' followed by something else
++                // this is an invalid character in JSON
++                unget(); // unget the character after '/'
++                // current is still '/'
++                error_message = "invalid literal";
++                return token_type::parse_error;
++            }
++        }
++
+         switch (current)
+         {
+             // structural characters
+@@ -9595,6 +9663,9 @@ scan_number_done:
+ 
+     /// the decimal point
+     const char_int_type decimal_point_char = '.';
++
++    /// whether comments are allowed and should be skipped
++    bool allow_comments = false;
+ };
+ }  // namespace detail
+ }  // namespace nlohmann
+@@ -9672,8 +9743,9 @@ class parser
+     /// a parser reading from an input adapter
+     explicit parser(InputAdapterType&& adapter,
+                     const parser_callback_t<BasicJsonType> cb = nullptr,
+-                    const bool allow_exceptions_ = true)
+-        : callback(cb), m_lexer(std::move(adapter)), allow_exceptions(allow_exceptions_)
++                    const bool allow_exceptions_ = true,
++                    const bool allow_comments_ = false)
++        : callback(cb), m_lexer(std::move(adapter), allow_comments_), allow_exceptions(allow_exceptions_)
+     {
+         // read first token
+         get_token();
+@@ -16001,10 +16073,11 @@ class basic_json
+     static ::nlohmann::detail::parser<basic_json, InputAdapterType> parser(
+         InputAdapterType adapter,
+         detail::parser_callback_t<basic_json>cb = nullptr,
+-        bool allow_exceptions = true
++        bool allow_exceptions = true,
++        bool allow_comments = false
+     )
+     {
+-        return ::nlohmann::detail::parser<basic_json, InputAdapterType>(std::move(adapter), std::move(cb), allow_exceptions);
++        return ::nlohmann::detail::parser<basic_json, InputAdapterType>(std::move(adapter), std::move(cb), allow_exceptions, allow_comments);
+     }
+ 
+     using primitive_iterator_t = ::nlohmann::detail::primitive_iterator_t;
+@@ -22430,10 +22503,11 @@ class basic_json
+     JSON_HEDLEY_WARN_UNUSED_RESULT
+     static basic_json parse(InputType&& i,
+                             const parser_callback_t cb = nullptr,
+-                            const bool allow_exceptions = true)
++                            const bool allow_exceptions = true,
++                            const bool allow_comments = false)
+     {
+         basic_json result;
+-        parser(detail::input_adapter(std::forward<InputType>(i)), cb, allow_exceptions).parse(true, result);
++        parser(detail::input_adapter(std::forward<InputType>(i)), cb, allow_exceptions, allow_comments).parse(true, result);
+         return result;
+     }
+ 
+@@ -22465,10 +22539,11 @@ class basic_json
+     static basic_json parse(IteratorType first,
+                             IteratorType last,
+                             const parser_callback_t cb = nullptr,
+-                            const bool allow_exceptions = true)
++                            const bool allow_exceptions = true,
++                            const bool allow_comments = false)
+     {
+         basic_json result;
+-        parser(detail::input_adapter(std::move(first), std::move(last)), cb, allow_exceptions).parse(true, result);
++        parser(detail::input_adapter(std::move(first), std::move(last)), cb, allow_exceptions, allow_comments).parse(true, result);
+         return result;
+     }
+ 
+@@ -22476,10 +22551,11 @@ class basic_json
+     JSON_HEDLEY_DEPRECATED_FOR(3.8.0, parse(ptr, ptr + len))
+     static basic_json parse(detail::span_input_adapter&& i,
+                             const parser_callback_t cb = nullptr,
+-                            const bool allow_exceptions = true)
++                            const bool allow_exceptions = true,
++                            const bool allow_comments = false)
+     {
+         basic_json result;
+-        parser(i.get(), cb, allow_exceptions).parse(true, result);
++        parser(i.get(), cb, allow_exceptions, allow_comments).parse(true, result);
+         return result;
+     }
+ 
+@@ -22511,22 +22587,22 @@ class basic_json
+     from a string.,accept__string}
+     */
+     template<typename InputType>
+-    static bool accept(InputType&& i)
++    static bool accept(InputType&& i, const bool allow_comments = false)
+     {
+-        return parser(detail::input_adapter(std::forward<InputType>(i))).accept(true);
++        return parser(detail::input_adapter(std::forward<InputType>(i)), nullptr, true, allow_comments).accept(true);
+     }
+ 
+     template<typename IteratorType>
+-    static bool accept(IteratorType first, IteratorType last)
++    static bool accept(IteratorType first, IteratorType last, const bool allow_comments = false)
+     {
+-        return parser(detail::input_adapter(std::move(first), std::move(last))).accept(true);
++        return parser(detail::input_adapter(std::move(first), std::move(last)), nullptr, true, allow_comments).accept(true);
+     }
+ 
+     JSON_HEDLEY_WARN_UNUSED_RESULT
+     JSON_HEDLEY_DEPRECATED_FOR(3.8.0, accept(ptr, ptr + len))
+-    static bool accept(detail::span_input_adapter&& i)
++    static bool accept(detail::span_input_adapter&& i, const bool allow_comments = false)
+     {
+-        return parser(i.get()).accept(true);
++        return parser(i.get(), nullptr, true, allow_comments).accept(true);
+     }
+ 
+     /*!
+@@ -22570,11 +22646,12 @@ class basic_json
+     JSON_HEDLEY_NON_NULL(2)
+     static bool sax_parse(InputType&& i, SAX* sax,
+                           input_format_t format = input_format_t::json,
+-                          const bool strict = true)
++                          const bool strict = true,
++                          const bool allow_comments = false)
+     {
+         auto ia = detail::input_adapter(std::forward<InputType>(i));
+         return format == input_format_t::json
+-               ? parser(std::move(ia)).sax_parse(sax, strict)
++               ? parser(std::move(ia), nullptr, true, allow_comments).sax_parse(sax, strict)
+                : detail::binary_reader<basic_json, decltype(ia), SAX>(std::move(ia)).sax_parse(format, sax, strict);
+     }
+ 
+@@ -22582,11 +22659,12 @@ class basic_json
+     JSON_HEDLEY_NON_NULL(3)
+     static bool sax_parse(IteratorType first, IteratorType last, SAX* sax,
+                           input_format_t format = input_format_t::json,
+-                          const bool strict = true)
++                          const bool strict = true,
++                          const bool allow_comments = false)
+     {
+         auto ia = detail::input_adapter(std::move(first), std::move(last));
+         return format == input_format_t::json
+-               ? parser(std::move(ia)).sax_parse(sax, strict)
++               ? parser(std::move(ia), nullptr, true, allow_comments).sax_parse(sax, strict)
+                : detail::binary_reader<basic_json, decltype(ia), SAX>(std::move(ia)).sax_parse(format, sax, strict);
+     }
+ 
+@@ -22595,11 +22673,12 @@ class basic_json
+     JSON_HEDLEY_NON_NULL(2)
+     static bool sax_parse(detail::span_input_adapter&& i, SAX* sax,
+                           input_format_t format = input_format_t::json,
+-                          const bool strict = true)
++                          const bool strict = true,
++                          const bool allow_comments = false)
+     {
+         auto ia = i.get();
+         return format == input_format_t::json
+-               ? parser(std::move(ia)).sax_parse(sax, strict)
++               ? parser(std::move(ia), nullptr, true, allow_comments).sax_parse(sax, strict)
+                : detail::binary_reader<basic_json, decltype(ia), SAX>(std::move(ia)).sax_parse(format, sax, strict);
+     }
+ 

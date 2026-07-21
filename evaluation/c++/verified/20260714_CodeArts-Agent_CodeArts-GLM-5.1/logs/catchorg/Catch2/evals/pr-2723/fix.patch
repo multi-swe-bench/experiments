@@ -1,0 +1,24 @@
+diff --git a/extras/catch_amalgamated.cpp b/extras/catch_amalgamated.cpp
+index eba3f00a..4b3822a6 100644
+--- a/extras/catch_amalgamated.cpp
++++ b/extras/catch_amalgamated.cpp
+@@ -5585,6 +5585,7 @@ namespace Catch {
+             // are reported without translation at the point of origin.
+             if( m_shouldReportUnexpected ) {
+                 AssertionReaction dummyReaction;
++                m_lastAssertionInfo.resultDisposition = ResultDisposition::Normal;
+                 handleUnexpectedInflightException( m_lastAssertionInfo, translateActiveException(), dummyReaction );
+             }
+         }
+diff --git a/src/catch2/internal/catch_run_context.cpp b/src/catch2/internal/catch_run_context.cpp
+index 6f15cfb1..7a00488c 100644
+--- a/src/catch2/internal/catch_run_context.cpp
++++ b/src/catch2/internal/catch_run_context.cpp
+@@ -524,6 +524,7 @@ namespace Catch {
+             // are reported without translation at the point of origin.
+             if( m_shouldReportUnexpected ) {
+                 AssertionReaction dummyReaction;
++                m_lastAssertionInfo.resultDisposition = ResultDisposition::Normal;
+                 handleUnexpectedInflightException( m_lastAssertionInfo, translateActiveException(), dummyReaction );
+             }
+         }

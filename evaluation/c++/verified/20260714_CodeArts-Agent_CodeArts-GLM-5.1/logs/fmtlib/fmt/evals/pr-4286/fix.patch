@@ -1,0 +1,41 @@
+diff --git a/include/fmt/format.h b/include/fmt/format.h
+index d1b83d18..7b92c380 100644
+--- a/include/fmt/format.h
++++ b/include/fmt/format.h
+@@ -3960,8 +3960,12 @@ template <typename T, typename Char = char> struct nested_formatter {
+     write(basic_appender<Char>(buf));
+     auto specs = format_specs();
+     specs.width = width_;
+-    specs.set_fill(
+-        basic_string_view<Char>(specs_.fill<Char>(), specs_.fill_size()));
++    if (specs_.fill_size() == 1) {
++      specs.set_fill(specs_.fill_unit<Char>());
++    } else {
++      specs.set_fill(
++          basic_string_view<Char>(specs_.fill<Char>(), specs_.fill_size()));
++    }
+     specs.set_align(specs_.align());
+     return detail::write<Char>(
+         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
+diff --git a/include/fmt/std.h b/include/fmt/std.h
+index b00e4022..72acaa4e 100644
+--- a/include/fmt/std.h
++++ b/include/fmt/std.h
+@@ -184,7 +184,7 @@ FMT_END_NAMESPACE
+ FMT_BEGIN_NAMESPACE
+ FMT_EXPORT
+ template <std::size_t N, typename Char>
+-struct formatter<std::bitset<N>, Char> : nested_formatter<string_view> {
++struct formatter<std::bitset<N>, Char> : nested_formatter<basic_string_view<Char>, Char> {
+  private:
+   // Functor because C++11 doesn't support generic lambdas.
+   struct writer {
+@@ -204,7 +204,7 @@ struct formatter<std::bitset<N>, Char> : nested_formatter<string_view> {
+   template <typename FormatContext>
+   auto format(const std::bitset<N>& bs, FormatContext& ctx) const
+       -> decltype(ctx.out()) {
+-    return write_padded(ctx, writer{bs});
++    return this->write_padded(ctx, writer{bs});
+   }
+ };
+ 

@@ -1,0 +1,43 @@
+diff --git a/include/fmt/color.h b/include/fmt/color.h
+index 42008f51..ff837dca 100644
+--- a/include/fmt/color.h
++++ b/include/fmt/color.h
+@@ -618,6 +618,24 @@ inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
+                     fmt::make_args_checked<Args...>(format_str, args...));
+ }
+ 
++template <typename S, typename Char = char_t<S>,
++          FMT_ENABLE_IF(detail::is_string<S>::value)>
++inline void vformat_to(
++    detail::buffer<Char>& buf, const text_style& ts, const S& format_str,
++    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
++  detail::vformat_to(buf, ts, to_string_view(format_str), args);
++}
++
++template <typename S, typename... Args, size_t SIZE = inline_buffer_size,
++          typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
++inline typename buffer_context<Char>::iterator format_to(
++    basic_memory_buffer<Char, SIZE>& buf, const text_style& ts,
++    const S& format_str, Args&&... args) {
++  detail::vformat_to(buf, ts, to_string_view(format_str),
++                     fmt::make_args_checked<Args...>(format_str, args...));
++  return detail::buffer_appender<Char>(buf);
++}
++
+ FMT_END_NAMESPACE
+ 
+ #endif  // FMT_COLOR_H_
+diff --git a/include/fmt/format.h b/include/fmt/format.h
+index e8fe34c1..7e83e500 100644
+--- a/include/fmt/format.h
++++ b/include/fmt/format.h
+@@ -3894,7 +3894,8 @@ inline void vformat_to(
+ }
+ 
+ template <typename S, typename... Args, size_t SIZE = inline_buffer_size,
+-          typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
++          typename Char = char_t<S>,
++          FMT_ENABLE_IF(detail::is_string<S>::value)>
+ inline typename buffer_context<Char>::iterator format_to(
+     basic_memory_buffer<Char, SIZE>& buf, const S& format_str, Args&&... args) {
+   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);

@@ -1,0 +1,144 @@
+diff --git a/include/fmt/chrono.h b/include/fmt/chrono.h
+index e70b8053..e89fb4dd 100644
+--- a/include/fmt/chrono.h
++++ b/include/fmt/chrono.h
+@@ -1118,6 +1118,139 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
+   }
+ };
+ 
++namespace detail {
++template <typename Clock, typename Duration>
++struct is_system_clock : std::is_same<Clock, std::chrono::system_clock> {};
++
++template <typename Char, typename FormatContext>
++auto format_system_time_point(std::time_t time, FormatContext& ctx,
++                              basic_memory_buffer<Char>& tm_format,
++                              const basic_format_specs<Char>& specs) ->
++    typename FormatContext::iterator {
++  auto tm = fmt::localtime(time);
++  basic_memory_buffer<Char> buf;
++  size_t start = buf.size();
++  for (;;) {
++    size_t size = buf.capacity() - start;
++    size_t count = detail::strftime(&buf[start], size, &tm_format[0], &tm);
++    if (count != 0) {
++      buf.resize(start + count);
++      break;
++    }
++    if (size >= tm_format.size() * 256) break;
++    const size_t MIN_GROWTH = 10;
++    buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
++  }
++  return detail::write(
++      ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
++}
++
++template <typename Clock, typename Duration, typename Char, typename FormatContext,
++          FMT_ENABLE_IF(is_system_clock<Clock, Duration>::value)>
++auto format_time_point(const std::chrono::time_point<Clock, Duration>& tp,
++                       FormatContext& ctx, basic_memory_buffer<Char>& tm_format,
++                       const basic_format_specs<Char>& specs) ->
++    typename FormatContext::iterator {
++  auto time = std::chrono::system_clock::to_time_t(
++      std::chrono::time_point_cast<std::chrono::system_clock::duration>(tp));
++  return format_system_time_point(time, ctx, tm_format, specs);
++}
++
++template <typename Clock, typename Duration, typename Char, typename FormatContext,
++          FMT_ENABLE_IF(!is_system_clock<Clock, Duration>::value)>
++auto format_time_point(const std::chrono::time_point<Clock, Duration>& tp,
++                       FormatContext& ctx, basic_memory_buffer<Char>&,
++                       const basic_format_specs<Char>&) ->
++    typename FormatContext::iterator {
++  auto d = tp.time_since_epoch();
++  basic_memory_buffer<Char> buf;
++  auto out = std::back_inserter(buf);
++  out = detail::format_duration_value<Char>(out, d.count(), -1);
++  detail::format_duration_unit<Char, typename Duration::period>(out);
++  return std::copy(buf.begin(), buf.end(), ctx.out());
++}
++}  // namespace detail
++
++template <typename Clock, typename Duration, typename Char>
++struct formatter<std::chrono::time_point<Clock, Duration>, Char> {
++ private:
++  basic_format_specs<Char> specs;
++  using arg_ref_type = detail::arg_ref<Char>;
++  arg_ref_type width_ref;
++  mutable basic_memory_buffer<Char> tm_format;
++
++  struct spec_handler {
++    formatter& f;
++    basic_format_parse_context<Char>& context;
++
++    template <typename Id> FMT_CONSTEXPR arg_ref_type make_arg_ref(Id arg_id) {
++      context.check_arg_id(arg_id);
++      return arg_ref_type(arg_id);
++    }
++
++    FMT_CONSTEXPR arg_ref_type make_arg_ref(basic_string_view<Char> arg_id) {
++      context.check_arg_id(arg_id);
++      return arg_ref_type(arg_id);
++    }
++
++    FMT_CONSTEXPR arg_ref_type make_arg_ref(detail::auto_id) {
++      return arg_ref_type(context.next_arg_id());
++    }
++
++    void on_error(const char* msg) { FMT_THROW(format_error(msg)); }
++    void on_fill(basic_string_view<Char> fill) { f.specs.fill = fill; }
++    void on_align(align_t align) { f.specs.align = align; }
++    void on_width(int width) { f.specs.width = width; }
++
++    template <typename Id> void on_dynamic_width(Id arg_id) {
++      f.width_ref = make_arg_ref(arg_id);
++    }
++  };
++
++ public:
++  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
++      -> decltype(ctx.begin()) {
++    auto begin = ctx.begin(), end = ctx.end();
++    if (begin == end || *begin == '}') {
++      tm_format.push_back('\0');
++      return begin;
++    }
++    spec_handler handler{*this, ctx};
++    begin = detail::parse_align(begin, end, handler);
++    if (begin == end) {
++      tm_format.push_back('\0');
++      return begin;
++    }
++    begin = detail::parse_width(begin, end, handler);
++    if (begin == end || *begin == '}') {
++      tm_format.push_back('\0');
++      return begin;
++    }
++    // Collect the chrono format string (everything until }).
++    auto fmt_end = begin;
++    while (fmt_end != end && *fmt_end != '}') ++fmt_end;
++    tm_format.reserve(detail::to_unsigned(fmt_end - begin + 1));
++    tm_format.append(begin, fmt_end);
++    tm_format.push_back('\0');
++    return fmt_end;
++  }
++
++  template <typename FormatContext>
++  auto format(const std::chrono::time_point<Clock, Duration>& tp,
++              FormatContext& ctx) -> decltype(ctx.out()) {
++    detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref,
++                                                       ctx);
++    if (detail::is_system_clock<Clock, Duration>::value &&
++        tm_format.size() == 1 && tm_format[0] == '\0') {
++      tm_format.resize(0);
++      tm_format.push_back('%');
++      tm_format.push_back('c');
++      tm_format.push_back('\0');
++    }
++    return detail::format_time_point(tp, ctx, tm_format, specs);
++  }
++};
++
+ FMT_END_NAMESPACE
+ 
+ #endif  // FMT_CHRONO_H_

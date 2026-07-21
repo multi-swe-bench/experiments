@@ -1,0 +1,784 @@
+diff --git a/test/CMakeLists.txt b/test/CMakeLists.txt
+index 838cce53..7020b6ad 100644
+--- a/test/CMakeLists.txt
++++ b/test/CMakeLists.txt
+@@ -95,6 +95,7 @@ set(files
+     src/unit-algorithms.cpp
+     src/unit-allocator.cpp
+     src/unit-alt-string.cpp
++    src/unit-binary.cpp
+     src/unit-bson.cpp
+     src/unit-capacity.cpp
+     src/unit-cbor.cpp
+diff --git a/test/src/unit-binary.cpp b/test/src/unit-binary.cpp
+new file mode 100644
+index 00000000..82179bde
+--- /dev/null
++++ b/test/src/unit-binary.cpp
+@@ -0,0 +1,766 @@
++/*
++    __ _____ _____ _____
++ __|  |   __|     |   | |  JSON for Modern C++ (test suite)
++|  |  |__   |  |  | | | |  version 3.7.3
++|_____|_____|_____|_|___|  https://github.com/nlohmann/json
++
++Licensed under the MIT License <http://opensource.org/licenses/MIT>.
++SPDX-License-Identifier: MIT
++Copyright (c) 2013-2019 Niels Lohmann <http://nlohmann.me>.
++
++Permission is hereby  granted, free of charge, to any  person obtaining a copy
++of this software and associated  documentation files (the "Software"), to deal
++in the Software  without restriction, including without  limitation the rights
++to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell
++copies  of  the Software,  and  to  permit persons  to  whom the Software  is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE  IS PROVIDED "AS  IS", WITHOUT WARRANTY  OF ANY KIND,  EXPRESS
++OR  IMPLIED,  INCLUDING BUT  NOT  LIMITED  TO  THE  WARRANTIES  OF MERCHANTABILITY,
++FITNESS  FOR  A PARTICULAR PURPOSE AND  NONINFRINGEMENT. IN NO EVENT  SHALL  THE
++AUTHORS  OR COPYRIGHT  HOLDERS  BE  LIABLE FOR  ANY  CLAIM,  DAMAGES  OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF  CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
++*/
++
++#include "doctest_compatibility.h"
++
++#include <nlohmann/json.hpp>
++using nlohmann::json;
++
++#include <sstream>
++#include <vector>
++
++namespace
++{
++class SaxEventLogger : public nlohmann::json::json_sax_t
++{
++  public:
++    bool null() override
++    {
++        events.push_back("null()");
++        return true;
++    }
++
++    bool boolean(bool val) override
++    {
++        events.push_back("boolean(" + std::string(val ? "true" : "false") + ")");
++        return true;
++    }
++
++    bool number_integer(json::number_integer_t val) override
++    {
++        events.push_back("number_integer(" + std::to_string(val) + ")");
++        return true;
++    }
++
++    bool number_unsigned(json::number_unsigned_t val) override
++    {
++        events.push_back("number_unsigned(" + std::to_string(val) + ")");
++        return true;
++    }
++
++    bool number_float(json::number_float_t val, const std::string& s) override
++    {
++        events.push_back("number_float(" + s + ")");
++        return true;
++    }
++
++    bool string(std::string& val) override
++    {
++        events.push_back("string(" + val + ")");
++        return true;
++    }
++
++    bool binary(std::vector<std::uint8_t>& val) override
++    {
++        std::string binary_contents = "binary(";
++        std::string comma_space = "";
++        for (auto b : val)
++        {
++            binary_contents.append(comma_space);
++            binary_contents.append(std::to_string(static_cast<int>(b)));
++            comma_space = ", ";
++        }
++        binary_contents.append(")");
++        events.push_back(binary_contents);
++        return true;
++    }
++
++    bool start_object(std::size_t elements) override
++    {
++        if (elements == std::size_t(-1))
++        {
++            events.push_back("start_object()");
++        }
++        else
++        {
++            events.push_back("start_object(" + std::to_string(elements) + ")");
++        }
++        return true;
++    }
++
++    bool key(std::string& val) override
++    {
++        events.push_back("key(" + val + ")");
++        return true;
++    }
++
++    bool end_object() override
++    {
++        events.push_back("end_object()");
++        return true;
++    }
++
++    bool start_array(std::size_t elements) override
++    {
++        if (elements == std::size_t(-1))
++        {
++            events.push_back("start_array()");
++        }
++        else
++        {
++            events.push_back("start_array(" + std::to_string(elements) + ")");
++        }
++        return true;
++    }
++
++    bool end_array() override
++    {
++        events.push_back("end_array()");
++        return true;
++    }
++
++    bool parse_error(std::size_t position, const std::string&, const json::exception&) override
++    {
++        errored = true;
++        events.push_back("parse_error(" + std::to_string(position) + ")");
++        return false;
++    }
++
++    std::vector<std::string> events {};
++    bool errored = false;
++};
++}
++
++TEST_CASE("binary values")
++{
++    SECTION("constructors")
++    {
++        SECTION("binary_array with lvalue")
++        {
++            const auto s = std::vector<uint8_t>{1, 2, 3};
++            const auto j = json::binary_array(s);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array(s));
++        }
++
++        SECTION("binary_array with rvalue")
++        {
++            auto s = std::vector<uint8_t>{1, 2, 3};
++            const auto j = json::binary_array(std::move(s));
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1, 2, 3}));
++        }
++
++        SECTION("binary_array with empty vector")
++        {
++            const auto s = std::vector<uint8_t>{};
++            const auto j = json::binary_array(s);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array(s));
++        }
++    }
++
++    SECTION("json_value constructors for binary")
++    {
++        SECTION("lvalue binary")
++        {
++            const auto s = std::vector<uint8_t>{4, 5, 6};
++            const auto j = json::binary_array(s);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array(s));
++        }
++
++        SECTION("rvalue binary")
++        {
++            auto s = std::vector<uint8_t>{4, 5, 6};
++            const auto j = json::binary_array(std::move(s));
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({4, 5, 6}));
++        }
++    }
++
++    SECTION("get_ptr for binary")
++    {
++        SECTION("non-const binary_t*")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            auto* ptr = j.get_ptr<json::binary_t*>();
++            CHECK(ptr != nullptr);
++            CHECK(*ptr == std::vector<uint8_t>{1, 2, 3});
++        }
++
++        SECTION("const binary_t*")
++        {
++            const auto j = json::binary_array({1, 2, 3});
++            const auto* ptr = j.get_ptr<const json::binary_t*>();
++            CHECK(ptr != nullptr);
++            CHECK(*ptr == std::vector<uint8_t>{1, 2, 3});
++        }
++
++        SECTION("non-const binary_t* on non-binary returns nullptr")
++        {
++            auto j = json(42);
++            auto* ptr = j.get_ptr<json::binary_t*>();
++            CHECK(ptr == nullptr);
++        }
++
++        SECTION("const binary_t* on non-binary returns nullptr")
++        {
++            const auto j = json(42);
++            const auto* ptr = j.get_ptr<const json::binary_t*>();
++            CHECK(ptr == nullptr);
++        }
++    }
++
++    SECTION("clear")
++    {
++        SECTION("binary")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            j.clear();
++            CHECK(j.is_binary());
++            auto* ptr = j.get_ptr<json::binary_t*>();
++            CHECK(ptr != nullptr);
++            CHECK(ptr->empty());
++        }
++    }
++
++    SECTION("erase")
++    {
++        SECTION("binary with begin iterator")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            auto it = j.erase(j.begin());
++            CHECK(it == j.end());
++            CHECK(j.is_null());
++        }
++
++        SECTION("binary with range erase")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            auto it = j.erase(j.begin(), j.end());
++            CHECK(it == j.end());
++            CHECK(j.is_null());
++        }
++
++        SECTION("binary erase throws for non-begin iterator")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            CHECK_THROWS_AS(j.erase(j.end()), json::invalid_iterator&);
++        }
++
++        SECTION("binary range erase throws for invalid range")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            CHECK_THROWS_AS(j.erase(j.begin() + 1, j.end()), json::invalid_iterator&);
++            CHECK_THROWS_AS(j.erase(j.begin(), j.end() - 1), json::invalid_iterator&);
++        }
++    }
++
++    SECTION("type_name")
++    {
++        CHECK(std::string(json::binary_array({}).type_name()) == "binary");
++    }
++
++    SECTION("operator< for binary values")
++    {
++        SECTION("binary < binary (different content)")
++        {
++            auto j1 = json::binary_array({1, 2, 3});
++            auto j2 = json::binary_array({1, 2, 4});
++            CHECK_NOTHROW(j1 < j2);
++            CHECK_NOTHROW(j2 < j1);
++        }
++
++        SECTION("binary < binary (same content)")
++        {
++            auto j1 = json::binary_array({1, 2, 3});
++            auto j2 = json::binary_array({1, 2, 3});
++            CHECK_NOTHROW(j1 < j2);
++        }
++
++        SECTION("binary compared with other types via operator<")
++        {
++            auto j_bin = json::binary_array({1});
++            auto j_null = json(nullptr);
++            auto j_bool = json(true);
++            auto j_str = json("hello");
++            auto j_int = json(42);
++            auto j_uint = json(42u);
++            auto j_float = json(3.14);
++            auto j_obj = json::object();
++            auto j_arr = json::array();
++
++            CHECK(j_null < j_bin);
++            CHECK(j_bool < j_bin);
++            CHECK(j_str < j_bin);
++            CHECK(j_int < j_bin);
++            CHECK(j_uint < j_bin);
++            CHECK(j_float < j_bin);
++            CHECK(j_obj < j_bin);
++            CHECK(j_arr < j_bin);
++            CHECK_FALSE(j_bin < j_null);
++            CHECK_FALSE(j_bin < j_bool);
++        }
++    }
++
++    SECTION("dump with binary")
++    {
++        SECTION("serialize_binary=false throws")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            CHECK_THROWS_AS(j.dump(), json::type_error&);
++            CHECK_THROWS_WITH(j.dump(), "[json.exception.type_error.317] cannot serialize binary data to text JSON");
++        }
++
++        SECTION("serialize_binary=true with non-empty binary (compact)")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            CHECK(j.dump(-1, ' ', false, json::error_handler_t::strict, true) == "b[1,2,3]");
++        }
++
++        SECTION("serialize_binary=true with empty binary")
++        {
++            auto j = json::binary_array({});
++            CHECK(j.dump(-1, ' ', false, json::error_handler_t::strict, true) == "b[]");
++        }
++
++        SECTION("serialize_binary=true with pretty print")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            auto result = j.dump(4, ' ', false, json::error_handler_t::strict, true);
++            CHECK(result.find("b[") != std::string::npos);
++            CHECK(result.find('1') != std::string::npos);
++        }
++
++        SECTION("serialize_binary=true with many elements (pretty print with newline)")
++        {
++            std::vector<uint8_t> data(32, 0);
++            for (size_t i = 0; i < data.size(); ++i)
++            {
++                data[i] = static_cast<uint8_t>(i);
++            }
++            auto j = json::binary_array(data);
++            auto result = j.dump(4, ' ', false, json::error_handler_t::strict, true);
++            CHECK(result.find("b[") != std::string::npos);
++            CHECK(result.find('\n') != std::string::npos);
++        }
++    }
++
++    SECTION("BSON binary")
++    {
++        SECTION("binary in object with subtype")
++        {
++            json j = {{"binary", json::binary_array({1, 2, 3})}};
++            j["binary"].set_subtype(0x80);
++            auto bson = json::to_bson(j);
++            auto j2 = json::from_bson(bson);
++            CHECK(j2["binary"].is_binary());
++            CHECK(j2["binary"] == json::binary_array({1, 2, 3}));
++        }
++
++        SECTION("binary in object without explicit subtype")
++        {
++            json j = {{"binary", json::binary_array({1, 2, 3})}};
++            auto bson = json::to_bson(j);
++            auto j2 = json::from_bson(bson);
++            CHECK(j2["binary"].is_binary());
++            CHECK(j2["binary"] == json::binary_array({1, 2, 3}));
++        }
++
++        SECTION("binary in object with larger data")
++        {
++            json j = {{"binary", json::binary_array({0xCA, 0xFE})}};
++            auto bson = json::to_bson(j);
++            auto j2 = json::from_bson(bson);
++            CHECK(j2["binary"].is_binary());
++            CHECK(j2["binary"] == json::binary_array({0xCA, 0xFE}));
++        }
++    }
++
++    SECTION("CBOR binary")
++    {
++        SECTION("indefinite length binary (0x5F)")
++        {
++            std::vector<uint8_t> data =
++            {
++                0x5F, // start indefinite length binary
++                0x42, 0x01, 0x02, // chunk of 2 bytes
++                0x43, 0x03, 0x04, 0x05, // chunk of 3 bytes
++                0xFF // end indefinite length
++            };
++            auto j = json::from_cbor(data);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1, 2, 3, 4, 5}));
++        }
++
++        SECTION("CBOR binary 0x5B (8-byte length)")
++        {
++            std::vector<uint8_t> data =
++            {
++                0x5B, // Binary data (eight-byte uint64_t for n follow)
++                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, // length = 3
++                0x01, 0x02, 0x03
++            };
++            auto j = json::from_cbor(data);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1, 2, 3}));
++        }
++
++        SECTION("CBOR binary error: invalid type byte")
++        {
++            std::vector<uint8_t> data =
++            {
++                0x5E // invalid byte for binary
++            };
++            CHECK_THROWS_AS(json::from_cbor(data), json::parse_error&);
++        }
++    }
++
++    SECTION("MsgPack binary")
++    {
++        SECTION("bin 8")
++        {
++            std::vector<uint8_t> data = {0xC4, 0x03, 0x01, 0x02, 0x03};
++            auto j = json::from_msgpack(data);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1, 2, 3}));
++        }
++
++        SECTION("bin 16")
++        {
++            std::vector<uint8_t> data = {0xC5, 0x00, 0x03, 0x01, 0x02, 0x03};
++            auto j = json::from_msgpack(data);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1, 2, 3}));
++        }
++
++        SECTION("bin 32")
++        {
++            std::vector<uint8_t> data = {0xC6, 0x00, 0x00, 0x00, 0x03, 0x01, 0x02, 0x03};
++            auto j = json::from_msgpack(data);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1, 2, 3}));
++        }
++
++        SECTION("ext 8 with subtype")
++        {
++            std::vector<uint8_t> data = {0xC7, 0x02, 0x2A, 0x01, 0x02};
++            auto j = json::from_msgpack(data);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1, 2}));
++        }
++
++        SECTION("ext 16 with subtype")
++        {
++            std::vector<uint8_t> data = {0xC8, 0x00, 0x02, 0x2A, 0x01, 0x02};
++            auto j = json::from_msgpack(data);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1, 2}));
++        }
++
++        SECTION("ext 32 with subtype")
++        {
++            std::vector<uint8_t> data = {0xC9, 0x00, 0x00, 0x00, 0x02, 0x2A, 0x01, 0x02};
++            auto j = json::from_msgpack(data);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1, 2}));
++        }
++
++        SECTION("fixext 1")
++        {
++            std::vector<uint8_t> data = {0xD4, 0x2A, 0x01};
++            auto j = json::from_msgpack(data);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1}));
++        }
++
++        SECTION("fixext 2")
++        {
++            std::vector<uint8_t> data = {0xD5, 0x2A, 0x01, 0x02};
++            auto j = json::from_msgpack(data);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1, 2}));
++        }
++
++        SECTION("fixext 4")
++        {
++            std::vector<uint8_t> data = {0xD6, 0x2A, 0x01, 0x02, 0x03, 0x04};
++            auto j = json::from_msgpack(data);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1, 2, 3, 4}));
++        }
++
++        SECTION("fixext 8")
++        {
++            std::vector<uint8_t> data = {0xD7, 0x2A, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
++            auto j = json::from_msgpack(data);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array({1, 2, 3, 4, 5, 6, 7, 8}));
++        }
++
++        SECTION("fixext 16")
++        {
++            std::vector<uint8_t> data = {0xD8, 0x2A,
++                                         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
++                                         0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
++            auto j = json::from_msgpack(data);
++            CHECK(j.is_binary());
++            CHECK(j.get_ptr<json::binary_t*>()->size() == 16);
++        }
++    }
++
++    SECTION("SAX events for binary")
++    {
++        SECTION("json_sax_dom_parser: binary as root")
++        {
++            json j;
++            nlohmann::detail::json_sax_dom_parser<json> sdp(j);
++            std::vector<uint8_t> bin = {1, 2, 3};
++            sdp.binary(bin);
++            CHECK(j.is_binary());
++            CHECK(j == json::binary_array(bin));
++        }
++
++        SECTION("json_sax_dom_parser: binary in array")
++        {
++            json j;
++            nlohmann::detail::json_sax_dom_parser<json> sdp(j);
++            sdp.start_array(1);
++            std::vector<uint8_t> bin = {1, 2, 3};
++            sdp.binary(bin);
++            sdp.end_array();
++            CHECK(j.is_array());
++            CHECK(j[0].is_binary());
++            CHECK(j[0] == json::binary_array(bin));
++        }
++
++        SECTION("json_sax_dom_parser: binary in object")
++        {
++            json j;
++            nlohmann::detail::json_sax_dom_parser<json> sdp(j);
++            sdp.start_object(1);
++            std::string key = "key";
++            sdp.key(key);
++            std::vector<uint8_t> bin = {1, 2, 3};
++            sdp.binary(bin);
++            sdp.end_object();
++            CHECK(j.is_object());
++            CHECK(j["key"].is_binary());
++            CHECK(j["key"] == json::binary_array(bin));
++        }
++
++        SECTION("json_sax_dom_callback_parser: binary as root")
++        {
++            json j;
++            auto cb = [](int, json::parse_event_t, const json&) {
++                return true;
++            };
++            nlohmann::detail::json_sax_dom_callback_parser<json> sdcp(j, cb);
++            std::vector<uint8_t> bin = {1, 2, 3};
++            sdcp.binary(bin);
++            // binary_t goes through handle_value which uses the CompatibleType
++            // constructor, creating an array instead of binary
++            CHECK(j.is_array());
++        }
++
++        SECTION("json_sax_dom_callback_parser: binary in array")
++        {
++            json j;
++            auto cb = [](int, json::parse_event_t, const json&) {
++                return true;
++            };
++            nlohmann::detail::json_sax_dom_callback_parser<json> sdcp(j, cb);
++            sdcp.start_array(1);
++            std::vector<uint8_t> bin = {1, 2, 3};
++            sdcp.binary(bin);
++            sdcp.end_array();
++            CHECK(j.is_array());
++        }
++
++        SECTION("json_sax_dom_callback_parser: binary in object")
++        {
++            json j;
++            auto cb = [](int, json::parse_event_t, const json&) {
++                return true;
++            };
++            nlohmann::detail::json_sax_dom_callback_parser<json> sdcp(j, cb);
++            sdcp.start_object(1);
++            std::string key = "key";
++            sdcp.key(key);
++            std::vector<uint8_t> bin = {1, 2, 3};
++            sdcp.binary(bin);
++            sdcp.end_object();
++            CHECK(j.is_object());
++        }
++
++        SECTION("json_sax_dom_callback_parser: binary discarded by callback")
++        {
++            json j;
++            auto cb = [](int, json::parse_event_t, const json&) {
++                return false;
++            };
++            nlohmann::detail::json_sax_dom_callback_parser<json> sdcp(j, cb);
++            std::vector<uint8_t> bin = {1, 2, 3};
++            sdcp.binary(bin);
++            // callback returned false, so the value was not kept
++            CHECK(j.is_null());
++        }
++    }
++
++    SECTION("SAX event logger for binary")
++    {
++        SECTION("from CBOR with binary")
++        {
++            std::vector<uint8_t> data = {0x44, 0x01, 0x02, 0x03, 0x04};
++            SaxEventLogger logger;
++            json::sax_parse(data, &logger, json::input_format_t::cbor);
++            CHECK(logger.events.size() == 1);
++            CHECK(logger.events[0] == "binary(1, 2, 3, 4)");
++        }
++    }
++
++    SECTION("binary subtype operations")
++    {
++        SECTION("set_subtype and get_subtype")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            CHECK(j.get_subtype() == std::size_t(-1)); // no subtype set
++            j.set_subtype(42);
++            CHECK(j.has_subtype());
++            CHECK(j.get_subtype() == 42);
++        }
++
++        SECTION("clear_subtype")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            j.set_subtype(42);
++            CHECK(j.has_subtype());
++            j.clear_subtype();
++            CHECK_FALSE(j.has_subtype());
++            CHECK(j.get_subtype() == std::size_t(-1));
++        }
++
++        SECTION("set_subtype on non-binary does nothing")
++        {
++            auto j = json(42);
++            j.set_subtype(42);
++            CHECK_FALSE(j.has_subtype());
++        }
++
++        SECTION("clear_subtype on non-binary does nothing")
++        {
++            auto j = json(42);
++            j.clear_subtype();
++            CHECK_FALSE(j.has_subtype());
++        }
++
++        SECTION("has_subtype on non-binary returns false")
++        {
++            auto j = json(42);
++            CHECK_FALSE(j.has_subtype());
++        }
++    }
++
++    SECTION("binary equality")
++    {
++        SECTION("equal binary values")
++        {
++            auto j1 = json::binary_array({1, 2, 3});
++            auto j2 = json::binary_array({1, 2, 3});
++            CHECK(j1 == j2);
++        }
++
++        SECTION("different binary values")
++        {
++            auto j1 = json::binary_array({1, 2, 3});
++            auto j2 = json::binary_array({1, 2, 4});
++            CHECK(j1 != j2);
++        }
++
++        SECTION("binary vs non-binary")
++        {
++            auto j1 = json::binary_array({1, 2, 3});
++            auto j2 = json({1, 2, 3});
++            CHECK(j1 != j2);
++        }
++    }
++
++    SECTION("binary via from_bson with negative length")
++    {
++        SECTION("BSON binary with negative length yields parse error")
++        {
++            std::vector<uint8_t> data =
++            {
++                0x10, 0x00, 0x00, 0x00, // document size (16 bytes)
++                0x05, // binary type
++                'x', '\x00', // key "x"
++                0xFF, 0xFF, 0xFF, 0xFF, // length = -1 (invalid)
++                0x00, // subtype
++                0x00 // end marker
++            };
++            CHECK_THROWS_AS(json::from_bson(data), json::parse_error&);
++        }
++    }
++
++    SECTION("binary roundtrip through CBOR with subtype")
++    {
++        SECTION("binary with subtype roundtrips via CBOR tag")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            j.set_subtype(42);
++            auto cbor = json::to_cbor(j);
++            auto j2 = json::from_cbor(cbor);
++            CHECK(j2.is_binary());
++            CHECK(j2 == json::binary_array({1, 2, 3}));
++        }
++    }
++
++    SECTION("binary via from_msgpack with truncated data")
++    {
++        SECTION("truncated bin 8 data")
++        {
++            std::vector<uint8_t> data = {0xC4, 0x03, 0x01}; // claims 3 bytes but only has 1
++            CHECK_THROWS_AS(json::from_msgpack(data), json::parse_error&);
++        }
++    }
++
++    SECTION("binary via from_cbor with truncated data")
++    {
++        SECTION("truncated binary data")
++        {
++            std::vector<uint8_t> data = {0x43, 0x01, 0x02}; // claims 3 bytes but only has 2
++            CHECK_THROWS_AS(json::from_cbor(data), json::parse_error&);
++        }
++    }
++
++    SECTION("binary in UBJSON")
++    {
++        SECTION("binary is serialized as array of integers")
++        {
++            auto j = json::binary_array({1, 2, 3});
++            auto ubj = json::to_ubjson(j, true, true);
++            // UBJSON does not have a native binary type; binary arrays are
++            // serialized as typed arrays of uint8 values
++            auto j2 = json::from_ubjson(ubj);
++            CHECK(j2.is_array());
++            CHECK(j2 == json({1, 2, 3}));
++        }
++    }
++}

@@ -1,0 +1,164 @@
+diff --git a/include/fmt/core.h b/include/fmt/core.h
+index 5f44a974..3dffc7f1 100644
+--- a/include/fmt/core.h
++++ b/include/fmt/core.h
+@@ -1360,6 +1360,14 @@ template <typename T> struct has_format_as {
+   enum { value = decltype(check(static_cast<T*>(nullptr)))::value };
+ };
+ 
++template <typename T> struct is_range_like_ {
++  template <typename U>
++  static auto check(U*) -> decltype(std::declval<U>().begin(),
++                                    std::declval<U>().end(), std::true_type());
++  static auto check(...) -> std::false_type;
++  enum { value = decltype(check(static_cast<T*>(nullptr)))::value };
++};
++
+ // Maps formatting arguments to core types.
+ // arg_mapper reports errors by returning unformattable instead of using
+ // static_assert because it's used in the is_formattable trait.
+@@ -1448,7 +1456,8 @@ template <typename Context> struct arg_mapper {
+             FMT_ENABLE_IF(
+                 std::is_convertible<T, std_string_view<char_type>>::value &&
+                 !std::is_convertible<T, basic_string_view<char_type>>::value &&
+-                !is_string<T>::value && !has_formatter<T, Context>::value &&
++                !is_string<T>::value && !is_range_like_<T>::value &&
++                !has_formatter<T, Context>::value &&
+                 !has_fallback_formatter<T, char_type>::value)>
+   FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
+       -> basic_string_view<char_type> {
+diff --git a/include/fmt/ranges.h b/include/fmt/ranges.h
+index 2105a668..2e2befe7 100644
+--- a/include/fmt/ranges.h
++++ b/include/fmt/ranges.h
+@@ -47,49 +47,6 @@ OutputIterator copy(wchar_t ch, OutputIterator out) {
+   return out;
+ }
+ 
+-// Returns true if T has a std::string-like interface, like std::string_view.
+-template <typename T> class is_std_string_like {
+-  template <typename U>
+-  static auto check(U* p)
+-      -> decltype((void)p->find('a'), p->length(), (void)p->data(), int());
+-  template <typename> static void check(...);
+-
+- public:
+-  static constexpr const bool value =
+-      is_string<T>::value ||
+-      std::is_convertible<T, std_string_view<char>>::value ||
+-      !std::is_void<decltype(check<T>(nullptr))>::value;
+-};
+-
+-template <typename Char>
+-struct is_std_string_like<fmt::basic_string_view<Char>> : std::true_type {};
+-
+-template <typename T> class is_map {
+-  template <typename U> static auto check(U*) -> typename U::mapped_type;
+-  template <typename> static void check(...);
+-
+- public:
+-#ifdef FMT_FORMAT_MAP_AS_LIST
+-  static constexpr const bool value = false;
+-#else
+-  static constexpr const bool value =
+-      !std::is_void<decltype(check<T>(nullptr))>::value;
+-#endif
+-};
+-
+-template <typename T> class is_set {
+-  template <typename U> static auto check(U*) -> typename U::key_type;
+-  template <typename> static void check(...);
+-
+- public:
+-#ifdef FMT_FORMAT_SET_AS_LIST
+-  static constexpr const bool value = false;
+-#else
+-  static constexpr const bool value =
+-      !std::is_void<decltype(check<T>(nullptr))>::value && !is_map<T>::value;
+-#endif
+-};
+-
+ template <typename... Ts> struct conditional_helper {};
+ 
+ template <typename T, typename _ = void> struct is_range_ : std::false_type {};
+@@ -167,6 +124,50 @@ struct is_range_<T, void>
+ #  undef FMT_DECLTYPE_RETURN
+ #endif
+ 
++// Returns true if T has a std::string-like interface, like std::string_view.
++template <typename T> class is_std_string_like {
++  template <typename U>
++  static auto check(U* p)
++      -> decltype((void)p->find('a'), p->length(), (void)p->data(), int());
++  template <typename> static void check(...);
++
++ public:
++  static constexpr const bool value =
++      is_string<T>::value ||
++      (std::is_convertible<T, std_string_view<char>>::value &&
++       !is_range_<T>::value) ||
++      !std::is_void<decltype(check<T>(nullptr))>::value;
++};
++
++template <typename Char>
++struct is_std_string_like<fmt::basic_string_view<Char>> : std::true_type {};
++
++template <typename T> class is_map {
++  template <typename U> static auto check(U*) -> typename U::mapped_type;
++  template <typename> static void check(...);
++
++ public:
++#ifdef FMT_FORMAT_MAP_AS_LIST
++  static constexpr const bool value = false;
++#else
++  static constexpr const bool value =
++      !std::is_void<decltype(check<T>(nullptr))>::value;
++#endif
++};
++
++template <typename T> class is_set {
++  template <typename U> static auto check(U*) -> typename U::key_type;
++  template <typename> static void check(...);
++
++ public:
++#ifdef FMT_FORMAT_SET_AS_LIST
++  static constexpr const bool value = false;
++#else
++  static constexpr const bool value =
++      !std::is_void<decltype(check<T>(nullptr))>::value && !is_map<T>::value;
++#endif
++};
++
+ // tuple_size and tuple_element check.
+ template <typename T> class is_tuple_like_ {
+   template <typename U>
+@@ -289,7 +290,8 @@ auto write_range_entry(OutputIt out, basic_string_view<Char> str) -> OutputIt {
+ }
+ 
+ template <typename Char, typename OutputIt, typename T,
+-          FMT_ENABLE_IF(std::is_convertible<T, std_string_view<char>>::value)>
++          FMT_ENABLE_IF(std::is_convertible<T, std_string_view<char>>::value &&
++                        !is_range_<T>::value)>
+ inline auto write_range_entry(OutputIt out, const T& str) -> OutputIt {
+   auto sv = std_string_view<Char>(str);
+   return write_range_entry<Char>(out, basic_string_view<Char>(sv));
+@@ -469,6 +471,10 @@ struct range_formatter<
+     closing_bracket_ = close;
+   }
+ 
++  FMT_CONSTEXPR void set_debug_format() {
++    maybe_set_debug_format(underlying_, 0);
++  }
++
+   template <typename ParseContext>
+   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+     auto it = ctx.begin();
+@@ -559,6 +565,8 @@ struct range_default_formatter<
+ 
+   FMT_CONSTEXPR void init(range_format_constant<range_format::sequence>) {}
+ 
++  FMT_CONSTEXPR void set_debug_format() { underlying_.set_debug_format(); }
++
+   template <typename ParseContext>
+   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+     return underlying_.parse(ctx);

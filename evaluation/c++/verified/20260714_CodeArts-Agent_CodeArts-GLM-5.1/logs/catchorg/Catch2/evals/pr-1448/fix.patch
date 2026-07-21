@@ -1,0 +1,26 @@
+diff --git a/include/internal/catch_message.cpp b/include/internal/catch_message.cpp
+index df905bf6..e8aa6458 100644
+--- a/include/internal/catch_message.cpp
++++ b/include/internal/catch_message.cpp
+@@ -63,7 +63,7 @@ namespace Catch {
+         auto start = std::string::npos;
+         for( size_t pos = 0; pos <= names.size(); ++pos ) {
+             char c = names[pos];
+-            if( pos == names.size() || c == ' ' || c == '\t' || c == ',' || c == ']' ) {
++            if( pos == names.size() || c == ',' || c == ']' ) {
+                 if( start != std::string::npos ) {
+                     m_messages.push_back( MessageInfo( macroName, lineInfo, resultType ) );
+                     m_messages.back().message = names.substr( start, pos-start) + " := ";
+diff --git a/single_include/catch2/catch.hpp b/single_include/catch2/catch.hpp
+index b324e56a..30ad09fc 100644
+--- a/single_include/catch2/catch.hpp
++++ b/single_include/catch2/catch.hpp
+@@ -8845,7 +8845,7 @@ namespace Catch {
+         auto start = std::string::npos;
+         for( size_t pos = 0; pos <= names.size(); ++pos ) {
+             char c = names[pos];
+-            if( pos == names.size() || c == ' ' || c == '\t' || c == ',' || c == ']' ) {
++            if( pos == names.size() || c == ',' || c == ']' ) {
+                 if( start != std::string::npos ) {
+                     m_messages.push_back( MessageInfo( macroName, lineInfo, resultType ) );
+                     m_messages.back().message = names.substr( start, pos-start) + " := ";

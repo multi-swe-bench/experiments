@@ -1,0 +1,26 @@
+diff --git a/include/nlohmann/detail/json_pointer.hpp b/include/nlohmann/detail/json_pointer.hpp
+index 35e1ddbc..0c4981b1 100644
+--- a/include/nlohmann/detail/json_pointer.hpp
++++ b/include/nlohmann/detail/json_pointer.hpp
+@@ -15,6 +15,7 @@
+ #include <limits> // max
+ #include <numeric> // accumulate
+ #include <string> // string
++#include <ostream> // ostream
+ #include <utility> // move
+ #include <vector> // vector
+ 
+@@ -870,6 +871,13 @@ class json_pointer
+ };
+ 
+ // functions cannot be defined inside class due to ODR violations
++template<typename RefStringType>
++inline std::ostream& operator<<(std::ostream& o, const json_pointer<RefStringType>& ptr)
++{
++    o << ptr.to_string();
++    return o;
++}
++
+ template<typename RefStringTypeLhs, typename RefStringTypeRhs>
+ inline bool operator==(json_pointer<RefStringTypeLhs> const& lhs,
+                        json_pointer<RefStringTypeRhs> const& rhs) noexcept

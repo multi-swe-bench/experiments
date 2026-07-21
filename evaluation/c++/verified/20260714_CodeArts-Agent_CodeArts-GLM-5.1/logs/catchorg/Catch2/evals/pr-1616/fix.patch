@@ -1,0 +1,218 @@
+diff --git a/include/catch.hpp b/include/catch.hpp
+index 947957f5..811a9ba5 100644
+--- a/include/catch.hpp
++++ b/include/catch.hpp
+@@ -33,6 +33,9 @@
+ #  if defined(CATCH_CONFIG_DISABLE_MATCHERS)
+ #    undef CATCH_CONFIG_DISABLE_MATCHERS
+ #  endif
++#  if defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++#    undef CATCH_CONFIG_DISABLE_BENCHMARK
++#  endif
+ #  if !defined(CATCH_CONFIG_ENABLE_CHRONO_STRINGMAKER)
+ #    define CATCH_CONFIG_ENABLE_CHRONO_STRINGMAKER
+ #  endif
+@@ -53,7 +56,9 @@
+ #include "internal/catch_test_registry.h"
+ #include "internal/catch_capture.hpp"
+ #include "internal/catch_section.h"
++#ifndef CATCH_CONFIG_DISABLE_BENCHMARK
+ #include "internal/catch_benchmark.h"
++#endif
+ #include "internal/catch_interfaces_exception.h"
+ #include "internal/catch_approx.h"
+ #include "internal/catch_compiler_capabilities.h"
+@@ -148,6 +153,13 @@
+ 
+ #define CATCH_ANON_TEST_CASE() INTERNAL_CATCH_TESTCASE()
+ 
++#if !defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++#define CATCH_BENCHMARK( name ) \
++    for( Catch::BenchmarkLooper looper( name ); looper; looper.increment() )
++#else
++#define CATCH_BENCHMARK( name )
++#endif // !CATCH_CONFIG_DISABLE_BENCHMARK
++
+ #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
+ #define CATCH_TEMPLATE_TEST_CASE( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE( __VA_ARGS__ )
+ #define CATCH_TEMPLATE_TEST_CASE_SIG( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_SIG( __VA_ARGS__ )
+@@ -239,6 +251,13 @@
+ #define SUCCEED( ... ) INTERNAL_CATCH_MSG( "SUCCEED", Catch::ResultWas::Ok, Catch::ResultDisposition::ContinueOnFailure, __VA_ARGS__ )
+ #define ANON_TEST_CASE() INTERNAL_CATCH_TESTCASE()
+ 
++#if !defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++#define BENCHMARK( name ) \
++    for( Catch::BenchmarkLooper looper( name ); looper; looper.increment() )
++#else
++#define BENCHMARK( name )
++#endif // !CATCH_CONFIG_DISABLE_BENCHMARK
++
+ #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
+ #define TEMPLATE_TEST_CASE( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE( __VA_ARGS__ )
+ #define TEMPLATE_TEST_CASE_SIG( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_SIG( __VA_ARGS__ )
+@@ -339,6 +358,13 @@ using Catch::Detail::Approx;
+ 
+ #define CATCH_ANON_TEST_CASE() INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ))
+ 
++#if !defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++#define CATCH_BENCHMARK( name ) \
++    for( Catch::BenchmarkLooper looper( name ); looper; looper.increment() )
++#else
++#define CATCH_BENCHMARK( name )
++#endif // !CATCH_CONFIG_DISABLE_BENCHMARK
++
+ #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
+ #define CATCH_TEMPLATE_TEST_CASE( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION(__VA_ARGS__)
+ #define CATCH_TEMPLATE_TEST_CASE_SIG( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_SIG_NO_REGISTRATION(__VA_ARGS__)
+@@ -423,6 +449,13 @@ using Catch::Detail::Approx;
+ #define SUCCEED( ... ) (void)(0)
+ #define ANON_TEST_CASE() INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ))
+ 
++#if !defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++#define BENCHMARK( name ) \
++    for( Catch::BenchmarkLooper looper( name ); looper; looper.increment() )
++#else
++#define BENCHMARK( name )
++#endif // !CATCH_CONFIG_DISABLE_BENCHMARK
++
+ #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
+ #define TEMPLATE_TEST_CASE( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION(__VA_ARGS__)
+ #define TEMPLATE_TEST_CASE_SIG( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_SIG_NO_REGISTRATION(__VA_ARGS__)
+diff --git a/include/internal/catch_benchmark.cpp b/include/internal/catch_benchmark.cpp
+index 742418f7..c36adf50 100644
+--- a/include/internal/catch_benchmark.cpp
++++ b/include/internal/catch_benchmark.cpp
+@@ -11,6 +11,8 @@
+ #include "catch_interfaces_reporter.h"
+ #include "catch_context.h"
+ 
++#if !defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++
+ namespace Catch {
+ 
+     auto BenchmarkLooper::getResolution() -> uint64_t {
+@@ -34,3 +36,5 @@ namespace Catch {
+     }
+ 
+ } // end namespace Catch
++
++#endif // !CATCH_CONFIG_DISABLE_BENCHMARK
+diff --git a/include/internal/catch_benchmark.h b/include/internal/catch_benchmark.h
+index e546713c..46bc3e09 100644
+--- a/include/internal/catch_benchmark.h
++++ b/include/internal/catch_benchmark.h
+@@ -51,7 +51,4 @@ namespace Catch {
+ 
+ } // end namespace Catch
+ 
+-#define BENCHMARK( name ) \
+-    for( Catch::BenchmarkLooper looper( name ); looper; looper.increment() )
+-
+ #endif // TWOBLUECUBES_CATCH_BENCHMARK_H_INCLUDED
+diff --git a/single_include/catch2/catch.hpp b/single_include/catch2/catch.hpp
+index 02302b8d..e86abfb1 100644
+--- a/single_include/catch2/catch.hpp
++++ b/single_include/catch2/catch.hpp
+@@ -58,6 +58,9 @@
+ #  if defined(CATCH_CONFIG_DISABLE_MATCHERS)
+ #    undef CATCH_CONFIG_DISABLE_MATCHERS
+ #  endif
++#  if defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++#    undef CATCH_CONFIG_DISABLE_BENCHMARK
++#  endif
+ #  if !defined(CATCH_CONFIG_ENABLE_CHRONO_STRINGMAKER)
+ #    define CATCH_CONFIG_ENABLE_CHRONO_STRINGMAKER
+ #  endif
+@@ -2768,6 +2771,8 @@ namespace Catch {
+ // end catch_section.h
+ // start catch_benchmark.h
+ 
++#if !defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++
+ #include <cstdint>
+ #include <string>
+ 
+@@ -2808,8 +2813,7 @@ namespace Catch {
+ 
+ } // end namespace Catch
+ 
+-#define BENCHMARK( name ) \
+-    for( Catch::BenchmarkLooper looper( name ); looper; looper.increment() )
++#endif // !CATCH_CONFIG_DISABLE_BENCHMARK
+ 
+ // end catch_benchmark.h
+ // start catch_interfaces_exception.h
+@@ -6675,6 +6679,8 @@ namespace Catch {
+ // end catch_assertionresult.cpp
+ // start catch_benchmark.cpp
+ 
++#if !defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++
+ namespace Catch {
+ 
+     auto BenchmarkLooper::getResolution() -> uint64_t {
+@@ -6698,6 +6704,8 @@ namespace Catch {
+     }
+ 
+ } // end namespace Catch
++
++#endif // !CATCH_CONFIG_DISABLE_BENCHMARK
+ // end catch_benchmark.cpp
+ // start catch_capture_matchers.cpp
+ 
+@@ -15039,6 +15047,13 @@ int main (int argc, char * const argv[]) {
+ 
+ #define CATCH_ANON_TEST_CASE() INTERNAL_CATCH_TESTCASE()
+ 
++#if !defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++#define CATCH_BENCHMARK( name ) \
++    for( Catch::BenchmarkLooper looper( name ); looper; looper.increment() )
++#else
++#define CATCH_BENCHMARK( name )
++#endif // !CATCH_CONFIG_DISABLE_BENCHMARK
++
+ #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
+ #define CATCH_TEMPLATE_TEST_CASE( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE( __VA_ARGS__ )
+ #define CATCH_TEMPLATE_TEST_CASE_SIG( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_SIG( __VA_ARGS__ )
+@@ -15127,6 +15142,13 @@ int main (int argc, char * const argv[]) {
+ #define SUCCEED( ... ) INTERNAL_CATCH_MSG( "SUCCEED", Catch::ResultWas::Ok, Catch::ResultDisposition::ContinueOnFailure, __VA_ARGS__ )
+ #define ANON_TEST_CASE() INTERNAL_CATCH_TESTCASE()
+ 
++#if !defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++#define BENCHMARK( name ) \
++    for( Catch::BenchmarkLooper looper( name ); looper; looper.increment() )
++#else
++#define BENCHMARK( name )
++#endif // !CATCH_CONFIG_DISABLE_BENCHMARK
++
+ #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
+ #define TEMPLATE_TEST_CASE( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE( __VA_ARGS__ )
+ #define TEMPLATE_TEST_CASE_SIG( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_SIG( __VA_ARGS__ )
+@@ -15226,6 +15248,13 @@ using Catch::Detail::Approx;
+ 
+ #define CATCH_ANON_TEST_CASE() INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ))
+ 
++#if !defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++#define CATCH_BENCHMARK( name ) \
++    for( Catch::BenchmarkLooper looper( name ); looper; looper.increment() )
++#else
++#define CATCH_BENCHMARK( name )
++#endif // !CATCH_CONFIG_DISABLE_BENCHMARK
++
+ #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
+ #define CATCH_TEMPLATE_TEST_CASE( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION(__VA_ARGS__)
+ #define CATCH_TEMPLATE_TEST_CASE_SIG( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_SIG_NO_REGISTRATION(__VA_ARGS__)
+@@ -15309,6 +15338,13 @@ using Catch::Detail::Approx;
+ #define SUCCEED( ... ) (void)(0)
+ #define ANON_TEST_CASE() INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ))
+ 
++#if !defined(CATCH_CONFIG_DISABLE_BENCHMARK)
++#define BENCHMARK( name ) \
++    for( Catch::BenchmarkLooper looper( name ); looper; looper.increment() )
++#else
++#define BENCHMARK( name )
++#endif // !CATCH_CONFIG_DISABLE_BENCHMARK
++
+ #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
+ #define TEMPLATE_TEST_CASE( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION(__VA_ARGS__)
+ #define TEMPLATE_TEST_CASE_SIG( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_SIG_NO_REGISTRATION(__VA_ARGS__)

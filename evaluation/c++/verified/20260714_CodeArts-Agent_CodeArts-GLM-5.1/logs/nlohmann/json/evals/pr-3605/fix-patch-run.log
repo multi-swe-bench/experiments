@@ -1,0 +1,1123 @@
+检测到 Debian 12 系统
+进入12+系统
+替换系统源完成
+==============================================================================
+Get:1 http://mirrors.tools.huawei.com/debian bookworm InRelease [151 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm-updates InRelease [55.4 kB]
+Get:3 http://mirrors.tools.huawei.com/debian-security bookworm-security InRelease [48.0 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 Packages [8790 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm-updates/main amd64 Packages [6924 B]
+Get:6 http://mirrors.tools.huawei.com/debian-security bookworm-security/main amd64 Packages [316 kB]
+Fetched 9368 kB in 1s (6904 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+patch is already the newest version (2.7.6-7).
+build-essential is already the newest version (12.9).
+libpcre2-dev is already the newest version (10.42-1).
+libpcre2-dev set to manually installed.
+libncurses-dev is already the newest version (6.4-4).
+libncurses-dev set to manually installed.
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+The following additional packages will be installed:
+  libonig5 libssl3 openssl
+Suggested packages:
+  libssl-doc
+The following NEW packages will be installed:
+  libonig-dev libonig5
+The following packages will be upgraded:
+  libssl-dev libssl3 openssl
+3 upgraded, 2 newly installed, 0 to remove and 156 not upgraded.
+Need to get 6203 kB of archives.
+After this operation, 780 kB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig5 amd64 6.9.8-1 [188 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libonig-dev amd64 6.9.8-1 [96.7 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl-dev amd64 3.0.20-1~deb12u2 [2443 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libssl3 amd64 3.0.20-1~deb12u2 [2036 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 openssl amd64 3.0.20-1~deb12u2 [1439 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 6203 kB in 0s (15.4 MB/s)
+Selecting previously unselected package libonig5:amd64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 30609 files and directories currently installed.)
+Preparing to unpack .../libonig5_6.9.8-1_amd64.deb ...
+Unpacking libonig5:amd64 (6.9.8-1) ...
+Selecting previously unselected package libonig-dev.
+Preparing to unpack .../libonig-dev_6.9.8-1_amd64.deb ...
+Unpacking libonig-dev (6.9.8-1) ...
+Preparing to unpack .../libssl-dev_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl-dev:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../libssl3_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking libssl3:amd64 (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Preparing to unpack .../openssl_3.0.20-1~deb12u2_amd64.deb ...
+Unpacking openssl (3.0.20-1~deb12u2) over (3.0.15-1~deb12u1) ...
+Setting up libssl3:amd64 (3.0.20-1~deb12u2) ...
+Setting up libssl-dev:amd64 (3.0.20-1~deb12u2) ...
+Setting up openssl (3.0.20-1~deb12u2) ...
+Setting up libonig5:amd64 (6.9.8-1) ...
+Setting up libonig-dev (6.9.8-1) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+cmake is already the newest version (3.25.1-1).
+zlib1g-dev is already the newest version (1:1.2.13.dfsg-1).
+0 upgraded, 0 newly installed, 0 to remove and 156 not upgraded.
+=== RUN FULL via /home/fix-run.sh (tee log) ===
+#!/bin/bash
+set -e
+
+cd /home/json
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake ..  
+cmake --build .
+ctest
+
+=========================================
+当前目录：/home
+当前目录内容：add_certificate_for_c.sh check_git_changes.sh fix-run.sh fix.patch json json_test_data prepare.sh run.sh test-run.sh test.patch
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+wget is already the newest version (1.21.3-1+deb12u1).
+0 upgraded, 0 newly installed, 0 to remove and 156 not upgraded.
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libgpm2 libsodium23 vim-common vim-runtime xxd
+Suggested packages:
+  gpm ctags vim-doc vim-scripts
+The following NEW packages will be installed:
+  libgpm2 libsodium23 vim vim-common vim-runtime xxd
+0 upgraded, 6 newly installed, 0 to remove and 156 not upgraded.
+Need to get 8980 kB of archives.
+After this operation, 41.9 MB of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-common all 2:9.0.1378-2+deb12u2 [125 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libgpm2 amd64 1.20.7-10+b1 [14.2 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libsodium23 amd64 1.0.18-1+deb12u1 [162 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim-runtime all 2:9.0.1378-2+deb12u2 [7027 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 vim amd64 2:9.0.1378-2+deb12u2 [1568 kB]
+Get:6 http://mirrors.tools.huawei.com/debian bookworm/main amd64 xxd amd64 2:9.0.1378-2+deb12u2 [84.1 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 8980 kB in 0s (19.6 MB/s)
+Selecting previously unselected package vim-common.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 30652 files and directories currently installed.)
+Preparing to unpack .../0-vim-common_2%3a9.0.1378-2+deb12u2_all.deb ...
+Unpacking vim-common (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package libgpm2:amd64.
+Preparing to unpack .../1-libgpm2_1.20.7-10+b1_amd64.deb ...
+Unpacking libgpm2:amd64 (1.20.7-10+b1) ...
+Selecting previously unselected package libsodium23:amd64.
+Preparing to unpack .../2-libsodium23_1.0.18-1+deb12u1_amd64.deb ...
+Unpacking libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Selecting previously unselected package vim-runtime.
+Preparing to unpack .../3-vim-runtime_2%3a9.0.1378-2+deb12u2_all.deb ...
+Adding 'diversion of /usr/share/vim/vim90/doc/help.txt to /usr/share/vim/vim90/doc/help.txt.vim-tiny by vim-runtime'
+Adding 'diversion of /usr/share/vim/vim90/doc/tags to /usr/share/vim/vim90/doc/tags.vim-tiny by vim-runtime'
+Unpacking vim-runtime (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package vim.
+Preparing to unpack .../4-vim_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking vim (2:9.0.1378-2+deb12u2) ...
+Selecting previously unselected package xxd.
+Preparing to unpack .../5-xxd_2%3a9.0.1378-2+deb12u2_amd64.deb ...
+Unpacking xxd (2:9.0.1378-2+deb12u2) ...
+Setting up libsodium23:amd64 (1.0.18-1+deb12u1) ...
+Setting up libgpm2:amd64 (1.20.7-10+b1) ...
+Setting up xxd (2:9.0.1378-2+deb12u2) ...
+Setting up vim-common (2:9.0.1378-2+deb12u2) ...
+Setting up vim-runtime (2:9.0.1378-2+deb12u2) ...
+Setting up vim (2:9.0.1378-2+deb12u2) ...
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/ex (ex) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rview (rview) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rvim (rvim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vi (vi) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/view (view) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vim (vim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vimdiff (vimdiff) in auto mode
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+Processing triggers for hicolor-icon-theme (0.17-2) ...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libcurl3-gnutls libcurl3-nss libcurl4 libcurl4-openssl-dev
+Suggested packages:
+  libcurl4-doc libidn-dev libldap2-dev librtmp-dev libssh2-1-dev
+The following packages will be upgraded:
+  curl libcurl3-gnutls libcurl3-nss libcurl4 libcurl4-openssl-dev
+5 upgraded, 0 newly installed, 0 to remove and 151 not upgraded.
+Need to get 1982 kB of archives.
+After this operation, 5120 B of additional disk space will be used.
+Get:1 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4-openssl-dev amd64 7.88.1-10+deb12u15 [493 kB]
+Get:2 http://mirrors.tools.huawei.com/debian bookworm/main amd64 curl amd64 7.88.1-10+deb12u15 [316 kB]
+Get:3 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl4 amd64 7.88.1-10+deb12u15 [392 kB]
+Get:4 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl3-gnutls amd64 7.88.1-10+deb12u15 [386 kB]
+Get:5 http://mirrors.tools.huawei.com/debian bookworm/main amd64 libcurl3-nss amd64 7.88.1-10+deb12u15 [396 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 1982 kB in 0s (5301 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 32809 files and directories currently installed.)
+Preparing to unpack .../libcurl4-openssl-dev_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../curl_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking curl (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl4_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl4:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl3-gnutls_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Preparing to unpack .../libcurl3-nss_7.88.1-10+deb12u15_amd64.deb ...
+Unpacking libcurl3-nss:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+Setting up libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) ...
+Setting up libcurl3-nss:amd64 (7.88.1-10+deb12u15) ...
+Setting up libcurl4:amd64 (7.88.1-10+deb12u15) ...
+Setting up curl (7.88.1-10+deb12u15) ...
+Setting up libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) ...
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+=== 配置证书 (abcert) ===
+[abcert][INFO] Created temporary directory .tmp.pems.29F8xZXs
+[abcert][INFO] Operating system: Debian GNU/Linux 12 (bookworm)
+[abcert][INFO] Installing certificates
+'.tmp.pems.29F8xZXs/HWBPITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWBPITEnterpriseCA1.crt'
+'.tmp.pems.29F8xZXs/HWITEnterpriseCA1.pem' -> '/usr/local/share/ca-certificates/HWITEnterpriseCA1.crt'
+'.tmp.pems.29F8xZXs/HuaweiBPITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiBPITRootCA.crt'
+'.tmp.pems.29F8xZXs/HuaweiITRootCA.pem' -> '/usr/local/share/ca-certificates/HuaweiITRootCA.crt'
+'.tmp.pems.29F8xZXs/HuaweiWebSecureInternetGatewayCA.pem' -> '/usr/local/share/ca-certificates/HuaweiWebSecureInternetGatewayCA.crt'
+Updating certificates in /etc/ssl/certs...
+rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+5 added, 0 removed; done.
+Running hooks in /etc/ca-certificates/update.d...
+done.
+[abcert][INFO] Removed .tmp.pems.29F8xZXs
+abcert 安装完成
+================git=====================
+http.version=HTTP/1.1
+http.postbuffer=524288000
+http.timeout=600
+================git=====================
+================env=====================
+HTTPS_PROXY=http://test:test@proxysg.huawei.com:8080/
+no_proxy=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+HOSTNAME=0bc2406106a0
+GCC_MIRRORS=https://ftpmirror.gnu.org/gcc 		https://mirrors.kernel.org/gnu/gcc 		https://bigsearcher.com/mirrors/gcc/releases 		http://www.netgull.com/gcc/releases 		https://ftpmirror.gnu.org/gcc 		https://sourceware.org/pub/gcc/releases 		ftp://ftp.gnu.org/gnu/gcc
+HOME=/root
+OLDPWD=/home
+NO_PROXY=127.0.0.1,.huawei.com,localhost,local,.local,10.173.93.185,7.242.105.181,7.150.10.43
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+https_proxy=http://test:test@proxysg.huawei.com:8080/
+GPG_KEYS=B215C1633BCA0477615F1B35A5B3A004745C015A 	B3C42148A44E6983B3E4CC0793FA9B1AB75C61B8 	90AA470469D3965A87A5DCB494D03953902C9419 	80F98B2E0DAB6C8281BDF541A7C8C3B2F71EDF1C 	7F74F97C103468EE5D750B583AB00996FC26A641 	33C235A34C46AA3FFB293709A328C3A2C3C45C06 	D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62
+http_proxy=http://test:test@proxysg.huawei.com:8080/
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+GIT_SSL_NO_VERIFY=true
+PWD=/tmp/tmp.CV29P6ashZ/abcert_install
+HTTP_PROXY=http://test:test@proxysg.huawei.com:8080/
+GCC_VERSION=12.4.0
+================env=====================
+#!/bin/bash
+# set -e
+
+cd /home/json
+git ls-files --others --exclude-standard | xargs -I {} mv {} {}.bak
+patch --batch --fuzz=5 -p1 -i /home/test.patch;tail -c1 /home/fix.patch | read -r || echo >> /home/fix.patch;patch --batch --fuzz=5 -p1 -i /home/fix.patch || true
+cd build
+cmake ..  
+cmake --build .
+ctest
+
+=========================================
+patching file tests/src/unit-class_parser.cpp
+patching file tests/src/unit-deserialization.cpp
+patching file tests/src/unit-element_access2.cpp
+patching file tests/src/unit-json_patch.cpp
+patching file tests/src/unit-json_pointer.cpp
+patching file tests/src/unit-merge_patch.cpp
+patching file tests/src/unit-msgpack.cpp
+patching file tests/src/unit-readme.cpp
+patching file tests/src/unit-regression1.cpp
+patching file tests/src/unit-regression2.cpp
+patching file tests/src/unit-udl.cpp
+patching file tests/src/unit-udt.cpp
+patching file include/nlohmann/json.hpp
+patching file single_include/nlohmann/json.hpp
+-- The CXX compiler identification is GNU 12.4.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Using the multi-header code from /home/json/include/
+-- Found Git: /usr/bin/git (found version "2.39.5") 
+-- Operating system: Linux-6.8.0-41-generic; Linux 0bc2406106a0 6.8.0-41-generic #41-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  2 20:41:06 UTC 2024 x86_64 GNU/Linux
+-- Compiler: c++ (GCC) 12.4.0; Copyright (C) 2022 Free Software Foundation, Inc.; This is free software; see the source for copying conditions.  There is NO; warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+-- Testing standards: 11 14 17 20 23
+-- Looking for C++ include sys/types.h
+-- Looking for C++ include sys/types.h - found
+-- Looking for C++ include stdint.h
+-- Looking for C++ include stdint.h - found
+-- Looking for C++ include stddef.h
+-- Looking for C++ include stddef.h - found
+-- Check size of size_t
+-- Check size of size_t - done
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/json/build
+[  1%] Building CXX object tests/CMakeFiles/test_main.dir/src/unit.cpp.o
+[  1%] Built target test_main
+[  2%] Building CXX object tests/CMakeFiles/test-algorithms_cpp11.dir/src/unit-algorithms.cpp.o
+[  3%] Linking CXX executable test-algorithms_cpp11
+[  3%] Built target test-algorithms_cpp11
+[  3%] Building CXX object tests/CMakeFiles/test-allocator_cpp11.dir/src/unit-allocator.cpp.o
+[  4%] Linking CXX executable test-allocator_cpp11
+[  4%] Built target test-allocator_cpp11
+[  5%] Building CXX object tests/CMakeFiles/test-alt-string_cpp11.dir/src/unit-alt-string.cpp.o
+[  5%] Linking CXX executable test-alt-string_cpp11
+[  5%] Built target test-alt-string_cpp11
+[  6%] Building CXX object tests/CMakeFiles/test-assert_macro_cpp11.dir/src/unit-assert_macro.cpp.o
+[  7%] Linking CXX executable test-assert_macro_cpp11
+[  7%] Built target test-assert_macro_cpp11
+[  7%] Building CXX object tests/CMakeFiles/test-binary_formats_cpp11.dir/src/unit-binary_formats.cpp.o
+[  8%] Linking CXX executable test-binary_formats_cpp11
+[  8%] Built target test-binary_formats_cpp11
+[  9%] Building CXX object tests/CMakeFiles/test-bjdata_cpp11.dir/src/unit-bjdata.cpp.o
+[  9%] Linking CXX executable test-bjdata_cpp11
+[  9%] Built target test-bjdata_cpp11
+[ 10%] Building CXX object tests/CMakeFiles/test-bson_cpp11.dir/src/unit-bson.cpp.o
+[ 10%] Linking CXX executable test-bson_cpp11
+[ 10%] Built target test-bson_cpp11
+[ 11%] Building CXX object tests/CMakeFiles/test-byte_container_with_subtype_cpp11.dir/src/unit-byte_container_with_subtype.cpp.o
+[ 12%] Linking CXX executable test-byte_container_with_subtype_cpp11
+[ 12%] Built target test-byte_container_with_subtype_cpp11
+[ 12%] Building CXX object tests/CMakeFiles/test-capacity_cpp11.dir/src/unit-capacity.cpp.o
+[ 13%] Linking CXX executable test-capacity_cpp11
+[ 13%] Built target test-capacity_cpp11
+[ 14%] Building CXX object tests/CMakeFiles/test-cbor_cpp11.dir/src/unit-cbor.cpp.o
+[ 14%] Linking CXX executable test-cbor_cpp11
+[ 14%] Built target test-cbor_cpp11
+[ 15%] Building CXX object tests/CMakeFiles/test-class_const_iterator_cpp11.dir/src/unit-class_const_iterator.cpp.o
+[ 16%] Linking CXX executable test-class_const_iterator_cpp11
+[ 16%] Built target test-class_const_iterator_cpp11
+[ 16%] Building CXX object tests/CMakeFiles/test-class_iterator_cpp11.dir/src/unit-class_iterator.cpp.o
+[ 17%] Linking CXX executable test-class_iterator_cpp11
+[ 17%] Built target test-class_iterator_cpp11
+[ 18%] Building CXX object tests/CMakeFiles/test-class_lexer_cpp11.dir/src/unit-class_lexer.cpp.o
+[ 18%] Linking CXX executable test-class_lexer_cpp11
+[ 18%] Built target test-class_lexer_cpp11
+[ 19%] Building CXX object tests/CMakeFiles/test-class_parser_cpp11.dir/src/unit-class_parser.cpp.o
+[ 20%] Linking CXX executable test-class_parser_cpp11
+[ 20%] Built target test-class_parser_cpp11
+[ 20%] Building CXX object tests/CMakeFiles/test-comparison_cpp11.dir/src/unit-comparison.cpp.o
+[ 21%] Linking CXX executable test-comparison_cpp11
+[ 21%] Built target test-comparison_cpp11
+[ 22%] Building CXX object tests/CMakeFiles/test-comparison_cpp20.dir/src/unit-comparison.cpp.o
+[ 22%] Linking CXX executable test-comparison_cpp20
+[ 22%] Built target test-comparison_cpp20
+[ 23%] Building CXX object tests/CMakeFiles/test-concepts_cpp11.dir/src/unit-concepts.cpp.o
+[ 23%] Linking CXX executable test-concepts_cpp11
+[ 23%] Built target test-concepts_cpp11
+[ 24%] Building CXX object tests/CMakeFiles/test-constructor1_cpp11.dir/src/unit-constructor1.cpp.o
+[ 24%] Linking CXX executable test-constructor1_cpp11
+[ 24%] Built target test-constructor1_cpp11
+[ 25%] Building CXX object tests/CMakeFiles/test-constructor2_cpp11.dir/src/unit-constructor2.cpp.o
+[ 26%] Linking CXX executable test-constructor2_cpp11
+[ 26%] Built target test-constructor2_cpp11
+[ 26%] Building CXX object tests/CMakeFiles/test-convenience_cpp11.dir/src/unit-convenience.cpp.o
+[ 27%] Linking CXX executable test-convenience_cpp11
+[ 27%] Built target test-convenience_cpp11
+[ 28%] Building CXX object tests/CMakeFiles/test-conversions_cpp11.dir/src/unit-conversions.cpp.o
+[ 28%] Linking CXX executable test-conversions_cpp11
+[ 28%] Built target test-conversions_cpp11
+[ 29%] Building CXX object tests/CMakeFiles/test-conversions_cpp17.dir/src/unit-conversions.cpp.o
+[ 30%] Linking CXX executable test-conversions_cpp17
+[ 30%] Built target test-conversions_cpp17
+[ 30%] Building CXX object tests/CMakeFiles/test-deserialization_cpp11.dir/src/unit-deserialization.cpp.o
+[ 31%] Linking CXX executable test-deserialization_cpp11
+[ 31%] Built target test-deserialization_cpp11
+[ 32%] Building CXX object tests/CMakeFiles/test-diagnostics_cpp11.dir/src/unit-diagnostics.cpp.o
+[ 32%] Linking CXX executable test-diagnostics_cpp11
+[ 32%] Built target test-diagnostics_cpp11
+[ 33%] Building CXX object tests/CMakeFiles/test-disabled_exceptions_cpp11.dir/src/unit-disabled_exceptions.cpp.o
+[ 34%] Linking CXX executable test-disabled_exceptions_cpp11
+[ 34%] Built target test-disabled_exceptions_cpp11
+[ 34%] Building CXX object tests/CMakeFiles/test-element_access1_cpp11.dir/src/unit-element_access1.cpp.o
+[ 35%] Linking CXX executable test-element_access1_cpp11
+[ 35%] Built target test-element_access1_cpp11
+[ 36%] Building CXX object tests/CMakeFiles/test-element_access2_cpp11.dir/src/unit-element_access2.cpp.o
+[ 36%] Linking CXX executable test-element_access2_cpp11
+[ 36%] Built target test-element_access2_cpp11
+[ 37%] Building CXX object tests/CMakeFiles/test-element_access2_cpp17.dir/src/unit-element_access2.cpp.o
+[ 38%] Linking CXX executable test-element_access2_cpp17
+[ 38%] Built target test-element_access2_cpp17
+[ 38%] Building CXX object tests/CMakeFiles/test-hash_cpp11.dir/src/unit-hash.cpp.o
+[ 39%] Linking CXX executable test-hash_cpp11
+[ 39%] Built target test-hash_cpp11
+[ 40%] Building CXX object tests/CMakeFiles/test-inspection_cpp11.dir/src/unit-inspection.cpp.o
+[ 40%] Linking CXX executable test-inspection_cpp11
+[ 40%] Built target test-inspection_cpp11
+[ 41%] Building CXX object tests/CMakeFiles/test-items_cpp11.dir/src/unit-items.cpp.o
+[ 41%] Linking CXX executable test-items_cpp11
+[ 41%] Built target test-items_cpp11
+[ 42%] Building CXX object tests/CMakeFiles/test-items_cpp17.dir/src/unit-items.cpp.o
+[ 43%] Linking CXX executable test-items_cpp17
+[ 43%] Built target test-items_cpp17
+[ 43%] Building CXX object tests/CMakeFiles/test-iterators1_cpp11.dir/src/unit-iterators1.cpp.o
+[ 44%] Linking CXX executable test-iterators1_cpp11
+[ 44%] Built target test-iterators1_cpp11
+[ 45%] Building CXX object tests/CMakeFiles/test-iterators2_cpp11.dir/src/unit-iterators2.cpp.o
+[ 45%] Linking CXX executable test-iterators2_cpp11
+[ 45%] Built target test-iterators2_cpp11
+[ 46%] Building CXX object tests/CMakeFiles/test-iterators2_cpp20.dir/src/unit-iterators2.cpp.o
+[ 47%] Linking CXX executable test-iterators2_cpp20
+[ 47%] Built target test-iterators2_cpp20
+[ 47%] Building CXX object tests/CMakeFiles/test-json_patch_cpp11.dir/src/unit-json_patch.cpp.o
+[ 48%] Linking CXX executable test-json_patch_cpp11
+[ 48%] Built target test-json_patch_cpp11
+[ 49%] Building CXX object tests/CMakeFiles/test-json_pointer_cpp11.dir/src/unit-json_pointer.cpp.o
+[ 49%] Linking CXX executable test-json_pointer_cpp11
+[ 49%] Built target test-json_pointer_cpp11
+[ 50%] Building CXX object tests/CMakeFiles/test-large_json_cpp11.dir/src/unit-large_json.cpp.o
+[ 51%] Linking CXX executable test-large_json_cpp11
+[ 51%] Built target test-large_json_cpp11
+[ 51%] Building CXX object tests/CMakeFiles/test-merge_patch_cpp11.dir/src/unit-merge_patch.cpp.o
+[ 52%] Linking CXX executable test-merge_patch_cpp11
+[ 52%] Built target test-merge_patch_cpp11
+[ 53%] Building CXX object tests/CMakeFiles/test-meta_cpp11.dir/src/unit-meta.cpp.o
+[ 53%] Linking CXX executable test-meta_cpp11
+[ 53%] Built target test-meta_cpp11
+[ 54%] Building CXX object tests/CMakeFiles/test-modifiers_cpp11.dir/src/unit-modifiers.cpp.o
+[ 55%] Linking CXX executable test-modifiers_cpp11
+[ 55%] Built target test-modifiers_cpp11
+[ 55%] Building CXX object tests/CMakeFiles/test-msgpack_cpp11.dir/src/unit-msgpack.cpp.o
+[ 56%] Linking CXX executable test-msgpack_cpp11
+[ 56%] Built target test-msgpack_cpp11
+[ 57%] Building CXX object tests/CMakeFiles/test-noexcept_cpp11.dir/src/unit-noexcept.cpp.o
+[ 57%] Linking CXX executable test-noexcept_cpp11
+[ 57%] Built target test-noexcept_cpp11
+[ 58%] Building CXX object tests/CMakeFiles/test-ordered_json_cpp11.dir/src/unit-ordered_json.cpp.o
+[ 58%] Linking CXX executable test-ordered_json_cpp11
+[ 58%] Built target test-ordered_json_cpp11
+[ 59%] Building CXX object tests/CMakeFiles/test-ordered_map_cpp11.dir/src/unit-ordered_map.cpp.o
+[ 60%] Linking CXX executable test-ordered_map_cpp11
+[ 60%] Built target test-ordered_map_cpp11
+[ 60%] Building CXX object tests/CMakeFiles/test-pointer_access_cpp11.dir/src/unit-pointer_access.cpp.o
+[ 61%] Linking CXX executable test-pointer_access_cpp11
+[ 61%] Built target test-pointer_access_cpp11
+[ 62%] Building CXX object tests/CMakeFiles/test-readme_cpp11.dir/src/unit-readme.cpp.o
+[ 62%] Linking CXX executable test-readme_cpp11
+[ 62%] Built target test-readme_cpp11
+[ 63%] Building CXX object tests/CMakeFiles/test-reference_access_cpp11.dir/src/unit-reference_access.cpp.o
+[ 64%] Linking CXX executable test-reference_access_cpp11
+[ 64%] Built target test-reference_access_cpp11
+[ 64%] Building CXX object tests/CMakeFiles/test-regression1_cpp11.dir/src/unit-regression1.cpp.o
+[ 65%] Linking CXX executable test-regression1_cpp11
+[ 65%] Built target test-regression1_cpp11
+[ 66%] Building CXX object tests/CMakeFiles/test-regression1_cpp17.dir/src/unit-regression1.cpp.o
+[ 66%] Linking CXX executable test-regression1_cpp17
+[ 66%] Built target test-regression1_cpp17
+[ 67%] Building CXX object tests/CMakeFiles/test-regression2_cpp11.dir/src/unit-regression2.cpp.o
+[ 68%] Linking CXX executable test-regression2_cpp11
+[ 68%] Built target test-regression2_cpp11
+[ 68%] Building CXX object tests/CMakeFiles/test-regression2_cpp17.dir/src/unit-regression2.cpp.o
+[ 69%] Linking CXX executable test-regression2_cpp17
+[ 69%] Built target test-regression2_cpp17
+[ 70%] Building CXX object tests/CMakeFiles/test-regression2_cpp20.dir/src/unit-regression2.cpp.o
+[ 70%] Linking CXX executable test-regression2_cpp20
+[ 70%] Built target test-regression2_cpp20
+[ 71%] Building CXX object tests/CMakeFiles/test-serialization_cpp11.dir/src/unit-serialization.cpp.o
+[ 72%] Linking CXX executable test-serialization_cpp11
+[ 72%] Built target test-serialization_cpp11
+[ 72%] Building CXX object tests/CMakeFiles/test-testsuites_cpp11.dir/src/unit-testsuites.cpp.o
+[ 73%] Linking CXX executable test-testsuites_cpp11
+[ 73%] Built target test-testsuites_cpp11
+[ 74%] Building CXX object tests/CMakeFiles/test-to_chars_cpp11.dir/src/unit-to_chars.cpp.o
+[ 74%] Linking CXX executable test-to_chars_cpp11
+[ 74%] Built target test-to_chars_cpp11
+[ 75%] Building CXX object tests/CMakeFiles/test-ubjson_cpp11.dir/src/unit-ubjson.cpp.o
+[ 75%] Linking CXX executable test-ubjson_cpp11
+[ 75%] Built target test-ubjson_cpp11
+[ 76%] Building CXX object tests/CMakeFiles/test-udl_cpp11.dir/src/unit-udl.cpp.o
+/home/json/tests/src/unit-udl.cpp: In function 'void _DOCTEST_ANON_FUNC_2()':
+/home/json/tests/src/unit-udl.cpp:22:45: error: 'json_literals' is not a namespace-name
+   22 |         using namespace nlohmann::literals::json_literals; // NOLINT(google-build-using-namespace)
+      |                                             ^~~~~~~~~~~~~
+/home/json/tests/src/unit-udl.cpp:30:35: error: 'json_literals' is not a namespace-name; did you mean 'literals'?
+   30 |         using namespace nlohmann::json_literals; // NOLINT(google-build-using-namespace)
+      |                                   ^~~~~~~~~~~~~
+      |                                   literals
+gmake[2]: *** [tests/CMakeFiles/test-udl_cpp11.dir/build.make:76: tests/CMakeFiles/test-udl_cpp11.dir/src/unit-udl.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:2693: tests/CMakeFiles/test-udl_cpp11.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+Test project /home/json/build
+      Start  1: download_test_data
+ 1/85 Test  #1: download_test_data ...........................   Passed    0.08 sec
+      Start  2: test-algorithms_cpp11
+ 2/85 Test  #2: test-algorithms_cpp11 ........................   Passed    0.00 sec
+      Start  3: test-allocator_cpp11
+ 3/85 Test  #3: test-allocator_cpp11 .........................   Passed    0.00 sec
+      Start  4: test-alt-string_cpp11
+ 4/85 Test  #4: test-alt-string_cpp11 ........................   Passed    0.00 sec
+      Start  5: test-assert_macro_cpp11
+ 5/85 Test  #5: test-assert_macro_cpp11 ......................   Passed    0.00 sec
+      Start  6: test-binary_formats_cpp11
+ 6/85 Test  #6: test-binary_formats_cpp11 ....................   Passed   23.33 sec
+      Start  7: test-bjdata_cpp11
+ 7/85 Test  #7: test-bjdata_cpp11 ............................   Passed   10.41 sec
+      Start  8: test-bson_cpp11
+ 8/85 Test  #8: test-bson_cpp11 ..............................   Passed    0.01 sec
+      Start  9: test-byte_container_with_subtype_cpp11
+ 9/85 Test  #9: test-byte_container_with_subtype_cpp11 .......   Passed    0.00 sec
+      Start 10: test-capacity_cpp11
+10/85 Test #10: test-capacity_cpp11 ..........................   Passed    0.00 sec
+      Start 11: test-cbor_cpp11
+11/85 Test #11: test-cbor_cpp11 ..............................   Passed   40.25 sec
+      Start 12: test-class_const_iterator_cpp11
+12/85 Test #12: test-class_const_iterator_cpp11 ..............   Passed    0.00 sec
+      Start 13: test-class_iterator_cpp11
+13/85 Test #13: test-class_iterator_cpp11 ....................   Passed    0.00 sec
+      Start 14: test-class_lexer_cpp11
+14/85 Test #14: test-class_lexer_cpp11 .......................   Passed    0.00 sec
+      Start 15: test-class_parser_cpp11
+15/85 Test #15: test-class_parser_cpp11 ......................   Passed    0.07 sec
+      Start 16: test-comparison_cpp11
+16/85 Test #16: test-comparison_cpp11 ........................   Passed    0.00 sec
+      Start 17: test-comparison_cpp20
+17/85 Test #17: test-comparison_cpp20 ........................   Passed    0.01 sec
+      Start 18: test-concepts_cpp11
+18/85 Test #18: test-concepts_cpp11 ..........................   Passed    0.00 sec
+      Start 19: test-constructor1_cpp11
+19/85 Test #19: test-constructor1_cpp11 ......................   Passed    0.01 sec
+      Start 20: test-constructor2_cpp11
+20/85 Test #20: test-constructor2_cpp11 ......................   Passed    0.00 sec
+      Start 21: test-convenience_cpp11
+21/85 Test #21: test-convenience_cpp11 .......................   Passed    0.00 sec
+      Start 22: test-conversions_cpp11
+22/85 Test #22: test-conversions_cpp11 .......................   Passed    0.01 sec
+      Start 23: test-conversions_cpp17
+23/85 Test #23: test-conversions_cpp17 .......................   Passed    0.01 sec
+      Start 24: test-deserialization_cpp11
+24/85 Test #24: test-deserialization_cpp11 ...................   Passed    0.01 sec
+      Start 25: test-diagnostics_cpp11
+25/85 Test #25: test-diagnostics_cpp11 .......................   Passed    0.00 sec
+      Start 26: test-disabled_exceptions_cpp11
+26/85 Test #26: test-disabled_exceptions_cpp11 ...............   Passed    0.00 sec
+      Start 27: test-element_access1_cpp11
+27/85 Test #27: test-element_access1_cpp11 ...................   Passed    0.01 sec
+      Start 28: test-element_access2_cpp11
+28/85 Test #28: test-element_access2_cpp11 ...................   Passed    0.01 sec
+      Start 29: test-element_access2_cpp17
+29/85 Test #29: test-element_access2_cpp17 ...................   Passed    0.02 sec
+      Start 30: test-hash_cpp11
+30/85 Test #30: test-hash_cpp11 ..............................   Passed    0.00 sec
+      Start 31: test-inspection_cpp11
+31/85 Test #31: test-inspection_cpp11 ........................   Passed    5.40 sec
+      Start 32: test-items_cpp11
+32/85 Test #32: test-items_cpp11 .............................   Passed    0.00 sec
+      Start 33: test-items_cpp17
+33/85 Test #33: test-items_cpp17 .............................   Passed    0.00 sec
+      Start 34: test-iterators1_cpp11
+34/85 Test #34: test-iterators1_cpp11 ........................   Passed    0.01 sec
+      Start 35: test-iterators2_cpp11
+35/85 Test #35: test-iterators2_cpp11 ........................   Passed    0.01 sec
+      Start 36: test-iterators2_cpp20
+36/85 Test #36: test-iterators2_cpp20 ........................   Passed    0.01 sec
+      Start 37: test-json_patch_cpp11
+37/85 Test #37: test-json_patch_cpp11 ........................   Passed    0.01 sec
+      Start 38: test-json_pointer_cpp11
+38/85 Test #38: test-json_pointer_cpp11 ......................   Passed    0.00 sec
+      Start 39: test-large_json_cpp11
+39/85 Test #39: test-large_json_cpp11 ........................   Passed    5.34 sec
+      Start 40: test-merge_patch_cpp11
+40/85 Test #40: test-merge_patch_cpp11 .......................   Passed    0.00 sec
+      Start 41: test-meta_cpp11
+41/85 Test #41: test-meta_cpp11 ..............................   Passed    0.00 sec
+      Start 42: test-modifiers_cpp11
+42/85 Test #42: test-modifiers_cpp11 .........................   Passed    0.01 sec
+      Start 43: test-msgpack_cpp11
+43/85 Test #43: test-msgpack_cpp11 ...........................   Passed   40.13 sec
+      Start 44: test-noexcept_cpp11
+44/85 Test #44: test-noexcept_cpp11 ..........................   Passed    0.00 sec
+      Start 45: test-ordered_json_cpp11
+45/85 Test #45: test-ordered_json_cpp11 ......................   Passed    0.00 sec
+      Start 46: test-ordered_map_cpp11
+46/85 Test #46: test-ordered_map_cpp11 .......................   Passed    0.00 sec
+      Start 47: test-pointer_access_cpp11
+47/85 Test #47: test-pointer_access_cpp11 ....................   Passed    0.00 sec
+      Start 48: test-readme_cpp11
+48/85 Test #48: test-readme_cpp11 ............................   Passed    0.00 sec
+      Start 49: test-reference_access_cpp11
+49/85 Test #49: test-reference_access_cpp11 ..................   Passed    0.00 sec
+      Start 50: test-regression1_cpp11
+50/85 Test #50: test-regression1_cpp11 .......................   Passed    6.50 sec
+      Start 51: test-regression1_cpp17
+51/85 Test #51: test-regression1_cpp17 .......................   Passed    7.56 sec
+      Start 52: test-regression2_cpp11
+52/85 Test #52: test-regression2_cpp11 .......................   Passed    0.00 sec
+      Start 53: test-regression2_cpp17
+53/85 Test #53: test-regression2_cpp17 .......................   Passed    0.00 sec
+      Start 54: test-regression2_cpp20
+54/85 Test #54: test-regression2_cpp20 .......................   Passed    0.00 sec
+      Start 55: test-serialization_cpp11
+55/85 Test #55: test-serialization_cpp11 .....................   Passed    0.00 sec
+      Start 56: test-testsuites_cpp11
+56/85 Test #56: test-testsuites_cpp11 ........................   Passed    0.07 sec
+      Start 57: test-to_chars_cpp11
+57/85 Test #57: test-to_chars_cpp11 ..........................   Passed    0.00 sec
+      Start 58: test-ubjson_cpp11
+58/85 Test #58: test-ubjson_cpp11 ............................   Passed   12.99 sec
+      Start 59: test-udl_cpp11
+Could not find executable /home/json/build/tests/test-udl_cpp11
+Looked in the following places:
+/home/json/build/tests/test-udl_cpp11
+/home/json/build/tests/test-udl_cpp11
+/home/json/build/tests/Release/test-udl_cpp11
+/home/json/build/tests/Release/test-udl_cpp11
+/home/json/build/tests/Debug/test-udl_cpp11
+/home/json/build/tests/Debug/test-udl_cpp11
+/home/json/build/tests/MinSizeRel/test-udl_cpp11
+/home/json/build/tests/MinSizeRel/test-udl_cpp11
+Unable to find executable: /home/json/build/tests/test-udl_cpp11
+/home/json/build/tests/RelWithDebInfo/test-udl_cpp11
+/home/json/build/tests/RelWithDebInfo/test-udl_cpp11
+/home/json/build/tests/Deployment/test-udl_cpp11
+/home/json/build/tests/Deployment/test-udl_cpp11
+/home/json/build/tests/Development/test-udl_cpp11
+/home/json/build/tests/Development/test-udl_cpp11
+home/json/build/tests/test-udl_cpp11
+home/json/build/tests/test-udl_cpp11
+home/json/build/tests/Release/test-udl_cpp11
+home/json/build/tests/Release/test-udl_cpp11
+home/json/build/tests/Debug/test-udl_cpp11
+home/json/build/tests/Debug/test-udl_cpp11
+home/json/build/tests/MinSizeRel/test-udl_cpp11
+home/json/build/tests/MinSizeRel/test-udl_cpp11
+home/json/build/tests/RelWithDebInfo/test-udl_cpp11
+home/json/build/tests/RelWithDebInfo/test-udl_cpp11
+home/json/build/tests/Deployment/test-udl_cpp11
+home/json/build/tests/Deployment/test-udl_cpp11
+home/json/build/tests/Development/test-udl_cpp11
+home/json/build/tests/Development/test-udl_cpp11
+59/85 Test #59: test-udl_cpp11 ...............................***Not Run   0.00 sec
+      Start 60: test-udt_cpp11
+Could not find executable /home/json/build/tests/test-udt_cpp11
+Looked in the following places:
+/home/json/build/tests/test-udt_cpp11
+/home/json/build/tests/test-udt_cpp11
+/home/json/build/tests/Release/test-udt_cpp11
+/home/json/build/tests/Release/test-udt_cpp11
+/home/json/build/tests/Debug/test-udt_cpp11
+/home/json/build/tests/Debug/test-udt_cpp11
+/home/json/build/tests/MinSizeRel/test-udt_cpp11
+/home/json/build/tests/MinSizeRel/test-udt_cpp11
+/home/json/build/tests/RelWithDebInfo/test-udt_cpp11
+/home/json/build/tests/RelWithDebInfo/test-udt_cpp11
+/home/json/build/tests/Deployment/test-udt_cpp11
+/home/json/build/tests/Deployment/test-udt_cpp11
+/home/json/build/tests/Development/test-udt_cpp11
+/home/json/build/tests/Development/test-udt_cpp11
+home/json/build/tests/test-udt_cpp11
+home/json/build/tests/test-udt_cpp11
+home/json/build/tests/Release/test-udt_cpp11
+home/json/build/tests/Release/test-udt_cpp11
+home/json/build/tests/Debug/test-udt_cpp11
+home/json/build/tests/Debug/test-udt_cpp11
+home/json/build/tests/MinSizeRel/test-udt_cpp11
+home/json/build/tests/MinSizeRel/test-udt_cpp11
+home/json/build/tests/RelWithDebInfo/test-udt_cpp11
+home/json/build/tests/RelWithDebInfo/test-udt_cpp11
+home/json/build/tests/Deployment/test-udt_cpp11
+home/json/build/tests/Deployment/test-udt_cpp11
+home/json/build/tests/Development/test-udt_cpp11
+home/json/build/tests/Development/test-udt_cpp11
+Unable to find executable: /home/json/build/tests/test-udt_cpp11
+60/85 Test #60: test-udt_cpp11 ...............................***Not Run   0.00 sec
+      Start 61: test-udt_macro_cpp11
+Could not find executable /home/json/build/tests/test-udt_macro_cpp11
+Looked in the following places:
+/home/json/build/tests/test-udt_macro_cpp11
+/home/json/build/tests/test-udt_macro_cpp11
+/home/json/build/tests/Release/test-udt_macro_cpp11
+/home/json/build/tests/Release/test-udt_macro_cpp11
+/home/json/build/tests/Debug/test-udt_macro_cpp11
+/home/json/build/tests/Debug/test-udt_macro_cpp11
+/home/json/build/tests/MinSizeRel/test-udt_macro_cpp11
+/home/json/build/tests/MinSizeRel/test-udt_macro_cpp11
+/home/json/build/tests/RelWithDebInfo/test-udt_macro_cpp11
+/home/json/build/tests/RelWithDebInfo/test-udt_macro_cpp11
+/home/json/build/tests/Deployment/test-udt_macro_cpp11
+/home/json/build/tests/Deployment/test-udt_macro_cpp11
+/home/json/build/tests/Development/test-udt_macro_cpp11
+/home/json/build/tests/Development/test-udt_macro_cpp11
+home/json/build/tests/test-udt_macro_cpp11
+home/json/build/tests/test-udt_macro_cpp11
+home/json/build/tests/Release/test-udt_macro_cpp11
+home/json/build/tests/Release/test-udt_macro_cpp11
+home/json/build/tests/Debug/test-udt_macro_cpp11
+home/json/build/tests/Debug/test-udt_macro_cpp11
+home/json/build/tests/MinSizeRel/test-udt_macro_cpp11
+home/json/build/tests/MinSizeRel/test-udt_macro_cpp11
+home/json/build/tests/RelWithDebInfo/test-udt_macro_cpp11
+home/json/build/tests/RelWithDebInfo/test-udt_macro_cpp11
+home/json/build/tests/Deployment/test-udt_macro_cpp11
+Unable to find executable: /home/json/build/tests/test-udt_macro_cpp11
+Unable to find executable: /home/json/build/tests/test-unicode1_cpp11
+home/json/build/tests/Deployment/test-udt_macro_cpp11
+home/json/build/tests/Development/test-udt_macro_cpp11
+home/json/build/tests/Development/test-udt_macro_cpp11
+61/85 Test #61: test-udt_macro_cpp11 .........................***Not Run   0.00 sec
+      Start 62: test-unicode1_cpp11
+Could not find executable /home/json/build/tests/test-unicode1_cpp11
+Looked in the following places:
+/home/json/build/tests/test-unicode1_cpp11
+/home/json/build/tests/test-unicode1_cpp11
+/home/json/build/tests/Release/test-unicode1_cpp11
+/home/json/build/tests/Release/test-unicode1_cpp11
+/home/json/build/tests/Debug/test-unicode1_cpp11
+/home/json/build/tests/Debug/test-unicode1_cpp11
+/home/json/build/tests/MinSizeRel/test-unicode1_cpp11
+/home/json/build/tests/MinSizeRel/test-unicode1_cpp11
+/home/json/build/tests/RelWithDebInfo/test-unicode1_cpp11
+/home/json/build/tests/RelWithDebInfo/test-unicode1_cpp11
+/home/json/build/tests/Deployment/test-unicode1_cpp11
+/home/json/build/tests/Deployment/test-unicode1_cpp11
+/home/json/build/tests/Development/test-unicode1_cpp11
+/home/json/build/tests/Development/test-unicode1_cpp11
+home/json/build/tests/test-unicode1_cpp11
+home/json/build/tests/test-unicode1_cpp11
+home/json/build/tests/Release/test-unicode1_cpp11
+home/json/build/tests/Release/test-unicode1_cpp11
+home/json/build/tests/Debug/test-unicode1_cpp11
+home/json/build/tests/Debug/test-unicode1_cpp11
+home/json/build/tests/MinSizeRel/test-unicode1_cpp11
+home/json/build/tests/MinSizeRel/test-unicode1_cpp11
+home/json/build/tests/RelWithDebInfo/test-unicode1_cpp11
+home/json/build/tests/RelWithDebInfo/test-unicode1_cpp11
+home/json/build/tests/Deployment/test-unicode1_cpp11
+Unable to find executable: /home/json/build/tests/test-unicode2_cpp11
+home/json/build/tests/Deployment/test-unicode1_cpp11
+home/json/build/tests/Development/test-unicode1_cpp11
+home/json/build/tests/Development/test-unicode1_cpp11
+62/85 Test #62: test-unicode1_cpp11 ..........................***Not Run   0.00 sec
+      Start 63: test-unicode2_cpp11
+Could not find executable /home/json/build/tests/test-unicode2_cpp11
+Looked in the following places:
+/home/json/build/tests/test-unicode2_cpp11
+/home/json/build/tests/test-unicode2_cpp11
+/home/json/build/tests/Release/test-unicode2_cpp11
+/home/json/build/tests/Release/test-unicode2_cpp11
+/home/json/build/tests/Debug/test-unicode2_cpp11
+/home/json/build/tests/Debug/test-unicode2_cpp11
+/home/json/build/tests/MinSizeRel/test-unicode2_cpp11
+/home/json/build/tests/MinSizeRel/test-unicode2_cpp11
+/home/json/build/tests/RelWithDebInfo/test-unicode2_cpp11
+/home/json/build/tests/RelWithDebInfo/test-unicode2_cpp11
+/home/json/build/tests/Deployment/test-unicode2_cpp11
+/home/json/build/tests/Deployment/test-unicode2_cpp11
+/home/json/build/tests/Development/test-unicode2_cpp11
+/home/json/build/tests/Development/test-unicode2_cpp11
+home/json/build/tests/test-unicode2_cpp11
+home/json/build/tests/test-unicode2_cpp11
+home/json/build/tests/Release/test-unicode2_cpp11
+home/json/build/tests/Release/test-unicode2_cpp11
+home/json/build/tests/Debug/test-unicode2_cpp11
+home/json/build/tests/Debug/test-unicode2_cpp11
+home/json/build/tests/MinSizeRel/test-unicode2_cpp11
+home/json/build/tests/MinSizeRel/test-unicode2_cpp11
+home/json/build/tests/RelWithDebInfo/test-unicode2_cpp11
+home/json/build/tests/RelWithDebInfo/test-unicode2_cpp11
+home/json/build/tests/Deployment/test-unicode2_cpp11
+home/json/build/tests/Deployment/test-unicode2_cpp11
+home/json/build/tests/Development/test-unicode2_cpp11
+home/json/build/tests/Development/test-unicode2_cpp11
+63/85 Test #63: test-unicode2_cpp11 ..........................***Not Run   0.00 sec
+      Start 64: test-unicode3_cpp11
+Unable to find executable: /home/json/build/tests/test-unicode3_cpp11
+Could not find executable /home/json/build/tests/test-unicode3_cpp11
+Looked in the following places:
+/home/json/build/tests/test-unicode3_cpp11
+/home/json/build/tests/test-unicode3_cpp11
+/home/json/build/tests/Release/test-unicode3_cpp11
+/home/json/build/tests/Release/test-unicode3_cpp11
+/home/json/build/tests/Debug/test-unicode3_cpp11
+/home/json/build/tests/Debug/test-unicode3_cpp11
+/home/json/build/tests/MinSizeRel/test-unicode3_cpp11
+/home/json/build/tests/MinSizeRel/test-unicode3_cpp11
+/home/json/build/tests/RelWithDebInfo/test-unicode3_cpp11
+/home/json/build/tests/RelWithDebInfo/test-unicode3_cpp11
+/home/json/build/tests/Deployment/test-unicode3_cpp11
+/home/json/build/tests/Deployment/test-unicode3_cpp11
+/home/json/build/tests/Development/test-unicode3_cpp11
+/home/json/build/tests/Development/test-unicode3_cpp11
+home/json/build/tests/test-unicode3_cpp11
+home/json/build/tests/test-unicode3_cpp11
+home/json/build/tests/Release/test-unicode3_cpp11
+home/json/build/tests/Release/test-unicode3_cpp11
+home/json/build/tests/Debug/test-unicode3_cpp11
+home/json/build/tests/Debug/test-unicode3_cpp11
+home/json/build/tests/MinSizeRel/test-unicode3_cpp11
+home/json/build/tests/MinSizeRel/test-unicode3_cpp11
+home/json/build/tests/RelWithDebInfo/test-unicode3_cpp11
+home/json/build/tests/RelWithDebInfo/test-unicode3_cpp11
+Unable to find executable: /home/json/build/tests/test-unicode4_cpp11
+home/json/build/tests/Deployment/test-unicode3_cpp11
+home/json/build/tests/Deployment/test-unicode3_cpp11
+home/json/build/tests/Development/test-unicode3_cpp11
+home/json/build/tests/Development/test-unicode3_cpp11
+64/85 Test #64: test-unicode3_cpp11 ..........................***Not Run   0.00 sec
+      Start 65: test-unicode4_cpp11
+Could not find executable /home/json/build/tests/test-unicode4_cpp11
+Looked in the following places:
+/home/json/build/tests/test-unicode4_cpp11
+/home/json/build/tests/test-unicode4_cpp11
+/home/json/build/tests/Release/test-unicode4_cpp11
+/home/json/build/tests/Release/test-unicode4_cpp11
+/home/json/build/tests/Debug/test-unicode4_cpp11
+/home/json/build/tests/Debug/test-unicode4_cpp11
+/home/json/build/tests/MinSizeRel/test-unicode4_cpp11
+/home/json/build/tests/MinSizeRel/test-unicode4_cpp11
+/home/json/build/tests/RelWithDebInfo/test-unicode4_cpp11
+/home/json/build/tests/RelWithDebInfo/test-unicode4_cpp11
+/home/json/build/tests/Deployment/test-unicode4_cpp11
+/home/json/build/tests/Deployment/test-unicode4_cpp11
+/home/json/build/tests/Development/test-unicode4_cpp11
+/home/json/build/tests/Development/test-unicode4_cpp11
+home/json/build/tests/test-unicode4_cpp11
+home/json/build/tests/test-unicode4_cpp11
+home/json/build/tests/Release/test-unicode4_cpp11
+home/json/build/tests/Release/test-unicode4_cpp11
+home/json/build/tests/Debug/test-unicode4_cpp11
+home/json/build/tests/Debug/test-unicode4_cpp11
+home/json/build/tests/MinSizeRel/test-unicode4_cpp11
+home/json/build/tests/MinSizeRel/test-unicode4_cpp11
+home/json/build/tests/RelWithDebInfo/test-unicode4_cpp11
+home/json/build/tests/RelWithDebInfo/test-unicode4_cpp11
+home/json/build/tests/Deployment/test-unicode4_cpp11
+home/json/build/tests/Deployment/test-unicode4_cpp11
+home/json/build/tests/Development/test-unicode4_cpp11
+home/json/build/tests/Development/test-unicode4_cpp11
+65/85 Test #65: test-unicode4_cpp11 ..........................***Not Run   0.00 sec
+      Start 66: test-unicode5_cpp11
+Could not find executable /home/json/build/tests/test-unicode5_cpp11
+Looked in the following places:
+/home/json/build/tests/test-unicode5_cpp11
+/home/json/build/tests/test-unicode5_cpp11
+/home/json/build/tests/Release/test-unicode5_cpp11
+/home/json/build/tests/Release/test-unicode5_cpp11
+/home/json/build/tests/Debug/test-unicode5_cpp11
+Unable to find executable: /home/json/build/tests/test-unicode5_cpp11
+/home/json/build/tests/Debug/test-unicode5_cpp11
+/home/json/build/tests/MinSizeRel/test-unicode5_cpp11
+/home/json/build/tests/MinSizeRel/test-unicode5_cpp11
+/home/json/build/tests/RelWithDebInfo/test-unicode5_cpp11
+/home/json/build/tests/RelWithDebInfo/test-unicode5_cpp11
+/home/json/build/tests/Deployment/test-unicode5_cpp11
+/home/json/build/tests/Deployment/test-unicode5_cpp11
+/home/json/build/tests/Development/test-unicode5_cpp11
+/home/json/build/tests/Development/test-unicode5_cpp11
+home/json/build/tests/test-unicode5_cpp11
+home/json/build/tests/test-unicode5_cpp11
+home/json/build/tests/Release/test-unicode5_cpp11
+home/json/build/tests/Release/test-unicode5_cpp11
+home/json/build/tests/Debug/test-unicode5_cpp11
+home/json/build/tests/Debug/test-unicode5_cpp11
+home/json/build/tests/MinSizeRel/test-unicode5_cpp11
+home/json/build/tests/MinSizeRel/test-unicode5_cpp11
+home/json/build/tests/RelWithDebInfo/test-unicode5_cpp11
+home/json/build/tests/RelWithDebInfo/test-unicode5_cpp11
+home/json/build/tests/Deployment/test-unicode5_cpp11
+home/json/build/tests/Deployment/test-unicode5_cpp11
+home/json/build/tests/Development/test-unicode5_cpp11
+home/json/build/tests/Development/test-unicode5_cpp11
+66/85 Test #66: test-unicode5_cpp11 ..........................***Not Run   0.00 sec
+      Start 67: test-user_defined_input_cpp11
+Could not find executable /home/json/build/tests/test-user_defined_input_cpp11
+Looked in the following places:
+/home/json/build/tests/test-user_defined_input_cpp11
+/home/json/build/tests/test-user_defined_input_cpp11
+/home/json/build/tests/Release/test-user_defined_input_cpp11
+/home/json/build/tests/Release/test-user_defined_input_cpp11
+Unable to find executable: /home/json/build/tests/test-user_defined_input_cpp11
+/home/json/build/tests/Debug/test-user_defined_input_cpp11
+/home/json/build/tests/Debug/test-user_defined_input_cpp11
+/home/json/build/tests/MinSizeRel/test-user_defined_input_cpp11
+/home/json/build/tests/MinSizeRel/test-user_defined_input_cpp11
+/home/json/build/tests/RelWithDebInfo/test-user_defined_input_cpp11
+/home/json/build/tests/RelWithDebInfo/test-user_defined_input_cpp11
+/home/json/build/tests/Deployment/test-user_defined_input_cpp11
+/home/json/build/tests/Deployment/test-user_defined_input_cpp11
+/home/json/build/tests/Development/test-user_defined_input_cpp11
+/home/json/build/tests/Development/test-user_defined_input_cpp11
+home/json/build/tests/test-user_defined_input_cpp11
+home/json/build/tests/test-user_defined_input_cpp11
+home/json/build/tests/Release/test-user_defined_input_cpp11
+home/json/build/tests/Release/test-user_defined_input_cpp11
+home/json/build/tests/Debug/test-user_defined_input_cpp11
+home/json/build/tests/Debug/test-user_defined_input_cpp11
+home/json/build/tests/MinSizeRel/test-user_defined_input_cpp11
+home/json/build/tests/MinSizeRel/test-user_defined_input_cpp11
+home/json/build/tests/RelWithDebInfo/test-user_defined_input_cpp11
+home/json/build/tests/RelWithDebInfo/test-user_defined_input_cpp11
+home/json/build/tests/Deployment/test-user_defined_input_cpp11
+home/json/build/tests/Deployment/test-user_defined_input_cpp11
+home/json/build/tests/Development/test-user_defined_input_cpp11
+home/json/build/tests/Development/test-user_defined_input_cpp11
+67/85 Test #67: test-user_defined_input_cpp11 ................***Not Run   0.00 sec
+      Start 68: test-windows_h_cpp11
+Could not find executable /home/json/build/tests/test-windows_h_cpp11
+Looked in the following places:
+/home/json/build/tests/test-windows_h_cpp11
+/home/json/build/tests/test-windows_h_cpp11
+/home/json/build/tests/Release/test-windows_h_cpp11
+/home/json/build/tests/Release/test-windows_h_cpp11
+/home/json/build/tests/Debug/test-windows_h_cpp11
+/home/json/build/tests/Debug/test-windows_h_cpp11
+/home/json/build/tests/MinSizeRel/test-windows_h_cpp11
+/home/json/build/tests/MinSizeRel/test-windows_h_cpp11
+/home/json/build/tests/RelWithDebInfo/test-windows_h_cpp11
+/home/json/build/tests/RelWithDebInfo/test-windows_h_cpp11
+/home/json/build/tests/Deployment/test-windows_h_cpp11
+/home/json/build/tests/Deployment/test-windows_h_cpp11
+Unable to find executable: /home/json/build/tests/test-windows_h_cpp11
+/home/json/build/tests/Development/test-windows_h_cpp11
+/home/json/build/tests/Development/test-windows_h_cpp11
+home/json/build/tests/test-windows_h_cpp11
+home/json/build/tests/test-windows_h_cpp11
+home/json/build/tests/Release/test-windows_h_cpp11
+home/json/build/tests/Release/test-windows_h_cpp11
+home/json/build/tests/Debug/test-windows_h_cpp11
+home/json/build/tests/Debug/test-windows_h_cpp11
+home/json/build/tests/MinSizeRel/test-windows_h_cpp11
+home/json/build/tests/MinSizeRel/test-windows_h_cpp11
+home/json/build/tests/RelWithDebInfo/test-windows_h_cpp11
+home/json/build/tests/RelWithDebInfo/test-windows_h_cpp11
+home/json/build/tests/Deployment/test-windows_h_cpp11
+home/json/build/tests/Deployment/test-windows_h_cpp11
+home/json/build/tests/Development/test-windows_h_cpp11
+home/json/build/tests/Development/test-windows_h_cpp11
+68/85 Test #68: test-windows_h_cpp11 .........................***Not Run   0.00 sec
+      Start 69: test-wstring_cpp11
+Could not find executable /home/json/build/tests/test-wstring_cpp11
+Looked in the following places:
+/home/json/build/tests/test-wstring_cpp11
+/home/json/build/tests/test-wstring_cpp11
+/home/json/build/tests/Release/test-wstring_cpp11
+/home/json/build/tests/Release/test-wstring_cpp11
+/home/json/build/tests/Debug/test-wstring_cpp11
+/home/json/build/tests/Debug/test-wstring_cpp11
+/home/json/build/tests/MinSizeRel/test-wstring_cpp11
+/home/json/build/tests/MinSizeRel/test-wstring_cpp11
+/home/json/build/tests/RelWithDebInfo/test-wstring_cpp11
+/home/json/build/tests/RelWithDebInfo/test-wstring_cpp11
+/home/json/build/tests/Deployment/test-wstring_cpp11
+Unable to find executable: /home/json/build/tests/test-wstring_cpp11
+/home/json/build/tests/Deployment/test-wstring_cpp11
+/home/json/build/tests/Development/test-wstring_cpp11
+/home/json/build/tests/Development/test-wstring_cpp11
+home/json/build/tests/test-wstring_cpp11
+home/json/build/tests/test-wstring_cpp11
+home/json/build/tests/Release/test-wstring_cpp11
+home/json/build/tests/Release/test-wstring_cpp11
+home/json/build/tests/Debug/test-wstring_cpp11
+home/json/build/tests/Debug/test-wstring_cpp11
+home/json/build/tests/MinSizeRel/test-wstring_cpp11
+home/json/build/tests/MinSizeRel/test-wstring_cpp11
+home/json/build/tests/RelWithDebInfo/test-wstring_cpp11
+home/json/build/tests/RelWithDebInfo/test-wstring_cpp11
+home/json/build/tests/Deployment/test-wstring_cpp11
+home/json/build/tests/Deployment/test-wstring_cpp11
+home/json/build/tests/Development/test-wstring_cpp11
+home/json/build/tests/Development/test-wstring_cpp11
+69/85 Test #69: test-wstring_cpp11 ...........................***Not Run   0.00 sec
+      Start 70: test-comparison_legacy_cpp11
+Could not find executable /home/json/build/tests/test-comparison_legacy_cpp11
+Looked in the following places:
+/home/json/build/tests/test-comparison_legacy_cpp11
+/home/json/build/tests/test-comparison_legacy_cpp11
+/home/json/build/tests/Release/test-comparison_legacy_cpp11
+/home/json/build/tests/Release/test-comparison_legacy_cpp11
+/home/json/build/tests/Debug/test-comparison_legacy_cpp11
+/home/json/build/tests/Debug/test-comparison_legacy_cpp11
+/home/json/build/tests/MinSizeRel/test-comparison_legacy_cpp11
+/home/json/build/tests/MinSizeRel/test-comparison_legacy_cpp11
+/home/json/build/tests/RelWithDebInfo/test-comparison_legacy_cpp11
+/home/json/build/tests/RelWithDebInfo/test-comparison_legacy_cpp11
+/home/json/build/tests/Deployment/test-comparison_legacy_cpp11
+/home/json/build/tests/Deployment/test-comparison_legacy_cpp11
+/home/json/build/tests/Development/test-comparison_legacy_cpp11
+/home/json/build/tests/Development/test-comparison_legacy_cpp11
+home/json/build/tests/test-comparison_legacy_cpp11
+home/json/build/tests/test-comparison_legacy_cpp11
+home/json/build/tests/Release/test-comparison_legacy_cpp11
+Unable to find executable: /home/json/build/tests/test-comparison_legacy_cpp11
+home/json/build/tests/Release/test-comparison_legacy_cpp11
+home/json/build/tests/Debug/test-comparison_legacy_cpp11
+home/json/build/tests/Debug/test-comparison_legacy_cpp11
+home/json/build/tests/MinSizeRel/test-comparison_legacy_cpp11
+home/json/build/tests/MinSizeRel/test-comparison_legacy_cpp11
+home/json/build/tests/RelWithDebInfo/test-comparison_legacy_cpp11
+home/json/build/tests/RelWithDebInfo/test-comparison_legacy_cpp11
+home/json/build/tests/Deployment/test-comparison_legacy_cpp11
+home/json/build/tests/Deployment/test-comparison_legacy_cpp11
+home/json/build/tests/Development/test-comparison_legacy_cpp11
+home/json/build/tests/Development/test-comparison_legacy_cpp11
+70/85 Test #70: test-comparison_legacy_cpp11 .................***Not Run   0.00 sec
+      Start 71: test-comparison_legacy_cpp20
+Could not find executable /home/json/build/tests/test-comparison_legacy_cpp20
+Looked in the following places:
+/home/json/build/tests/test-comparison_legacy_cpp20
+/home/json/build/tests/test-comparison_legacy_cpp20
+/home/json/build/tests/Release/test-comparison_legacy_cpp20
+/home/json/build/tests/Release/test-comparison_legacy_cpp20
+/home/json/build/tests/Debug/test-comparison_legacy_cpp20
+/home/json/build/tests/Debug/test-comparison_legacy_cpp20
+/home/json/build/tests/MinSizeRel/test-comparison_legacy_cpp20
+/home/json/build/tests/MinSizeRel/test-comparison_legacy_cpp20
+Unable to find executable: /home/json/build/tests/test-comparison_legacy_cpp20
+/home/json/build/tests/RelWithDebInfo/test-comparison_legacy_cpp20
+/home/json/build/tests/RelWithDebInfo/test-comparison_legacy_cpp20
+/home/json/build/tests/Deployment/test-comparison_legacy_cpp20
+/home/json/build/tests/Deployment/test-comparison_legacy_cpp20
+/home/json/build/tests/Development/test-comparison_legacy_cpp20
+/home/json/build/tests/Development/test-comparison_legacy_cpp20
+home/json/build/tests/test-comparison_legacy_cpp20
+home/json/build/tests/test-comparison_legacy_cpp20
+home/json/build/tests/Release/test-comparison_legacy_cpp20
+home/json/build/tests/Release/test-comparison_legacy_cpp20
+home/json/build/tests/Debug/test-comparison_legacy_cpp20
+home/json/build/tests/Debug/test-comparison_legacy_cpp20
+home/json/build/tests/MinSizeRel/test-comparison_legacy_cpp20
+home/json/build/tests/MinSizeRel/test-comparison_legacy_cpp20
+home/json/build/tests/RelWithDebInfo/test-comparison_legacy_cpp20
+home/json/build/tests/RelWithDebInfo/test-comparison_legacy_cpp20
+home/json/build/tests/Deployment/test-comparison_legacy_cpp20
+home/json/build/tests/Deployment/test-comparison_legacy_cpp20
+home/json/build/tests/Development/test-comparison_legacy_cpp20
+home/json/build/tests/Development/test-comparison_legacy_cpp20
+71/85 Test #71: test-comparison_legacy_cpp20 .................***Not Run   0.00 sec
+      Start 72: test-abi_compat_diag
+Could not find executable /home/json/build/tests/abi/diag/abi_compat_diag
+Looked in the following places:
+/home/json/build/tests/abi/diag/abi_compat_diag
+/home/json/build/tests/abi/diag/abi_compat_diag
+/home/json/build/tests/abi/diag/Release/abi_compat_diag
+/home/json/build/tests/abi/diag/Release/abi_compat_diag
+/home/json/build/tests/abi/diag/Debug/abi_compat_diag
+/home/json/build/tests/abi/diag/Debug/abi_compat_diag
+/home/json/build/tests/abi/diag/MinSizeRel/abi_compat_diag
+/home/json/build/tests/abi/diag/MinSizeRel/abi_compat_diag
+Unable to find executable: /home/json/build/tests/abi/diag/abi_compat_diag
+/home/json/build/tests/abi/diag/RelWithDebInfo/abi_compat_diag
+/home/json/build/tests/abi/diag/RelWithDebInfo/abi_compat_diag
+/home/json/build/tests/abi/diag/Deployment/abi_compat_diag
+/home/json/build/tests/abi/diag/Deployment/abi_compat_diag
+/home/json/build/tests/abi/diag/Development/abi_compat_diag
+/home/json/build/tests/abi/diag/Development/abi_compat_diag
+home/json/build/tests/abi/diag/abi_compat_diag
+home/json/build/tests/abi/diag/abi_compat_diag
+home/json/build/tests/abi/diag/Release/abi_compat_diag
+home/json/build/tests/abi/diag/Release/abi_compat_diag
+home/json/build/tests/abi/diag/Debug/abi_compat_diag
+home/json/build/tests/abi/diag/Debug/abi_compat_diag
+home/json/build/tests/abi/diag/MinSizeRel/abi_compat_diag
+home/json/build/tests/abi/diag/MinSizeRel/abi_compat_diag
+home/json/build/tests/abi/diag/RelWithDebInfo/abi_compat_diag
+home/json/build/tests/abi/diag/RelWithDebInfo/abi_compat_diag
+home/json/build/tests/abi/diag/Deployment/abi_compat_diag
+home/json/build/tests/abi/diag/Deployment/abi_compat_diag
+home/json/build/tests/abi/diag/Development/abi_compat_diag
+home/json/build/tests/abi/diag/Development/abi_compat_diag
+72/85 Test #72: test-abi_compat_diag .........................***Not Run   0.00 sec
+      Start 73: test-abi_compat_inline_ns
+Could not find executable /home/json/build/tests/abi/inline_ns/abi_compat_inline_ns
+Looked in the following places:
+/home/json/build/tests/abi/inline_ns/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/abi_compat_inline_ns
+Unable to find executable: /home/json/build/tests/abi/inline_ns/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/Release/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/Release/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/Debug/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/Debug/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/MinSizeRel/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/MinSizeRel/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/RelWithDebInfo/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/RelWithDebInfo/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/Deployment/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/Deployment/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/Development/abi_compat_inline_ns
+/home/json/build/tests/abi/inline_ns/Development/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/Release/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/Release/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/Debug/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/Debug/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/MinSizeRel/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/MinSizeRel/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/RelWithDebInfo/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/RelWithDebInfo/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/Deployment/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/Deployment/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/Development/abi_compat_inline_ns
+home/json/build/tests/abi/inline_ns/Development/abi_compat_inline_ns
+73/85 Test #73: test-abi_compat_inline_ns ....................***Not Run   0.00 sec
+      Start 74: cmake_import_configure
+74/85 Test #74: cmake_import_configure .......................   Passed    0.20 sec
+      Start 75: cmake_import_build
+75/85 Test #75: cmake_import_build ...........................   Passed    2.92 sec
+      Start 76: cmake_import_minver_configure
+76/85 Test #76: cmake_import_minver_configure ................   Passed    0.20 sec
+      Start 77: cmake_import_minver_build
+77/85 Test #77: cmake_import_minver_build ....................   Passed    1.47 sec
+      Start 78: cmake_add_subdirectory_configure
+78/85 Test #78: cmake_add_subdirectory_configure .............   Passed    0.22 sec
+      Start 79: cmake_add_subdirectory_build
+79/85 Test #79: cmake_add_subdirectory_build .................   Passed    4.29 sec
+      Start 80: cmake_fetch_content_configure
+80/85 Test #80: cmake_fetch_content_configure ................   Passed    0.94 sec
+      Start 81: cmake_fetch_content_build
+81/85 Test #81: cmake_fetch_content_build ....................   Passed    2.89 sec
+      Start 82: cmake_fetch_content2_configure
+82/85 Test #82: cmake_fetch_content2_configure ...............   Passed    0.70 sec
+      Start 83: cmake_fetch_content2_build
+83/85 Test #83: cmake_fetch_content2_build ...................   Passed    2.89 sec
+      Start 84: cmake_target_include_directories_configure
+84/85 Test #84: cmake_target_include_directories_configure ...   Passed    0.21 sec
+      Start 85: cmake_target_include_directories_build
+85/85 Test #85: cmake_target_include_directories_build .......   Passed    5.19 sec
+
+82% tests passed, 15 tests failed out of 85
+
+Label Time Summary:
+all                 = 152.27 sec*proc (70 tests)
+git_required        =   7.42 sec*proc (4 tests)
+not_reproducible    =  22.12 sec*proc (12 tests)
+
+Total Test time (real) = 174.51 sec
+
+The following tests FAILED:
+	 59 - test-udl_cpp11 (Not Run)
+	 60 - test-udt_cpp11 (Not Run)
+	 61 - test-udt_macro_cpp11 (Not Run)
+	 62 - test-unicode1_cpp11 (Not Run)
+	 63 - test-unicode2_cpp11 (Not Run)
+	 64 - test-unicode3_cpp11 (Not Run)
+	 65 - test-unicode4_cpp11 (Not Run)
+	 66 - test-unicode5_cpp11 (Not Run)
+	 67 - test-user_defined_input_cpp11 (Not Run)
+	 68 - test-windows_h_cpp11 (Not Run)
+	 69 - test-wstring_cpp11 (Not Run)
+	 70 - test-comparison_legacy_cpp11 (Not Run)
+	 71 - test-comparison_legacy_cpp20 (Not Run)
+	 72 - test-abi_compat_diag (Not Run)
+	 73 - test-abi_compat_inline_ns (Not Run)
+Errors while running CTest
+Output from these tests are in: /home/json/build/Testing/Temporary/LastTest.log
+Use "--rerun-failed --output-on-failure" to re-run the failed cases verbosely.

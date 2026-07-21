@@ -1,0 +1,92 @@
+diff --git a/src/json.hpp b/src/json.hpp
+index 90a48538..4239b38b 100644
+--- a/src/json.hpp
++++ b/src/json.hpp
+@@ -460,6 +460,11 @@ using is_unscoped_enum =
+     std::integral_constant<bool, std::is_convertible<T, int>::value and
+     std::is_enum<T>::value>;
+ 
++template<typename T>
++using is_scoped_enum =
++    std::integral_constant<bool, not std::is_convertible<T, int>::value and
++    std::is_enum<T>::value>;
++
+ /*
+ Implementation of two C++17 constructs: conjunction, negation. This is needed
+ to avoid evaluating all the traits in a condition
+@@ -825,6 +830,13 @@ void to_json(BasicJsonType& j, UnscopedEnumType e) noexcept
+     external_constructor<value_t::number_integer>::construct(j, e);
+ }
+ 
++template<typename BasicJsonType, typename ScopedEnumType,
++         enable_if_t<is_scoped_enum<ScopedEnumType>::value, int> = 0>
++void to_json(BasicJsonType& j, ScopedEnumType e) noexcept
++{
++    external_constructor<value_t::number_integer>::construct(j, static_cast<typename std::underlying_type<ScopedEnumType>::type>(e));
++}
++
+ template<typename BasicJsonType>
+ void to_json(BasicJsonType& j, const std::vector<bool>& e)
+ {
+@@ -946,6 +958,15 @@ void from_json(const BasicJsonType& j, UnscopedEnumType& e)
+     e = static_cast<UnscopedEnumType>(val);
+ }
+ 
++template<typename BasicJsonType, typename ScopedEnumType,
++         enable_if_t<is_scoped_enum<ScopedEnumType>::value, int> = 0>
++void from_json(const BasicJsonType& j, ScopedEnumType& e)
++{
++    typename std::underlying_type<ScopedEnumType>::type val;
++    get_arithmetic_value(j, val);
++    e = static_cast<ScopedEnumType>(val);
++}
++
+ template<typename BasicJsonType>
+ void from_json(const BasicJsonType& j, typename BasicJsonType::array_t& arr)
+ {
+diff --git a/src/json.hpp.re2c b/src/json.hpp.re2c
+index d88830b9..12253933 100644
+--- a/src/json.hpp.re2c
++++ b/src/json.hpp.re2c
+@@ -460,6 +460,11 @@ using is_unscoped_enum =
+     std::integral_constant<bool, std::is_convertible<T, int>::value and
+     std::is_enum<T>::value>;
+ 
++template<typename T>
++using is_scoped_enum =
++    std::integral_constant<bool, not std::is_convertible<T, int>::value and
++    std::is_enum<T>::value>;
++
+ /*
+ Implementation of two C++17 constructs: conjunction, negation. This is needed
+ to avoid evaluating all the traits in a condition
+@@ -825,6 +830,13 @@ void to_json(BasicJsonType& j, UnscopedEnumType e) noexcept
+     external_constructor<value_t::number_integer>::construct(j, e);
+ }
+ 
++template<typename BasicJsonType, typename ScopedEnumType,
++         enable_if_t<is_scoped_enum<ScopedEnumType>::value, int> = 0>
++void to_json(BasicJsonType& j, ScopedEnumType e) noexcept
++{
++    external_constructor<value_t::number_integer>::construct(j, static_cast<typename std::underlying_type<ScopedEnumType>::type>(e));
++}
++
+ template<typename BasicJsonType>
+ void to_json(BasicJsonType& j, const std::vector<bool>& e)
+ {
+@@ -946,6 +958,15 @@ void from_json(const BasicJsonType& j, UnscopedEnumType& e)
+     e = static_cast<UnscopedEnumType>(val);
+ }
+ 
++template<typename BasicJsonType, typename ScopedEnumType,
++         enable_if_t<is_scoped_enum<ScopedEnumType>::value, int> = 0>
++void from_json(const BasicJsonType& j, ScopedEnumType& e)
++{
++    typename std::underlying_type<ScopedEnumType>::type val;
++    get_arithmetic_value(j, val);
++    e = static_cast<ScopedEnumType>(val);
++}
++
+ template<typename BasicJsonType>
+ void from_json(const BasicJsonType& j, typename BasicJsonType::array_t& arr)
+ {

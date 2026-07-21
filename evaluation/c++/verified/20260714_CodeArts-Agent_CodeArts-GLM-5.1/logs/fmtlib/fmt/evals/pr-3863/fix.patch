@@ -1,0 +1,161 @@
+diff --git a/include/fmt/ranges.h b/include/fmt/ranges.h
+index 03eb5184..92d387dc 100644
+--- a/include/fmt/ranges.h
++++ b/include/fmt/ranges.h
+@@ -246,6 +246,45 @@ FMT_CONSTEXPR auto maybe_set_debug_format(Formatter& f, bool set)
+ template <typename Formatter>
+ FMT_CONSTEXPR void maybe_set_debug_format(Formatter&, ...) {}
+ 
++template <typename Char, typename OutputIt>
++auto write_char_direct(OutputIt out, Char value) -> OutputIt {
++  *out++ = value;
++  return out;
++}
++
++template <typename Char, typename OutputIt, typename R>
++auto write_range_as_debug_string(OutputIt out, R&& range) -> OutputIt {
++  *out++ = static_cast<Char>('"');
++  auto it = range_begin(range);
++  auto end = range_end(range);
++  for (; it != end; ++it) {
++    auto c = static_cast<Char>(*it);
++    if (c == static_cast<Char>('"') || c == static_cast<Char>('\\')) {
++      *out++ = static_cast<Char>('\\');
++      *out++ = c;
++    } else if (c == static_cast<Char>('\n')) {
++      *out++ = static_cast<Char>('\\');
++      *out++ = static_cast<Char>('n');
++    } else if (c == static_cast<Char>('\r')) {
++      *out++ = static_cast<Char>('\\');
++      *out++ = static_cast<Char>('r');
++    } else if (c == static_cast<Char>('\t')) {
++      *out++ = static_cast<Char>('\\');
++      *out++ = static_cast<Char>('t');
++    } else if (0 < c && c < 0x20) {
++      *out++ = static_cast<Char>('\\');
++      *out++ = static_cast<Char>('x');
++      auto v = static_cast<unsigned>(c);
++      *out++ = static_cast<Char>("0123456789abcdef"[v >> 4]);
++      *out++ = static_cast<Char>("0123456789abcdef"[v & 0xf]);
++    } else {
++      *out++ = c;
++    }
++  }
++  *out++ = static_cast<Char>('"');
++  return out;
++}
++
+ // These are not generic lambdas for compatibility with C++11.
+ template <typename ParseContext> struct parse_empty_specs {
+   template <typename Formatter> FMT_CONSTEXPR void operator()(Formatter& f) {
+@@ -388,6 +427,8 @@ struct range_formatter<
+       detail::string_literal<Char, '['>{};
+   basic_string_view<Char> closing_bracket_ =
+       detail::string_literal<Char, ']'>{};
++  bool is_string_ = false;
++  bool is_debug_string_ = false;
+ 
+  public:
+   FMT_CONSTEXPR range_formatter() {}
+@@ -406,6 +447,15 @@ struct range_formatter<
+     closing_bracket_ = close;
+   }
+ 
++  FMT_CONSTEXPR void set_string_mode(bool debug) {
++    if (debug)
++      is_debug_string_ = true;
++    else
++      is_string_ = true;
++    set_brackets({}, {});
++    set_separator({});
++  }
++
+   template <typename ParseContext>
+   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+     auto it = ctx.begin();
+@@ -416,6 +466,27 @@ struct range_formatter<
+       ++it;
+     }
+ 
++    if (it != end && *it == 's' && std::is_same<T, Char>::value) {
++      is_string_ = true;
++      set_brackets({}, {});
++      set_separator({});
++      ++it;
++      ctx.advance_to(it);
++      return underlying_.parse(ctx);
++    }
++
++    if (it != end && *it == '?') {
++      if (!std::is_same<T, Char>::value) report_error("invalid format specifier");
++      is_debug_string_ = true;
++      set_brackets({}, {});
++      set_separator({});
++      ++it;
++      if (it == end || *it != 's') report_error("invalid format specifier");
++      ++it;
++      ctx.advance_to(it);
++      return it;
++    }
++
+     if (it != end && *it != '}') {
+       if (*it != ':') report_error("invalid format specifier");
+       ++it;
+@@ -429,8 +500,20 @@ struct range_formatter<
+ 
+   template <typename R, typename FormatContext>
+   auto format(R&& range, FormatContext& ctx) const -> decltype(ctx.out()) {
+-    detail::range_mapper<buffered_context<Char>> mapper;
+     auto out = ctx.out();
++    if constexpr (std::is_same<T, Char>::value) {
++      if (is_debug_string_) {
++        out = detail::write_range_as_debug_string<Char>(out, range);
++        return out;
++      }
++      if (is_string_) {
++        auto it = detail::range_begin(range);
++        auto end = detail::range_end(range);
++        for (; it != end; ++it) out = detail::write_char_direct(out, *it);
++        return out;
++      }
++    }
++    detail::range_mapper<buffered_context<Char>> mapper;
+     out = detail::copy<Char>(opening_bracket_, out);
+     int i = 0;
+     auto it = detail::range_begin(range);
+@@ -501,6 +584,35 @@ struct range_default_formatter<
+     return underlying_.format(range, ctx);
+   }
+ };
++
++template <range_format K, typename R, typename Char>
++struct range_default_formatter<
++    K, R, Char,
++    enable_if_t<(K == range_format::string || K == range_format::debug_string)>> {
++  using range_type = detail::maybe_const_range<R>;
++  range_formatter<detail::uncvref_type<range_type>, Char> underlying_;
++
++  FMT_CONSTEXPR range_default_formatter() { init(range_format_constant<K>()); }
++
++  FMT_CONSTEXPR void init(range_format_constant<range_format::string>) {
++    underlying_.set_string_mode(false);
++  }
++
++  FMT_CONSTEXPR void init(range_format_constant<range_format::debug_string>) {
++    underlying_.set_string_mode(true);
++  }
++
++  template <typename ParseContext>
++  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
++    return underlying_.parse(ctx);
++  }
++
++  template <typename FormatContext>
++  auto format(range_type& range, FormatContext& ctx) const
++      -> decltype(ctx.out()) {
++    return underlying_.format(range, ctx);
++  }
++};
+ }  // namespace detail
+ 
+ template <typename T, typename Char, typename Enable = void>

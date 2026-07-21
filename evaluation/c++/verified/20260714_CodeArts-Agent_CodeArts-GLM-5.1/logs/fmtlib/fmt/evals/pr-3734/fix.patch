@@ -1,0 +1,14 @@
+diff --git a/include/fmt/core.h b/include/fmt/core.h
+index 2fcaf845..c0706dcf 100644
+--- a/include/fmt/core.h
++++ b/include/fmt/core.h
+@@ -2429,7 +2429,8 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
+     case 'G':
+       return parse_presentation_type(pres::general_upper, float_set);
+     case 'c':
+-      return parse_presentation_type(pres::chr, integral_set);
++      return parse_presentation_type(pres::chr,
++                                     sint_set | uint_set | char_set);
+     case 's':
+       return parse_presentation_type(pres::string,
+                                      bool_set | string_set | cstring_set);

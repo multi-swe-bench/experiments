@@ -1,0 +1,50 @@
+diff --git a/include/fmt/ranges.h b/include/fmt/ranges.h
+index a1fc80d2..9383040a 100644
+--- a/include/fmt/ranges.h
++++ b/include/fmt/ranges.h
+@@ -202,6 +202,30 @@ template <size_t N>
+ using make_index_sequence = make_integer_sequence<size_t, N>;
+ #endif
+ 
++template <size_t N, typename Tuple, typename Char>
++struct is_tuple_formattable_impl_;
++
++template <typename Tuple, typename Char>
++struct is_tuple_formattable_impl_<0, Tuple, Char> : std::true_type {};
++
++template <size_t N, typename Tuple, typename Char>
++struct is_tuple_formattable_impl_
++    : std::integral_constant<
++          bool,
++          is_formattable<
++              typename std::tuple_element<N - 1, Tuple>::type,
++              Char>::value &&
++              is_tuple_formattable_impl_<N - 1, Tuple, Char>::value> {};
++
++template <typename T, typename Char, typename Enable = void>
++struct is_tuple_formattable_ : std::false_type {};
++
++template <typename T, typename Char>
++struct is_tuple_formattable_<
++    T, Char,
++    void_t<decltype(std::tuple_size<T>::value)>>
++    : is_tuple_formattable_impl_<std::tuple_size<T>::value, T, Char> {};
++
+ template <class Tuple, class F, size_t... Is>
+ void for_each(index_sequence<Is...>, Tuple&& tup, F&& f) noexcept {
+   using std::get;
+@@ -284,7 +308,13 @@ template <typename T> struct is_tuple_like {
+ };
+ 
+ template <typename TupleT, typename Char>
+-struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
++struct formatter<
++    TupleT, Char,
++    enable_if_t<fmt::is_tuple_like<TupleT>::value
++#if !FMT_MSC_VERSION
++                && detail::is_tuple_formattable_<TupleT, Char>::value
++#endif
++                >> {
+  private:
+   // C++11 generic lambda for format().
+   template <typename FormatContext> struct format_each {

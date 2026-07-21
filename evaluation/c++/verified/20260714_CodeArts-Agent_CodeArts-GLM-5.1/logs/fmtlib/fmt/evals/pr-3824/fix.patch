@@ -1,0 +1,33 @@
+diff --git a/include/fmt/ranges.h b/include/fmt/ranges.h
+index 9499fa14..fc0719dd 100644
+--- a/include/fmt/ranges.h
++++ b/include/fmt/ranges.h
+@@ -596,8 +596,9 @@ auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
+  */
+ template <typename Range>
+ auto join(Range&& range, string_view sep)
+-    -> join_view<decltype(std::begin(range)), decltype(std::end(range))> {
+-  return join(std::begin(range), std::end(range), sep);
++    -> join_view<decltype(detail::range_begin(range)),
++                 decltype(detail::range_end(range))> {
++  return join(detail::range_begin(range), detail::range_end(range), sep);
+ }
+ 
+ template <typename Char, typename... T> struct tuple_join_view : detail::view {
+diff --git a/include/fmt/xchar.h b/include/fmt/xchar.h
+index eed501c7..e924a5bb 100644
+--- a/include/fmt/xchar.h
++++ b/include/fmt/xchar.h
+@@ -108,9 +108,9 @@ auto join(It begin, Sentinel end, wstring_view sep)
+ 
+ template <typename Range>
+ auto join(Range&& range, wstring_view sep)
+-    -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>,
+-                 wchar_t> {
+-  return join(std::begin(range), std::end(range), sep);
++    -> join_view<decltype(detail::range_begin(range)),
++                 decltype(detail::range_end(range)), wchar_t> {
++  return join(detail::range_begin(range), detail::range_end(range), sep);
+ }
+ 
+ template <typename T>

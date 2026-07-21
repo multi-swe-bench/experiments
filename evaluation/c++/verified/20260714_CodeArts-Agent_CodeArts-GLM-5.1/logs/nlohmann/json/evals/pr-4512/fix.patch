@@ -1,0 +1,60 @@
+diff --git a/include/nlohmann/detail/iterators/iter_impl.hpp b/include/nlohmann/detail/iterators/iter_impl.hpp
+index 44470913..c3b58b86 100644
+--- a/include/nlohmann/detail/iterators/iter_impl.hpp
++++ b/include/nlohmann/detail/iterators/iter_impl.hpp
+@@ -468,6 +468,12 @@ class iter_impl // NOLINT(cppcoreguidelines-special-member-functions,hicpp-speci
+     template < typename IterImpl, detail::enable_if_t < (std::is_same<IterImpl, iter_impl>::value || std::is_same<IterImpl, other_iter_impl>::value), std::nullptr_t > = nullptr >
+     bool operator==(const IterImpl& other) const
+     {
++        // if both iterators are default-initialized, they are equal
++        if (m_object == nullptr && other.m_object == nullptr)
++        {
++            return true;
++        }
++
+         // if objects are not the same, the comparison is undefined
+         if (JSON_HEDLEY_UNLIKELY(m_object != other.m_object))
+         {
+@@ -513,6 +519,12 @@ class iter_impl // NOLINT(cppcoreguidelines-special-member-functions,hicpp-speci
+     */
+     bool operator<(const iter_impl& other) const
+     {
++        // if both iterators are default-initialized, they are equal
++        if (m_object == nullptr && other.m_object == nullptr)
++        {
++            return false;
++        }
++
+         // if objects are not the same, the comparison is undefined
+         if (JSON_HEDLEY_UNLIKELY(m_object != other.m_object))
+         {
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index a6b4c3a7..569d47cc 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -13444,6 +13444,12 @@ class iter_impl // NOLINT(cppcoreguidelines-special-member-functions,hicpp-speci
+     template < typename IterImpl, detail::enable_if_t < (std::is_same<IterImpl, iter_impl>::value || std::is_same<IterImpl, other_iter_impl>::value), std::nullptr_t > = nullptr >
+     bool operator==(const IterImpl& other) const
+     {
++        // if both iterators are default-initialized, they are equal
++        if (m_object == nullptr && other.m_object == nullptr)
++        {
++            return true;
++        }
++
+         // if objects are not the same, the comparison is undefined
+         if (JSON_HEDLEY_UNLIKELY(m_object != other.m_object))
+         {
+@@ -13489,6 +13495,12 @@ class iter_impl // NOLINT(cppcoreguidelines-special-member-functions,hicpp-speci
+     */
+     bool operator<(const iter_impl& other) const
+     {
++        // if both iterators are default-initialized, they are equal
++        if (m_object == nullptr && other.m_object == nullptr)
++        {
++            return false;
++        }
++
+         // if objects are not the same, the comparison is undefined
+         if (JSON_HEDLEY_UNLIKELY(m_object != other.m_object))
+         {

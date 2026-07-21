@@ -1,0 +1,246 @@
+diff --git a/include/nlohmann/detail/json_pointer.hpp b/include/nlohmann/detail/json_pointer.hpp
+index 5b763267..3cfbf187 100644
+--- a/include/nlohmann/detail/json_pointer.hpp
++++ b/include/nlohmann/detail/json_pointer.hpp
+@@ -862,6 +862,38 @@ class json_pointer
+     friend bool operator==(json_pointer<RefStringTypeLhs> const& lhs,
+                            json_pointer<RefStringTypeRhs> const& rhs) noexcept;
+ 
++    /*!
++    @brief compares JSON pointer and string for equality
++
++    @param[in] lhs  JSON pointer to compare
++    @param[in] rhs  string to compare
++    @return whether @a lhs is equal to @a rhs
++
++    @complexity Linear in the length of the JSON pointer
++
++    @exceptionsafety No-throw guarantee: this function never throws exceptions.
++    */
++    template<typename RefStringTypeLhs>
++    // NOLINTNEXTLINE(readability-redundant-declaration)
++    friend bool operator==(json_pointer<RefStringTypeLhs> const& lhs,
++                           const typename json_pointer<RefStringTypeLhs>::string_t& rhs) noexcept;
++
++    /*!
++    @brief compares string and JSON pointer for equality
++
++    @param[in] lhs  string to compare
++    @param[in] rhs  JSON pointer to compare
++    @return whether @a lhs is equal to @a rhs
++
++    @complexity Linear in the length of the JSON pointer
++
++    @exceptionsafety No-throw guarantee: this function never throws exceptions.
++    */
++    template<typename RefStringTypeRhs>
++    // NOLINTNEXTLINE(readability-redundant-declaration)
++    friend bool operator==(const typename json_pointer<RefStringTypeRhs>::string_t& lhs,
++                           json_pointer<RefStringTypeRhs> const& rhs) noexcept;
++
+     /*!
+     @brief compares two JSON pointers for inequality
+ 
+@@ -878,6 +910,38 @@ class json_pointer
+     friend bool operator!=(json_pointer<RefStringTypeLhs> const& lhs,
+                            json_pointer<RefStringTypeRhs> const& rhs) noexcept;
+ 
++    /*!
++    @brief compares JSON pointer and string for inequality
++
++    @param[in] lhs  JSON pointer to compare
++    @param[in] rhs  string to compare
++    @return whether @a lhs is not equal @a rhs
++
++    @complexity Linear in the length of the JSON pointer
++
++    @exceptionsafety No-throw guarantee: this function never throws exceptions.
++    */
++    template<typename RefStringTypeLhs>
++    // NOLINTNEXTLINE(readability-redundant-declaration)
++    friend bool operator!=(json_pointer<RefStringTypeLhs> const& lhs,
++                           const typename json_pointer<RefStringTypeLhs>::string_t& rhs) noexcept;
++
++    /*!
++    @brief compares string and JSON pointer for inequality
++
++    @param[in] lhs  string to compare
++    @param[in] rhs  JSON pointer to compare
++    @return whether @a lhs is not equal @a rhs
++
++    @complexity Linear in the length of the JSON pointer
++
++    @exceptionsafety No-throw guarantee: this function never throws exceptions.
++    */
++    template<typename RefStringTypeRhs>
++    // NOLINTNEXTLINE(readability-redundant-declaration)
++    friend bool operator!=(const typename json_pointer<RefStringTypeRhs>::string_t& lhs,
++                           json_pointer<RefStringTypeRhs> const& rhs) noexcept;
++
+     /// the reference tokens
+     std::vector<string_t> reference_tokens;
+ };
+@@ -890,6 +954,20 @@ inline bool operator==(json_pointer<RefStringTypeLhs> const& lhs,
+     return lhs.reference_tokens == rhs.reference_tokens;
+ }
+ 
++template<typename RefStringTypeLhs>
++inline bool operator==(json_pointer<RefStringTypeLhs> const& lhs,
++                       const typename json_pointer<RefStringTypeLhs>::string_t& rhs) noexcept
++{
++    return lhs.to_string() == rhs;
++}
++
++template<typename RefStringTypeRhs>
++inline bool operator==(const typename json_pointer<RefStringTypeRhs>::string_t& lhs,
++                       json_pointer<RefStringTypeRhs> const& rhs) noexcept
++{
++    return lhs == rhs.to_string();
++}
++
+ template<typename RefStringTypeLhs, typename RefStringTypeRhs>
+ inline bool operator!=(json_pointer<RefStringTypeLhs> const& lhs,
+                        json_pointer<RefStringTypeRhs> const& rhs) noexcept
+@@ -897,4 +975,18 @@ inline bool operator!=(json_pointer<RefStringTypeLhs> const& lhs,
+     return !(lhs == rhs);
+ }
+ 
++template<typename RefStringTypeLhs>
++inline bool operator!=(json_pointer<RefStringTypeLhs> const& lhs,
++                       const typename json_pointer<RefStringTypeLhs>::string_t& rhs) noexcept
++{
++    return !(lhs == rhs);
++}
++
++template<typename RefStringTypeRhs>
++inline bool operator!=(const typename json_pointer<RefStringTypeRhs>::string_t& lhs,
++                       json_pointer<RefStringTypeRhs> const& rhs) noexcept
++{
++    return !(lhs == rhs);
++}
++
+ NLOHMANN_JSON_NAMESPACE_END
+diff --git a/single_include/nlohmann/json.hpp b/single_include/nlohmann/json.hpp
+index 4d86493e..0aae4b84 100644
+--- a/single_include/nlohmann/json.hpp
++++ b/single_include/nlohmann/json.hpp
+@@ -14464,6 +14464,38 @@ class json_pointer
+     friend bool operator==(json_pointer<RefStringTypeLhs> const& lhs,
+                            json_pointer<RefStringTypeRhs> const& rhs) noexcept;
+ 
++    /*!
++    @brief compares JSON pointer and string for equality
++
++    @param[in] lhs  JSON pointer to compare
++    @param[in] rhs  string to compare
++    @return whether @a lhs is equal to @a rhs
++
++    @complexity Linear in the length of the JSON pointer
++
++    @exceptionsafety No-throw guarantee: this function never throws exceptions.
++    */
++    template<typename RefStringTypeLhs>
++    // NOLINTNEXTLINE(readability-redundant-declaration)
++    friend bool operator==(json_pointer<RefStringTypeLhs> const& lhs,
++                           const typename json_pointer<RefStringTypeLhs>::string_t& rhs) noexcept;
++
++    /*!
++    @brief compares string and JSON pointer for equality
++
++    @param[in] lhs  string to compare
++    @param[in] rhs  JSON pointer to compare
++    @return whether @a lhs is equal to @a rhs
++
++    @complexity Linear in the length of the JSON pointer
++
++    @exceptionsafety No-throw guarantee: this function never throws exceptions.
++    */
++    template<typename RefStringTypeRhs>
++    // NOLINTNEXTLINE(readability-redundant-declaration)
++    friend bool operator==(const typename json_pointer<RefStringTypeRhs>::string_t& lhs,
++                           json_pointer<RefStringTypeRhs> const& rhs) noexcept;
++
+     /*!
+     @brief compares two JSON pointers for inequality
+ 
+@@ -14480,6 +14512,38 @@ class json_pointer
+     friend bool operator!=(json_pointer<RefStringTypeLhs> const& lhs,
+                            json_pointer<RefStringTypeRhs> const& rhs) noexcept;
+ 
++    /*!
++    @brief compares JSON pointer and string for inequality
++
++    @param[in] lhs  JSON pointer to compare
++    @param[in] rhs  string to compare
++    @return whether @a lhs is not equal @a rhs
++
++    @complexity Linear in the length of the JSON pointer
++
++    @exceptionsafety No-throw guarantee: this function never throws exceptions.
++    */
++    template<typename RefStringTypeLhs>
++    // NOLINTNEXTLINE(readability-redundant-declaration)
++    friend bool operator!=(json_pointer<RefStringTypeLhs> const& lhs,
++                           const typename json_pointer<RefStringTypeLhs>::string_t& rhs) noexcept;
++
++    /*!
++    @brief compares string and JSON pointer for inequality
++
++    @param[in] lhs  string to compare
++    @param[in] rhs  JSON pointer to compare
++    @return whether @a lhs is not equal @a rhs
++
++    @complexity Linear in the length of the JSON pointer
++
++    @exceptionsafety No-throw guarantee: this function never throws exceptions.
++    */
++    template<typename RefStringTypeRhs>
++    // NOLINTNEXTLINE(readability-redundant-declaration)
++    friend bool operator!=(const typename json_pointer<RefStringTypeRhs>::string_t& lhs,
++                           json_pointer<RefStringTypeRhs> const& rhs) noexcept;
++
+     /// the reference tokens
+     std::vector<string_t> reference_tokens;
+ };
+@@ -14492,6 +14556,20 @@ inline bool operator==(json_pointer<RefStringTypeLhs> const& lhs,
+     return lhs.reference_tokens == rhs.reference_tokens;
+ }
+ 
++template<typename RefStringTypeLhs>
++inline bool operator==(json_pointer<RefStringTypeLhs> const& lhs,
++                       const typename json_pointer<RefStringTypeLhs>::string_t& rhs) noexcept
++{
++    return lhs.to_string() == rhs;
++}
++
++template<typename RefStringTypeRhs>
++inline bool operator==(const typename json_pointer<RefStringTypeRhs>::string_t& lhs,
++                       json_pointer<RefStringTypeRhs> const& rhs) noexcept
++{
++    return lhs == rhs.to_string();
++}
++
+ template<typename RefStringTypeLhs, typename RefStringTypeRhs>
+ inline bool operator!=(json_pointer<RefStringTypeLhs> const& lhs,
+                        json_pointer<RefStringTypeRhs> const& rhs) noexcept
+@@ -14499,6 +14577,20 @@ inline bool operator!=(json_pointer<RefStringTypeLhs> const& lhs,
+     return !(lhs == rhs);
+ }
+ 
++template<typename RefStringTypeLhs>
++inline bool operator!=(json_pointer<RefStringTypeLhs> const& lhs,
++                       const typename json_pointer<RefStringTypeLhs>::string_t& rhs) noexcept
++{
++    return !(lhs == rhs);
++}
++
++template<typename RefStringTypeRhs>
++inline bool operator!=(const typename json_pointer<RefStringTypeRhs>::string_t& lhs,
++                       json_pointer<RefStringTypeRhs> const& rhs) noexcept
++{
++    return !(lhs == rhs);
++}
++
+ NLOHMANN_JSON_NAMESPACE_END
+ 
+ // #include <nlohmann/detail/json_ref.hpp>

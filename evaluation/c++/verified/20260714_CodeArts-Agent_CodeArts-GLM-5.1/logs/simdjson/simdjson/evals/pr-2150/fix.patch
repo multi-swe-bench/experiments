@@ -1,0 +1,371 @@
+diff --git a/include/simdjson/generic/ondemand/field-inl.h b/include/simdjson/generic/ondemand/field-inl.h
+index 25021e0b..654083cf 100644
+--- a/include/simdjson/generic/ondemand/field-inl.h
++++ b/include/simdjson/generic/ondemand/field-inl.h
+@@ -49,6 +49,16 @@ simdjson_inline std::string_view field::key_raw_json_token() const noexcept {
+   return std::string_view(reinterpret_cast<const char*>(first.buf-1), second.iter._json_iter->token.peek(-1) - first.buf + 1);
+ }
+ 
++simdjson_inline std::string_view field::key_sv() const noexcept {
++  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
++  const char* end = reinterpret_cast<const char*>(second.iter._json_iter->token.peek(-1));
++  // Walk back past any whitespace to find the closing quote
++  const char* p = end;
++  while (p > reinterpret_cast<const char*>(first.buf) && *(p-1) != '"') { --p; }
++  // p points just past the closing quote; key content is [first.buf, p-1)
++  return std::string_view(reinterpret_cast<const char*>(first.buf), p - 1 - reinterpret_cast<const char*>(first.buf));
++}
++
+ simdjson_inline value &field::value() & noexcept {
+   return second;
+ }
+@@ -88,6 +98,11 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLE
+   return first.key_raw_json_token();
+ }
+ 
++simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::key_sv() noexcept {
++  if (error()) { return error(); }
++  return first.key_sv();
++}
++
+ simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::unescaped_key(bool allow_replacement) noexcept {
+   if (error()) { return error(); }
+   return first.unescaped_key(allow_replacement);
+diff --git a/include/simdjson/generic/ondemand/field.h b/include/simdjson/generic/ondemand/field.h
+index 082f401b..01b845c1 100644
+--- a/include/simdjson/generic/ondemand/field.h
++++ b/include/simdjson/generic/ondemand/field.h
+@@ -47,6 +47,11 @@ public:
+    * some spaces after the last quote.
+    */
+   simdjson_inline std::string_view key_raw_json_token() const noexcept;
++  /**
++   * Get the key as a string_view, without quotes and without unescaping.
++   * This is faster than unescaped_key() but does not handle escape sequences.
++   */
++  simdjson_inline std::string_view key_sv() const noexcept;
+   /**
+    * Get the field value.
+    */
+@@ -80,6 +85,7 @@ public:
+   simdjson_inline simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
+   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> key() noexcept;
+   simdjson_inline simdjson_result<std::string_view> key_raw_json_token() noexcept;
++  simdjson_inline simdjson_result<std::string_view> key_sv() noexcept;
+   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> value() noexcept;
+ };
+ 
+diff --git a/singleheader/simdjson.cpp b/singleheader/simdjson.cpp
+index 7c385f42..8fbf5910 100644
+--- a/singleheader/simdjson.cpp
++++ b/singleheader/simdjson.cpp
+@@ -1,4 +1,4 @@
+-/* auto-generated on 2024-03-10 13:24:07 -0400. Do not edit! */
++/* auto-generated on 2026-07-02 20:39:40 +0000. Do not edit! */
+ /* including simdjson.cpp:  */
+ /* begin file simdjson.cpp */
+ #define SIMDJSON_SRC_SIMDJSON_CPP
+diff --git a/singleheader/simdjson.h b/singleheader/simdjson.h
+index 0166d443..c4cbad5a 100644
+--- a/singleheader/simdjson.h
++++ b/singleheader/simdjson.h
+@@ -1,4 +1,4 @@
+-/* auto-generated on 2024-03-10 13:24:07 -0400. Do not edit! */
++/* auto-generated on 2026-07-02 20:39:40 +0000. Do not edit! */
+ /* including simdjson.h:  */
+ /* begin file simdjson.h */
+ #ifndef SIMDJSON_H
+@@ -30399,6 +30399,11 @@ public:
+    * some spaces after the last quote.
+    */
+   simdjson_inline std::string_view key_raw_json_token() const noexcept;
++  /**
++   * Get the key as a string_view, without quotes and without unescaping.
++   * This is faster than unescaped_key() but does not handle escape sequences.
++   */
++  simdjson_inline std::string_view key_sv() const noexcept;
+   /**
+    * Get the field value.
+    */
+@@ -30432,6 +30437,7 @@ public:
+   simdjson_inline simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
+   simdjson_inline simdjson_result<arm64::ondemand::raw_json_string> key() noexcept;
+   simdjson_inline simdjson_result<std::string_view> key_raw_json_token() noexcept;
++  simdjson_inline simdjson_result<std::string_view> key_sv() noexcept;
+   simdjson_inline simdjson_result<arm64::ondemand::value> value() noexcept;
+ };
+ 
+@@ -32654,6 +32660,16 @@ simdjson_inline std::string_view field::key_raw_json_token() const noexcept {
+   return std::string_view(reinterpret_cast<const char*>(first.buf-1), second.iter._json_iter->token.peek(-1) - first.buf + 1);
+ }
+ 
++simdjson_inline std::string_view field::key_sv() const noexcept {
++  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
++  const char* end = reinterpret_cast<const char*>(second.iter._json_iter->token.peek(-1));
++  // Walk back past any whitespace to find the closing quote
++  const char* p = end;
++  while (p > reinterpret_cast<const char*>(first.buf) && *(p-1) != '"') { --p; }
++  // p points just past the closing quote; key content is [first.buf, p-1)
++  return std::string_view(reinterpret_cast<const char*>(first.buf), p - 1 - reinterpret_cast<const char*>(first.buf));
++}
++
+ simdjson_inline value &field::value() & noexcept {
+   return second;
+ }
+@@ -32693,6 +32709,11 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<arm64::ondeman
+   return first.key_raw_json_token();
+ }
+ 
++simdjson_inline simdjson_result<std::string_view> simdjson_result<arm64::ondemand::field>::key_sv() noexcept {
++  if (error()) { return error(); }
++  return first.key_sv();
++}
++
+ simdjson_inline simdjson_result<std::string_view> simdjson_result<arm64::ondemand::field>::unescaped_key(bool allow_replacement) noexcept {
+   if (error()) { return error(); }
+   return first.unescaped_key(allow_replacement);
+@@ -40705,6 +40726,11 @@ public:
+    * some spaces after the last quote.
+    */
+   simdjson_inline std::string_view key_raw_json_token() const noexcept;
++  /**
++   * Get the key as a string_view, without quotes and without unescaping.
++   * This is faster than unescaped_key() but does not handle escape sequences.
++   */
++  simdjson_inline std::string_view key_sv() const noexcept;
+   /**
+    * Get the field value.
+    */
+@@ -40738,6 +40764,7 @@ public:
+   simdjson_inline simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
+   simdjson_inline simdjson_result<fallback::ondemand::raw_json_string> key() noexcept;
+   simdjson_inline simdjson_result<std::string_view> key_raw_json_token() noexcept;
++  simdjson_inline simdjson_result<std::string_view> key_sv() noexcept;
+   simdjson_inline simdjson_result<fallback::ondemand::value> value() noexcept;
+ };
+ 
+@@ -42960,6 +42987,16 @@ simdjson_inline std::string_view field::key_raw_json_token() const noexcept {
+   return std::string_view(reinterpret_cast<const char*>(first.buf-1), second.iter._json_iter->token.peek(-1) - first.buf + 1);
+ }
+ 
++simdjson_inline std::string_view field::key_sv() const noexcept {
++  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
++  const char* end = reinterpret_cast<const char*>(second.iter._json_iter->token.peek(-1));
++  // Walk back past any whitespace to find the closing quote
++  const char* p = end;
++  while (p > reinterpret_cast<const char*>(first.buf) && *(p-1) != '"') { --p; }
++  // p points just past the closing quote; key content is [first.buf, p-1)
++  return std::string_view(reinterpret_cast<const char*>(first.buf), p - 1 - reinterpret_cast<const char*>(first.buf));
++}
++
+ simdjson_inline value &field::value() & noexcept {
+   return second;
+ }
+@@ -42999,6 +43036,11 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<fallback::onde
+   return first.key_raw_json_token();
+ }
+ 
++simdjson_inline simdjson_result<std::string_view> simdjson_result<fallback::ondemand::field>::key_sv() noexcept {
++  if (error()) { return error(); }
++  return first.key_sv();
++}
++
+ simdjson_inline simdjson_result<std::string_view> simdjson_result<fallback::ondemand::field>::unescaped_key(bool allow_replacement) noexcept {
+   if (error()) { return error(); }
+   return first.unescaped_key(allow_replacement);
+@@ -51503,6 +51545,11 @@ public:
+    * some spaces after the last quote.
+    */
+   simdjson_inline std::string_view key_raw_json_token() const noexcept;
++  /**
++   * Get the key as a string_view, without quotes and without unescaping.
++   * This is faster than unescaped_key() but does not handle escape sequences.
++   */
++  simdjson_inline std::string_view key_sv() const noexcept;
+   /**
+    * Get the field value.
+    */
+@@ -51536,6 +51583,7 @@ public:
+   simdjson_inline simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
+   simdjson_inline simdjson_result<haswell::ondemand::raw_json_string> key() noexcept;
+   simdjson_inline simdjson_result<std::string_view> key_raw_json_token() noexcept;
++  simdjson_inline simdjson_result<std::string_view> key_sv() noexcept;
+   simdjson_inline simdjson_result<haswell::ondemand::value> value() noexcept;
+ };
+ 
+@@ -53758,6 +53806,16 @@ simdjson_inline std::string_view field::key_raw_json_token() const noexcept {
+   return std::string_view(reinterpret_cast<const char*>(first.buf-1), second.iter._json_iter->token.peek(-1) - first.buf + 1);
+ }
+ 
++simdjson_inline std::string_view field::key_sv() const noexcept {
++  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
++  const char* end = reinterpret_cast<const char*>(second.iter._json_iter->token.peek(-1));
++  // Walk back past any whitespace to find the closing quote
++  const char* p = end;
++  while (p > reinterpret_cast<const char*>(first.buf) && *(p-1) != '"') { --p; }
++  // p points just past the closing quote; key content is [first.buf, p-1)
++  return std::string_view(reinterpret_cast<const char*>(first.buf), p - 1 - reinterpret_cast<const char*>(first.buf));
++}
++
+ simdjson_inline value &field::value() & noexcept {
+   return second;
+ }
+@@ -53797,6 +53855,11 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<haswell::ondem
+   return first.key_raw_json_token();
+ }
+ 
++simdjson_inline simdjson_result<std::string_view> simdjson_result<haswell::ondemand::field>::key_sv() noexcept {
++  if (error()) { return error(); }
++  return first.key_sv();
++}
++
+ simdjson_inline simdjson_result<std::string_view> simdjson_result<haswell::ondemand::field>::unescaped_key(bool allow_replacement) noexcept {
+   if (error()) { return error(); }
+   return first.unescaped_key(allow_replacement);
+@@ -62300,6 +62363,11 @@ public:
+    * some spaces after the last quote.
+    */
+   simdjson_inline std::string_view key_raw_json_token() const noexcept;
++  /**
++   * Get the key as a string_view, without quotes and without unescaping.
++   * This is faster than unescaped_key() but does not handle escape sequences.
++   */
++  simdjson_inline std::string_view key_sv() const noexcept;
+   /**
+    * Get the field value.
+    */
+@@ -62333,6 +62401,7 @@ public:
+   simdjson_inline simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
+   simdjson_inline simdjson_result<icelake::ondemand::raw_json_string> key() noexcept;
+   simdjson_inline simdjson_result<std::string_view> key_raw_json_token() noexcept;
++  simdjson_inline simdjson_result<std::string_view> key_sv() noexcept;
+   simdjson_inline simdjson_result<icelake::ondemand::value> value() noexcept;
+ };
+ 
+@@ -64555,6 +64624,16 @@ simdjson_inline std::string_view field::key_raw_json_token() const noexcept {
+   return std::string_view(reinterpret_cast<const char*>(first.buf-1), second.iter._json_iter->token.peek(-1) - first.buf + 1);
+ }
+ 
++simdjson_inline std::string_view field::key_sv() const noexcept {
++  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
++  const char* end = reinterpret_cast<const char*>(second.iter._json_iter->token.peek(-1));
++  // Walk back past any whitespace to find the closing quote
++  const char* p = end;
++  while (p > reinterpret_cast<const char*>(first.buf) && *(p-1) != '"') { --p; }
++  // p points just past the closing quote; key content is [first.buf, p-1)
++  return std::string_view(reinterpret_cast<const char*>(first.buf), p - 1 - reinterpret_cast<const char*>(first.buf));
++}
++
+ simdjson_inline value &field::value() & noexcept {
+   return second;
+ }
+@@ -64594,6 +64673,11 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<icelake::ondem
+   return first.key_raw_json_token();
+ }
+ 
++simdjson_inline simdjson_result<std::string_view> simdjson_result<icelake::ondemand::field>::key_sv() noexcept {
++  if (error()) { return error(); }
++  return first.key_sv();
++}
++
+ simdjson_inline simdjson_result<std::string_view> simdjson_result<icelake::ondemand::field>::unescaped_key(bool allow_replacement) noexcept {
+   if (error()) { return error(); }
+   return first.unescaped_key(allow_replacement);
+@@ -73212,6 +73296,11 @@ public:
+    * some spaces after the last quote.
+    */
+   simdjson_inline std::string_view key_raw_json_token() const noexcept;
++  /**
++   * Get the key as a string_view, without quotes and without unescaping.
++   * This is faster than unescaped_key() but does not handle escape sequences.
++   */
++  simdjson_inline std::string_view key_sv() const noexcept;
+   /**
+    * Get the field value.
+    */
+@@ -73245,6 +73334,7 @@ public:
+   simdjson_inline simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
+   simdjson_inline simdjson_result<ppc64::ondemand::raw_json_string> key() noexcept;
+   simdjson_inline simdjson_result<std::string_view> key_raw_json_token() noexcept;
++  simdjson_inline simdjson_result<std::string_view> key_sv() noexcept;
+   simdjson_inline simdjson_result<ppc64::ondemand::value> value() noexcept;
+ };
+ 
+@@ -75467,6 +75557,16 @@ simdjson_inline std::string_view field::key_raw_json_token() const noexcept {
+   return std::string_view(reinterpret_cast<const char*>(first.buf-1), second.iter._json_iter->token.peek(-1) - first.buf + 1);
+ }
+ 
++simdjson_inline std::string_view field::key_sv() const noexcept {
++  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
++  const char* end = reinterpret_cast<const char*>(second.iter._json_iter->token.peek(-1));
++  // Walk back past any whitespace to find the closing quote
++  const char* p = end;
++  while (p > reinterpret_cast<const char*>(first.buf) && *(p-1) != '"') { --p; }
++  // p points just past the closing quote; key content is [first.buf, p-1)
++  return std::string_view(reinterpret_cast<const char*>(first.buf), p - 1 - reinterpret_cast<const char*>(first.buf));
++}
++
+ simdjson_inline value &field::value() & noexcept {
+   return second;
+ }
+@@ -75506,6 +75606,11 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<ppc64::ondeman
+   return first.key_raw_json_token();
+ }
+ 
++simdjson_inline simdjson_result<std::string_view> simdjson_result<ppc64::ondemand::field>::key_sv() noexcept {
++  if (error()) { return error(); }
++  return first.key_sv();
++}
++
+ simdjson_inline simdjson_result<std::string_view> simdjson_result<ppc64::ondemand::field>::unescaped_key(bool allow_replacement) noexcept {
+   if (error()) { return error(); }
+   return first.unescaped_key(allow_replacement);
+@@ -84447,6 +84552,11 @@ public:
+    * some spaces after the last quote.
+    */
+   simdjson_inline std::string_view key_raw_json_token() const noexcept;
++  /**
++   * Get the key as a string_view, without quotes and without unescaping.
++   * This is faster than unescaped_key() but does not handle escape sequences.
++   */
++  simdjson_inline std::string_view key_sv() const noexcept;
+   /**
+    * Get the field value.
+    */
+@@ -84480,6 +84590,7 @@ public:
+   simdjson_inline simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
+   simdjson_inline simdjson_result<westmere::ondemand::raw_json_string> key() noexcept;
+   simdjson_inline simdjson_result<std::string_view> key_raw_json_token() noexcept;
++  simdjson_inline simdjson_result<std::string_view> key_sv() noexcept;
+   simdjson_inline simdjson_result<westmere::ondemand::value> value() noexcept;
+ };
+ 
+@@ -86702,6 +86813,16 @@ simdjson_inline std::string_view field::key_raw_json_token() const noexcept {
+   return std::string_view(reinterpret_cast<const char*>(first.buf-1), second.iter._json_iter->token.peek(-1) - first.buf + 1);
+ }
+ 
++simdjson_inline std::string_view field::key_sv() const noexcept {
++  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
++  const char* end = reinterpret_cast<const char*>(second.iter._json_iter->token.peek(-1));
++  // Walk back past any whitespace to find the closing quote
++  const char* p = end;
++  while (p > reinterpret_cast<const char*>(first.buf) && *(p-1) != '"') { --p; }
++  // p points just past the closing quote; key content is [first.buf, p-1)
++  return std::string_view(reinterpret_cast<const char*>(first.buf), p - 1 - reinterpret_cast<const char*>(first.buf));
++}
++
+ simdjson_inline value &field::value() & noexcept {
+   return second;
+ }
+@@ -86741,6 +86862,11 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<westmere::onde
+   return first.key_raw_json_token();
+ }
+ 
++simdjson_inline simdjson_result<std::string_view> simdjson_result<westmere::ondemand::field>::key_sv() noexcept {
++  if (error()) { return error(); }
++  return first.key_sv();
++}
++
+ simdjson_inline simdjson_result<std::string_view> simdjson_result<westmere::ondemand::field>::unescaped_key(bool allow_replacement) noexcept {
+   if (error()) { return error(); }
+   return first.unescaped_key(allow_replacement);
