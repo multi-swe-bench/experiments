@@ -1,0 +1,8 @@
+# Multi-SWE-bench Execution Trajectory
+## Instance: django__django-12741
+## Model: Qwen-3.5-MoE-35B-Ternary-1.375bpw (Undersea Fiber 40-Layer Substrate)
+## Status: UNRESOLVED
+
+### Execution Log:
+- Targeted inspection executed.
+- Patch candidate did not fully satisfy all test assertions.
