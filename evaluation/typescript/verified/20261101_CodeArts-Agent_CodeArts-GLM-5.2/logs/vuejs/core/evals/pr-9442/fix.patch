@@ -1,0 +1,16 @@
+diff --git a/packages/compiler-ssr/src/transforms/ssrVModel.ts b/packages/compiler-ssr/src/transforms/ssrVModel.ts
+index bd587ed..8b077a6 100644
+--- a/packages/compiler-ssr/src/transforms/ssrVModel.ts
++++ b/packages/compiler-ssr/src/transforms/ssrVModel.ts
+@@ -131,7 +131,10 @@ export const ssrTransformModel: DirectiveTransform = (dir, node, context) => {
+       node.children = [createInterpolation(model, model.loc)]
+     } else if (node.tag === 'select') {
+       node.children.forEach(option => {
+-        if (option.type === NodeTypes.ELEMENT) {
++        if (
++          option.type === NodeTypes.ELEMENT &&
++          option.tagType === ElementTypes.ELEMENT
++        ) {
+           const plainNode = option as PlainElementNode
+           if (plainNode.props.findIndex(p => p.name === 'selected') === -1) {
+             const value = findValueBinding(plainNode)

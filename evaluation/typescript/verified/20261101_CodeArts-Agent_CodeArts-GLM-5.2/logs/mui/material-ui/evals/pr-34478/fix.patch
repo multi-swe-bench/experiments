@@ -1,0 +1,21 @@
+diff --git a/packages/mui-joy/src/Radio/Radio.tsx b/packages/mui-joy/src/Radio/Radio.tsx
+index e64d10bf..4025c084 100644
+--- a/packages/mui-joy/src/Radio/Radio.tsx
++++ b/packages/mui-joy/src/Radio/Radio.tsx
+@@ -288,6 +288,8 @@ const Radio = React.forwardRef(function Radio(inProps, ref) {
+ 
+   const { getInputProps, checked, disabled, focusVisible } = useSwitch(useRadioProps);
+ 
++  const requiredProp = inProps.required ?? formControl?.required;
++
+   const ownerState = {
+     ...props,
+     checked,
+@@ -347,6 +349,7 @@ const Radio = React.forwardRef(function Radio(inProps, ref) {
+       name,
+       value: String(value),
+       'aria-describedby': formControl?.['aria-describedby'],
++      required: requiredProp,
+     },
+     ownerState,
+   });

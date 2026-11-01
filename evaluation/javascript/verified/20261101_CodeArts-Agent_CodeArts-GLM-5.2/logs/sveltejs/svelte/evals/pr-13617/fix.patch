@@ -1,0 +1,55 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 5c2c1fb..08ed1b4 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -489,7 +489,7 @@ const instance_script = {
+ 				}
+ 
+ 				state.str.prependLeft(start, '$state(');
+-				state.str.appendRight(end, ')');
++				state.str.appendLeft(end, ')');
+ 			} else {
+ 				/**
+ 				 * @type {AssignmentExpression | undefined}
+@@ -550,12 +550,12 @@ const instance_script = {
+ 					(labeled_has_single_assignment || is_expression_assignment)
+ 				) {
+ 					// Someone wrote a `$: { ... }` statement which we can turn into a `$derived`
+-					state.str.appendRight(
++					state.str.appendLeft(
+ 						/** @type {number} */ (declarator.id.typeAnnotation?.end ?? declarator.id.end),
+ 						' = $derived('
+ 					);
+ 					visit(assignment_in_labeled.right);
+-					state.str.appendRight(
++					state.str.appendLeft(
+ 						/** @type {number} */ (declarator.id.typeAnnotation?.end ?? declarator.id.end),
+ 						state.str
+ 							.snip(
+@@ -568,7 +568,7 @@ const instance_script = {
+ 						/** @type {number} */ (labeled_statement.start),
+ 						/** @type {number} */ (labeled_statement.end)
+ 					);
+-					state.str.appendRight(
++					state.str.appendLeft(
+ 						/** @type {number} */ (declarator.id.typeAnnotation?.end ?? declarator.id.end),
+ 						')'
+ 					);
+@@ -580,7 +580,7 @@ const instance_script = {
+ 					);
+ 					if (should_be_state) {
+ 						// someone wrote a `$: foo = ...` statement which we can turn into `let foo = $state(...)`
+-						state.str.appendRight(
++						state.str.appendLeft(
+ 							/** @type {number} */ (declarator.id.typeAnnotation?.end ?? declarator.id.end),
+ 							state.str
+ 								.snip(
+@@ -598,7 +598,7 @@ const instance_script = {
+ 							/** @type {number} */ (/** @type {LabeledStatement} */ (labeled_statement).end)
+ 						);
+ 					}
+-					state.str.appendRight(
++					state.str.appendLeft(
+ 						/** @type {number} */ (declarator.id.typeAnnotation?.end ?? declarator.id.end),
+ 						')'
+ 					);

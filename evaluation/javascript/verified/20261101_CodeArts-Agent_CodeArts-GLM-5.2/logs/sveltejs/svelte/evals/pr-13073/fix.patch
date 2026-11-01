@@ -1,0 +1,74 @@
+diff --git a/packages/svelte/src/internal/client/dom/operations.js b/packages/svelte/src/internal/client/dom/operations.js
+index 76e5ca3..4727781 100644
+--- a/packages/svelte/src/internal/client/dom/operations.js
++++ b/packages/svelte/src/internal/client/dom/operations.js
+@@ -146,8 +146,10 @@ export function first_child(fragment, is_text) {
+  */
+ export function sibling(node, count = 1, is_text = false) {
+ 	let next_sibling = hydrating ? hydrate_node : node;
++	let last_sibling = next_sibling;
+ 
+ 	while (count--) {
++		last_sibling = next_sibling;
+ 		next_sibling = /** @type {TemplateNode} */ (get_next_sibling(next_sibling));
+ 	}
+ 
+@@ -155,13 +157,17 @@ export function sibling(node, count = 1, is_text = false) {
+ 		return next_sibling;
+ 	}
+ 
+-	var type = next_sibling.nodeType;
+-
+ 	// if a sibling {expression} is empty during SSR, there might be no
+ 	// text node to hydrate — we must therefore create one
+-	if (is_text && type !== 3) {
++	if (is_text && next_sibling?.nodeType !== 3) {
+ 		var text = create_text();
+-		next_sibling?.before(text);
++
++		if (next_sibling !== null) {
++			next_sibling.before(text);
++		} else {
++			last_sibling.after(text);
++		}
++
+ 		set_hydrate_node(text);
+ 		return text;
+ 	}
+diff --git a/packages/svelte/tests/hydration/samples/snippet-empty-expr/Card.svelte b/packages/svelte/tests/hydration/samples/snippet-empty-expr/Card.svelte
+new file mode 100644
+index 0000000..cc0c4d8
+--- /dev/null
++++ b/packages/svelte/tests/hydration/samples/snippet-empty-expr/Card.svelte
+@@ -0,0 +1,5 @@
++<script>
++	const { header, value } = $props();
++</script>
++
++<div>{@render header?.()}{value}</div>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/hydration/samples/snippet-empty-expr/_config.js b/packages/svelte/tests/hydration/samples/snippet-empty-expr/_config.js
+new file mode 100644
+index 0000000..ce62e8b
+--- /dev/null
++++ b/packages/svelte/tests/hydration/samples/snippet-empty-expr/_config.js
+@@ -0,0 +1,5 @@
++import { test } from '../../test';
++
++export default test({
++	props: { value: '' }
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/hydration/samples/snippet-empty-expr/main.svelte b/packages/svelte/tests/hydration/samples/snippet-empty-expr/main.svelte
+new file mode 100644
+index 0000000..88efa93
+--- /dev/null
++++ b/packages/svelte/tests/hydration/samples/snippet-empty-expr/main.svelte
+@@ -0,0 +1,6 @@
++<script>
++	import Card from './Card.svelte';
++</script>
++
++<Card value="" />
++<Card value="V" />
+\ No newline at end of file

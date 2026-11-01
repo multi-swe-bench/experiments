@@ -1,0 +1,55 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index a4a2fb4..6b65fcf 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -1112,6 +1112,21 @@ function migrate_slot_usage(node, path, state) {
+ 				);
+ 				return;
+ 			}
++			if (
++				parent?.type === 'Component' &&
++				parent.attributes.some(
++					(attr) =>
++						(attr.type === 'Attribute' || attr.type === 'BindDirective') &&
++						attr.name === snippet_name
++				)
++			) {
++				has_migration_task = true;
++				state.str.appendLeft(
++					node.start,
++					`<!-- @migration-task: migrate this slot by hand, the snippet \`${snippet_name}\` would shadow the prop \`${snippet_name}\` with the same name -->\n${state.indent}`
++				);
++				return;
++			}
+ 			state.str.remove(attribute.start, attribute.end);
+ 		}
+ 		if (attribute.type === 'LetDirective') {
+diff --git a/packages/svelte/tests/migrate/samples/slot-shadowing-prop/input.svelte b/packages/svelte/tests/migrate/samples/slot-shadowing-prop/input.svelte
+new file mode 100644
+index 0000000..a47a345
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/slot-shadowing-prop/input.svelte
+@@ -0,0 +1,7 @@
++<script>
++	import Component from './Component.svelte';
++</script>
++
++<Component msg="hello">
++	<div slot="msg">slot content</div>
++</Component>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/migrate/samples/slot-shadowing-prop/output.svelte b/packages/svelte/tests/migrate/samples/slot-shadowing-prop/output.svelte
+new file mode 100644
+index 0000000..bb0a7f5
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/slot-shadowing-prop/output.svelte
+@@ -0,0 +1,8 @@
++<script>
++	import Component from './Component.svelte';
++</script>
++
++<Component msg="hello">
++	<!-- @migration-task: migrate this slot by hand, the snippet `msg` would shadow the prop `msg` with the same name -->
++	<div slot="msg">slot content</div>
++</Component>
+\ No newline at end of file

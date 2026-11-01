@@ -1,0 +1,12 @@
+diff --git a/packages/material-ui/src/useAutocomplete/useAutocomplete.js b/packages/material-ui/src/useAutocomplete/useAutocomplete.js
+index 1bc987e..38f59d8 100644
+--- a/packages/material-ui/src/useAutocomplete/useAutocomplete.js
++++ b/packages/material-ui/src/useAutocomplete/useAutocomplete.js
+@@ -31,6 +31,7 @@ export function createFilterOptions(config = {}) {
+ 
+     const filteredOptions = options.filter((option) => {
+       let candidate = (stringify || getOptionLabel)(option);
++      candidate = String(candidate);
+       if (ignoreCase) {
+         candidate = candidate.toLowerCase();
+       }

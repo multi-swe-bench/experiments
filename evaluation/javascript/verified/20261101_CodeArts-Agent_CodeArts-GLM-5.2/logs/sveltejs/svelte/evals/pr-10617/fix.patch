@@ -1,0 +1,130 @@
+diff --git a/packages/svelte/src/internal/client/dom/elements/bindings/input.js b/packages/svelte/src/internal/client/dom/elements/bindings/input.js
+index fcf56b7..6b44ac8 100644
+--- a/packages/svelte/src/internal/client/dom/elements/bindings/input.js
++++ b/packages/svelte/src/internal/client/dom/elements/bindings/input.js
+@@ -1,6 +1,7 @@
+ import { DEV } from 'esm-env';
+ import { render_effect } from '../../../reactivity/effects.js';
+ import { stringify } from '../../../render.js';
++import { add_form_reset_listener } from './shared.js';
+ 
+ /**
+  * @param {HTMLInputElement} input
+@@ -19,6 +20,10 @@ export function bind_value(input, get_value, update) {
+ 		update(is_numberlike_input(input) ? to_number(input.value) : input.value);
+ 	});
+ 
++	add_form_reset_listener(input, () => {
++		update(is_numberlike_input(input) ? to_number(input.value) : input.value);
++	});
++
+ 	render_effect(() => {
+ 		if (DEV && input.type === 'checkbox') {
+ 			throw new Error(
+@@ -83,6 +88,29 @@ export function bind_group(inputs, group_index, input, get_value, update) {
+ 		update(value);
+ 	});
+ 
++	add_form_reset_listener(input, () => {
++		if (is_checkbox) {
++			// @ts-ignore
++			update(get_binding_group_value(binding_group, input.__value, input.checked));
++		} else {
++			// For radio buttons, the reset event fires for every input in the group,
++			// so we need to read the value of the (now) checked input rather than the
++			// one the listener is attached to.
++			/** @type {unknown} */
++			var value;
++
++			for (var i = 0; i < binding_group.length; i++) {
++				if (binding_group[i].checked) {
++					// @ts-ignore
++					value = binding_group[i].__value;
++					break;
++				}
++			}
++
++			update(value);
++		}
++	});
++
+ 	render_effect(() => {
+ 		var value = get_value();
+ 
+@@ -119,6 +147,10 @@ export function bind_checked(input, get_value, update) {
+ 		update(value);
+ 	});
+ 
++	add_form_reset_listener(input, () => {
++		update(input.checked);
++	});
++
+ 	// eslint-disable-next-line eqeqeq
+ 	if (get_value() == undefined) {
+ 		update(false);
+diff --git a/packages/svelte/src/internal/client/dom/elements/bindings/select.js b/packages/svelte/src/internal/client/dom/elements/bindings/select.js
+index 6ee497f..dec83ca 100644
+--- a/packages/svelte/src/internal/client/dom/elements/bindings/select.js
++++ b/packages/svelte/src/internal/client/dom/elements/bindings/select.js
+@@ -1,5 +1,6 @@
+ import { effect } from '../../../reactivity/effects.js';
+ import { untrack } from '../../../runtime.js';
++import { add_form_reset_listener } from './shared.js';
+ 
+ /**
+  * Selects the correct option(s) (depending on whether this is a multiple select)
+@@ -91,6 +92,21 @@ export function bind_select_value(select, get_value, update) {
+ 		update(value);
+ 	});
+ 
++	add_form_reset_listener(select, () => {
++		/** @type {unknown} */
++		var value;
++
++		if (select.multiple) {
++			value = [].map.call(select.querySelectorAll(':checked'), get_option_value);
++		} else {
++			/** @type {HTMLOptionElement | null} */
++			var selected_option = select.querySelector(':checked');
++			value = selected_option && get_option_value(selected_option);
++		}
++
++		update(value);
++	});
++
+ 	// Needs to be an effect, not a render_effect, so that in case of each loops the logic runs after the each block has updated
+ 	effect(() => {
+ 		var value = get_value();
+diff --git a/packages/svelte/src/internal/client/dom/elements/bindings/shared.js b/packages/svelte/src/internal/client/dom/elements/bindings/shared.js
+index 379ce82..945ee60 100644
+--- a/packages/svelte/src/internal/client/dom/elements/bindings/shared.js
++++ b/packages/svelte/src/internal/client/dom/elements/bindings/shared.js
+@@ -1,5 +1,28 @@
+ import { render_effect } from '../../../reactivity/effects.js';
+ 
++/**
++ * form-associated elements can have their value reset by form.reset().
++ * The reset event fires before the form is reset, so we need to defer
++ * reading the new value to the next microtask.
++ * @param {HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement} element
++ * @param {() => void} callback
++ * @returns {void}
++ */
++export function add_form_reset_listener(element, callback) {
++	var form = element.form;
++
++	if (form) {
++		var listener = () => queueMicrotask(callback);
++		form.addEventListener('reset', listener);
++
++		render_effect(() => {
++			return () => {
++				form.removeEventListener('reset', listener);
++			};
++		});
++	}
++}
++
+ /**
+  * Fires the handler once immediately (unless corresponding arg is set to `false`),
+  * then listens to the given events until the render effect context is destroyed

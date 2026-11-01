@@ -1,0 +1,37 @@
+diff --git a/.changeset/derived-export-accessor.md b/.changeset/derived-export-accessor.md
+new file mode 100644
+index 0000000..37c62ba
+--- /dev/null
++++ b/.changeset/derived-export-accessor.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: use `$.get` when creating `$derived` value accessors so the signal is not exposed
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+index 00a9d1f..722042f 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+@@ -230,7 +230,9 @@ export function client_component(source, analysis, options) {
+ 				'$.bind_prop',
+ 				b.id('$$props'),
+ 				b.literal(alias ?? name),
+-				binding?.kind === 'state' || binding?.kind === 'frozen_state'
++				binding?.kind === 'state' ||
++					binding?.kind === 'frozen_state' ||
++					binding?.kind === 'derived'
+ 					? b.call('$.get', b.id(name))
+ 					: b.id(name)
+ 			)
+@@ -239,7 +241,8 @@ export function client_component(source, analysis, options) {
+ 
+ 	const properties = analysis.exports.map(({ name, alias }) => {
+ 		const binding = analysis.instance.scope.get(name);
+-		const is_source = binding !== null && is_state_source(binding, state);
++		const is_source =
++			binding !== null && (is_state_source(binding, state) || binding.kind === 'derived');
+ 
+ 		// TODO This is always a getter because the `renamed-instance-exports` test wants it that way.
+ 		// Should we for code size reasons make it an init in runes mode and/or non-dev mode?

@@ -1,0 +1,59 @@
+diff --git a/docs/en/API-reference.md b/docs/en/API-reference.md
+index 6ffa389..18a9af7 100644
+--- a/docs/en/API-reference.md
++++ b/docs/en/API-reference.md
+@@ -367,6 +367,14 @@ Returns the UTC offset in minutes for the `Dayjs`.
+ dayjs().utcOffset()
+ ```
+ 
++You can also set the UTC offset by passing a number (in minutes).
++The optional second parameter accepts a boolean value indicating whether to keep the existing time of day.
++
++```js
++dayjs.utc('2016-01-01T00:00:00').utcOffset(-5) // 2015-12-31T19:00:00-05:00
++dayjs.utc('2016-01-01T00:00:00').utcOffset(-5, true) // 2016-01-01T00:00:00-05:00
++```
++
+ ### Days in the Month `.daysInMonth()`
+ 
+ Returns the `number` of days in the `Dayjs`'s month.
+diff --git a/src/plugin/utc/index.js b/src/plugin/utc/index.js
+index a5bc635..9fca750 100644
+--- a/src/plugin/utc/index.js
++++ b/src/plugin/utc/index.js
+@@ -45,7 +45,7 @@ export default (option, Dayjs, dayjs) => {
+   }
+ 
+   const oldUtcOffset = proto.utcOffset
+-  proto.utcOffset = function (input) {
++  proto.utcOffset = function (input, keepLocalTime) {
+     const { u } = this.$utils()
+     if (u(input)) {
+       if (this.$u) {
+@@ -59,8 +59,12 @@ export default (option, Dayjs, dayjs) => {
+     const offset = Math.abs(input) <= 16 ? input * 60 : input
+     let ins
+     if (input !== 0) {
+-      ins = this.local().add(offset + localOffset, MIN)
++      ins = this.local()
++      ins = ins.add(keepLocalTime ? this.utcOffset() + localOffset : offset + localOffset, MIN)
+       ins.$offset = offset
++    } else if (keepLocalTime) {
++      const insTs = Date.UTC(this.$y, this.$M, this.$D, this.$H, this.$m, this.$s, this.$ms)
++      ins = dayjs.utc(new Date(insTs))
+     } else {
+       ins = this.utc()
+     }
+diff --git a/types/plugin/utc.d.ts b/types/plugin/utc.d.ts
+index d25e2e8..1802761 100644
+--- a/types/plugin/utc.d.ts
++++ b/types/plugin/utc.d.ts
+@@ -12,7 +12,7 @@ declare module 'dayjs' {
+ 
+     isUTC(): boolean
+ 
+-    utcOffset(offset: number): Dayjs
++    utcOffset(offset: number, keepLocalTime?: boolean): Dayjs
+   }
+ 
+   export function utc(config?: ConfigType, format?: string): Dayjs

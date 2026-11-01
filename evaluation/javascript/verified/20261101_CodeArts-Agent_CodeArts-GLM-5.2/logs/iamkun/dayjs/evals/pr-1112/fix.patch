@@ -1,0 +1,70 @@
+diff --git a/src/locale/hu.js b/src/locale/hu.js
+index 116086d..6c911b6 100644
+--- a/src/locale/hu.js
++++ b/src/locale/hu.js
+@@ -1,6 +1,36 @@
+ // Hungarian [hu]
+ import dayjs from 'dayjs'
+ 
++function translate(number, withoutSuffix, key, isFuture) {
++  const num = number
++  switch (key) {
++    case 's':
++      return isFuture || withoutSuffix ? 'néhány másodperc' : 'néhány másodperce'
++    case 'm':
++      return `egy${isFuture || withoutSuffix ? ' perc' : ' perce'}`
++    case 'mm':
++      return `${num}${isFuture || withoutSuffix ? ' perc' : ' perce'}`
++    case 'h':
++      return `egy${isFuture || withoutSuffix ? ' óra' : ' órája'}`
++    case 'hh':
++      return `${num}${isFuture || withoutSuffix ? ' óra' : ' órája'}`
++    case 'd':
++      return `egy${isFuture || withoutSuffix ? ' nap' : ' napja'}`
++    case 'dd':
++      return `${num}${isFuture || withoutSuffix ? ' nap' : ' napja'}`
++    case 'M':
++      return `egy${isFuture || withoutSuffix ? ' hónap' : ' hónapja'}`
++    case 'MM':
++      return `${num}${isFuture || withoutSuffix ? ' hónap' : ' hónapja'}`
++    case 'y':
++      return `egy${isFuture || withoutSuffix ? ' év' : ' éve'}`
++    case 'yy':
++      return `${num}${isFuture || withoutSuffix ? ' év' : ' éve'}`
++    default:
++      return ''
++  }
++}
++
+ const locale = {
+   name: 'hu',
+   weekdays: 'vasárnap_hétfő_kedd_szerda_csütörtök_péntek_szombat'.split('_'),
+@@ -13,17 +43,17 @@ const locale = {
+   relativeTime: {
+     future: '%s múlva',
+     past: '%s',
+-    s: 'néhány másodperc',
+-    m: 'egy perc',
+-    mm: '%d perc',
+-    h: 'egy óra',
+-    hh: '%d óra',
+-    d: 'egy nap',
+-    dd: '%d nap',
+-    M: 'egy hónap',
+-    MM: '%d hónap',
+-    y: 'egy éve',
+-    yy: '%d év'
++    s: translate,
++    m: translate,
++    mm: translate,
++    h: translate,
++    hh: translate,
++    d: translate,
++    dd: translate,
++    M: translate,
++    MM: translate,
++    y: translate,
++    yy: translate
+   },
+   formats: {
+     LT: 'H:mm',

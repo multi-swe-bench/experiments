@@ -1,0 +1,31 @@
+diff --git a/.changeset/inspect-add-prop.md b/.changeset/inspect-add-prop.md
+new file mode 100644
+index 0000000..127feef
+--- /dev/null
++++ b/.changeset/inspect-add-prop.md
+@@ -0,0 +1,4 @@
++'svelte': patch
++---
++
++fix: ensure `$inspect` sees newly added object properties
+\ No newline at end of file
+diff --git a/packages/svelte/src/internal/client/proxy/proxy.js b/packages/svelte/src/internal/client/proxy/proxy.js
+index d0bb285..ada5136 100644
+--- a/packages/svelte/src/internal/client/proxy/proxy.js
++++ b/packages/svelte/src/internal/client/proxy/proxy.js
+@@ -250,11 +250,13 @@ const handler = {
+ 				if (s !== undefined) set(s, UNINITIALIZED);
+ 			}
+ 		}
++
++		// @ts-ignore
++		target[prop] = value;
++
+ 		if (not_has) {
+ 			update(metadata.v);
+ 		}
+-		// @ts-ignore
+-		target[prop] = value;
+ 
+ 		// If we have mutated an array directly, we might need to
+ 		// signal that length has also changed too.

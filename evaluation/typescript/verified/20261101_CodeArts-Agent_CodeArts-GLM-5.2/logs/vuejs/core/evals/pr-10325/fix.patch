@@ -1,0 +1,50 @@
+diff --git a/packages/runtime-core/src/hydration.ts b/packages/runtime-core/src/hydration.ts
+index 1e9200c..ff8aaeb 100644
+--- a/packages/runtime-core/src/hydration.ts
++++ b/packages/runtime-core/src/hydration.ts
+@@ -754,8 +754,10 @@ function propHasMismatch(
+     }
+ 
+     const cssVars = instance?.getCssVars?.()
+-    for (const key in cssVars) {
+-      expectedMap.set(`--${key}`, String(cssVars[key]))
++    if (cssVars && instance && isRootVNode(instance.subTree, vnode)) {
++      for (const key in cssVars) {
++        expectedMap.set(`--${key}`, String(cssVars[key]))
++      }
+     }
+ 
+     if (!isMapEqual(actualMap, expectedMap)) {
+@@ -852,3 +854,32 @@ function isMapEqual(a: Map<string, string>, b: Map<string, string>): boolean {
+   }
+   return true
+ }
++
++/**
++ * Checks whether `target` is one of the root element vnodes of the
++ * component's rendered `subTree`. CSS `v-bind()` variables are only
++ * injected onto the root element(s) during SSR (and applied to the same
++ * elements at runtime via `setVarsOnVNode`), so the hydration mismatch
++ * check should only account for them on those elements.
++ */
++function isRootVNode(subTree: VNode, target: VNode): boolean {
++  if (__FEATURE_SUSPENSE__ && subTree.shapeFlag & ShapeFlags.SUSPENSE) {
++    subTree = subTree.suspense!.activeBranch!
++    if (!subTree) {
++      return false
++    }
++  }
++  // drill down HOCs until it's a non-component vnode
++  while (subTree.component) {
++    subTree = subTree.component.subTree
++  }
++  if (subTree === target) {
++    return true
++  }
++  if (subTree.type === Fragment) {
++    return (subTree.children as VNode[]).some(child =>
++      isRootVNode(child, target),
++    )
++  }
++  return false
++}

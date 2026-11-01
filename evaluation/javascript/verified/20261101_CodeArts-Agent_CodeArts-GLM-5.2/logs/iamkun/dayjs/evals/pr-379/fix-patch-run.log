@@ -1,0 +1,205 @@
+$ bash /home/test-run.sh
+
+
+> dayjs@0.0.0-development test
+> jest && TZ=Pacific/Auckland npm run test-tz && TZ=Europe/London npm run test-tz && npm run test-tz --verbose --maxWorkers=4
+
+PASS test/utils.test.js (7.799s)
+FAIL test/manipulate.test.js (8.495s)
+  ● StartOf EndOf › StartOf EndOf Week with week start setting
+
+    expect(received).toBe(expected) // Object.is equality
+    
+    Expected value to be:
+      1792368000000
+    Received:
+      1792281600000
+
+      22 |
+      23 |   it('StartOf EndOf Week with week start setting', () => {
+    > 24 |     expect(dayjs().locale({ name: 'test', weekStart: 1 }).startOf('week').valueOf()).toBe(moment().startOf('week').add(1, 'day').valueOf())
+      25 |   })
+      26 |
+      27 |   it('StartOf EndOf Other -> no change', () => {
+      
+      at Object.<anonymous> (test/manipulate.test.js:24:86)
+
+PASS test/query.test.js (9.091s)
+PASS test/timezone.test.js (9.793s)
+PASS test/plugin/weekOfYear.test.js (9.901s)
+PASS test/plugin.test.js (9.402s)
+PASS test/plugin/isLeapYear.test.js (9.196s)
+PASS test/parse.test.js (9.496s)
+PASS test/locale.test.js (10.402s)
+PASS test/comparison.test.js (10.394s)
+PASS test/plugin/isSameOrAfter.test.js (10.596s)
+PASS test/plugin/localizableFormat.test.js (10.598s)
+PASS test/get-set.test.js (9.902s)
+PASS test/plugin/dayOfYear.test.js (10.807s)
+PASS test/plugin/isSameOrBefore.test.js (10.197s)
+PASS test/plugin/customParseFormat.test.js (10.998s)
+PASS test/constructor.test.js (10.398s)
+PASS test/plugin/quarterOfYear.test.js (10.401s)
+PASS test/plugin/buddhistEra.test.js (10.989s)
+FAIL test/display.test.js (10.986s)
+  ● Difference › diff -> in seconds, minutes, hours, days, weeks, months, quarters, years 
+
+    expect(received).toBe(expected) // Object.is equality
+    
+    Expected value to be:
+      32.86666666666667
+    Received:
+      32.87096774193548
+
+      162 |       expect(dayjsA.diff(dayjsB, unit, true)).toBe(momentA.diff(momentB, unit, true))
+      163 |       expect(dayjsA.diff(dayjsC, unit)).toBe(momentA.diff(momentC, unit))
+    > 164 |       expect(dayjsA.diff(dayjsC, unit, true)).toBe(momentA.diff(momentC, unit, true))
+      165 |     })
+      166 |   })
+      167 |
+      
+      at forEach (test/display.test.js:164:47)
+          at Array.forEach (<anonymous>)
+      at Object.<anonymous> (test/display.test.js:160:11)
+
+PASS test/plugin/relativeTime.test.js (11.2s)
+PASS test/plugin/advancedFormat.test.js (11.394s)
+PASS test/plugin/isBetween.test.js (11.325s)
+PASS test/locale/keys.test.js (12.006s)
+------------------------------|----------|----------|----------|----------|-------------------|
+File                          |  % Stmts | % Branch |  % Funcs |  % Lines | Uncovered Line #s |
+------------------------------|----------|----------|----------|----------|-------------------|
+All files                     |      100 |    99.57 |      100 |      100 |                   |
+ src                          |      100 |      100 |      100 |      100 |                   |
+  constant.js                 |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+  utils.js                    |      100 |      100 |      100 |      100 |                   |
+ src/locale                   |      100 |      100 |      100 |      100 |                   |
+  ar.js                       |      100 |      100 |      100 |      100 |                   |
+  bg.js                       |      100 |      100 |      100 |      100 |                   |
+  ca.js                       |      100 |      100 |      100 |      100 |                   |
+  cs.js                       |      100 |      100 |      100 |      100 |                   |
+  da.js                       |      100 |      100 |      100 |      100 |                   |
+  de.js                       |      100 |      100 |      100 |      100 |                   |
+  el.js                       |      100 |      100 |      100 |      100 |                   |
+  es-do.js                    |      100 |      100 |      100 |      100 |                   |
+  es-us.js                    |      100 |      100 |      100 |      100 |                   |
+  es.js                       |      100 |      100 |      100 |      100 |                   |
+  et.js                       |      100 |      100 |      100 |      100 |                   |
+  fa.js                       |      100 |      100 |      100 |      100 |                   |
+  fi.js                       |      100 |      100 |      100 |      100 |                   |
+  fr.js                       |      100 |      100 |      100 |      100 |                   |
+  he.js                       |      100 |      100 |      100 |      100 |                   |
+  hr.js                       |      100 |      100 |      100 |      100 |                   |
+  hu.js                       |      100 |      100 |      100 |      100 |                   |
+  id.js                       |      100 |      100 |      100 |      100 |                   |
+  it.js                       |      100 |      100 |      100 |      100 |                   |
+  ja.js                       |      100 |      100 |      100 |      100 |                   |
+  ka.js                       |      100 |      100 |      100 |      100 |                   |
+  kk.js                       |      100 |      100 |      100 |      100 |                   |
+  ko.js                       |      100 |      100 |      100 |      100 |                   |
+  lt.js                       |      100 |      100 |      100 |      100 |                   |
+  nb.js                       |      100 |      100 |      100 |      100 |                   |
+  nl.js                       |      100 |      100 |      100 |      100 |                   |
+  nn.js                       |      100 |      100 |      100 |      100 |                   |
+  pl.js                       |      100 |      100 |      100 |      100 |                   |
+  pt-br.js                    |      100 |      100 |      100 |      100 |                   |
+  pt.js                       |      100 |      100 |      100 |      100 |                   |
+  ro.js                       |      100 |      100 |      100 |      100 |                   |
+  ru.js                       |      100 |      100 |      100 |      100 |                   |
+  sk.js                       |      100 |      100 |      100 |      100 |                   |
+  sr-cyrl.js                  |      100 |      100 |      100 |      100 |                   |
+  sr.js                       |      100 |      100 |      100 |      100 |                   |
+  sv.js                       |      100 |      100 |      100 |      100 |                   |
+  th.js                       |      100 |      100 |      100 |      100 |                   |
+  tr.js                       |      100 |      100 |      100 |      100 |                   |
+  uk.js                       |      100 |      100 |      100 |      100 |                   |
+  zh-cn.js                    |      100 |      100 |      100 |      100 |                   |
+  zh-tw.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/advancedFormat    |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/buddhistEra       |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/customParseFormat |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/dayOfYear         |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isBetween         |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isLeapYear        |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isSameOrAfter     |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isSameOrBefore    |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/localizedFormat   |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/quarterOfYear     |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/relativeTime      |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/weekOfYear        |      100 |    88.89 |      100 |      100 |                   |
+  index.js                    |      100 |    88.89 |      100 |      100 |                18 |
+------------------------------|----------|----------|----------|----------|-------------------|
+Handlebars: Access has been denied to resolve the property "statements" because it is not an "own property" of its parent.
+You can add a runtime option to disable the check or this warning:
+See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details
+Handlebars: Access has been denied to resolve the property "branches" because it is not an "own property" of its parent.
+You can add a runtime option to disable the check or this warning:
+See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details
+Handlebars: Access has been denied to resolve the property "functions" because it is not an "own property" of its parent.
+You can add a runtime option to disable the check or this warning:
+See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details
+Handlebars: Access has been denied to resolve the property "lines" because it is not an "own property" of its parent.
+You can add a runtime option to disable the check or this warning:
+See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details
+
+Summary of all failing tests
+FAIL test/manipulate.test.js (8.495s)
+  ● StartOf EndOf › StartOf EndOf Week with week start setting
+
+    expect(received).toBe(expected) // Object.is equality
+    
+    Expected value to be:
+      1792368000000
+    Received:
+      1792281600000
+
+      22 |
+      23 |   it('StartOf EndOf Week with week start setting', () => {
+    > 24 |     expect(dayjs().locale({ name: 'test', weekStart: 1 }).startOf('week').valueOf()).toBe(moment().startOf('week').add(1, 'day').valueOf())
+      25 |   })
+      26 |
+      27 |   it('StartOf EndOf Other -> no change', () => {
+      
+      at Object.<anonymous> (test/manipulate.test.js:24:86)
+
+FAIL test/display.test.js (10.986s)
+  ● Difference › diff -> in seconds, minutes, hours, days, weeks, months, quarters, years 
+
+    expect(received).toBe(expected) // Object.is equality
+    
+    Expected value to be:
+      32.86666666666667
+    Received:
+      32.87096774193548
+
+      162 |       expect(dayjsA.diff(dayjsB, unit, true)).toBe(momentA.diff(momentB, unit, true))
+      163 |       expect(dayjsA.diff(dayjsC, unit)).toBe(momentA.diff(momentC, unit))
+    > 164 |       expect(dayjsA.diff(dayjsC, unit, true)).toBe(momentA.diff(momentC, unit, true))
+      165 |     })
+      166 |   })
+      167 |
+      
+      at forEach (test/display.test.js:164:47)
+          at Array.forEach (<anonymous>)
+      at Object.<anonymous> (test/display.test.js:160:11)
+
+
+Test Suites: 2 failed, 22 passed, 24 total
+Tests:       2 failed, 172 passed, 174 total
+Snapshots:   0 total
+Time:        18.259s
+Ran all test suites.
+
+[exit code: 1]

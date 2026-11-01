@@ -1,0 +1,153 @@
+diff --git a/packages/mui-material/src/Grid/Grid.js b/packages/mui-material/src/Grid/Grid.js
+index 82572f43..805d40ce 100644
+--- a/packages/mui-material/src/Grid/Grid.js
++++ b/packages/mui-material/src/Grid/Grid.js
+@@ -20,6 +20,8 @@ import {
+ import { unstable_composeClasses as composeClasses } from '@mui/base';
+ import requirePropFactory from '../utils/requirePropFactory';
+ import styled from '../styles/styled';
++import defaultTheme from '../styles/defaultTheme';
++import useTheme from '../styles/useTheme';
+ import useThemeProps from '../styles/useThemeProps';
+ import GridContext from './GridContext';
+ import gridClasses, { getGridUtilityClass } from './gridClasses';
+@@ -29,6 +31,24 @@ function getOffset(val) {
+   return `${parse}${String(val).replace(String(parse), '') || 'px'}`;
+ }
+ 
++function resolveSpacingClasses(spacing, theme) {
++  if (!spacing || spacing === 0) {
++    return [];
++  }
++
++  let values;
++  if (typeof spacing === 'object') {
++    values = resolveBreakpointValues({
++      values: spacing,
++      breakpoints: theme.breakpoints.values,
++    });
++  } else {
++    values = { xs: spacing };
++  }
++
++  return Object.keys(values).map((breakpoint) => `spacing-${breakpoint}-${values[breakpoint]}`);
++}
++
+ function generateGrid(globalStyles, theme, breakpoint, ownerState) {
+   const size = ownerState[breakpoint];
+ 
+@@ -187,13 +207,16 @@ const GridRoot = styled('div', {
+   overridesResolver: (props, styles) => {
+     const { container, direction, item, lg, md, sm, spacing, wrap, xl, xs, zeroMinWidth } =
+       props.ownerState;
++    const theme = props.theme && Object.keys(props.theme).length > 0 ? props.theme : defaultTheme;
+ 
+     return [
+       styles.root,
+       container && styles.container,
+       item && styles.item,
+       zeroMinWidth && styles.zeroMinWidth,
+-      container && spacing !== 0 && styles[`spacing-xs-${String(spacing)}`],
++      ...(container
++        ? resolveSpacingClasses(spacing, theme).map((key) => styles[key])
++        : []),
+       direction !== 'row' && styles[`direction-xs-${String(direction)}`],
+       wrap !== 'wrap' && styles[`wrap-xs-${String(wrap)}`],
+       xs !== false && styles[`grid-xs-${String(xs)}`],
+@@ -235,7 +258,7 @@ const GridRoot = styled('div', {
+     }, {}),
+ );
+ 
+-const useUtilityClasses = (ownerState) => {
++const useUtilityClasses = (ownerState, theme) => {
+   const { classes, container, direction, item, lg, md, sm, spacing, wrap, xl, xs, zeroMinWidth } =
+     ownerState;
+ 
+@@ -245,7 +268,7 @@ const useUtilityClasses = (ownerState) => {
+       container && 'container',
+       item && 'item',
+       zeroMinWidth && 'zeroMinWidth',
+-      container && spacing !== 0 && `spacing-xs-${String(spacing)}`,
++      ...(container ? resolveSpacingClasses(spacing, theme) : []),
+       direction !== 'row' && `direction-xs-${String(direction)}`,
+       wrap !== 'wrap' && `wrap-xs-${String(wrap)}`,
+       xs !== false && `grid-xs-${String(xs)}`,
+@@ -260,6 +283,7 @@ const useUtilityClasses = (ownerState) => {
+ };
+ 
+ const Grid = React.forwardRef(function Grid(inProps, ref) {
++  const theme = useTheme();
+   const themeProps = useThemeProps({ props: inProps, name: 'MuiGrid' });
+   const props = extendSxProp(themeProps);
+   const {
+@@ -308,7 +332,7 @@ const Grid = React.forwardRef(function Grid(inProps, ref) {
+     zeroMinWidth,
+   };
+ 
+-  const classes = useUtilityClasses(ownerState);
++  const classes = useUtilityClasses(ownerState, theme);
+ 
+   const wrapChild = (element) =>
+     columns !== 12 ? (
+diff --git a/packages/mui-material/src/Grid/gridClasses.ts b/packages/mui-material/src/Grid/gridClasses.ts
+index c7284fe4..963eb2e5 100644
+--- a/packages/mui-material/src/Grid/gridClasses.ts
++++ b/packages/mui-material/src/Grid/gridClasses.ts
+@@ -29,6 +29,46 @@ export interface GridClasses {
+   'spacing-xs-8': string;
+   'spacing-xs-9': string;
+   'spacing-xs-10': string;
++  'spacing-sm-1': string;
++  'spacing-sm-2': string;
++  'spacing-sm-3': string;
++  'spacing-sm-4': string;
++  'spacing-sm-5': string;
++  'spacing-sm-6': string;
++  'spacing-sm-7': string;
++  'spacing-sm-8': string;
++  'spacing-sm-9': string;
++  'spacing-sm-10': string;
++  'spacing-md-1': string;
++  'spacing-md-2': string;
++  'spacing-md-3': string;
++  'spacing-md-4': string;
++  'spacing-md-5': string;
++  'spacing-md-6': string;
++  'spacing-md-7': string;
++  'spacing-md-8': string;
++  'spacing-md-9': string;
++  'spacing-md-10': string;
++  'spacing-lg-1': string;
++  'spacing-lg-2': string;
++  'spacing-lg-3': string;
++  'spacing-lg-4': string;
++  'spacing-lg-5': string;
++  'spacing-lg-6': string;
++  'spacing-lg-7': string;
++  'spacing-lg-8': string;
++  'spacing-lg-9': string;
++  'spacing-lg-10': string;
++  'spacing-xl-1': string;
++  'spacing-xl-2': string;
++  'spacing-xl-3': string;
++  'spacing-xl-4': string;
++  'spacing-xl-5': string;
++  'spacing-xl-6': string;
++  'spacing-xl-7': string;
++  'spacing-xl-8': string;
++  'spacing-xl-9': string;
++  'spacing-xl-10': string;
+   'grid-xs-auto': string;
+   'grid-xs-true': string;
+   'grid-xs-1': string;
+@@ -64,6 +104,10 @@ const gridClasses: GridClasses = generateUtilityClasses('MuiGrid', [
+ 
+   // spacings
+   ...SPACINGS.map((spacing) => `spacing-xs-${spacing}` as const),
++  ...SPACINGS.map((spacing) => `spacing-sm-${spacing}` as const),
++  ...SPACINGS.map((spacing) => `spacing-md-${spacing}` as const),
++  ...SPACINGS.map((spacing) => `spacing-lg-${spacing}` as const),
++  ...SPACINGS.map((spacing) => `spacing-xl-${spacing}` as const),
+   // direction values
+   ...DIRECTIONS.map((direction) => `direction-xs-${direction}` as const),
+   // wrap values

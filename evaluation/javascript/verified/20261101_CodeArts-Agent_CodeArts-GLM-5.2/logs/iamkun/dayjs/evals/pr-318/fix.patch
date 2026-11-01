@@ -1,0 +1,109 @@
+diff --git a/docs/en/I18n.md b/docs/en/I18n.md
+index c08a1a1..a9b1000 100644
+--- a/docs/en/I18n.md
++++ b/docs/en/I18n.md
+@@ -97,6 +97,18 @@ const localeObject = {
+     MM: '%d months',
+     y: 'a year',
+     yy: '%d years'
++  },
++  longDateFormat: { // OPTIONAL, localized format tokens used by the LocalizedFormat plugin
++    LT: 'h:mm A',
++    LTS: 'h:mm:ss A',
++    L: 'MM/DD/YYYY',
++    LL: 'MMMM D, YYYY',
++    LLL: 'MMMM D, YYYY h:mm A',
++    LLLL: 'dddd, MMMM D, YYYY h:mm A',
++    l: 'M/D/YYYY',
++    ll: 'MMM D, YYYY',
++    lll: 'MMM D, YYYY h:mm A',
++    llll: 'ddd, MMM D, YYYY h:mm A'
+   }
+ }
+ ```
+diff --git a/docs/en/Plugin.md b/docs/en/Plugin.md
+index 2b82216..24b8912 100644
+--- a/docs/en/Plugin.md
++++ b/docs/en/Plugin.md
+@@ -65,6 +65,41 @@ List of added formats:
+ | `X`    | 1360013296       | Unix Timestamp in second              |
+ | `x`    | 1360013296123    | Unix Timestamp in millisecond         |
+ 
++### LocalizedFormat
++
++  - LocalizedFormat extends `dayjs().format` API to supply localized format options, which return different results based on the current locale, like moment.js "Multiple Locale Support".
++
++```javascript
++import localizedFormat from 'dayjs/plugin/localizedFormat'
++
++dayjs.extend(localizedFormat)
++
++dayjs().format('LT')   // 2:19 PM
++dayjs().format('LTS')  // 2:19:56 PM
++dayjs().format('L')    // 08/29/2018
++dayjs().format('l')    // 8/29/2018
++dayjs().format('LL')   // August 29, 2018
++dayjs().format('ll')   // Aug 29, 2018
++dayjs().format('LLL')  // August 29, 2018 2:19 PM
++dayjs().format('lll')  // Aug 29, 2018 2:19 PM
++dayjs().format('LLLL') // Wednesday, August 29, 2018 2:19 PM
++dayjs().format('llll') // Wed, Aug 29, 2018 2:19 PM
++```
++
++List of added formats:
++
++| Format | Description                                |
++| ------ | ------------------------------------------ |
++| `LT`   | Time (without seconds)                     |
++| `LTS`  | Time (with seconds)                        |
++| `L`    | Date localized, numeric                    |
++| `LL`   | Date localized, long                       |
++| `LLL`  | Date + time localized, long                |
++| `LLLL` | Date (day of week) + time localized, long  |
++| `l` `ll` `lll` `llll` | The lowercased versions of `L` `LL` `LLL` `LLLL` |
++
++The format strings for the tokens above come from the current locale's `longDateFormat` object. You can override them in your custom locale.
++
+ ### RelativeTime
+  - RelativeTime adds `.from` `.to` `.fromNow` `.toNow` APIs to formats date to relative time strings (e.g. 3 hours ago).
+ 
+diff --git a/src/plugin/localizedFormat/index.js b/src/plugin/localizedFormat/index.js
+new file mode 100644
+index 0000000..7a60710
+--- /dev/null
++++ b/src/plugin/localizedFormat/index.js
+@@ -0,0 +1,34 @@
++import { FORMAT_DEFAULT } from '../../constant'
++
++const REGEX = /(\[[^\]]*\])|LTS?|L{1,4}|l{1,4}/g
++
++function t(str, longDateFormat) {
++  return str.replace(REGEX, (match) => {
++    const localStr = (longDateFormat || {})[match]
++    if (!localStr) return match
++    return t(localStr, longDateFormat)
++  })
++}
++
++export default (o, c, d) => {
++  const proto = c.prototype
++  const oldFormat = proto.format
++  d.en.longDateFormat = {
++    LT: 'h:mm A',
++    LTS: 'h:mm:ss A',
++    L: 'MM/DD/YYYY',
++    LL: 'MMMM D, YYYY',
++    LLL: 'MMMM D, YYYY h:mm A',
++    LLLL: 'dddd, MMMM D, YYYY h:mm A',
++    l: 'M/D/YYYY',
++    ll: 'MMM D, YYYY',
++    lll: 'MMM D, YYYY h:mm A',
++    llll: 'ddd, MMM D, YYYY h:mm A'
++  }
++  proto.format = function (formatStr) {
++    const locale = this.$locale()
++    const str = formatStr || FORMAT_DEFAULT
++    const result = t(str, locale.longDateFormat)
++    return oldFormat.bind(this)(result)
++  }
++}

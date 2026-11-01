@@ -1,0 +1,64 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+index 0227313..d3ea375 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+@@ -1,7 +1,7 @@
+ import * as b from '../../../utils/builders.js';
+ import { extract_paths, is_simple_expression } from '../../../utils/ast.js';
+ import { error } from '../../../errors.js';
+-import { PROPS_CALL_DEFAULT_VALUE, PROPS_IS_IMMUTABLE } from '../../../../constants.js';
++import { PROPS_CALL_DEFAULT_VALUE, PROPS_IS_IMMUTABLE, PROPS_DEV } from '../../../../constants.js';
+ 
+ /**
+  * @template {import('./types').ClientTransformState} State
+@@ -369,6 +369,10 @@ export function get_props_method(binding, state, name, default_value) {
+ 			flags |= PROPS_IS_IMMUTABLE;
+ 		}
+ 
++		if (state.options.dev) {
++			flags |= PROPS_DEV;
++		}
++
+ 		if (default_value) {
+ 			// To avoid eagerly evaluating the right-hand-side, we wrap it in a thunk if necessary
+ 			if (is_simple_expression(default_value)) {
+diff --git a/packages/svelte/src/constants.js b/packages/svelte/src/constants.js
+index d5daaf7..2602869 100644
+--- a/packages/svelte/src/constants.js
++++ b/packages/svelte/src/constants.js
+@@ -7,6 +7,7 @@ export const EACH_IS_IMMUTABLE = 1 << 6;
+ 
+ export const PROPS_IS_IMMUTABLE = 1;
+ export const PROPS_CALL_DEFAULT_VALUE = 1 << 1;
++export const PROPS_DEV = 1 << 2;
+ 
+ /** List of Element events that will be delegated */
+ export const DelegatedEvents = [
+diff --git a/packages/svelte/src/internal/client/runtime.js b/packages/svelte/src/internal/client/runtime.js
+index 29f1b73..ca328a3 100644
+--- a/packages/svelte/src/internal/client/runtime.js
++++ b/packages/svelte/src/internal/client/runtime.js
+@@ -2,7 +2,7 @@ import { DEV } from 'esm-env';
+ import { subscribe_to_store } from '../../store/utils.js';
+ import { EMPTY_FUNC, run_all } from '../common.js';
+ import { get_descriptor, get_descriptors, is_array } from './utils.js';
+-import { PROPS_CALL_DEFAULT_VALUE, PROPS_IS_IMMUTABLE } from '../../constants.js';
++import { PROPS_CALL_DEFAULT_VALUE, PROPS_IS_IMMUTABLE, PROPS_DEV } from '../../constants.js';
+ 
+ export const SOURCE = 1;
+ export const DERIVED = 1 << 1;
+@@ -1425,6 +1425,14 @@ export function prop_source(props_obj, key, flags, default_value) {
+ 
+ 	const props = is_signal(props_obj) ? get(props_obj) : props_obj;
+ 	const update_bound_prop = get_descriptor(props, key)?.set;
++
++	// While fallback values make sense for readonly props, they are confusing
++	// and a source of bugginess when used on bound props — the fallback would
++	// propagate up to the parent. We disallow this combination in runes mode.
++	if ((flags & PROPS_DEV) !== 0 && update_bound_prop !== undefined && default_value !== undefined) {
++		throw new Error('ERR_SVELTE_BOUND_PROP_FALLBACK: Cannot use a fallback value for a bound prop');
++	}
++
+ 	let value = props[key];
+ 	const should_set_default_value = value === undefined && default_value !== undefined;
+ 

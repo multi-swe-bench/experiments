@@ -1,0 +1,17 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/read/expression.js b/packages/svelte/src/compiler/phases/1-parse/read/expression.js
+index 82a667d..c3cb768 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/read/expression.js
++++ b/packages/svelte/src/compiler/phases/1-parse/read/expression.js
+@@ -38,7 +38,12 @@ export default function read_expression(parser, opening_token, disallow_loose) {
+ 
+ 		let num_parens = 0;
+ 
++		// Skip leading comments so that e.g. a JSDoc comment containing an opening
++		// paren doesn't throw off the parenthesis balancing logic below
++		const leading_comments = node.leadingComments ?? [];
+ 		for (let i = parser.index; i < /** @type {number} */ (node.start); i += 1) {
++			const in_comment = leading_comments.some((c) => i >= c.start && i < c.end);
++			if (in_comment) continue;
+ 			if (parser.template[i] === '(') num_parens += 1;
+ 		}
+ 

@@ -1,0 +1,72 @@
+diff --git a/.changeset/snippet-const.md b/.changeset/snippet-const.md
+new file mode 100644
+index 0000000..dadf71f
+--- /dev/null
++++ b/.changeset/snippet-const.md
+@@ -0,0 +1,4 @@
++'svelte': patch
++---
++
++feat: allow `{@const}` inside `{#snippet}` blocks
+\ No newline at end of file
+diff --git a/documentation/docs/02-template-syntax/04-special-tags.md b/documentation/docs/02-template-syntax/04-special-tags.md
+index 4145d8d..f877580 100644
+--- a/documentation/docs/02-template-syntax/04-special-tags.md
++++ b/documentation/docs/02-template-syntax/04-special-tags.md
+@@ -85,4 +85,4 @@ The `{@const ...}` tag defines a local constant.
+ {/each}
+ ```
+ 
+-`{@const}` is only allowed as direct child of `{#if}`, `{:else if}`, `{:else}`, `{#each}`, `{:then}`, `{:catch}`, `<Component />` or `<svelte:fragment />`.
++`{@const}` is only allowed as direct child of `{#if}`, `{:else if}`, `{:else}`, `{#each}`, `{#snippet}`, `{:then}`, `{:catch}`, `<Component />` or `<svelte:fragment />`.
+diff --git a/packages/svelte/src/compiler/errors.js b/packages/svelte/src/compiler/errors.js
+index 73b6f2e..d06b7b7 100644
+--- a/packages/svelte/src/compiler/errors.js
++++ b/packages/svelte/src/compiler/errors.js
+@@ -333,7 +333,7 @@ const compiler_options = {
+ /** @satisfies {Errors} */
+ const const_tag = {
+ 	'invalid-const-placement': () =>
+-		`{@const} must be the immediate child of {#if}, {:else if}, {:else}, {#each}, {:then}, {:catch}, <svelte:fragment> or <Component>`
++		`{@const} must be the immediate child of {#if}, {:else if}, {:else}, {#each}, {#snippet}, {:then}, {:catch}, <svelte:fragment> or <Component>`
+ };
+ 
+ /** @satisfies {Errors} */
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 8dad40e..0840200 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -476,6 +476,7 @@ export const validation = {
+ 				grand_parent?.type !== 'SvelteComponent' &&
+ 				grand_parent?.type !== 'EachBlock' &&
+ 				grand_parent?.type !== 'AwaitBlock' &&
++				grand_parent?.type !== 'SnippetBlock' &&
+ 				((grand_parent?.type !== 'RegularElement' && grand_parent?.type !== 'SvelteElement') ||
+ 					!grand_parent.attributes.some((a) => a.type === 'Attribute' && a.name === 'slot')))
+ 		) {
+diff --git a/packages/svelte/tests/validator/samples/const-tag-placement-1/errors.json b/packages/svelte/tests/validator/samples/const-tag-placement-1/errors.json
+index f90fcf8..9655c9a 100644
+--- a/packages/svelte/tests/validator/samples/const-tag-placement-1/errors.json
++++ b/packages/svelte/tests/validator/samples/const-tag-placement-1/errors.json
+@@ -1,7 +1,7 @@
+ [
+ 	{
+ 		"code": "invalid-const-placement",
+-		"message": "{@const} must be the immediate child of {#if}, {:else if}, {:else}, {#each}, {:then}, {:catch}, <svelte:fragment> or <Component>",
++		"message": "{@const} must be the immediate child of {#if}, {:else if}, {:else}, {#each}, {#snippet}, {:then}, {:catch}, <svelte:fragment> or <Component>",
+ 		"start": { "line": 5, "column": 0 },
+ 		"end": { "line": 5, "column": 18 }
+ 	}
+diff --git a/packages/svelte/tests/validator/samples/const-tag-placement-2/errors.json b/packages/svelte/tests/validator/samples/const-tag-placement-2/errors.json
+index 1124d0b..84d82f4 100644
+--- a/packages/svelte/tests/validator/samples/const-tag-placement-2/errors.json
++++ b/packages/svelte/tests/validator/samples/const-tag-placement-2/errors.json
+@@ -1,7 +1,7 @@
+ [
+ 	{
+ 		"code": "invalid-const-placement",
+-		"message": "{@const} must be the immediate child of {#if}, {:else if}, {:else}, {#each}, {:then}, {:catch}, <svelte:fragment> or <Component>",
++		"message": "{@const} must be the immediate child of {#if}, {:else if}, {:else}, {#each}, {#snippet}, {:then}, {:catch}, <svelte:fragment> or <Component>",
+ 		"start": { "line": 7, "column": 4 },
+ 		"end": { "line": 7, "column": 18 }
+ 	}

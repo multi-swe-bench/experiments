@@ -1,0 +1,37 @@
+diff --git a/.changeset/style-directive-shorthand-reactivity.md b/.changeset/style-directive-shorthand-reactivity.md
+new file mode 100644
+index 0000000..6ae4067
+--- /dev/null
++++ b/.changeset/style-directive-shorthand-reactivity.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: ensure `style:foo` shorthand references become reactive when mutated in legacy mode
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 7a55c57..a0589a2 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -809,6 +809,20 @@ const legacy_scope_tweaker = {
+ 			}
+ 		}
+ 	},
++	StyleDirective(node, context) {
++		if (node.value !== true) return;
++
++		const binding = context.state.scope.get(node.name);
++		if (
++			binding !== null &&
++			binding.kind === 'normal' &&
++			binding.scope === context.state.instance_scope &&
++			binding.declaration_kind !== 'function' &&
++			binding.mutated
++		) {
++			binding.kind = 'state';
++		}
++	},
+ 	ExportNamedDeclaration(node, { next, state }) {
+ 		if (state.ast_type !== 'instance') {
+ 			return next();

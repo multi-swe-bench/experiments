@@ -1,0 +1,34 @@
+diff --git a/packages/runtime-dom/src/patchProp.ts b/packages/runtime-dom/src/patchProp.ts
+index 0da0ff1..2cb4d5f 100644
+--- a/packages/runtime-dom/src/patchProp.ts
++++ b/packages/runtime-dom/src/patchProp.ts
+@@ -53,9 +53,26 @@ export const patchProp: DOMRendererOptions['patchProp'] = (
+       unmountChildren,
+     )
+     // #6007 also set form state as attributes so they work with
+-    // <input type="reset"> or libs / extensions that expect attributes
+-    if (key === 'value' || key === 'checked' || key === 'selected') {
+-      patchAttr(el, key, nextValue, isSVG, parentComponent, key !== 'value')
++    // <input type="reset"> or libs / extensions that expect attributes.
++    // Only set the `value` attribute for primitive values; for non-primitive
++    // values (e.g. dual-knob range objects) remove it instead, otherwise it
++    // would be stringified to `[object Object]` and break custom elements
++    // that observe the `value` attribute. #11220
++    if (key === 'checked' || key === 'selected') {
++      patchAttr(el, key, nextValue, isSVG, parentComponent, true)
++    } else if (key === 'value') {
++      patchAttr(
++        el,
++        key,
++        typeof nextValue === 'string' ||
++          typeof nextValue === 'number' ||
++          typeof nextValue === 'boolean'
++          ? nextValue
++          : null,
++        isSVG,
++        parentComponent,
++        false,
++      )
+     }
+   } else {
+     // special case for <input v-model type="checkbox"> with

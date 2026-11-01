@@ -1,0 +1,28 @@
+diff --git a/src/cards/wakatime-card.js b/src/cards/wakatime-card.js
+index 14203df..21a7d18 100644
+--- a/src/cards/wakatime-card.js
++++ b/src/cards/wakatime-card.js
+@@ -163,12 +163,13 @@ const renderWakatimeCard = (stats = {}, options = { hide: [] }) => {
+   // RENDER COMPACT LAYOUT
+   if (layout === "compact") {
+     width = width + 50;
+-    height = 90 + Math.round(languages.length / 2) * 25;
++    height = 90 + Math.round(langsCount / 2) * 25;
+ 
+     // progressOffset holds the previous language's width and used to offset the next language
+     // so that we can stack them one after another, like this: [--][----][---]
+     let progressOffset = 0;
+     const compactProgressBar = languages
++      .slice(0, langsCount)
+       .map((lang) => {
+         // const progress = (width * lang.percent) / 100;
+         const progress = ((width - 25) * lang.percent) / 100;
+@@ -199,7 +200,7 @@ const renderWakatimeCard = (stats = {}, options = { hide: [] }) => {
+       ${createLanguageTextNode({
+         x: 0,
+         y: 25,
+-        langs: languages,
++        langs: languages.slice(0, langsCount),
+         totalSize: 100,
+       }).join("")}
+     `;

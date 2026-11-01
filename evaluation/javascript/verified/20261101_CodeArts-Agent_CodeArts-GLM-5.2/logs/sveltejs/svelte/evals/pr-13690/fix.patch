@@ -1,0 +1,28 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/DebugTag.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/DebugTag.js
+index 685d305..2a046c4 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/DebugTag.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/DebugTag.js
+@@ -8,15 +8,19 @@ import * as b from '../../../../utils/builders.js';
+  * @param {ComponentContext} context
+  */
+ export function DebugTag(node, context) {
++	const identifiers = node.identifiers.map(
++		(identifier) => /** @type {Expression} */ (context.visit(identifier))
++	);
++
+ 	const object = b.object(
+-		node.identifiers.map((identifier) =>
+-			b.prop('init', identifier, /** @type {Expression} */ (context.visit(identifier)))
+-		)
++		node.identifiers.map((identifier, i) => b.prop('init', identifier, identifiers[i]))
+ 	);
+ 
+ 	const call = b.call('console.log', object);
+ 
++	const deep_reads = identifiers.map((identifier) => b.stmt(b.call('$.deep_read', identifier)));
++
+ 	context.state.init.push(
+-		b.stmt(b.call('$.template_effect', b.thunk(b.block([b.stmt(call), b.debugger]))))
++		b.stmt(b.call('$.template_effect', b.thunk(b.block([...deep_reads, b.stmt(call), b.debugger]))))
+ 	);
+ }

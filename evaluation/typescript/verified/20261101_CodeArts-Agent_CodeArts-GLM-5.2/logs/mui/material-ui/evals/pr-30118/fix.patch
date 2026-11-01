@@ -1,0 +1,125 @@
+diff --git a/packages/mui-material/src/Portal/Portal.d.ts b/packages/mui-material/src/Portal/Portal.d.ts
+new file mode 100644
+index 00000000..42fe2127
+--- /dev/null
++++ b/packages/mui-material/src/Portal/Portal.d.ts
+@@ -0,0 +1,5 @@
++import { PortalProps as BasePortalProps } from '@mui/base/Portal';
++
++export interface PortalProps extends BasePortalProps {}
++
++export default function Portal(props: PortalProps): JSX.Element;
+\ No newline at end of file
+diff --git a/packages/mui-material/src/Portal/Portal.js b/packages/mui-material/src/Portal/Portal.js
+new file mode 100644
+index 00000000..d53961b4
+--- /dev/null
++++ b/packages/mui-material/src/Portal/Portal.js
+@@ -0,0 +1,57 @@
++import * as React from 'react';
++import PropTypes from 'prop-types';
++import { HTMLElementType } from '@mui/utils';
++import PortalUnstyled from '@mui/base/Portal';
++import useThemeProps from '../styles/useThemeProps';
++
++/**
++ * Portals provide a first-class way to render children into a DOM node
++ * that exists outside the DOM hierarchy of the parent component.
++ *
++ * Demos:
++ *
++ * - [Portal](https://mui.com/components/portal/)
++ *
++ * API:
++ *
++ * - [Portal API](https://mui.com/api/portal/)
++ */
++const Portal = React.forwardRef(function Portal(inProps, ref) {
++  const props = useThemeProps({ name: 'MuiPortal', props: inProps });
++  const { children, container, disablePortal = false } = props;
++
++  return (
++    <PortalUnstyled ref={ref} container={container} disablePortal={disablePortal}>
++      {children}
++    </PortalUnstyled>
++  );
++});
++
++Portal.propTypes /* remove-proptypes */ = {
++  // ----------------------------- Warning --------------------------------
++  // | These PropTypes are generated from the TypeScript type definitions |
++  // |     To update them edit the d.ts file and run "yarn proptypes"     |
++  // ----------------------------------------------------------------------
++  /**
++   * The children to render into the `container`.
++   */
++  children: PropTypes.node,
++  /**
++   * An HTML element or function that returns one.
++   * The `container` will have the portal children appended to it.
++   *
++   * By default, it uses the body of the top-level document object,
++   * so it's simply `document.body` most of the time.
++   */
++  container: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    HTMLElementType,
++    PropTypes.func,
++  ]),
++  /**
++   * The `children` will be under the DOM hierarchy of the parent component.
++   * @default false
++   */
++  disablePortal: PropTypes.bool,
++};
++
++export default Portal;
+diff --git a/packages/mui-material/src/Portal/index.d.ts b/packages/mui-material/src/Portal/index.d.ts
+index 7bcee455..d915f501 100644
+--- a/packages/mui-material/src/Portal/index.d.ts
++++ b/packages/mui-material/src/Portal/index.d.ts
+@@ -1,2 +1,2 @@
+-export { default } from '@mui/base/Portal';
+-export * from '@mui/base/Portal';
++export { default } from './Portal';
++export * from './Portal';
+diff --git a/packages/mui-material/src/Portal/index.js b/packages/mui-material/src/Portal/index.js
+index 7c77bf61..f227015f 100644
+--- a/packages/mui-material/src/Portal/index.js
++++ b/packages/mui-material/src/Portal/index.js
+@@ -1 +1 @@
+-export { default } from '@mui/base/Portal';
++export { default } from './Portal';
+diff --git a/packages/mui-material/src/styles/components.d.ts b/packages/mui-material/src/styles/components.d.ts
+index 754e9011..a47673e3 100644
+--- a/packages/mui-material/src/styles/components.d.ts
++++ b/packages/mui-material/src/styles/components.d.ts
+@@ -373,6 +373,9 @@ export interface Components<Theme = unknown> {
+     styleOverrides?: ComponentsOverrides<Theme>['MuiPopover'];
+     variants?: ComponentsVariants['MuiPopover'];
+   };
++  MuiPortal?: {
++    defaultProps?: ComponentsProps['MuiPortal'];
++  };
+   MuiRadio?: {
+     defaultProps?: ComponentsProps['MuiRadio'];
+     styleOverrides?: ComponentsOverrides<Theme>['MuiRadio'];
+diff --git a/packages/mui-material/src/styles/props.d.ts b/packages/mui-material/src/styles/props.d.ts
+index 94cc1787..524ee732 100644
+--- a/packages/mui-material/src/styles/props.d.ts
++++ b/packages/mui-material/src/styles/props.d.ts
+@@ -74,6 +74,7 @@ import { PaginationProps } from '../Pagination';
+ import { PaginationItemProps } from '../PaginationItem';
+ import { PaperProps } from '../Paper';
+ import { PopoverProps } from '../Popover';
++import { PortalProps } from '../Portal';
+ import { RadioGroupProps } from '../RadioGroup';
+ import { RadioProps } from '../Radio';
+ import { RatingProps } from '../Rating';
+@@ -196,6 +197,7 @@ export interface ComponentsPropsList {
+   MuiPaginationItem: PaginationItemProps;
+   MuiPaper: PaperProps;
+   MuiPopover: PopoverProps;
++  MuiPortal: PortalProps;
+   MuiRadio: RadioProps;
+   MuiRadioGroup: RadioGroupProps;
+   MuiRating: RatingProps;

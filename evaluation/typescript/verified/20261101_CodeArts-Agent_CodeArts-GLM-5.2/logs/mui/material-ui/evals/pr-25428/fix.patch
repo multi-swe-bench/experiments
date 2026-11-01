@@ -1,0 +1,15 @@
+diff --git a/packages/material-ui/src/Divider/Divider.js b/packages/material-ui/src/Divider/Divider.js
+index 42f4c05..69d0360 100644
+--- a/packages/material-ui/src/Divider/Divider.js
++++ b/packages/material-ui/src/Divider/Divider.js
+@@ -104,6 +104,10 @@ const DividerRoot = experimentalStyled(
+     ...(styleProps.variant === 'middle' && {
+       marginLeft: theme.spacing(2),
+       marginRight: theme.spacing(2),
++      ...(styleProps.orientation === 'vertical' && {
++        marginTop: theme.spacing(2),
++        marginBottom: theme.spacing(2),
++      }),
+     }),
+     /* Styles applied to the root element if `orientation="vertical"`. */
+     ...(styleProps.orientation === 'vertical' && {

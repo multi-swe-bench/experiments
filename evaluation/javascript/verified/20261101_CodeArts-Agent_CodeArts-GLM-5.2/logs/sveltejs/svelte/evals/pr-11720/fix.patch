@@ -1,0 +1,14 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 4cc0c83..0975536 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -516,6 +516,9 @@ function serialize_element_attribute_update_assignment(element, node_id, attribu
+ 	if (attribute.metadata.dynamic) {
+ 		if (contains_call_expression) {
+ 			state.init.push(serialize_update(update));
++		} else if (name === 'value' || name === 'checked') {
++			const id = state.scope.generate(`${node_id.name}_${name}`);
++			serialize_update_assignment(state, id, undefined, value, update);
+ 		} else {
+ 			state.update.push(update);
+ 		}

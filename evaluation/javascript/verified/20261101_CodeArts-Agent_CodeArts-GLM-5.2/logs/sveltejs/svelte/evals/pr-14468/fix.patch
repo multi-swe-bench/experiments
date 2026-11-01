@@ -1,0 +1,15 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/ExpressionTag.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/ExpressionTag.js
+index 7e21d5c..ee5712d 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/visitors/ExpressionTag.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/ExpressionTag.js
+@@ -9,7 +9,9 @@ import { mark_subtree_dynamic } from './shared/fragment.js';
+  * @param {Context} context
+  */
+ export function ExpressionTag(node, context) {
+-	const in_attribute = context.path.at(-1)?.type === 'Attribute';
++	const parent = context.path.at(-1);
++	const in_attribute =
++		parent?.type === 'Attribute' || parent?.type === 'StyleDirective';
+ 
+ 	if (!in_attribute && context.state.parent_element) {
+ 		if (!is_tag_valid_with_parent('#text', context.state.parent_element)) {

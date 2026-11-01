@@ -1,0 +1,78 @@
+diff --git a/packages/svelte/src/internal/client/each.js b/packages/svelte/src/internal/client/each.js
+index 3974557..40bb555 100644
+--- a/packages/svelte/src/internal/client/each.js
++++ b/packages/svelte/src/internal/client/each.js
+@@ -37,6 +37,33 @@ const LIS_BLOCK = -2;
+ 
+ function no_op() {}
+ 
++/**
++ * When hydrating, the server may have rendered more items than the client is
++ * rendering (for example because of a `{#each browser ? client : server}` block).
++ * The leftover server-rendered nodes are not hydrated and so must be removed
++ * from the DOM, otherwise they would remain stuck in place.
++ * @param {null | Array<Text | Comment | Element>} fragment The each block's hydration fragment
++ * @param {Node | null | undefined} hydrating_node The node after the last hydrated item
++ * @returns {void}
++ */
++function remove_leftover_hydration_nodes(fragment, hydrating_node) {
++	if (fragment === null || fragment.length === 0 || hydrating_node == null) {
++		return;
++	}
++	// The each block's closing `<!--ssr:...-->` comment is the node right after
++	// the last node of the fragment. Everything between `hydrating_node` and that
++	// closing comment is leftover server-rendered content that needs to go.
++	var end_node = /** @type {Node} */ (/** @type {Node} */ (fragment.at(-1)).nextSibling);
++	if (end_node === null) {
++		return;
++	}
++	while (hydrating_node !== null && hydrating_node !== end_node) {
++		var next = /** @type {Node} */ (hydrating_node.nextSibling);
++		hydrating_node.remove();
++		hydrating_node = next;
++	}
++}
++
+ /**
+  * @template V
+  * @param {Element | Comment} anchor_node
+@@ -271,6 +298,9 @@ function reconcile_indexed_array(
+ 	var b_blocks;
+ 	var block;
+ 
++	/** @type {null | Array<Text | Comment | Element>} */
++	var each_fragment = current_hydration_fragment;
++
+ 	if (active_transitions.length !== 0) {
+ 		destroy_active_transition_blocks(active_transitions);
+ 	}
+@@ -304,6 +334,9 @@ function reconcile_indexed_array(
+ 				block = each_item_block(item, null, index, render_fn, flags);
+ 				b_blocks[index] = block;
+ 			}
++			// Hydration mismatch: the server rendered more items than the client is
++			// rendering. Remove the leftover server-rendered nodes.
++			remove_leftover_hydration_nodes(each_fragment, hydrating_node);
+ 		} else {
+ 			for (; index < length; index++) {
+ 				if (index >= a) {
+@@ -371,6 +404,9 @@ function reconcile_tracked_array(
+ 	var b_blocks;
+ 	var block;
+ 
++	/** @type {null | Array<Text | Comment | Element>} */
++	var each_fragment = current_hydration_fragment;
++
+ 	if (active_transitions.length !== 0) {
+ 		destroy_active_transition_blocks(active_transitions);
+ 	}
+@@ -414,6 +450,9 @@ function reconcile_tracked_array(
+ 				block = each_item_block(item, key, idx, render_fn, flags);
+ 				b_blocks[idx] = block;
+ 			}
++			// Hydration mismatch: the server rendered more items than the client is
++			// rendering. Remove the leftover server-rendered nodes.
++			remove_leftover_hydration_nodes(each_fragment, hydrating_node);
+ 		} else if (a === 0) {
+ 			// Create new blocks
+ 			while (b > 0) {

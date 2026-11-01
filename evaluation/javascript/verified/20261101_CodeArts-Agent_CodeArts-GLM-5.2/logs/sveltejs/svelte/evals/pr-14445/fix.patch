@@ -1,0 +1,154 @@
+diff --git a/documentation/docs/98-reference/.generated/compile-errors.md b/documentation/docs/98-reference/.generated/compile-errors.md
+index 16cd361..b028c6a 100644
+--- a/documentation/docs/98-reference/.generated/compile-errors.md
++++ b/documentation/docs/98-reference/.generated/compile-errors.md
+@@ -484,6 +484,10 @@ A component cannot have a default export
+ %thing% is invalid inside `<%parent%>`
+ ```
+ 
++```
++%thing% must be the child of a %required_parent% element
++```
++
+ HTML restricts where certain elements can appear. In case of a violation the browser will 'repair' the HTML in a way that breaks Svelte's assumptions about the structure of your components. Some examples:
+ 
+ - `<p>hello <div>world</div></p>` will result in `<p>hello </p><div>world</div><p></p>` for example (the `<div>` autoclosed the `<p>` because `<p>` cannot contain block-level elements)
+diff --git a/packages/svelte/messages/compile-errors/template.md b/packages/svelte/messages/compile-errors/template.md
+index 38ff87d..fb656b7 100644
+--- a/packages/svelte/messages/compile-errors/template.md
++++ b/packages/svelte/messages/compile-errors/template.md
+@@ -192,6 +192,8 @@
+ 
+ > %thing% is invalid inside `<%parent%>`
+ 
++> %thing% must be the child of a %required_parent% element
++
+ HTML restricts where certain elements can appear. In case of a violation the browser will 'repair' the HTML in a way that breaks Svelte's assumptions about the structure of your components. Some examples:
+ 
+ - `<p>hello <div>world</div></p>` will result in `<p>hello </p><div>world</div><p></p>` for example (the `<div>` autoclosed the `<p>` because `<p>` cannot contain block-level elements)
+diff --git a/packages/svelte/src/compiler/errors.js b/packages/svelte/src/compiler/errors.js
+index ad2919b..f3acde8 100644
+--- a/packages/svelte/src/compiler/errors.js
++++ b/packages/svelte/src/compiler/errors.js
+@@ -1024,14 +1024,15 @@ export function mixed_event_handler_syntaxes(node, name) {
+ }
+ 
+ /**
+- * %thing% is invalid inside `<%parent%>`
++ * %thing% must be the child of a %required_parent% element
+  * @param {null | number | NodeLike} node
+  * @param {string} thing
+  * @param {string} parent
++ * @param {string | undefined | null} [required_parent]
+  * @returns {never}
+  */
+-export function node_invalid_placement(node, thing, parent) {
+-	e(node, "node_invalid_placement", `${thing} is invalid inside \`<${parent}>\``);
++export function node_invalid_placement(node, thing, parent, required_parent) {
++	e(node, "node_invalid_placement", required_parent ? `${thing} must be the child of a ${required_parent} element` : `${thing} is invalid inside \`<${parent}>\``);
+ }
+ 
+ /**
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/RegularElement.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/RegularElement.js
+index fa6ca0f..36a36e0 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/visitors/RegularElement.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/RegularElement.js
+@@ -2,6 +2,7 @@
+ /** @import { Context } from '../types' */
+ import { is_mathml, is_svg, is_void } from '../../../../utils.js';
+ import {
++	get_required_parent,
+ 	is_tag_valid_with_ancestor,
+ 	is_tag_valid_with_parent
+ } from '../../../../html-tree-validation.js';
+@@ -122,7 +123,12 @@ export function RegularElement(node, context) {
+ 								context.state.parent_element
+ 							);
+ 						} else {
+-							e.node_invalid_placement(node, `\`<${node.name}>\``, context.state.parent_element);
++							e.node_invalid_placement(
++								node,
++								`\`<${node.name}>\``,
++								context.state.parent_element,
++								get_required_parent(node.name, context.state.parent_element)
++							);
+ 						}
+ 					}
+ 
+@@ -135,7 +141,12 @@ export function RegularElement(node, context) {
+ 					if (only_warn) {
+ 						w.node_invalid_placement_ssr(node, `\`<${node.name}>\``, ancestor.name);
+ 					} else {
+-						e.node_invalid_placement(node, `\`<${node.name}>\``, ancestor.name);
++						e.node_invalid_placement(
++							node,
++							`\`<${node.name}>\``,
++							ancestor.name,
++							get_required_parent(node.name, ancestor.name)
++						);
+ 					}
+ 				}
+ 			} else if (
+diff --git a/packages/svelte/src/html-tree-validation.js b/packages/svelte/src/html-tree-validation.js
+index 0ebf45e..4e0447b 100644
+--- a/packages/svelte/src/html-tree-validation.js
++++ b/packages/svelte/src/html-tree-validation.js
+@@ -163,6 +163,58 @@ export function is_tag_valid_with_ancestor(tag, ancestors) {
+ 	return 'descendant' in disallowed ? !disallowed.descendant.includes(tag) : true;
+ }
+ 
++/**
++ * Map of table-related elements to the elements that are required to be their direct parent.
++ * Used to produce more helpful error messages when such an element is placed incorrectly inside another table-related element.
++ * @type {Record<string, string[]>}
++ */
++const required_parents = {
++	td: ['tr'],
++	th: ['tr'],
++	tr: ['thead', 'tbody', 'tfoot'],
++	thead: ['table'],
++	tbody: ['table'],
++	tfoot: ['table'],
++	caption: ['table'],
++	colgroup: ['table'],
++	col: ['colgroup']
++};
++
++/**
++ * The set of elements that participate in table parsing, so that a misplaced table-related child
++ * is reported with a "must be the child of" message rather than the generic "is invalid inside" one.
++ * @type {Set<string>}
++ */
++const table_context_parents = new Set([
++	'table',
++	'thead',
++	'tbody',
++	'tfoot',
++	'tr',
++	'td',
++	'th',
++	'caption',
++	'colgroup'
++]);
++
++/**
++ * Returns a formatted string listing the elements that are required to be the direct parent of the
++ * given tag, or `null` if the tag has no such requirement or the current parent is not a
++ * table-related element.
++ * @param {string} tag
++ * @param {string} parent_tag
++ * @returns {string | null}
++ */
++export function get_required_parent(tag, parent_tag) {
++	const parents = required_parents[tag];
++	if (!parents || !table_context_parents.has(parent_tag)) return null;
++
++	const formatted = parents.map((parent) => `\`<${parent}>\``);
++	return formatted.length === 1
++		? formatted[0]
++		: formatted.slice(0, -1).join(', ') + ' or ' + formatted[formatted.length - 1];
++}
++
+ /**
+  * Returns false if the tag is not allowed inside the parent tag such that it will result
+  * in the browser repairing the HTML, which will likely result in an error during hydration.

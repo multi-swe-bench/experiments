@@ -1,0 +1,51 @@
+diff --git a/api/index.js b/api/index.js
+index 6e9405a..7130a82 100644
+--- a/api/index.js
++++ b/api/index.js
+@@ -27,6 +27,7 @@ module.exports = async (req, res) => {
+     bg_color,
+     theme,
+     cache_seconds,
++    custom_username,
+   } = req.query;
+   let stats;
+ 
+@@ -63,9 +64,10 @@ module.exports = async (req, res) => {
+         title_color,
+         icon_color,
+         text_color,
+-        bg_color,
+-        theme,
+-      }),
++bg_color,
++      theme,
++      custom_username,
++    }),
+     );
+   } catch (err) {
+     return res.send(renderError(err.message, err.secondaryMessage));
+diff --git a/src/cards/stats-card.js b/src/cards/stats-card.js
+index b69b4b4..36315e9 100644
+--- a/src/cards/stats-card.js
++++ b/src/cards/stats-card.js
+@@ -65,6 +65,7 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
+     text_color,
+     bg_color,
+     theme = "default",
++    custom_username,
+   } = options;
+ 
+   const lheight = parseInt(line_height, 10);
+@@ -165,9 +166,10 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
+     progress,
+   });
+ 
+-  const apostrophe = ["x", "s"].includes(name.slice(-1)) ? "" : "s";
++  const displayName = custom_username || name;
++  const apostrophe = ["x", "s"].includes(displayName.slice(-1)) ? "" : "s";
+   const card = new Card({
+-    title: `${encodeHTML(name)}'${apostrophe} GitHub Stats`,
++    title: `${encodeHTML(displayName)}'${apostrophe} GitHub Stats`,
+     width: 495,
+     height,
+     colors: {

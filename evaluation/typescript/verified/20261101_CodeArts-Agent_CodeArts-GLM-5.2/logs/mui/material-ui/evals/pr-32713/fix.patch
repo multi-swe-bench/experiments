@@ -1,0 +1,85 @@
+diff --git a/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js b/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js
+index d1ddc7f6..70728693 100644
+--- a/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js
++++ b/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js
+@@ -16,6 +16,71 @@ function callIfFn(maybeFn, arg) {
+   return typeof maybeFn === 'function' ? maybeFn(arg) : maybeFn;
+ }
+ 
++// Returns the min-width (in px) declared in a media query, or `null` if it
++// does not contain one (e.g. `@media print` or `@media (max-width: 600px)`).
++function getMinWidthFromMediaQuery(mediaQuery) {
++  if (typeof mediaQuery !== 'string') {
++    return null;
++  }
++  const match = mediaQuery.match(/min-width:\s*(\d+(?:\.\d+)?)px/);
++  return match ? parseFloat(match[1]) : null;
++}
++
++// Sort the styles so that media queries are ordered from the smallest
++// `min-width` to the largest. This guarantees that a custom media query such
++// as `@media (min-width:0px) and (orientation: landscape)` is placed before
++// `@media (min-width:600px)`. Custom media queries are placed right after the
++// breakpoint with the same (or smaller) `min-width` so that more specific
++// queries override the base ones. Non media-query declarations (regular CSS
++// properties, nested selectors, ...) keep their original relative order and
++// always come first.
++function sortMediaQueries(breakpointKeys, css) {
++  const breakpointMinWidths = breakpointKeys.map((key) => getMinWidthFromMediaQuery(key));
++
++  const getSortValue = (key) => {
++    const exactIndex = breakpointKeys.indexOf(key);
++    if (exactIndex !== -1) {
++      return exactIndex;
++    }
++    if (typeof key === 'string' && key.indexOf('@media') === 0) {
++      const minWidth = getMinWidthFromMediaQuery(key);
++      if (minWidth !== null) {
++        // Place custom media queries right after the largest breakpoint whose
++        // `min-width` is smaller than or equal to the custom one.
++        let position = 0;
++        for (let i = 0; i < breakpointMinWidths.length; i += 1) {
++          if (breakpointMinWidths[i] !== null && breakpointMinWidths[i] <= minWidth) {
++            position = i + 1;
++          }
++        }
++        return position - 0.5;
++      }
++      // Media queries without a `min-width` (e.g. `@media print`) are kept at
++      // the end, preserving their original relative order.
++      return Number.POSITIVE_INFINITY;
++    }
++    // Regular CSS properties and nested selectors come first.
++    return -1;
++  };
++
++  return Object.keys(css)
++    .sort((a, b) => {
++      const valueA = getSortValue(a);
++      const valueB = getSortValue(b);
++      if (valueA < valueB) {
++        return -1;
++      }
++      if (valueA > valueB) {
++        return 1;
++      }
++      return 0;
++    })
++    .reduce((acc, key) => {
++      acc[key] = css[key];
++      return acc;
++    }, {});
++}
++
+ // eslint-disable-next-line @typescript-eslint/naming-convention
+ export function unstable_createStyleFunctionSx(styleFunctionMapping = defaultStyleFunctionMapping) {
+   const propToStyleFunction = Object.keys(styleFunctionMapping).reduce((acc, styleFnName) => {
+@@ -86,7 +151,7 @@ export function unstable_createStyleFunctionSx(styleFunctionMapping = defaultSty
+         }
+       });
+ 
+-      return removeUnusedBreakpoints(breakpointsKeys, css);
++      return sortMediaQueries(breakpointsKeys, removeUnusedBreakpoints(breakpointsKeys, css));
+     }
+ 
+     return Array.isArray(sx) ? sx.map(traverse) : traverse(sx);

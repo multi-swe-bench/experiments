@@ -1,0 +1,140 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 1365cb2..a54941c 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -709,6 +709,8 @@ function serialize_update_assignment(state, id, init, value, assignment, contain
+ 		b.block([assignment.grouped])
+ 	);
+ 
++	const init_value = init ?? b.id('$.UNINITIALIZED');
++
+ 	if (contains_call_expression && assignment.singular) {
+ 		state.init.push(assignment.singular);
+ 	} else {
+@@ -719,20 +721,20 @@ function serialize_update_assignment(state, id, init, value, assignment, contain
+ 					grouped: assignment.grouped
+ 				});
+ 			} else {
+-				state.init.push(b.var(id, init));
++				state.init.push(b.var(id, init_value));
+ 				state.update.push({
+ 					grouped
+ 				});
+ 			}
+ 		} else {
+ 			if (assignment.singular) {
+-				state.init.push(b.var(id, init));
++				state.init.push(b.var(id, init_value));
+ 				state.update.push({
+ 					singular: assignment.singular,
+ 					grouped
+ 				});
+ 			} else {
+-				state.init.push(b.var(id, init));
++				state.init.push(b.var(id, init_value));
+ 				state.update.push({
+ 					grouped
+ 				});
+diff --git a/packages/svelte/src/internal/client/dom/elements/attributes.js b/packages/svelte/src/internal/client/dom/elements/attributes.js
+index 50b18bd..c5b5aa9 100644
+--- a/packages/svelte/src/internal/client/dom/elements/attributes.js
++++ b/packages/svelte/src/internal/client/dom/elements/attributes.js
+@@ -3,6 +3,7 @@ import { hydrating } from '../hydration.js';
+ import { render_effect } from '../../reactivity/effects.js';
+ import { get_descriptors, map_get, map_set, object_assign } from '../../utils.js';
+ import { AttributeAliases, DelegatedEvents, namespace_svg } from '../../../../constants.js';
++import { UNINITIALIZED } from '../../constants.js';
+ import { delegate } from './events.js';
+ import { autofocus } from './misc.js';
+ 
+@@ -22,11 +23,16 @@ export function remove_input_attr_defaults(dom) {
+ /**
+  * @param {Element} dom
+  * @param {string} attribute
+- * @param {() => string} value
++ * @param {() => string} get_value
+  */
+-export function attr_effect(dom, attribute, value) {
++export function attr_effect(dom, attribute, get_value) {
++	/** @type {string | typeof UNINITIALIZED} */
++	let value = UNINITIALIZED;
++
+ 	render_effect(() => {
+-		attr(dom, attribute, value());
++		if (value === (value = get_value())) return;
++
++		attr(dom, attribute, value);
+ 	});
+ }
+ 
+@@ -67,11 +73,16 @@ export function attr(element, attribute, value) {
+ /**
+  * @param {Element} dom
+  * @param {string} attribute
+- * @param {() => string} value
++ * @param {() => string} get_value
+  */
+-export function xlink_attr_effect(dom, attribute, value) {
++export function xlink_attr_effect(dom, attribute, get_value) {
++	/** @type {string | typeof UNINITIALIZED} */
++	let value = UNINITIALIZED;
++
+ 	render_effect(() => {
+-		xlink_attr(dom, attribute, value());
++		if (value === (value = get_value())) return;
++
++		xlink_attr(dom, attribute, value);
+ 	});
+ }
+ 
+@@ -87,11 +98,16 @@ export function xlink_attr(dom, attribute, value) {
+ /**
+  * @param {any} node
+  * @param {string} prop
+- * @param {() => any} value
++ * @param {() => any} get_value
+  */
+-export function set_custom_element_data_effect(node, prop, value) {
++export function set_custom_element_data_effect(node, prop, get_value) {
++	/** @type {any} */
++	let value = UNINITIALIZED;
++
+ 	render_effect(() => {
+-		set_custom_element_data(node, prop, value());
++		if (value === (value = get_value())) return;
++
++		set_custom_element_data(node, prop, value);
+ 	});
+ }
+ 
+diff --git a/packages/svelte/src/internal/index.js b/packages/svelte/src/internal/index.js
+index a8286ea..5851517 100644
+--- a/packages/svelte/src/internal/index.js
++++ b/packages/svelte/src/internal/index.js
+@@ -61,6 +61,7 @@ export * from './client/render.js';
+ export * from './client/validate.js';
+ export { raf } from './client/timing.js';
+ export { proxy, unstate } from './client/proxy.js';
++export { UNINITIALIZED } from './client/constants.js';
+ export { create_custom_element } from './client/dom/elements/custom-element.js';
+ export {
+ 	child,
+diff --git a/packages/svelte/tests/snapshot/samples/dynamic-attributes-casing/_expected/client/main.svelte.js b/packages/svelte/tests/snapshot/samples/dynamic-attributes-casing/_expected/client/main.svelte.js
+index 65aa3ed..ad2a7d7 100644
+--- a/packages/svelte/tests/snapshot/samples/dynamic-attributes-casing/_expected/client/main.svelte.js
++++ b/packages/svelte/tests/snapshot/samples/dynamic-attributes-casing/_expected/client/main.svelte.js
+@@ -13,11 +13,11 @@ export default function Main($$anchor, $$props) {
+ 	let y = () => 'test';
+ 	var fragment = $.open_frag($$anchor, frag, false);
+ 	var div = $.first_child(fragment);
+-	var div_foobar;
++	var div_foobar = $.UNINITIALIZED;
+ 	var svg = $.sibling($.sibling(div, true));
+-	var svg_viewBox;
++	var svg_viewBox = $.UNINITIALIZED;
+ 	var custom_element = $.sibling($.sibling(svg, true));
+-	var custom_element_fooBar;
++	var custom_element_fooBar = $.UNINITIALIZED;
+ 	var div_1 = $.sibling($.sibling(custom_element, true));
+ 
+ 	$.attr_effect(div_1, "foobar", y);

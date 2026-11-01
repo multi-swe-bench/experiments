@@ -1,0 +1,368 @@
+diff --git a/documentation/docs/98-reference/.generated/compile-errors.md b/documentation/docs/98-reference/.generated/compile-errors.md
+index 16cd361..39777f1 100644
+--- a/documentation/docs/98-reference/.generated/compile-errors.md
++++ b/documentation/docs/98-reference/.generated/compile-errors.md
+@@ -94,6 +94,12 @@ Can only bind to an Identifier or MemberExpression
+ `bind:%name%` is not a valid binding. %explanation%
+ ```
+ 
++### bind_invalid_modifier
++
++```
++`bind:%name%` does not support the `%modifier%` modifier
++```
++
+ ### bind_invalid_target
+ 
+ ```
+diff --git a/packages/svelte/messages/compile-errors/template.md b/packages/svelte/messages/compile-errors/template.md
+index 38ff87d..631a90c 100644
+--- a/packages/svelte/messages/compile-errors/template.md
++++ b/packages/svelte/messages/compile-errors/template.md
+@@ -60,6 +60,10 @@
+ 
+ > `bind:%name%` is not a valid binding. %explanation%
+ 
++## bind_invalid_modifier
++
++> `bind:%name%` does not support the `%modifier%` modifier
++
+ ## bind_invalid_target
+ 
+ > `bind:%name%` can only be used with %elements%
+diff --git a/packages/svelte/src/compiler/errors.js b/packages/svelte/src/compiler/errors.js
+index ad2919b..97ed8ea 100644
+--- a/packages/svelte/src/compiler/errors.js
++++ b/packages/svelte/src/compiler/errors.js
+@@ -716,6 +716,17 @@ export function bind_invalid_name(node, name, explanation) {
+ 	e(node, "bind_invalid_name", explanation ? `\`bind:${name}\` is not a valid binding. ${explanation}` : `\`bind:${name}\` is not a valid binding`);
+ }
+ 
++/**
++ * `bind:%name%` does not support the `%modifier%` modifier
++ * @param {null | number | NodeLike} node
++ * @param {string} name
++ * @param {string} modifier
++ * @returns {never}
++ */
++export function bind_invalid_modifier(node, name, modifier) {
++	e(node, "bind_invalid_modifier", `\`bind:${name}\` does not support the \`${modifier}\` modifier`);
++}
++
+ /**
+  * `bind:%name%` can only be used with %elements%
+  * @param {null | number | NodeLike} node
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/element.js b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+index 9082b76..625f8ed 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/element.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+@@ -517,12 +517,19 @@ function read_attribute(parser) {
+ 	}
+ 
+ 	if (type) {
+-		const [directive_name, ...modifiers] = name.slice(colon_index + 1).split('|');
++		let [directive_name, ...modifiers] = name.slice(colon_index + 1).split('|');
+ 
+ 		if (directive_name === '') {
+ 			e.directive_missing_name({ start, end: start + colon_index + 1 }, name);
+ 		}
+ 
++		// `bind:value:nohydrate` — allow colon-separated modifiers on bind directives
++		if (type === 'BindDirective' && directive_name.includes(':')) {
++			const [real_name, ...extra_modifiers] = directive_name.split(':');
++			directive_name = real_name;
++			modifiers = [...modifiers, ...extra_modifiers];
++		}
++
+ 		if (type === 'StyleDirective') {
+ 			return {
+ 				start,
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/BindDirective.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/BindDirective.js
+index 5b56d9d..19b7a60 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/visitors/BindDirective.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/BindDirective.js
+@@ -19,6 +19,16 @@ import { is_content_editable_binding, is_svg } from '../../../../utils.js';
+ export function BindDirective(node, context) {
+ 	validate_no_const_assignment(node, node.expression, context.state.scope, true);
+ 
++	// `nohydrate` is only supported on form-related bindings, where hydration
++	// would otherwise clobber user-entered values
++	const nohydrate_supported = ['value', 'checked', 'group', 'files', 'textContent', 'innerHTML', 'innerText'];
++
++	for (const modifier of node.modifiers) {
++		if (modifier !== 'nohydrate' || !nohydrate_supported.includes(node.name)) {
++			e.bind_invalid_modifier(node, node.name, modifier);
++		}
++	}
++
+ 	const assignee = node.expression;
+ 	const left = object(assignee);
+ 
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/BindDirective.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/BindDirective.js
+index 7996924..67cd973 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/BindDirective.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/BindDirective.js
+@@ -18,6 +18,8 @@ export function BindDirective(node, context) {
+ 
+ 	const parent = /** @type {SvelteNode} */ (context.path.at(-1));
+ 
++	const nohydrate = node.modifiers.includes('nohydrate');
++
+ 	if (
+ 		dev &&
+ 		context.state.analysis.runes &&
+@@ -150,15 +152,15 @@ export function BindDirective(node, context) {
+ 			// various
+ 			case 'value': {
+ 				if (parent?.type === 'RegularElement' && parent.name === 'select') {
+-					call = b.call(`$.bind_select_value`, context.state.node, get, set);
++					call = b.call(`$.bind_select_value`, context.state.node, get, set, ...(nohydrate ? [b.literal(true)] : []));
+ 				} else {
+-					call = b.call(`$.bind_value`, context.state.node, get, set);
++					call = b.call(`$.bind_value`, context.state.node, get, set, ...(nohydrate ? [b.literal(true)] : []));
+ 				}
+ 				break;
+ 			}
+ 
+ 			case 'files':
+-				call = b.call(`$.bind_files`, context.state.node, get, set);
++				call = b.call(`$.bind_files`, context.state.node, get, set, ...(nohydrate ? [b.literal(true)] : []));
+ 				break;
+ 
+ 			case 'this':
+@@ -173,13 +175,14 @@ export function BindDirective(node, context) {
+ 					b.literal(node.name),
+ 					context.state.node,
+ 					get,
+-					set
++					set,
++					...(nohydrate ? [b.literal(true)] : [])
+ 				);
+ 				break;
+ 
+ 			// checkbox/radio
+ 			case 'checked':
+-				call = b.call(`$.bind_checked`, context.state.node, get, set);
++				call = b.call(`$.bind_checked`, context.state.node, get, set, ...(nohydrate ? [b.literal(true)] : []));
+ 				break;
+ 
+ 			case 'focused':
+@@ -227,7 +230,8 @@ export function BindDirective(node, context) {
+ 					b.array(indexes),
+ 					context.state.node,
+ 					group_getter,
+-					set ?? get
++					set ?? get,
++					...(nohydrate ? [b.literal(true)] : [])
+ 				);
+ 				break;
+ 			}
+diff --git a/packages/svelte/src/compiler/types/template.d.ts b/packages/svelte/src/compiler/types/template.d.ts
+index fd1824d..7ac8b07 100644
+--- a/packages/svelte/src/compiler/types/template.d.ts
++++ b/packages/svelte/src/compiler/types/template.d.ts
+@@ -184,8 +184,10 @@ export namespace AST {
+ 		type: 'BindDirective';
+ 		/** The 'x' in `bind:x` */
+ 		name: string;
+-		/** The y in `bind:x={y}` */
++		/** The 'y' in `bind:x={y}` */
+ 		expression: Identifier | MemberExpression;
++		/** Modifiers, e.g. `nohydrate` in `bind:value|nohydrate` */
++		modifiers: string[];
+ 		/** @internal */
+ 		metadata: {
+ 			binding_group_name: Identifier;
+diff --git a/packages/svelte/src/internal/client/dom/elements/bindings/input.js b/packages/svelte/src/internal/client/dom/elements/bindings/input.js
+index e528d16..b65b812 100644
+--- a/packages/svelte/src/internal/client/dom/elements/bindings/input.js
++++ b/packages/svelte/src/internal/client/dom/elements/bindings/input.js
+@@ -11,9 +11,10 @@ import { is_runes } from '../../../runtime.js';
+  * @param {HTMLInputElement} input
+  * @param {() => unknown} get
+  * @param {(value: unknown) => void} set
++ * @param {boolean} [nohydrate]
+  * @returns {void}
+  */
+-export function bind_value(input, get, set = get) {
++export function bind_value(input, get, set = get, nohydrate = false) {
+ 	var runes = is_runes();
+ 
+ 	listen_to_event_and_reset_event(input, 'input', () => {
+@@ -42,9 +43,11 @@ export function bind_value(input, get, set = get) {
+ 
+ 		var value = get();
+ 
+-		// If we are hydrating and the value has since changed, then use the update value
+-		// from the input instead.
+-		if (hydrating && input.defaultValue !== input.value) {
++		// If we are hydrating, don't clobber the input. Either the value was
++		// changed by the user (in which case we want to preserve it), or the
++		// `nohydrate` modifier was used (in which case we always want to take
++		// the value from the DOM).
++		if (hydrating && (nohydrate || input.defaultValue !== input.value)) {
+ 			set(input.value);
+ 			return;
+ 		}
+@@ -78,9 +81,10 @@ const pending = new Set();
+  * @param {HTMLInputElement} input
+  * @param {() => unknown} get
+  * @param {(value: unknown) => void} set
++ * @param {boolean} [nohydrate]
+  * @returns {void}
+  */
+-export function bind_group(inputs, group_index, input, get, set = get) {
++export function bind_group(inputs, group_index, input, get, set = get, nohydrate = false) {
+ 	var is_checkbox = input.getAttribute('type') === 'checkbox';
+ 	var binding_group = inputs;
+ 
+@@ -116,9 +120,9 @@ export function bind_group(inputs, group_index, input, get, set = get) {
+ 	render_effect(() => {
+ 		var value = get();
+ 
+-		// If we are hydrating and the value has since changed, then use the update value
+-		// from the input instead.
+-		if (hydrating && input.defaultChecked !== input.checked) {
++		// If we are hydrating, don't clobber the input. Either the checked
++		// state was changed by the user, or the `nohydrate` modifier was used.
++		if (hydrating && (nohydrate || input.defaultChecked !== input.checked)) {
+ 			hydration_mismatch = true;
+ 			return;
+ 		}
+@@ -172,9 +176,10 @@ export function bind_group(inputs, group_index, input, get, set = get) {
+  * @param {HTMLInputElement} input
+  * @param {() => unknown} get
+  * @param {(value: unknown) => void} set
++ * @param {boolean} [nohydrate]
+  * @returns {void}
+  */
+-export function bind_checked(input, get, set = get) {
++export function bind_checked(input, get, set = get, nohydrate = false) {
+ 	listen_to_event_and_reset_event(input, 'change', () => {
+ 		var value = input.checked;
+ 		set(value);
+@@ -186,6 +191,14 @@ export function bind_checked(input, get, set = get) {
+ 
+ 	render_effect(() => {
+ 		var value = get();
++
++		// If we are hydrating and the `nohydrate` modifier was used, take the
++		// checked state from the DOM instead of clobbering it.
++		if (hydrating && nohydrate) {
++			set(input.checked);
++			return;
++		}
++
+ 		input.checked = Boolean(value);
+ 	});
+ }
+@@ -233,13 +246,21 @@ function to_number(value) {
+  * @param {HTMLInputElement} input
+  * @param {() => FileList | null} get
+  * @param {(value: FileList | null) => void} set
++ * @param {boolean} [nohydrate]
+  */
+-export function bind_files(input, get, set = get) {
++export function bind_files(input, get, set = get, nohydrate = false) {
+ 	listen_to_event_and_reset_event(input, 'change', () => {
+ 		set(input.files);
+ 	});
+ 
+ 	render_effect(() => {
++		// If we are hydrating and the `nohydrate` modifier was used, take the
++		// files from the DOM instead of clobbering them.
++		if (hydrating && nohydrate) {
++			set(input.files);
++			return;
++		}
++
+ 		input.files = get();
+ 	});
+ }
+diff --git a/packages/svelte/src/internal/client/dom/elements/bindings/select.js b/packages/svelte/src/internal/client/dom/elements/bindings/select.js
+index 4d3dbff..20b6128 100644
+--- a/packages/svelte/src/internal/client/dom/elements/bindings/select.js
++++ b/packages/svelte/src/internal/client/dom/elements/bindings/select.js
+@@ -2,6 +2,7 @@ import { effect } from '../../../reactivity/effects.js';
+ import { listen_to_event_and_reset_event } from './shared.js';
+ import { untrack } from '../../../runtime.js';
+ import { is } from '../../../proxy.js';
++import { hydrating } from '../../hydration.js';
+ 
+ /**
+  * Selects the correct option(s) (depending on whether this is a multiple select)
+@@ -75,9 +76,10 @@ export function init_select(select, get_value) {
+  * @param {HTMLSelectElement} select
+  * @param {() => unknown} get
+  * @param {(value: unknown) => void} set
++ * @param {boolean} [nohydrate]
+  * @returns {void}
+  */
+-export function bind_select_value(select, get, set = get) {
++export function bind_select_value(select, get, set = get, nohydrate = false) {
+ 	var mounting = true;
+ 
+ 	listen_to_event_and_reset_event(select, 'change', () => {
+@@ -98,6 +100,25 @@ export function bind_select_value(select, get, set = get) {
+ 	// Needs to be an effect, not a render_effect, so that in case of each loops the logic runs after the each block has updated
+ 	effect(() => {
+ 		var value = get();
++
++		// If we are hydrating and the `nohydrate` modifier was used, take the
++		// selection from the DOM instead of clobbering it.
++		if (hydrating && nohydrate) {
++			if (select.multiple) {
++				value = [].map.call(select.querySelectorAll(':checked'), get_option_value);
++			} else {
++				/** @type {HTMLOptionElement | null} */
++				var selected_option = select.querySelector(':checked');
++				value = selected_option && get_option_value(selected_option);
++			}
++
++			set(value);
++			// @ts-ignore
++			select.__value = value;
++			mounting = false;
++			return;
++		}
++
+ 		select_option(select, value, mounting);
+ 
+ 		// Mounting and value undefined -> take selection from dom
+diff --git a/packages/svelte/src/internal/client/dom/elements/bindings/universal.js b/packages/svelte/src/internal/client/dom/elements/bindings/universal.js
+index 5b10abd..5412f13 100644
+--- a/packages/svelte/src/internal/client/dom/elements/bindings/universal.js
++++ b/packages/svelte/src/internal/client/dom/elements/bindings/universal.js
+@@ -1,14 +1,16 @@
+ import { render_effect, teardown } from '../../../reactivity/effects.js';
+ import { listen } from './shared.js';
++import { hydrating } from '../../hydration.js';
+ 
+ /**
+  * @param {'innerHTML' | 'textContent' | 'innerText'} property
+  * @param {HTMLElement} element
+  * @param {() => unknown} get
+  * @param {(value: unknown) => void} set
++ * @param {boolean} [nohydrate]
+  * @returns {void}
+  */
+-export function bind_content_editable(property, element, get, set = get) {
++export function bind_content_editable(property, element, get, set = get, nohydrate = false) {
+ 	element.addEventListener('input', () => {
+ 		// @ts-ignore
+ 		set(element[property]);
+@@ -17,6 +19,14 @@ export function bind_content_editable(property, element, get, set = get) {
+ 	render_effect(() => {
+ 		var value = get();
+ 
++		// If we are hydrating and the `nohydrate` modifier was used, take the
++		// value from the DOM instead of clobbering it.
++		if (hydrating && nohydrate) {
++			// @ts-ignore
++			set(element[property]);
++			return;
++		}
++
+ 		if (element[property] !== value) {
+ 			if (value == null) {
+ 				// @ts-ignore

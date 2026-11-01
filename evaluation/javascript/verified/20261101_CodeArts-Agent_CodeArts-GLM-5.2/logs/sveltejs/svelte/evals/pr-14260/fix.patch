@@ -1,0 +1,13 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 8c2429b..080babd 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -1309,7 +1309,7 @@ const template = {
+ 						parent.type === 'RegularElement' ||
+ 						parent.type === 'SvelteElement' ||
+ 						parent.type === 'SvelteFragment') &&
+-					parent.attributes.some((attr) => (attr.type = 'LetDirective'))
++					parent.attributes.some((attr) => attr.type === 'LetDirective')
+ 			)
+ 		) {
+ 			aliased_slot_name = `${name}_render`;

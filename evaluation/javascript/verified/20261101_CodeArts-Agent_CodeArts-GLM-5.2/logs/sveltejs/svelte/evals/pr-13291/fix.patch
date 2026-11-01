@@ -1,0 +1,78 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index c14b577..83550a6 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -422,16 +422,35 @@ const instance_script = {
+ 					/** @type {number} */ (node.body.expression.start),
+ 					'let '
+ 				);
+-				state.str.prependRight(
+-					/** @type {number} */ (node.body.expression.right.start),
+-					'$derived('
+-				);
+-				if (node.body.expression.right.end !== node.end) {
+-					state.str.update(
+-						/** @type {number} */ (node.body.expression.right.end),
+-						/** @type {number} */ (node.end),
+-						');'
+-					);
++
++				const right = node.body.expression.right;
++				let rhs_start = /** @type {number} */ (right.start);
++				let rhs_end = /** @type {number} */ (right.end);
++
++				// If the right-hand side is wrapped in parentheses, e.g.
++				// `$: double = (console.log(double), count * 2);`, the parens
++				// are not part of the AST node, so we need to include them so
++				// that the resulting `$derived(...)` is syntactically valid
++				// (and, in the case of sequence expressions, keeps the comma
++				// expression grouped together).
++				let i = rhs_start - 1;
++				while (i >= 0) {
++					while (i >= 0 && /\s/.test(state.str.original[i])) i--;
++					if (state.str.original[i] === '(') {
++						rhs_start = i;
++						i--;
++					} else {
++						break;
++					}
++				}
++
++				if (rhs_start !== right.start) {
++					rhs_end = /** @type {number} */ (node.body.expression.end);
++				}
++
++				state.str.prependRight(rhs_start, '$derived(');
++				if (rhs_end !== node.end) {
++					state.str.update(rhs_end, /** @type {number} */ (node.end), ');');
+ 				} else {
+ 					state.str.appendLeft(/** @type {number} */ (node.end), ');');
+ 				}
+diff --git a/packages/svelte/tests/migrate/samples/derivations-parens/input.svelte b/packages/svelte/tests/migrate/samples/derivations-parens/input.svelte
+new file mode 100644
+index 0000000..dd62b7f
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/derivations-parens/input.svelte
+@@ -0,0 +1,7 @@
++<script>
++	let count = 0;
++	$: double = (console.log(double), count * 2);
++	$: triple = ((count, count * 3));
++</script>
++
++{double} / {triple}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/migrate/samples/derivations-parens/output.svelte b/packages/svelte/tests/migrate/samples/derivations-parens/output.svelte
+new file mode 100644
+index 0000000..6263547
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/derivations-parens/output.svelte
+@@ -0,0 +1,7 @@
++<script>
++	let count = 0;
++	let double = $derived((console.log(double), count * 2));
++	let triple = $derived(((count, count * 3)));
++</script>
++
++{double} / {triple}
+\ No newline at end of file

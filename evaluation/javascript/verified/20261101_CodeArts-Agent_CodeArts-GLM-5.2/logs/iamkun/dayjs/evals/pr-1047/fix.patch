@@ -1,0 +1,219 @@
+diff --git a/build/esm.js b/build/esm.js
+index a778de2..87852fd 100644
+--- a/build/esm.js
++++ b/build/esm.js
+@@ -22,6 +22,11 @@ const localeTypePath = path.join(process.env.PWD, 'esm/locale', `index${typeFile
+ 
+     await promisify(ncp)('./types/', './esm')
+ 
++    const localesFilePath = path.join(process.env.PWD, 'esm', 'locales.js')
++    const readLocalesFile = await promisify(fs.readFile)(localesFilePath, 'utf8')
++    const localesResult = readLocalesFile.replace("'dayjs'", "'./index'")
++    await promisify(fs.writeFile)(localesFilePath, localesResult, 'utf8')
++
+     const readLocaleFile = await promisify(fs.readFile)(localeTypePath, 'utf8')
+     const localResult = readLocaleFile.replace("'dayjs", "'dayjs/esm")
+     await promisify(fs.writeFile)(localeTypePath, localResult, 'utf8')
+diff --git a/build/index.js b/build/index.js
+index 683170d..c6dd671 100644
+--- a/build/index.js
++++ b/build/index.js
+@@ -36,6 +36,12 @@ async function build(option) {
+       }))
+     })
+ 
++    build(configFactory({
++      input: './src/locales.js',
++      fileName: './locales.js',
++      name: 'dayjs_locales'
++    }))
++
+     build(configFactory({
+       input: './src/index.js',
+       fileName: './dayjs.min.js'
+diff --git a/src/locales.js b/src/locales.js
+new file mode 100644
+index 0000000..5c5fd5c
+--- /dev/null
++++ b/src/locales.js
+@@ -0,0 +1,160 @@
++// This file exports the list of all available locales that ship with dayjs
++// and a helper to load them all (or a given list) at once.
++// Importing this module registers every locale as a side effect.
++/* eslint-disable camelcase, max-len */
++import dayjs from 'dayjs'
++import af from './locale/af'
++import am from './locale/am'
++import ar_dz from './locale/ar-dz'
++import ar_kw from './locale/ar-kw'
++import ar_ly from './locale/ar-ly'
++import ar_ma from './locale/ar-ma'
++import ar_sa from './locale/ar-sa'
++import ar_tn from './locale/ar-tn'
++import ar from './locale/ar'
++import az from './locale/az'
++import be from './locale/be'
++import bg from './locale/bg'
++import bi from './locale/bi'
++import bm from './locale/bm'
++import bn from './locale/bn'
++import bo from './locale/bo'
++import br from './locale/br'
++import bs from './locale/bs'
++import ca from './locale/ca'
++import cs from './locale/cs'
++import cv from './locale/cv'
++import cy from './locale/cy'
++import da from './locale/da'
++import de_at from './locale/de-at'
++import de_ch from './locale/de-ch'
++import de from './locale/de'
++import dv from './locale/dv'
++import el from './locale/el'
++import en_SG from './locale/en-SG'
++import en_au from './locale/en-au'
++import en_ca from './locale/en-ca'
++import en_gb from './locale/en-gb'
++import en_ie from './locale/en-ie'
++import en_il from './locale/en-il'
++import en_in from './locale/en-in'
++import en_nz from './locale/en-nz'
++import en_tt from './locale/en-tt'
++import en from './locale/en'
++import eo from './locale/eo'
++import es_do from './locale/es-do'
++import es_pr from './locale/es-pr'
++import es_us from './locale/es-us'
++import es from './locale/es'
++import et from './locale/et'
++import eu from './locale/eu'
++import fa from './locale/fa'
++import fi from './locale/fi'
++import fo from './locale/fo'
++import fr_ca from './locale/fr-ca'
++import fr_ch from './locale/fr-ch'
++import fr from './locale/fr'
++import fy from './locale/fy'
++import ga from './locale/ga'
++import gd from './locale/gd'
++import gl from './locale/gl'
++import gom_latn from './locale/gom-latn'
++import gu from './locale/gu'
++import he from './locale/he'
++import hi from './locale/hi'
++import hr from './locale/hr'
++import ht from './locale/ht'
++import hu from './locale/hu'
++import hy_am from './locale/hy-am'
++import id from './locale/id'
++import is from './locale/is'
++import it_ch from './locale/it-ch'
++import it from './locale/it'
++import ja from './locale/ja'
++import jv from './locale/jv'
++import ka from './locale/ka'
++import kk from './locale/kk'
++import km from './locale/km'
++import kn from './locale/kn'
++import ko from './locale/ko'
++import ku from './locale/ku'
++import ky from './locale/ky'
++import lb from './locale/lb'
++import lo from './locale/lo'
++import lt from './locale/lt'
++import lv from './locale/lv'
++import me from './locale/me'
++import mi from './locale/mi'
++import mk from './locale/mk'
++import ml from './locale/ml'
++import mn from './locale/mn'
++import mr from './locale/mr'
++import ms_my from './locale/ms-my'
++import ms from './locale/ms'
++import mt from './locale/mt'
++import my from './locale/my'
++import nb from './locale/nb'
++import ne from './locale/ne'
++import nl_be from './locale/nl-be'
++import nl from './locale/nl'
++import nn from './locale/nn'
++import oc_lnc from './locale/oc-lnc'
++import pa_in from './locale/pa-in'
++import pl from './locale/pl'
++import pt_br from './locale/pt-br'
++import pt from './locale/pt'
++import ro from './locale/ro'
++import ru from './locale/ru'
++import rw from './locale/rw'
++import sd from './locale/sd'
++import se from './locale/se'
++import si from './locale/si'
++import sk from './locale/sk'
++import sl from './locale/sl'
++import sq from './locale/sq'
++import sr_cyrl from './locale/sr-cyrl'
++import sr from './locale/sr'
++import ss from './locale/ss'
++import sv from './locale/sv'
++import sw from './locale/sw'
++import ta from './locale/ta'
++import te from './locale/te'
++import tet from './locale/tet'
++import tg from './locale/tg'
++import th from './locale/th'
++import tk from './locale/tk'
++import tl_ph from './locale/tl-ph'
++import tlh from './locale/tlh'
++import tr from './locale/tr'
++import tzl from './locale/tzl'
++import tzm_latn from './locale/tzm-latn'
++import tzm from './locale/tzm'
++import ug_cn from './locale/ug-cn'
++import uk from './locale/uk'
++import ur from './locale/ur'
++import uz_latn from './locale/uz-latn'
++import uz from './locale/uz'
++import vi from './locale/vi'
++import x_pseudo from './locale/x-pseudo'
++import yo from './locale/yo'
++import zh_cn from './locale/zh-cn'
++import zh_hk from './locale/zh-hk'
++import zh_tw from './locale/zh-tw'
++import zh from './locale/zh'
++
++const locales = [af, am, ar_dz, ar_kw, ar_ly, ar_ma, ar_sa, ar_tn, ar, az, be, bg, bi, bm, bn, bo, br, bs, ca, cs, cv, cy, da, de_at, de_ch, de, dv, el, en_SG, en_au, en_ca, en_gb, en_ie, en_il, en_in, en_nz, en_tt, en, eo, es_do, es_pr, es_us, es, et, eu, fa, fi, fo, fr_ca, fr_ch, fr, fy, ga, gd, gl, gom_latn, gu, he, hi, hr, ht, hu, hy_am, id, is, it_ch, it, ja, jv, ka, kk, km, kn, ko, ku, ky, lb, lo, lt, lv, me, mi, mk, ml, mn, mr, ms_my, ms, mt, my, nb, ne, nl_be, nl, nn, oc_lnc, pa_in, pl, pt_br, pt, ro, ru, rw, sd, se, si, sk, sl, sq, sr_cyrl, sr, ss, sv, sw, ta, te, tet, tg, th, tk, tl_ph, tlh, tr, tzl, tzm_latn, tzm, ug_cn, uk, ur, uz_latn, uz, vi, x_pseudo, yo, zh_cn, zh_hk, zh_tw, zh]
++
++/**
++ * Load all locales (or a list of locales passed in) into dayjs at once.
++ * @param {Array} [list] - an array of locale objects to load; defaults to all available locales
++ * @returns {Array} the array of loaded locales
++ */
++const loadAllLocales = (list) => {
++  (list || locales).forEach((locale) => {
++    dayjs.locale(locale, null, true)
++  })
++  return list || locales
++}
++
++export { loadAllLocales }
++export default locales
+diff --git a/types/locale/index.d.ts b/types/locale/index.d.ts
+index bd2dca2..f33b79f 100644
+--- a/types/locale/index.d.ts
++++ b/types/locale/index.d.ts
+@@ -9,3 +9,15 @@ declare module 'dayjs/locale/*' {
+ 
+   export = locale
+ }
++
++declare module 'dayjs/locales' {
++  namespace dayjsLocales {
++    interface Locale extends ILocale {}
++  }
++
++  const locales: dayjsLocales.Locale[]
++
++  export const loadAllLocales: (list?: dayjsLocales.Locale[]) => dayjsLocales.Locale[]
++
++  export default locales
++}

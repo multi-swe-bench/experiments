@@ -1,0 +1,142 @@
+diff --git a/packages/svelte/src/internal/client/render.js b/packages/svelte/src/internal/client/render.js
+index 0861acd..2ab8f63 100644
+--- a/packages/svelte/src/internal/client/render.js
++++ b/packages/svelte/src/internal/client/render.js
+@@ -48,7 +48,8 @@ import {
+ 	get,
+ 	set,
+ 	is_signals_recorded,
+-	inspect_fn
++	inspect_fn,
++	get_last_component
+ } from './runtime.js';
+ import {
+ 	render_effect,
+@@ -1338,7 +1339,7 @@ export function bind_prop(props, prop, value) {
+ }
+ 
+ /**
+- * @param {Element} element_or_component
++ * @param {Element | Record<string, any> | undefined} element_or_component
+  * @param {(value: unknown, ...parts: unknown[]) => void} update
+  * @param {(...parts: unknown[]) => unknown} get_value
+  * @param {() => unknown[]} [get_parts] Set if the this binding is used inside an each block,
+@@ -1351,6 +1352,10 @@ export function bind_this(element_or_component, update, get_value, get_parts) {
+ 	/** @type {unknown[]} */
+ 	let parts;
+ 
++	if (element_or_component === undefined) {
++		element_or_component = get_last_component();
++	}
++
+ 	const e = effect(() => {
+ 		old_parts = parts;
+ 		// We only track changes to the parts, not the value itself to avoid unnecessary reruns.
+diff --git a/packages/svelte/src/internal/client/runtime.js b/packages/svelte/src/internal/client/runtime.js
+index 79eed38..89a477c 100644
+--- a/packages/svelte/src/internal/client/runtime.js
++++ b/packages/svelte/src/internal/client/runtime.js
+@@ -7,7 +7,8 @@ import {
+ 	is_array,
+ 	is_frozen,
+ 	object_freeze,
+-	object_prototype
++	object_prototype,
++	define_property
+ } from './utils.js';
+ import { unstate } from './proxy.js';
+ import { pre_effect } from './reactivity/computations.js';
+@@ -30,6 +31,7 @@ import {
+ 	STATE_SYMBOL
+ } from './constants.js';
+ import { flush_tasks } from './dom/task.js';
++import { unmount } from './render.js';
+ 
+ const IS_EFFECT = EFFECT | PRE_EFFECT | RENDER_EFFECT;
+ 
+@@ -103,6 +105,9 @@ export let current_block = null;
+ /** @type {import('./types.js').ComponentContext | null} */
+ export let current_component_context = null;
+ 
++/** @type {Record<string, any> | null} */
++let last_component = null;
++
+ export let updating_derived = false;
+ 
+ /**
+@@ -1239,9 +1244,72 @@ export function pop(component) {
+ 		current_component_context = context_stack_item.p;
+ 		context_stack_item.m = true;
+ 	}
+-	// Micro-optimization: Don't set .a above to the empty object
+-	// so it can be garbage-collected when the return here is unused
+-	return component || /** @type {T} */ ({});
++
++	const instance = component || /** @type {T} */ ({});
++
++	if (context_stack_item !== null) {
++		last_component = instance;
++		if (!context_stack_item.r) {
++			attach_legacy_methods(instance, context_stack_item);
++		}
++	}
++
++	return instance;
++}
++
++/**
++ * Retrieves the most recently created component instance. This is used by
++ * `bind:this` for components that don't return their instance explicitly
++ * (e.g. legacy components without exports), so that the binding receives a
++ * usable component instance.
++ * @returns {Record<string, any> | undefined}
++ */
++export function get_last_component() {
++	const component = last_component;
++	last_component = null;
++	return component ?? undefined;
++}
++
++/**
++ * Attaches the Svelte 4 `$on`, `$set` and `$destroy` methods to a legacy
++ * component instance.
++ * @param {Record<string, any>} instance
++ * @param {import('./types.js').ComponentContext} context
++ * @returns {void}
++ */
++function attach_legacy_methods(instance, context) {
++	define_property(instance, '$on', {
++		value: (/** @type {string} */ event, /** @type {(...args: any[]) => any} */ callback) => {
++			const events = /** @type {Record<string, Function[]>} */ (context.s.$$events ??= {});
++			/** @param {any[]} args */
++			const cb = (...args) => callback.call(instance, ...args);
++			(events[event] ||= []).push(cb);
++			return () => {
++				events[event] = events[event].filter((/** @type {Function} */ fn) => fn !== cb);
++			};
++		},
++		writable: true,
++		configurable: true,
++		enumerable: false
++	});
++
++	define_property(instance, '$set', {
++		value: (/** @type {Record<string, any>} */ next) => {
++			Object.assign(context.s, next);
++		},
++		writable: true,
++		configurable: true,
++		enumerable: false
++	});
++
++	define_property(instance, '$destroy', {
++		value: () => {
++			unmount(instance);
++		},
++		writable: true,
++		configurable: true,
++		enumerable: false
++	});
+ }
+ 
+ /**

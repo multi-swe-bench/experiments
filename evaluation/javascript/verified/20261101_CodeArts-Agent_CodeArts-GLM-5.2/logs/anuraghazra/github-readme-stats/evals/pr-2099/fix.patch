@@ -1,0 +1,161 @@
+diff --git a/readme.md b/readme.md
+index 58af283..c7a1b78 100644
+--- a/readme.md
++++ b/readme.md
+@@ -303,7 +303,7 @@ You can provide multiple comma-separated values in the bg_color option to render
+ 
+ -   `hide` - Hide the languages specified from the card _(Comma-separated values)_. Default: `[] (blank array)`.
+ -   `hide_title` - _(boolean)_. Default: `false`.
+--   `layout` - Switch between two available layouts `default` & `compact`. Default: `default`.
++-   `layout` - Switch between available layouts `default`, `compact` & `pie`. Default: `default`.
+ -   `card_width` - Set the card's width manually _(number)_. Default `300`.
+ -   `langs_count` - Show more languages on the card, between 1-10 _(number)_. Default `5`.
+ -   `exclude_repo` - Exclude specified repositories _(Comma-separated values)_. Default: `[] (blank array)`.
+@@ -420,7 +420,15 @@ You can use the `&langs_count=` option to increase or decrease the number of lan
+ You can use the `&layout=compact` option to change the card design.
+ 
+ ```md
+-[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra&layout=compact)](https://github.com/anuraghazra/github-readme-stats)
++[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra&layout=compact)](https://github.com-anuraghazra/github-readme-stats)
++```
++
++### Pie Chart Language Card Layout
++
++You can use the `&layout=pie` option to display your most used languages as a pie chart.
++
++```md
++[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra&layout=pie)](https://github.com/anuraghazra/github-readme-stats)
+ ```
+ 
+ ### Hide Progress Bars
+diff --git a/src/cards/top-languages-card.js b/src/cards/top-languages-card.js
+index 816b651..39ff1cf 100644
+--- a/src/cards/top-languages-card.js
++++ b/src/cards/top-languages-card.js
+@@ -17,6 +17,7 @@ const MIN_CARD_WIDTH = 280;
+ const DEFAULT_LANGS_COUNT = 5;
+ const DEFAULT_LANG_COLOR = "#858585";
+ const CARD_PADDING = 25;
++const PIE_CHART_RADIUS = 50;
+ 
+ /**
+  * @typedef {import("../fetchers/types").Lang} Lang
+@@ -157,6 +158,86 @@ const renderNormalLayout = (langs, width, totalLanguageSize) => {
+   }).join("");
+ };
+ 
++/**
++ * Creates the SVG node for a pie chart displaying the user's most frequently
++ * used programming languages.
++ *
++ * @param {object} props Function properties.
++ * @param {Lang[]} props.langs Array of programming languages.
++ * @param {number} props.totalSize Total size of all languages.
++ * @param {number} props.radius Radius of the pie chart.
++ * @returns {string} Pie chart SVG node.
++ */
++const createPieChartNode = ({ langs, totalSize, radius }) => {
++  const diameter = radius * 2;
++  const centerX = radius;
++  const centerY = radius;
++
++  let currentAngle = 0;
++  const paths = langs
++    .map((lang) => {
++      const percentage = lang.size / totalSize;
++      const angle = percentage * 2 * Math.PI;
++      const endAngle = currentAngle + angle;
++
++      const startX = centerX + radius * Math.cos(currentAngle);
++      const startY = centerY + radius * Math.sin(currentAngle);
++      const endX = centerX + radius * Math.cos(endAngle);
++      const endY = centerY + radius * Math.sin(endAngle);
++
++      const largeArcFlag = angle > Math.PI ? 1 : 0;
++
++      const path = `
++        <path
++          data-testid="lang-progress"
++          d="M ${centerX} ${centerY} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY} Z"
++          fill="${lang.color || DEFAULT_LANG_COLOR}"
++        />
++      `;
++
++      currentAngle = endAngle;
++      return path;
++    })
++    .join("");
++
++  return `
++    <svg width="${diameter}" height="${diameter}" viewBox="0 0 ${diameter} ${diameter}">
++      ${paths}
++    </svg>
++  `;
++};
++
++/**
++ * Renders pie chart layout to display user's most frequently used programming
++ * languages.
++ *
++ * @param {Lang[]} langs Array of programming languages.
++ * @param {number} width Card width.
++ * @param {number} totalLanguageSize Total size of all languages.
++ * @returns {string} Pie chart layout card SVG object.
++ */
++const renderPieChartLayout = (langs, width, totalLanguageSize) => {
++  const diameter = PIE_CHART_RADIUS * 2;
++  const legend = createLanguageTextNode({
++    langs,
++    totalSize: totalLanguageSize,
++    hideProgress: false,
++  });
++
++  return `
++    <g transform="translate(0, 0)">
++      ${createPieChartNode({
++        langs,
++        totalSize: totalLanguageSize,
++        radius: PIE_CHART_RADIUS,
++      })}
++    </g>
++    <g transform="translate(${diameter + 20}, 0)">
++      ${legend}
++    </g>
++  `;
++};
++
+ /**
+  * Renders compact layout to display user's most frequently used programming languages.
+  *
+@@ -237,6 +318,18 @@ const calculateNormalLayoutHeight = (totalLangs) => {
+   return 45 + (totalLangs + 1) * 40;
+ };
+ 
++/**
++ * Calculates height for the pie chart layout.
++ *
++ * @param {number} totalLangs Total number of languages.
++ * @returns {number} Card height.
++ */
++const calculatePieChartLayoutHeight = (totalLangs) => {
++  const legendHeight = Math.ceil(totalLangs / 2) * 25;
++  const contentHeight = Math.max(PIE_CHART_RADIUS * 2, legendHeight);
++  return 55 + contentHeight + 10;
++};
++
+ /**
+  *  Hides languages and trims the list to show only the top N languages.
+  *
+@@ -316,7 +409,11 @@ const renderTopLanguages = (topLangs, options = {}) => {
+   let height = calculateNormalLayoutHeight(langs.length);
+ 
+   let finalLayout = "";
+-  if (layout === "compact" || hide_progress == true) {
++  if (layout === "pie") {
++    height = calculatePieChartLayoutHeight(langs.length);
++
++    finalLayout = renderPieChartLayout(langs, width, totalLanguageSize);
++  } else if (layout === "compact" || hide_progress == true) {
+     height =
+       calculateCompactLayoutHeight(langs.length) + (hide_progress ? -25 : 0);
+ 

@@ -1,0 +1,18 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/element.js b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+index 07af4c8..0be1418 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/element.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+@@ -196,6 +196,13 @@ export default function element(parser) {
+ 			} else if (attribute.name !== 'this') {
+ 				unique_names.push(attribute.name);
+ 			}
++		} else if (attribute.type === 'ClassDirective' || attribute.type === 'StyleDirective') {
++			const unique_name = `${attribute.type === 'ClassDirective' ? 'class' : 'style'}:${attribute.name}`;
++			if (unique_names.includes(unique_name)) {
++				e.attribute_duplicate(attribute);
++			} else {
++				unique_names.push(unique_name);
++			}
+ 		}
+ 
+ 		element.attributes.push(attribute);

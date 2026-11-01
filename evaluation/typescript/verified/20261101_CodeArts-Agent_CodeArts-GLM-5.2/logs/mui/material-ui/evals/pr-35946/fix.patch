@@ -1,0 +1,181 @@
+diff --git a/packages/mui-base/src/ListboxUnstyled/useListbox.ts b/packages/mui-base/src/ListboxUnstyled/useListbox.ts
+index fbc5624d..086f0bbe 100644
+--- a/packages/mui-base/src/ListboxUnstyled/useListbox.ts
++++ b/packages/mui-base/src/ListboxUnstyled/useListbox.ts
+@@ -123,6 +123,22 @@ export default function useListbox<TOption>(props: UseListboxParameters<TOption>
+     [dispatch],
+   );
+ 
++  // A subscription store that lets individual options re-render only when their own
++  // `highlighted`/`selected`/`disabled` state changes, instead of re-rendering every
++  // option on each listbox render. This is critical for performance when the listbox
++  // contains a large number of options (e.g. hovering/scrolling).
++  const subscribers = React.useRef(new Set<() => void>());
++  const subscribe = React.useCallback((callback: () => void) => {
++    subscribers.current.add(callback);
++    return () => {
++      subscribers.current.delete(callback);
++    };
++  }, []);
++
++  React.useEffect(() => {
++    subscribers.current.forEach((cb) => cb());
++  }, [highlightedValue, selectedValue]);
++
+   const createHandleOptionClick =
+     (option: TOption, other: Record<string, React.EventHandler<any>>) =>
+     (event: React.MouseEvent) => {
+@@ -322,5 +338,6 @@ export default function useListbox<TOption>(props: UseListboxParameters<TOption>
+     selectedOption: selectedValue,
+     setSelectedValue,
+     setHighlightedValue,
++    subscribe,
+   };
+ }
+diff --git a/packages/mui-base/src/SelectUnstyled/SelectUnstyledContext.ts b/packages/mui-base/src/SelectUnstyled/SelectUnstyledContext.ts
+index 4ebdcc60..d83b5280 100644
+--- a/packages/mui-base/src/SelectUnstyled/SelectUnstyledContext.ts
++++ b/packages/mui-base/src/SelectUnstyled/SelectUnstyledContext.ts
+@@ -6,6 +6,12 @@ export interface SelectUnstyledContextType {
+   getOptionState: (value: SelectOption<any>) => OptionState;
+   getOptionProps: (option: SelectOption<any>) => UseSelectOptionSlotProps;
+   listboxRef: React.RefObject<HTMLElement>;
++  /**
++   * Subscribes to changes of the listbox's highlighted/selected state.
++   * Options use it to re-render only when their own state changes.
++   * @ignore
++   */
++  subscribe?: (callback: () => void) => () => void;
+ }
+ 
+ export const SelectUnstyledContext = React.createContext<SelectUnstyledContextType | undefined>(
+diff --git a/packages/mui-base/src/SelectUnstyled/useSelect.ts b/packages/mui-base/src/SelectUnstyled/useSelect.ts
+index 4e70cdcf..82d9e959 100644
+--- a/packages/mui-base/src/SelectUnstyled/useSelect.ts
++++ b/packages/mui-base/src/SelectUnstyled/useSelect.ts
+@@ -262,6 +262,7 @@ function useSelect<TValue>(props: UseSelectParameters<TValue>) {
+     getOptionState,
+     highlightedOption,
+     selectedOption: listboxSelectedOption,
++    subscribe,
+   } = useListbox(useListboxParameters);
+ 
+   const getButtonProps = <TOther extends EventHandlers>(
+@@ -316,6 +317,7 @@ function useSelect<TValue>(props: UseSelectParameters<TValue>) {
+     getOptionState,
+     open,
+     value,
++    subscribe,
+   };
+ }
+ 
+diff --git a/packages/mui-base/src/SelectUnstyled/useSelect.types.ts b/packages/mui-base/src/SelectUnstyled/useSelect.types.ts
+index 35f43fa9..e4f8813b 100644
+--- a/packages/mui-base/src/SelectUnstyled/useSelect.types.ts
++++ b/packages/mui-base/src/SelectUnstyled/useSelect.types.ts
+@@ -108,6 +108,12 @@ interface UseSelectCommonResult<TValue> {
+   ) => UseSelectOptionSlotProps<TOther>;
+   getOptionState: (option: SelectOption<TValue>) => OptionState;
+   open: boolean;
++  /**
++   * Subscribe to changes of the listbox's highlighted/selected state.
++   * Used by options to re-render only when their own state changes.
++   * @ignore
++   */
++  subscribe: (callback: () => void) => () => void;
+ }
+ 
+ export interface UseSelectSingleResult<TValue> extends UseSelectCommonResult<TValue> {
+diff --git a/packages/mui-joy/src/Option/Option.tsx b/packages/mui-joy/src/Option/Option.tsx
+index da68b786..fd3ae667 100644
+--- a/packages/mui-joy/src/Option/Option.tsx
++++ b/packages/mui-joy/src/Option/Option.tsx
+@@ -83,6 +83,32 @@ const Option = React.forwardRef(function Option(inProps, ref) {
+   const optionRef = React.useRef<HTMLLIElement>(null);
+   const handleRef = useForkRef(ref, optionRef);
+ 
++  // Re-render this option only when its own highlighted/selected/disabled state
++  // changes. The listbox publishes state changes `subscribe`); each option checks
++  // whether its own state changed before forcing a re-render. This avoids re-rendering
++  // every option on each hover/scroll when there are many options.
++  const selectOptionRef = React.useRef(selectOption);
++  selectOptionRef.current = selectOption;
++  const optionStateRef = React.useRef(optionState);
++  optionStateRef.current = optionState;
++  const [, forceRender] = React.useReducer((c: number) => c + 1, 0);
++  React.useEffect(() => {
++    if (!selectContext.subscribe) {
++      return undefined;
++    }
++    return selectContext.subscribe(() => {
++      const nextOptionState = selectContext.getOptionState(selectOptionRef.current);
++      const prevOptionState = optionStateRef.current;
++      if (
++        nextOptionState.highlighted !== prevOptionState.highlighted ||
++        nextOptionState.selected !== prevOptionState.selected ||
++        nextOptionState.disabled !== prevOptionState.disabled
++      ) {
++        forceRender();
++      }
++    });
++  }, [selectContext]);
++
+   React.useEffect(() => {
+     // Scroll to the currently highlighted option
+     if (optionState.highlighted) {
+@@ -172,4 +198,4 @@ Option.propTypes /* remove-proptypes */ = {
+   ]),
+ } as any;
+ 
+-export default Option;
++export default React.memo(Option) as ExtendOption<OptionTypeMap>;
+diff --git a/packages/mui-joy/src/Select/Select.tsx b/packages/mui-joy/src/Select/Select.tsx
+index 82636352..8c1d74e6 100644
+--- a/packages/mui-joy/src/Select/Select.tsx
++++ b/packages/mui-joy/src/Select/Select.tsx
+@@ -437,6 +437,7 @@ const Select = React.forwardRef(function Select<TValue extends {}>(
+     getOptionProps,
+     getOptionState,
+     value,
++    subscribe,
+   } = useSelect({
+     buttonRef,
+     defaultValue,
+@@ -557,14 +558,34 @@ const Select = React.forwardRef(function Select<TValue extends {}>(
+     ownerState,
+   });
+ 
++  // The context value is kept referentially stable across renders so that options
++  // (which are context consumers) do not re-render on every Select render.
++  // Options instead subscribe to `subscribe` and re-render only when their own
++  // highlighted/selected/disabled state changes. This is what keeps the Select
++  // smooth when it contains a large number of options.
++  const getOptionStateRef = React.useRef(getOptionState);
++  getOptionStateRef.current = getOptionState;
++  const getOptionPropsRef = React.useRef(getOptionProps);
++  getOptionPropsRef.current = getOptionProps;
++
++  const stableGetOptionState = React.useCallback(
++    (option: SelectOption<any>) => getOptionStateRef.current(option),
++    [],
++  );
++  const stableGetOptionProps = React.useCallback(
++    (option: SelectOption<any>) => getOptionPropsRef.current(option),
++    [],
++  );
++
+   const context = React.useMemo(
+     () => ({
+-      getOptionProps,
+-      getOptionState,
++      getOptionProps: stableGetOptionProps,
++      getOptionState: stableGetOptionState,
+       listboxRef,
+       color,
++      subscribe,
+     }),
+-    [color, getOptionProps, getOptionState],
++    [color, stableGetOptionProps, stableGetOptionState, subscribe],
+   );
+ 
+   const modifiers = React.useMemo(

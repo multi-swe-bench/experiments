@@ -1,0 +1,71 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 42727ea..0aa4310 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -1267,6 +1267,14 @@ function get_node_range(source, node) {
+ 	let start = /** @type {number} */ (node.start);
+ 	let end = /** @type {number} */ (node.end);
+ 
++	// include leading comments so they stay attached to the node when it is moved
++	const leading_comments = /** @type {any} */ (node).leadingComments;
++	if (leading_comments) {
++		for (const comment of leading_comments) {
++			start = Math.min(start, /** @type {number} */ (comment.start));
++		}
++	}
++
+ 	let idx = start;
+ 	while (source[idx - 1] !== '\n' && source[idx - 1] !== '\r') {
+ 		idx--;
+diff --git a/packages/svelte/tests/migrate/samples/reactive-statements-reorder-comment/input.svelte b/packages/svelte/tests/migrate/samples/reactive-statements-reorder-comment/input.svelte
+new file mode 100644
+index 0000000..8f8607b
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/reactive-statements-reorder-comment/input.svelte
+@@ -0,0 +1,18 @@
++<script>
++	let count = 0;
++
++	$: {
++		console.log({ count, double });
++	}
++
++	// this comment should remain attached to this declaration after migration
++	$: double = count * 2;
++
++	function increment() {
++		count += 1;
++	}
++</script>
++
++<button onclick={increment}>
++	clicks: {count}
++</button>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/migrate/samples/reactive-statements-reorder-comment/output.svelte b/packages/svelte/tests/migrate/samples/reactive-statements-reorder-comment/output.svelte
+new file mode 100644
+index 0000000..ef6f94e
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/reactive-statements-reorder-comment/output.svelte
+@@ -0,0 +1,20 @@
++<script>
++	import { run } from 'svelte/legacy';
++
++	let count = $state(0);
++
++
++
++	function increment() {
++		count += 1;
++	}
++	// this comment should remain attached to this declaration after migration
++	let double = $derived(count * 2);
++	run(() => {
++		console.log({ count, double });
++	});
++</script>
++
++<button onclick={increment}>
++	clicks: {count}
++</button>
+\ No newline at end of file

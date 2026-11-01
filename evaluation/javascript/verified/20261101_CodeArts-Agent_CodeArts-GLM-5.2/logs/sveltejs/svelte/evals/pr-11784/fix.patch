@@ -1,0 +1,62 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/css/index.js b/packages/svelte/src/compiler/phases/3-transform/css/index.js
+index 2fd588b..db119bd 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/css/index.js
++++ b/packages/svelte/src/compiler/phases/3-transform/css/index.js
+@@ -238,6 +238,13 @@ const visitors = {
+ 					}
+ 				}
+ 
++				// for any :global() at the middle of compound selector
++				for (const selector of relative_selector.selectors) {
++					if (selector.type === 'PseudoClassSelector' && selector.name === 'global') {
++						remove_global_pseudo_class(selector);
++					}
++				}
++
+ 				if (relative_selector.selectors.some((s) => s.type === 'NestingSelector')) {
+ 					continue;
+ 				}
+@@ -250,13 +257,6 @@ const visitors = {
+ 
+ 				context.state.specificity.bumped = true;
+ 
+-				// for any :global() at the middle of compound selector
+-				for (const selector of relative_selector.selectors) {
+-					if (selector.type === 'PseudoClassSelector' && selector.name === 'global') {
+-						remove_global_pseudo_class(selector);
+-					}
+-				}
+-
+ 				let i = relative_selector.selectors.length;
+ 				while (i--) {
+ 					const selector = relative_selector.selectors[i];
+diff --git a/packages/svelte/tests/css/samples/nested-global-attribute/expected.css b/packages/svelte/tests/css/samples/nested-global-attribute/expected.css
+new file mode 100644
+index 0000000..70c47e6
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/nested-global-attribute/expected.css
+@@ -0,0 +1,5 @@
++.parent.svelte-xyz {
++		&[data-active='true'] {
++			color: green;
++		}
++	}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/nested-global-attribute/input.svelte b/packages/svelte/tests/css/samples/nested-global-attribute/input.svelte
+new file mode 100644
+index 0000000..5773bac
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/nested-global-attribute/input.svelte
+@@ -0,0 +1,11 @@
++<div class="parent">
++	<div data-active="true">text</div>
++</div>
++
++<style>
++	.parent {
++		&:global([data-active='true']) {
++			color: green;
++		}
++	}
++</style>
+\ No newline at end of file

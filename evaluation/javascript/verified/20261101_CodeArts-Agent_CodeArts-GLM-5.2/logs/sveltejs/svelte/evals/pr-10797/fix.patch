@@ -1,0 +1,88 @@
+diff --git a/.changeset/real-default-props.md b/.changeset/real-default-props.md
+new file mode 100644
+index 0000000..71cd761
+--- /dev/null
++++ b/.changeset/real-default-props.md
+@@ -0,0 +1,7 @@
++---
++'svelte': minor
++---
++
++Default prop values are now used whenever `undefined` is passed, instead of only acting as an initial value. This matches the behavior of other frameworks like React, Vue, and Solid.
++
++For example, with `let { count = 1 } = $props()`, passing `count={undefined}` will now use the fallback value of `1` (both initially and on subsequent updates), rather than the fallback only applying before a real value is seen.
+\ No newline at end of file
+diff --git a/documentation/docs/02-template-syntax/01-svelte-components.md b/documentation/docs/02-template-syntax/01-svelte-components.md
+index e05a90a..ea07c16 100644
+--- a/documentation/docs/02-template-syntax/01-svelte-components.md
++++ b/documentation/docs/02-template-syntax/01-svelte-components.md
+@@ -36,7 +36,7 @@ Svelte uses the `export` keyword to mark a variable declaration as a _property_
+ </script>
+ ```
+ 
+-You can specify a default initial value for a prop. It will be used if the component's consumer doesn't specify the prop on the component (or if its initial value is `undefined`) when instantiating the component. Note that if the values of props are subsequently updated, then any prop whose value is not specified will be set to `undefined` (rather than its initial value).
++You can specify a default value for a prop. It will be used if the component's consumer doesn't specify the prop on the component, or if the provided value is `undefined`. Whenever the prop is `undefined`, the default value is used (rather than the default only applying initially).
+ 
+ In development mode (see the [compiler options](/docs/svelte-compiler#compile)), a warning will be printed if no default initial value is provided and the consumer does not specify a value. To squelch this warning, ensure that a default initial value is specified, even if it is `undefined`.
+ 
+diff --git a/packages/svelte/src/internal/client/reactivity/props.js b/packages/svelte/src/internal/client/reactivity/props.js
+index 586f0e6..50f1829 100644
+--- a/packages/svelte/src/internal/client/reactivity/props.js
++++ b/packages/svelte/src/internal/client/reactivity/props.js
+@@ -139,6 +139,7 @@ export function spread_props(...props) {
+ export function prop(props, key, flags, initial) {
+ 	var immutable = (flags & PROPS_IS_IMMUTABLE) !== 0;
+ 	var runes = (flags & PROPS_IS_RUNES) !== 0;
++	var lazy = (flags & PROPS_IS_LAZY_INITIAL) !== 0;
+ 	var prop_value = /** @type {V} */ (props[key]);
+ 	var setter = get_descriptor(props, key)?.set;
+ 
+@@ -154,18 +155,42 @@ export function prop(props, key, flags, initial) {
+ 		}
+ 
+ 		// @ts-expect-error would need a cumbersome method overload to type this
+-		if ((flags & PROPS_IS_LAZY_INITIAL) !== 0) initial = initial();
++		if (lazy) initial = initial();
++
++		lazy = false;
+ 
+ 		prop_value = /** @type {V} */ (initial);
+ 
+ 		if (setter) setter(prop_value);
+ 	}
+ 
+-	var getter = () => {
+-		var value = /** @type {V} */ (props[key]);
+-		if (value !== undefined) initial = undefined;
+-		return value === undefined ? /** @type {V} */ (initial) : value;
+-	};
++	var getter = setter
++		? () => {
++				// bound prop (`bind:`): the fallback only applies initially. Once a
++				// real value has been observed, an explicitly passed `undefined` is
++				// kept as-is so that the parent and child stay in sync.
++				var value = /** @type {V} */ (props[key]);
++				if (value !== undefined) initial = undefined;
++				return value === undefined ? /** @type {V} */ (initial) : value;
++			}
++		: () => {
++				// unbound prop: the default value is a real default, meaning that
++				// whenever `undefined` is passed (not just initially), the fallback
++				// value is used.
++				var value = /** @type {V} */ (props[key]);
++
++				if (value === undefined) {
++					if (lazy) {
++						// @ts-expect-error would need a cumbersome method overload to type this
++						initial = initial();
++						lazy = false;
++					}
++
++					return /** @type {V} */ (initial);
++				}
++
++				return value;
++			};
+ 
+ 	// easy mode — prop is never written to
+ 	if ((flags & PROPS_IS_UPDATED) === 0) {

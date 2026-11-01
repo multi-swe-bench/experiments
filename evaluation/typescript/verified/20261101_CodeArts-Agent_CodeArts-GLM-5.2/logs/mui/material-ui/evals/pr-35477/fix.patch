@@ -1,0 +1,30 @@
+diff --git a/packages/mui-utils/src/resolveProps.ts b/packages/mui-utils/src/resolveProps.ts
+index 35d46f9e..a9438212 100644
+--- a/packages/mui-utils/src/resolveProps.ts
++++ b/packages/mui-utils/src/resolveProps.ts
+@@ -4,14 +4,20 @@
+  * @param {object} props
+  * @returns {object} resolved props
+  */
+-export default function resolveProps<T extends { className?: string } & Record<string, unknown>>(
+-  defaultProps: T,
+-  props: T,
+-) {
++export default function resolveProps<
++  T extends { className?: string; components?: Record<string, unknown> } & Record<string, unknown>,
++>(defaultProps: T, props: T) {
+   const output = { ...props };
+ 
+   Object.keys(defaultProps).forEach((propName: keyof T) => {
+-    if (output[propName] === undefined) {
++    if (propName === 'components') {
++      if (defaultProps[propName] !== undefined) {
++        output[propName] =
++          output[propName] === undefined
++            ? defaultProps[propName]
++            : resolveProps(defaultProps[propName] as any, output[propName]);
++      }
++    } else if (output[propName] === undefined) {
+       output[propName] = defaultProps[propName];
+     }
+   });

@@ -1,0 +1,22 @@
+diff --git a/packages/mui-base/src/utils/useControllableReducer.ts b/packages/mui-base/src/utils/useControllableReducer.ts
+index 48f2ee2e..3d171cf2 100644
+--- a/packages/mui-base/src/utils/useControllableReducer.ts
++++ b/packages/mui-base/src/utils/useControllableReducer.ts
+@@ -1,4 +1,5 @@
+ import * as React from 'react';
++import { unstable_useEnhancedEffect as useEnhancedEffect } from '@mui/utils';
+ import {
+   ActionWithContext,
+   ControllableReducerAction,
+@@ -69,7 +70,10 @@ function useStateChangeDetection<State extends {}>(
+ 
+   const internalPreviousStateRef = React.useRef<State>(initialState);
+ 
+-  React.useEffect(() => {
++  // Notified in a layout effect (before paint) so controlled values update in the same
++  // frame as the internal state change; deferring this to a passive effect causes visual
++  // glitches such as the Select button flashing in controlled mode.
++  useEnhancedEffect(() => {
+     if (lastActionRef.current === null) {
+       // Detect changes only if an action has been dispatched.
+       return;

@@ -1,0 +1,25 @@
+diff --git a/packages/mui-base/src/SelectUnstyled/SelectUnstyled.tsx b/packages/mui-base/src/SelectUnstyled/SelectUnstyled.tsx
+index 6687125f..aef8a56f 100644
+--- a/packages/mui-base/src/SelectUnstyled/SelectUnstyled.tsx
++++ b/packages/mui-base/src/SelectUnstyled/SelectUnstyled.tsx
+@@ -245,7 +245,6 @@ const SelectUnstyled = React.forwardRef(function SelectUnstyled<
+       externalSlotProps: slotProps.popper,
+       additionalProps: {
+         anchorEl: buttonRef.current,
+-        disablePortal: true,
+         open: listboxOpen,
+         placement: 'bottom-start' as const,
+         role: undefined,
+diff --git a/packages/mui-base/src/SelectUnstyled/SelectUnstyled.types.ts b/packages/mui-base/src/SelectUnstyled/SelectUnstyled.types.ts
+index e30fbb14..0b3618a6 100644
+--- a/packages/mui-base/src/SelectUnstyled/SelectUnstyled.types.ts
++++ b/packages/mui-base/src/SelectUnstyled/SelectUnstyled.types.ts
+@@ -205,7 +205,7 @@ export type SelectUnstyledPopperSlotProps<TValue extends {}, Multiple extends bo
+   anchorEl: PopperUnstyledProps['anchorEl'];
+   children?: PopperUnstyledProps['children'];
+   className?: string;
+-  disablePortal: PopperUnstyledProps['disablePortal'];
++  disablePortal?: PopperUnstyledProps['disablePortal'];
+   open: boolean;
+   ownerState: SelectUnstyledOwnerState<TValue, Multiple>;
+   placement: PopperUnstyledProps['placement'];

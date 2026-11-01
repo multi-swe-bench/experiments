@@ -1,0 +1,38 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 30461ca..a02eb04 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -309,7 +309,15 @@ function serialize_element_spread_attributes(attributes, context, element, eleme
+ 			const [, value] = serialize_attribute_value(attribute.value, context);
+ 			values.push(b.object([b.init(name, value)]));
+ 		} else {
+-			values.push(/** @type {import('estree').Expression} */ (context.visit(attribute)));
++			const expression = /** @type {import('estree').Expression} */ (context.visit(attribute));
++
++			if (attribute.metadata.contains_call_expression) {
++				const id = b.id(context.state.scope.generate('spread_element'));
++				context.state.init.push(b.var(id, b.call('$.derived', b.thunk(expression))));
++				values.push(b.call('$.get', id));
++			} else {
++				values.push(expression);
++			}
+ 		}
+ 
+ 		is_reactive ||=
+@@ -385,7 +393,15 @@ function serialize_dynamic_element_spread_attributes(attributes, context, elemen
+ 			const [, value] = serialize_attribute_value(attribute.value, context);
+ 			values.push(b.object([b.init(attribute.name, value)]));
+ 		} else {
+-			values.push(/** @type {import('estree').Expression} */ (context.visit(attribute)));
++			const expression = /** @type {import('estree').Expression} */ (context.visit(attribute));
++
++			if (attribute.metadata.contains_call_expression) {
++				const id = b.id(context.state.scope.generate('spread_element'));
++				context.state.init.push(b.var(id, b.call('$.derived', b.thunk(expression))));
++				values.push(b.call('$.get', id));
++			} else {
++				values.push(expression);
++			}
+ 		}
+ 
+ 		is_reactive ||= attribute.metadata.dynamic;

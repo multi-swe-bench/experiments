@@ -1,0 +1,55 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/Selector.js b/packages/svelte/src/compiler/phases/2-analyze/css/Selector.js
+index 1236e88..4f54e94 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/Selector.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/Selector.js
+@@ -177,6 +177,7 @@ export default class Selector {
+ 
+ 	validate_global_compound_selector() {
+ 		for (const block of this.blocks) {
++			if (block.global) continue;
+ 			if (block.selectors.length === 1) continue;
+ 
+ 			for (let i = 0; i < block.selectors.length; i++) {
+diff --git a/packages/svelte/tests/css/samples/global-pseudo-after-global/_config.js b/packages/svelte/tests/css/samples/global-pseudo-after-global/_config.js
+new file mode 100644
+index 0000000..f47bee7
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-pseudo-after-global/_config.js
+@@ -0,0 +1,3 @@
++import { test } from '../../test';
++
++export default test({});
+diff --git a/packages/svelte/tests/css/samples/global-pseudo-after-global/expected.css b/packages/svelte/tests/css/samples/global-pseudo-after-global/expected.css
+new file mode 100644
+index 0000000..07c92b2
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-pseudo-after-global/expected.css
+@@ -0,0 +1,3 @@
++a.svelte-xyz b:hover {
++		color: red;
++	}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/global-pseudo-after-global/expected.html b/packages/svelte/tests/css/samples/global-pseudo-after-global/expected.html
+new file mode 100644
+index 0000000..443e4c7
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-pseudo-after-global/expected.html
+@@ -0,0 +1 @@
++<a class="svelte-xyz"><b>hello</b></a>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/global-pseudo-after-global/input.svelte b/packages/svelte/tests/css/samples/global-pseudo-after-global/input.svelte
+new file mode 100644
+index 0000000..ad3e9ad
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-pseudo-after-global/input.svelte
+@@ -0,0 +1,9 @@
++<a>
++	<b>hello</b>
++</a>
++
++<style>
++	a :global(b):hover {
++		color: red;
++	}
++</style>
+\ No newline at end of file

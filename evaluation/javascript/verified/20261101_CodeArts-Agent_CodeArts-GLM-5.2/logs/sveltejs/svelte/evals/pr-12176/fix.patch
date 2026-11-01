@@ -1,0 +1,118 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 4454640..ab9f43d 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -593,6 +593,8 @@ function extract_type_and_comment(declarator, str, path) {
+ function handle_events(node, state) {
+ 	/** @type {Map<string, import('#compiler').OnDirective[]>} */
+ 	const handlers = new Map();
++	const element_indent = get_indent(state.str.original, node.start);
++	const indent = element_indent + state.indent;
+ 	for (const attribute of node.attributes) {
+ 		if (attribute.type !== 'OnDirective') continue;
+ 
+@@ -641,16 +643,16 @@ function handle_events(node, state) {
+ 				// TODO check how many indents needed
+ 				for (const modifier of node.modifiers) {
+ 					if (modifier === 'stopPropagation') {
+-						body = `\n${state.indent}${payload_name}.stopPropagation();\n${body}`;
++						body = `\n${indent}${payload_name}.stopPropagation();\n${body}`;
+ 					} else if (modifier === 'preventDefault') {
+-						body = `\n${state.indent}${payload_name}.preventDefault();\n${body}`;
++						body = `\n${indent}${payload_name}.preventDefault();\n${body}`;
+ 					} else if (modifier === 'stopImmediatePropagation') {
+-						body = `\n${state.indent}${payload_name}.stopImmediatePropagation();\n${body}`;
++						body = `\n${indent}${payload_name}.stopImmediatePropagation();\n${body}`;
+ 					} else {
+-						body = `\n${state.indent}// @migration-task: incorporate ${modifier} modifier\n${body}`;
++						body = `\n${indent}// @migration-task: incorporate ${modifier} modifier\n${body}`;
+ 					}
+ 				}
+-				prepend += `\n${state.indent}${body}\n`;
++				prepend += `\n${indent}${body}\n`;
+ 			} else {
+ 				if (!local) {
+ 					local = state.scope.generate(`on${node.name}`);
+@@ -663,7 +665,7 @@ function handle_events(node, state) {
+ 						type: '(event: any) => void'
+ 					});
+ 				}
+-				prepend += `\n${state.indent}${local}?.(${payload_name});\n`;
++				prepend += `\n${indent}${local}?.(${payload_name});\n`;
+ 			}
+ 
+ 			state.str.remove(node.start, node.end);
+@@ -685,13 +687,13 @@ function handle_events(node, state) {
+ 
+ 			for (const modifier of last.modifiers) {
+ 				if (modifier === 'stopPropagation') {
+-					prepend += `\n${state.indent}${payload_name}.stopPropagation();\n`;
++					prepend += `\n${indent}${payload_name}.stopPropagation();\n`;
+ 				} else if (modifier === 'preventDefault') {
+-					prepend += `\n${state.indent}${payload_name}.preventDefault();\n`;
++					prepend += `\n${indent}${payload_name}.preventDefault();\n`;
+ 				} else if (modifier === 'stopImmediatePropagation') {
+-					prepend += `\n${state.indent}${payload_name}.stopImmediatePropagation();\n`;
++					prepend += `\n${indent}${payload_name}.stopImmediatePropagation();\n`;
+ 				} else if (modifier !== 'capture') {
+-					prepend += `\n${state.indent}// @migration-task: incorporate ${modifier} modifier\n`;
++					prepend += `\n${indent}// @migration-task: incorporate ${modifier} modifier\n`;
+ 				}
+ 			}
+ 
+@@ -723,20 +725,20 @@ function handle_events(node, state) {
+ 					pos = /** @type {number} */ (pos) + (needs_curlies ? 0 : 1);
+ 					if (needs_curlies && state.str.original[pos - 1] === '(') {
+ 						// Prettier does something like on:click={() => (foo = true)}, we need to remove the braces in this case
+-						state.str.update(pos - 1, pos, `{${prepend}${state.indent}`);
+-						state.str.update(end, end + 1, '\n}');
++						state.str.update(pos - 1, pos, `{${prepend}${indent}`);
++						state.str.update(end, end + 1, `\n${element_indent}}`);
+ 					} else {
+-						state.str.prependRight(pos, `${needs_curlies ? '{' : ''}${prepend}${state.indent}`);
+-						state.str.appendRight(end, `\n${needs_curlies ? '}' : ''}`);
++						state.str.prependRight(pos, `${needs_curlies ? '{' : ''}${prepend}${indent}`);
++						state.str.appendRight(end, `\n${element_indent}${needs_curlies ? '}' : ''}`);
+ 					}
+ 				} else {
+ 					state.str.update(
+ 						/** @type {number} */ (last.expression.start),
+ 						/** @type {number} */ (last.expression.end),
+-						`(${payload_name}) => {${prepend}\n${state.indent}${state.str.original.substring(
++						`(${payload_name}) => {${prepend}\n${indent}${state.str.original.substring(
+ 							/** @type {number} */ (last.expression.start),
+ 							/** @type {number} */ (last.expression.end)
+-						)}?.(${payload_name});\n}`
++						)}?.(${payload_name});\n${element_indent}}`
+ 					);
+ 				}
+ 			}
+@@ -763,7 +765,7 @@ function handle_events(node, state) {
+ 					replacement = `${name}={${local}}`;
+ 				}
+ 			} else {
+-				replacement = `${name}={(${payload_name}) => {${prepend}\n${state.indent}${local}?.(${payload_name});\n}}`;
++				replacement = `${name}={(${payload_name}) => {${prepend}\n${indent}${local}?.(${payload_name});\n${element_indent}}}`;
+ 			}
+ 
+ 			state.str.update(last.start, last.end, replacement);
+@@ -824,6 +826,19 @@ function handle_identifier(node, state, path) {
+ 	}
+ }
+ 
++/**
++ * @param {string} content
++ * @param {number} pos
++ */
++function get_indent(content, pos) {
++	const start = content.lastIndexOf('\n', pos) + 1;
++	let end = start;
++	while (end < content.length && (content[end] === ' ' || content[end] === '\t')) {
++		end += 1;
++	}
++	return content.slice(start, end);
++}
++
+ /** @param {string} content */
+ function guess_indent(content) {
+ 	const lines = content.split('\n');

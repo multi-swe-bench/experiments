@@ -1,0 +1,12 @@
+diff --git a/packages/svelte/src/reactivity/map.js b/packages/svelte/src/reactivity/map.js
+index 400f607..972b9fb 100644
+--- a/packages/svelte/src/reactivity/map.js
++++ b/packages/svelte/src/reactivity/map.js
+@@ -26,6 +26,7 @@ export class ReactiveMap extends Map {
+ 		if (value) {
+ 			for (var [key, v] of value) {
+ 				super.set(key, v);
++				this.#sources.set(key, source(Symbol()));
+ 			}
+ 			this.#size.v = super.size;
+ 		}

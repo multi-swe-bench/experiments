@@ -1,0 +1,120 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/component.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/component.js
+index ccf0e23..1b7517c 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/component.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/component.js
+@@ -273,7 +273,14 @@ export function build_component(node, component_name, context, anchor = context.
+ 		);
+ 
+ 		if (slot_name === 'default' && !has_children_prop) {
+-			if (lets.length === 0 && children.default.every((node) => node.type !== 'SvelteFragment')) {
++			if (
++				lets.length === 0 &&
++				children.default.every(
++					(node) =>
++						node.type !== 'SvelteFragment' ||
++						!node.attributes.some((attribute) => attribute.type === 'LetDirective')
++				)
++			) {
+ 				// create `children` prop...
+ 				push_prop(
+ 					b.init(
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/component.js b/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/component.js
+index 7da60ca..359e37e 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/component.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/component.js
+@@ -200,7 +200,11 @@ export function build_inline_component(node, expression, context) {
+ 		if (slot_name === 'default' && !has_children_prop) {
+ 			if (
+ 				lets.default.length === 0 &&
+-				children.default.every((node) => node.type !== 'SvelteFragment')
++				children.default.every(
++					(node) =>
++						node.type !== 'SvelteFragment' ||
++						!node.attributes.some((attribute) => attribute.type === 'LetDirective')
++				)
+ 			) {
+ 				// create `children` prop...
+ 				push_prop(b.prop('init', b.id('children'), slot_fn));
+diff --git a/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-no-let/_config.js b/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-no-let/_config.js
+new file mode 100644
+index 0000000..72c8ca9
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-no-let/_config.js
+@@ -0,0 +1,5 @@
++import { test } from '../../test';
++
++export default test({
++	html: `hello`
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-no-let/inner.svelte b/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-no-let/inner.svelte
+new file mode 100644
+index 0000000..10a92f9
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-no-let/inner.svelte
+@@ -0,0 +1,5 @@
++<script>
++	let { children } = $props();
++</script>
++
++{@render children()}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-no-let/main.svelte b/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-no-let/main.svelte
+new file mode 100644
+index 0000000..fba03f2
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-no-let/main.svelte
+@@ -0,0 +1,9 @@
++<script>
++	import Inner from './inner.svelte';
++</script>
++
++<Inner>
++	<svelte:fragment>
++		hello
++	</svelte:fragment>
++</Inner>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-with-let-error/_config.js b/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-with-let-error/_config.js
+new file mode 100644
+index 0000000..dfcf587
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-with-let-error/_config.js
+@@ -0,0 +1,8 @@
++import { test } from '../../test';
++
++export default test({
++	compileOptions: {
++		dev: true
++	},
++	runtime_error: 'invalid_default_snippet'
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-with-let-error/inner.svelte b/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-with-let-error/inner.svelte
+new file mode 100644
+index 0000000..bc233a5
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-with-let-error/inner.svelte
+@@ -0,0 +1,5 @@
++<script>
++	let { children } = $props();
++</script>
++
++{@render children(true)}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-with-let-error/main.svelte b/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-with-let-error/main.svelte
+new file mode 100644
+index 0000000..f8c7f21
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/snippet-slot-fragment-with-let-error/main.svelte
+@@ -0,0 +1,9 @@
++<script>
++	import Inner from './inner.svelte';
++</script>
++
++<Inner>
++	<svelte:fragment let:foo>
++		{foo}
++	</svelte:fragment>
++</Inner>
+\ No newline at end of file

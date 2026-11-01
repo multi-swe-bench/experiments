@@ -1,0 +1,13 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 0b97284..fce38e2 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -327,7 +327,7 @@ export const validation = {
+ 					const type = /** @type {import('#compiler').Attribute | undefined} */ (
+ 						parent.attributes.find((a) => a.type === 'Attribute' && a.name === 'type')
+ 					);
+-					if (type && !is_text_attribute(type)) {
++					if (type && !is_text_attribute(type) && node.name !== 'this') {
+ 						error(type, 'invalid-type-attribute');
+ 					}
+ 

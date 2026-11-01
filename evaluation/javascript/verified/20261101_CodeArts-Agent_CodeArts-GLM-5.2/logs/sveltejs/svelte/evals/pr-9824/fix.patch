@@ -1,0 +1,323 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 6e3e570..b3a3e7e 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -705,6 +705,25 @@ function collect_parent_each_blocks(context) {
+ 	);
+ }
+ 
++/**
++ * Returns a context that behaves like `context` but visits nodes using `scope`
++ * as the active scope. This is used so that a component's props (which belong to
++ * the parent scope) are evaluated in the parent scope rather than the scope
++ * created by `let:` directives on the same component.
++ * @param {import('../types.js').ComponentContext} context
++ * @param {import('../../../scope').Scope} scope
++ * @returns {import('../types.js').ComponentContext}
++ */
++function with_scope(context, scope) {
++	if (scope === context.state.scope) return context;
++	const state = { ...context.state, scope };
++	return {
++		...context,
++		state,
++		visit: (node, next_state) => context.visit(node, next_state ?? state)
++	};
++}
++
+ /**
+  * @param {import('#compiler').Component | import('#compiler').SvelteComponent | import('#compiler').SvelteSelf} node
+  * @param {string} component_name
+@@ -748,77 +767,102 @@ function serialize_inline_component(node, component_name, context) {
+ 			default_lets.push(
+ 				/** @type {import('estree').ExpressionStatement} */ (context.visit(attribute))
+ 			);
+-		} else if (attribute.type === 'OnDirective') {
+-			events[attribute.name] ||= [];
+-			let handler = serialize_event_handler(attribute, context);
+-			if (attribute.modifiers.includes('once')) {
+-				handler = b.call('$.once', handler);
+-			}
+-			events[attribute.name].push(handler);
+-		} else if (attribute.type === 'SpreadAttribute') {
+-			const expression = /** @type {import('estree').Expression} */ (context.visit(attribute));
+-			if (attribute.metadata.dynamic) {
+-				let value = expression;
+-
+-				if (attribute.metadata.contains_call_expression) {
+-					const id = b.id(context.state.scope.generate('spread_element'));
+-					context.state.init.push(b.var(id, b.call('$.derived', b.thunk(value))));
+-					value = b.call('$.get', id);
+-				}
++		} else {
++			// Props/events/binds/spreads belong to the parent scope, not the let scope
++			const attribute_context = with_scope(
++				context,
++				/** @type {import('../../../scope').Scope} */ (
++					context.state.scopes.get(attribute) ?? context.state.scope
++				)
++			);
+ 
+-				props_and_spreads.push(b.thunk(value));
+-			} else {
+-				props_and_spreads.push(expression);
+-			}
+-		} else if (attribute.type === 'Attribute') {
+-			if (attribute.name.startsWith('--')) {
+-				custom_css_props.push(
+-					b.init(attribute.name, serialize_attribute_value(attribute.value, context)[1])
++			if (attribute.type === 'OnDirective') {
++				events[attribute.name] ||= [];
++				let handler = serialize_event_handler(attribute, attribute_context);
++				if (attribute.modifiers.includes('once')) {
++					handler = b.call('$.once', handler);
++				}
++				events[attribute.name].push(handler);
++			} else if (attribute.type === 'SpreadAttribute') {
++				const expression = /** @type {import('estree').Expression} */ (
++					attribute_context.visit(attribute)
+ 				);
+-				continue;
+-			}
++				if (attribute.metadata.dynamic) {
++					let value = expression;
+ 
+-			const [, value] = serialize_attribute_value(attribute.value, context);
++					if (attribute.metadata.contains_call_expression) {
++						const id = b.id(attribute_context.state.scope.generate('spread_element'));
++						attribute_context.state.init.push(
++							b.var(id, b.call('$.derived', b.thunk(value)))
++						);
++						value = b.call('$.get', id);
++					}
++
++					props_and_spreads.push(b.thunk(value));
++				} else {
++					props_and_spreads.push(expression);
++				}
++			} else if (attribute.type === 'Attribute') {
++				if (attribute.name.startsWith('--')) {
++					custom_css_props.push(
++						b.init(
++							attribute.name,
++							serialize_attribute_value(attribute.value, attribute_context)[1]
++						)
++					);
++					continue;
++				}
+ 
+-			if (attribute.metadata.dynamic) {
+-				let arg = value;
++				const [, value] = serialize_attribute_value(attribute.value, attribute_context);
+ 
+-				const contains_call_expression =
+-					Array.isArray(attribute.value) &&
+-					attribute.value.some((n) => {
+-						return n.type === 'ExpressionTag' && n.metadata.contains_call_expression;
+-					});
++				if (attribute.metadata.dynamic) {
++					let arg = value;
+ 
+-				if (contains_call_expression) {
+-					const id = b.id(context.state.scope.generate(attribute.name));
+-					context.state.init.push(b.var(id, b.call('$.derived', b.thunk(value))));
+-					arg = b.call('$.get', id);
+-				}
++					const contains_call_expression =
++						Array.isArray(attribute.value) &&
++						attribute.value.some((n) => {
++							return n.type === 'ExpressionTag' && n.metadata.contains_call_expression;
++						});
+ 
+-				if (context.state.options.dev) arg = b.call('$.readonly', arg);
++					if (contains_call_expression) {
++						const id = b.id(attribute_context.state.scope.generate(attribute.name));
++						attribute_context.state.init.push(
++							b.var(id, b.call('$.derived', b.thunk(value)))
++						);
++						arg = b.call('$.get', id);
++					}
+ 
+-				push_prop(b.get(attribute.name, [b.return(arg)]));
+-			} else {
+-				push_prop(b.init(attribute.name, value));
+-			}
+-		} else if (attribute.type === 'BindDirective') {
+-			if (attribute.name === 'this') {
+-				bind_this = attribute.expression;
+-			} else {
+-				push_prop(
+-					b.get(attribute.name, [
+-						b.return(
+-							/** @type {import('estree').Expression} */ (context.visit(attribute.expression))
+-						)
+-					])
+-				);
++					if (attribute_context.state.options.dev) arg = b.call('$.readonly', arg);
+ 
+-				const assignment = b.assignment('=', attribute.expression, b.id('$$value'));
+-				push_prop(
+-					b.set(attribute.name, [
+-						b.stmt(serialize_set_binding(assignment, context, () => context.visit(assignment)))
+-					])
+-				);
++					push_prop(b.get(attribute.name, [b.return(arg)]));
++				} else {
++					push_prop(b.init(attribute.name, value));
++				}
++			} else if (attribute.type === 'BindDirective') {
++				if (attribute.name === 'this') {
++					bind_this = attribute.expression;
++				} else {
++					push_prop(
++						b.get(attribute.name, [
++							b.return(
++								/** @type {import('estree').Expression} */ (
++									attribute_context.visit(attribute.expression)
++								)
++							)
++						])
++					);
++
++					const assignment = b.assignment('=', attribute.expression, b.id('$$value'));
++					push_prop(
++						b.set(attribute.name, [
++							b.stmt(
++								serialize_set_binding(assignment, attribute_context, () =>
++									attribute_context.visit(assignment)
++								)
++							)
++						])
++					);
++				}
+ 			}
+ 		}
+ 	}
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 798e58e..40cd8ea 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -801,6 +801,25 @@ function serialize_element_spread_attributes(
+ 	context.state.template.push(t_expression(b.call('$.spread_attributes', ...args)));
+ }
+ 
++/**
++ * Returns a context that behaves like `context` but visits nodes using `scope`
++ * as the active scope. This is used so that a component's props (which belong to
++ * the parent scope) are evaluated in the parent scope rather than the scope
++ * created by `let:` directives on the same component.
++ * @param {import('./types').ComponentContext} context
++ * @param {import('../../scope').Scope} scope
++ * @returns {import('./types').ComponentContext}
++ */
++function with_scope(context, scope) {
++	if (scope === context.state.scope) return context;
++	const state = { ...context.state, scope };
++	return {
++		...context,
++		state,
++		visit: (node, next_state) => context.visit(node, next_state ?? state)
++	};
++}
++
+ /**
+  * @param {import('#compiler').Component | import('#compiler').SvelteComponent | import('#compiler').SvelteSelf} node
+  * @param {string | import('estree').Expression} component_name
+@@ -838,34 +857,52 @@ function serialize_inline_component(node, component_name, context) {
+ 			default_lets.push(
+ 				/** @type {import('estree').ExpressionStatement} */ (context.visit(attribute))
+ 			);
+-		} else if (attribute.type === 'SpreadAttribute') {
+-			props_and_spreads.push(/** @type {import('estree').Expression} */ (context.visit(attribute)));
+-		} else if (attribute.type === 'Attribute') {
+-			if (attribute.name.startsWith('--')) {
+-				const value = serialize_attribute_value(attribute.value, context, false, true);
+-				custom_css_props.push(b.init(attribute.name, value));
+-				continue;
+-			}
+-
+-			const value = serialize_attribute_value(attribute.value, context, false, true);
+-			push_prop(b.prop('init', b.key(attribute.name), value));
+-		} else if (attribute.type === 'BindDirective') {
+-			// TODO this needs to turn the whole thing into a while loop because the binding could be mutated eagerly in the child
+-			push_prop(
+-				b.get(attribute.name, [
+-					b.return(/** @type {import('estree').Expression} */ (context.visit(attribute.expression)))
+-				])
++		} else {
++			// Props/spreads/binds belong to the parent scope, not the let scope
++			const attribute_context = with_scope(
++				context,
++				/** @type {import('../../scope').Scope} */ (
++					context.state.scopes.get(attribute) ?? context.state.scope
++				)
+ 			);
+-			push_prop(
+-				b.set(attribute.name, [
+-					b.stmt(
+-						/** @type {import('estree').Expression} */ (
+-							context.visit(b.assignment('=', attribute.expression, b.id('$$value')))
++
++			if (attribute.type === 'SpreadAttribute') {
++				props_and_spreads.push(
++					/** @type {import('estree').Expression} */ (attribute_context.visit(attribute))
++				);
++			} else if (attribute.type === 'Attribute') {
++				if (attribute.name.startsWith('--')) {
++					const value = serialize_attribute_value(attribute.value, attribute_context, false, true);
++					custom_css_props.push(b.init(attribute.name, value));
++					continue;
++				}
++
++				const value = serialize_attribute_value(attribute.value, attribute_context, false, true);
++				push_prop(b.prop('init', b.key(attribute.name), value));
++			} else if (attribute.type === 'BindDirective') {
++				// TODO this needs to turn the whole thing into a while loop because the binding could be mutated eagerly in the child
++				push_prop(
++					b.get(attribute.name, [
++						b.return(
++							/** @type {import('estree').Expression} */ (
++								attribute_context.visit(attribute.expression)
++							)
+ 						)
+-					),
+-					b.stmt(b.assignment('=', b.id('$$settled'), b.false))
+-				])
+-			);
++					])
++				);
++				push_prop(
++					b.set(attribute.name, [
++						b.stmt(
++							/** @type {import('estree').Expression} */ (
++								attribute_context.visit(
++									b.assignment('=', attribute.expression, b.id('$$value'))
++								)
++							)
++						),
++						b.stmt(b.assignment('=', b.id('$$settled'), b.false))
++					])
++				);
++			}
+ 		}
+ 	}
+ 
+diff --git a/packages/svelte/src/compiler/phases/scope.js b/packages/svelte/src/compiler/phases/scope.js
+index 1a65ed2..eccd7eb 100644
+--- a/packages/svelte/src/compiler/phases/scope.js
++++ b/packages/svelte/src/compiler/phases/scope.js
+@@ -366,6 +366,14 @@ export function create_scopes(ast, root, allow_reactive_declarations, parent) {
+ 			// let:x from the default slot is a weird one:
+ 			// Its scope only applies to children that are not slots themselves.
+ 			for (const attribute of node.attributes) {
++				// Attributes other than `let:` directives (i.e. the component's props,
++				// events, binds and spreads) belong to the parent scope, not the scope
++				// created by the `let:` directives. We attach the parent scope to them
++				// so that a prop with the same name as a `let:` directive resolves to
++				// the correct binding.
++				if (attribute.type !== 'LetDirective') {
++					scopes.set(attribute, state.scope);
++				}
+ 				visit(attribute);
+ 			}
+ 

@@ -1,0 +1,36 @@
+diff --git a/src/plugin/timezone/index.js b/src/plugin/timezone/index.js
+index c8f8a46..d611310 100644
+--- a/src/plugin/timezone/index.js
++++ b/src/plugin/timezone/index.js
+@@ -99,6 +99,11 @@ export default (o, c, d) => {
+     const diff = Math.round((date - new Date(target)) / 1000 / 60)
+     let ins = d(target).$set(MS, this.$ms)
+       .utcOffset((-Math.round(date.getTimezoneOffset() / 15) * 15) - diff, true)
++    if (ins.$u) {
++      ins.$d = date
++      ins.$x.$localOffset = 0
++      ins.init()
++    }
+     if (keepLocalTime) {
+       const newOffset = ins.utcOffset()
+       ins = ins.add(oldOffset - newOffset, MIN)
+diff --git a/src/plugin/utc/index.js b/src/plugin/utc/index.js
+index f147357..803a4ec 100644
+--- a/src/plugin/utc/index.js
++++ b/src/plugin/utc/index.js
+@@ -113,8 +113,13 @@ export default (option, Dayjs, dayjs) => {
+   }
+ 
+   proto.valueOf = function () {
+-    const addedOffset = !this.$utils().u(this.$offset)
+-      ? this.$offset + (this.$x.$localOffset || this.$d.getTimezoneOffset()) : 0
++    const { u } = this.$utils()
++    let addedOffset = 0
++    if (!u(this.$offset)) {
++      const localOffset = this.$x.$localOffset != null
++        ? this.$x.$localOffset : this.$d.getTimezoneOffset()
++      addedOffset = this.$offset + localOffset
++    }
+     return this.$d.valueOf() - (addedOffset * MILLISECONDS_A_MINUTE)
+   }
+ 

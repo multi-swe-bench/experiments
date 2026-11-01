@@ -1,0 +1,84 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 43d4720..7ff7faf 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -229,7 +229,26 @@ export function migrate(source, { filename } = {}) {
+ 					props_declaration = `${type}\n\n${indent}${props_declaration}`;
+ 					props_declaration = `${props_declaration}${type ? `: ${type_name}` : ''} = $props();`;
+ 				} else {
+-					props_declaration = `/** @type {${type}} */\n${indent}${props_declaration}`;
++					const descriptions = state.props
++						.map((prop) => {
++							const description = extract_description(prop.comment);
++							return description
++								? `@property {${prop.type}} ${prop.exported} ${description}`
++								: null;
++						})
++						.filter(Boolean);
++
++					if (descriptions.length > 0) {
++						const typedef = [
++							'/**',
++							`${indent} * @typedef {${type}} ${type_name}`,
++							...descriptions.map((d) => `${indent} * ${d}`),
++							`${indent} */`
++						].join('\n');
++						props_declaration = `${typedef}\n\n${indent}/** @type {${type_name}} */\n${indent}${props_declaration}`;
++					} else {
++						props_declaration = `/** @type {${type}} */\n${indent}${props_declaration}`;
++					}
+ 					props_declaration = `${props_declaration} = $props();`;
+ 				}
+ 
+@@ -1263,9 +1282,8 @@ function migrate_slot_usage(node, path, state) {
+ function extract_type_and_comment(declarator, str, path) {
+ 	const parent = path.at(-1);
+ 
+-	// Try to find jsdoc above the declaration
++	// Try to find a comment above the declaration
+ 	let comment_node = /** @type {Node} */ (parent)?.leadingComments?.at(-1);
+-	if (comment_node?.type !== 'Block') comment_node = undefined;
+ 
+ 	const comment_start = /** @type {any} */ (comment_node)?.start;
+ 	const comment_end = /** @type {any} */ (comment_node)?.end;
+@@ -1287,7 +1305,7 @@ function extract_type_and_comment(declarator, str, path) {
+ 	if (parent?.type === 'ExportNamedDeclaration' && comment_node) {
+ 		const match = /@type {(.+)}/.exec(comment_node.value);
+ 		if (match) {
+-			return { type: match[1] };
++			return { type: match[1], comment };
+ 		}
+ 	}
+ 
+@@ -1302,6 +1320,31 @@ function extract_type_and_comment(declarator, str, path) {
+ 	return { type: 'any', comment };
+ }
+ 
++/**
++ * Extracts a human-readable description from a comment, stripping JSDoc markers
++ * and `@type`/`@property`/etc. tags so it can be used as a `@property` description.
++ * @param {string | undefined} comment
++ * @returns {string}
++ */
++function extract_description(comment) {
++	if (!comment) return '';
++	let text = comment;
++	if (text.startsWith('/**')) {
++		text = text.slice(3, -2);
++	} else if (text.startsWith('/*')) {
++		text = text.slice(2, -2);
++	} else if (text.startsWith('//')) {
++		text = text.slice(2);
++	}
++
++	const lines = text
++		.split('\n')
++		.map((line) => line.replace(/^\s*\*/, '').trim())
++		.filter((line) => line.length > 0 && !line.startsWith('@'));
++
++	return lines.join(' ').replace(/\s+/g, ' ').trim();
++}
++
+ // Ensure modifiers are applied in the same order as Svelte 4
+ const modifier_order = [
+ 	'preventDefault',

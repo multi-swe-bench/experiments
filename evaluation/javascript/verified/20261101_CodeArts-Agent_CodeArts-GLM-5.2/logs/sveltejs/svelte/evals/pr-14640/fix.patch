@@ -1,0 +1,74 @@
+diff --git a/packages/svelte/src/internal/client/dom/elements/attributes.js b/packages/svelte/src/internal/client/dom/elements/attributes.js
+index 8f6588e..fe2b5a9 100644
+--- a/packages/svelte/src/internal/client/dom/elements/attributes.js
++++ b/packages/svelte/src/internal/client/dom/elements/attributes.js
+@@ -33,14 +33,20 @@ export function remove_input_defaults(input) {
+ 		if (already_removed) return;
+ 		already_removed = true;
+ 
+-		// Remove the attributes but preserve the values
+-		if (input.hasAttribute('value')) {
++		// @ts-expect-error
++		var attributes = input.__attributes;
++
++		// Remove the attributes but preserve the values.
++		// If a defaultValue/defaultChecked is set (e.g. via a spread), the value/checked
++		// attribute represents the default value that should be restored on reset, so we
++		// must not remove it.
++		if (input.hasAttribute('value') && attributes?.defaultValue == null) {
+ 			var value = input.value;
+ 			set_attribute(input, 'value', null);
+ 			input.value = value;
+ 		}
+ 
+-		if (input.hasAttribute('checked')) {
++		if (input.hasAttribute('checked') && attributes?.defaultChecked == null) {
+ 			var checked = input.checked;
+ 			set_attribute(input, 'checked', null);
+ 			input.checked = checked;
+@@ -355,6 +361,14 @@ export function set_attributes(
+ 			element.style.cssText = value + '';
+ 		} else if (key === 'autofocus') {
+ 			autofocus(/** @type {HTMLElement} */ (element), Boolean(value));
++		} else if (key === 'defaultValue') {
++			attributes[key] = value;
++			// @ts-ignore
++			element.defaultValue = value;
++		} else if (key === 'defaultChecked') {
++			attributes[key] = value;
++			// @ts-ignore
++			element.defaultChecked = value;
+ 		} else if (key === '__value' || (key === 'value' && value != null)) {
+ 			// @ts-ignore
+ 			element.value = element[key] = element.__value = value;
+@@ -366,7 +380,16 @@ export function set_attributes(
+ 
+ 			if (value == null && !is_custom_element) {
+ 				attributes[key] = null;
+-				element.removeAttribute(key);
++				// Don't remove the value/checked attribute if a defaultValue/defaultChecked
++				// is present, as it represents the default value that should be restored on reset
++				if (
++					!(
++						(key === 'value' && next.defaultValue != null) ||
++						(key === 'checked' && next.defaultChecked != null)
++					)
++				) {
++					element.removeAttribute(key);
++				}
+ 			} else if (setters.includes(name) && (is_custom_element || typeof value !== 'string')) {
+ 				// @ts-ignore
+ 				element[name] = value;
+diff --git a/packages/svelte/src/internal/server/index.js b/packages/svelte/src/internal/server/index.js
+index b8371b7..66cebc5 100644
+--- a/packages/svelte/src/internal/server/index.js
++++ b/packages/svelte/src/internal/server/index.js
+@@ -218,6 +218,8 @@ export function spread_attributes(attrs, classes, styles, flags = 0) {
+ 		if (typeof attrs[name] === 'function') continue;
+ 		if (name[0] === '$' && name[1] === '$') continue; // faster than name.startsWith('$$')
+ 		if (INVALID_ATTR_NAME_CHAR_REGEX.test(name)) continue;
++		// the defaultValue/defaultChecked properties don't exist as attributes
++		if (name === 'defaultValue' || name === 'defaultChecked') continue;
+ 
+ 		var value = attrs[name];
+ 

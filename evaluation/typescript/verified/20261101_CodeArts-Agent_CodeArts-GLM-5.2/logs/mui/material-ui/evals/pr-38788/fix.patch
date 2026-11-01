@@ -1,0 +1,32 @@
+diff --git a/packages/mui-base/src/useAutocomplete/useAutocomplete.js b/packages/mui-base/src/useAutocomplete/useAutocomplete.js
+index 241fc98f..d7427b99 100644
+--- a/packages/mui-base/src/useAutocomplete/useAutocomplete.js
++++ b/packages/mui-base/src/useAutocomplete/useAutocomplete.js
+@@ -451,7 +451,26 @@ export function useAutocomplete(props) {
+         return newIndex;
+       };
+ 
+-      const nextIndex = validOptionIndex(getNextIndex(), direction);
++      const candidateIndex = getNextIndex();
++      let nextIndex = validOptionIndex(candidateIndex, direction);
++
++      // When the candidate index lands on a disabled option, `validOptionIndex`
++      // skips it until it finds an enabled one. If it runs out of options (for
++      // example when the remaining options at the end of the list are disabled)
++      // it returns -1, which would lose the highlight. In that case, wrap around
++      // to mirror the behavior of the opposite arrow key (see #39281).
++      if (
++        nextIndex === -1 &&
++        candidateIndex !== -1 &&
++        !disableListWrap &&
++        Math.abs(diff) === 1
++      ) {
++        nextIndex = validOptionIndex(
++          direction === 'next' ? 0 : filteredOptions.length - 1,
++          direction,
++        );
++      }
++
+       setHighlightedIndex({ index: nextIndex, reason, event });
+ 
+       // Sync the content of the input with the highlighted option.

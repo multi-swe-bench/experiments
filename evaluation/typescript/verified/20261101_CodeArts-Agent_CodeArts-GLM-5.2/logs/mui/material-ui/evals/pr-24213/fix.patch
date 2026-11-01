@@ -1,0 +1,32 @@
+diff --git a/packages/material-ui/src/useAutocomplete/useAutocomplete.js b/packages/material-ui/src/useAutocomplete/useAutocomplete.js
+index a47295e..4976c99 100644
+--- a/packages/material-ui/src/useAutocomplete/useAutocomplete.js
++++ b/packages/material-ui/src/useAutocomplete/useAutocomplete.js
+@@ -941,6 +941,18 @@ export default function useAutocomplete(props) {
+     }, []);
+   }
+ 
++  // Keep a stable mapping between an option and its index in the source `options` array.
++  // This is used to give each rendered option a stable React `key` so that the
++  // underlying DOM node is not reused for a different option when the list is filtered.
++  // Reusing the same DOM node for different options confuses screen readers (e.g. VoiceOver)
++  // which keep reading the previously announced label instead of the currently rendered one.
++  const optionIndexes = new Map();
++  options.forEach((option, index) => {
++    if (!optionIndexes.has(option)) {
++      optionIndexes.set(option, index);
++    }
++  });
++
+   return {
+     getRootProps: (other = {}) => ({
+       'aria-owns': listboxAvailable ? `${id}-listbox` : null,
+@@ -1005,7 +1017,7 @@ export default function useAutocomplete(props) {
+       const disabled = getOptionDisabled ? getOptionDisabled(option) : false;
+ 
+       return {
+-        key: index,
++        key: optionIndexes.get(option) ?? index,
+         tabIndex: -1,
+         role: 'option',
+         id: `${id}-option-${index}`,

@@ -1,0 +1,66 @@
+diff --git a/packages/compiler-core/src/transforms/vFor.ts b/packages/compiler-core/src/transforms/vFor.ts
+index 5d423ee..173d280 100644
+--- a/packages/compiler-core/src/transforms/vFor.ts
++++ b/packages/compiler-core/src/transforms/vFor.ts
+@@ -38,6 +38,7 @@ import {
+   isSlotOutlet,
+   isTemplateNode,
+ } from '../utils'
++import { PatchFlagNames, PatchFlags, camelize } from '@vue/shared'
+ import {
+   FRAGMENT,
+   IS_MEMO_SAME,
+@@ -46,7 +47,6 @@ import {
+ } from '../runtimeHelpers'
+ import { processExpression } from './transformExpression'
+ import { validateBrowserExpression } from '../validateExpression'
+-import { PatchFlagNames, PatchFlags } from '@vue/shared'
+ 
+ export const transformFor = createStructuralDirectiveTransform(
+   'for',
+@@ -60,13 +60,23 @@ export const transformFor = createStructuralDirectiveTransform(
+       ]) as ForRenderListExpression
+       const isTemplate = isTemplateNode(node)
+       const memo = findDir(node, 'memo')
+-      const keyProp = findProp(node, `key`)
++      // v-bind same-name shorthand `:key` should be treated as a key binding,
++      // so allow empty expression here.
++      const keyProp = findProp(node, `key`, false, true /* allowEmpty */)
+       const keyExp =
+         keyProp &&
+         (keyProp.type === NodeTypes.ATTRIBUTE
+-          ? createSimpleExpression(keyProp.value!.content, true)
+-          : keyProp.exp!)
+-      const keyProperty = keyProp ? createObjectProperty(`key`, keyExp!) : null
++          ? keyProp.value
++            ? createSimpleExpression(keyProp.value.content, true)
++            : undefined
++          : keyProp.exp
++            ? keyProp.exp
++            : createSimpleExpression(
++                camelize((keyProp.arg as SimpleExpressionNode).content),
++                false,
++                keyProp.arg.loc,
++              ))
++      const keyProperty = keyExp ? createObjectProperty(`key`, keyExp) : null
+ 
+       if (!__BROWSER__ && isTemplate) {
+         // #2085 / #5288 process :key and v-memo expressions need to be
+@@ -92,7 +102,7 @@ export const transformFor = createStructuralDirectiveTransform(
+         forNode.source.constType > ConstantTypes.NOT_CONSTANT
+       const fragmentFlag = isStableFragment
+         ? PatchFlags.STABLE_FRAGMENT
+-        : keyProp
++        : keyProperty
+           ? PatchFlags.KEYED_FRAGMENT
+           : PatchFlags.UNKEYED_FRAGMENT
+ 
+@@ -120,7 +130,7 @@ export const transformFor = createStructuralDirectiveTransform(
+         if ((__DEV__ || !__BROWSER__) && isTemplate) {
+           node.children.some(c => {
+             if (c.type === NodeTypes.ELEMENT) {
+-              const key = findProp(c, 'key')
++              const key = findProp(c, 'key', false, true /* allowEmpty */)
+               if (key) {
+                 context.onError(
+                   createCompilerError(

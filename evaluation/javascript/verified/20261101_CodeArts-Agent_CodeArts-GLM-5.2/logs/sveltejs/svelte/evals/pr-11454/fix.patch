@@ -1,0 +1,55 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/element.js b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+index 80edeca..b25a148 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/element.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+@@ -262,14 +262,15 @@ export default function tag(parser) {
+ 		const definition = /** @type {import('#compiler').Attribute} */ (
+ 			element.attributes.splice(index, 1)[0]
+ 		);
+-		if (definition.value === true || definition.value.length !== 1) {
++		if (
++			definition.value === true ||
++			definition.value.length !== 1 ||
++			definition.value[0].type === 'Text'
++		) {
+ 			e.svelte_element_invalid_this(definition.start);
+ 		}
+-		const chunk = definition.value[0];
+-		element.tag =
+-			chunk.type === 'Text'
+-				? { type: 'Literal', value: chunk.data, raw: `'${chunk.raw}'` }
+-				: chunk.expression;
++
++		element.tag = /** @type {import('#compiler').ExpressionTag} */ (definition.value[0]).expression;
+ 	}
+ 
+ 	if (is_top_level_script_or_style) {
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 631c254..798fdd0 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -1449,24 +1449,6 @@ const common_visitors = {
+ 	SvelteElement(node, context) {
+ 		context.state.analysis.elements.push(node);
+ 
+-		// TODO why are we handling the `<svelte:element this="x" />` case? there is no
+-		// reason for someone to use a static value with `<svelte:element>`
+-		if (
+-			context.state.options.namespace !== 'foreign' &&
+-			node.tag.type === 'Literal' &&
+-			typeof node.tag.value === 'string'
+-		) {
+-			if (SVGElements.includes(node.tag.value)) {
+-				node.metadata.svg = true;
+-				return;
+-			}
+-
+-			if (MathMLElements.includes(node.tag.value)) {
+-				node.metadata.mathml = true;
+-				return;
+-			}
+-		}
+-
+ 		for (const attribute of node.attributes) {
+ 			if (attribute.type === 'Attribute') {
+ 				if (attribute.name === 'xmlns' && is_text_attribute(attribute)) {

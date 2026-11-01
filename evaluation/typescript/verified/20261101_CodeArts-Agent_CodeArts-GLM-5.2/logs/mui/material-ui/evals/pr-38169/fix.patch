@@ -1,0 +1,538 @@
+diff --git a/packages/mui-joy/src/Drawer/Drawer.tsx b/packages/mui-joy/src/Drawer/Drawer.tsx
+new file mode 100644
+index 00000000..e0c15aa8
+--- /dev/null
++++ b/packages/mui-joy/src/Drawer/Drawer.tsx
+@@ -0,0 +1,288 @@
++'use client';
++import * as React from 'react';
++import PropTypes from 'prop-types';
++import clsx from 'clsx';
++import { OverridableComponent } from '@mui/types';
++import { unstable_capitalize as capitalize } from '@mui/utils';
++import { unstable_composeClasses as composeClasses } from '@mui/base/composeClasses';
++import { resolveComponentProps } from '@mui/base/utils';
++import { styled, useThemeProps } from '../styles';
++import { ColorInversionProvider } from '../styles/ColorInversion';
++import Modal from '../Modal';
++import { getDrawerUtilityClass } from './drawerClasses';
++import { DrawerProps, DrawerOwnerState, DrawerTypeMap } from './DrawerProps';
++import useSlot from '../utils/useSlot';
++
++const useUtilityClasses = (ownerState: DrawerOwnerState) => {
++  const { open, anchor, variant, color, size } = ownerState;
++
++  const slots = {
++    root: ['root', !open && 'hidden', `anchor${capitalize(anchor)}`],
++    backdrop: ['backdrop'],
++    content: [
++      'content',
++      `anchor${capitalize(anchor)}`,
++      variant && `variant${capitalize(variant)}`,
++      color && `color${capitalize(color)}`,
++      size && `size${capitalize(size)}`,
++    ],
++  };
++
++  return composeClasses(slots, getDrawerUtilityClass, {});
++};
++
++const getContentSize = (size: DrawerOwnerState['size']) => {
++  if (typeof size === 'number') {
++    return `${size}px`;
++  }
++  switch (size) {
++    case 'sm':
++      return 'clamp(240px, 30vw, 320px)';
++    case 'lg':
++      return 'clamp(360px, 50vw, 560px)';
++    case 'md':
++      return 'clamp(280px, 40vw, 440px)';
++    default:
++      // A custom CSS size (e.g. '50vw') provided via `DrawerPropsSizeOverrides`.
++      return size;
++  }
++};
++
++const DrawerContent = styled('div', {
++  name: 'JoyDrawer',
++  slot: 'Content',
++  overridesResolver: (props, styles) => styles.content,
++})<{ ownerState: DrawerOwnerState }>(({ theme, ownerState }) => {
++  const variantStyle = theme.variants?.[ownerState.variant]?.[ownerState.color!];
++  return {
++    '--Drawer-contentSize': getContentSize(ownerState.size),
++    boxSizing: 'border-box',
++    display: 'flex',
++    flexDirection: 'column',
++    position: 'absolute',
++    zIndex: 1,
++    outline: 0,
++    overflowY: 'auto',
++    backgroundColor: theme.vars.palette.background.surface,
++    ...variantStyle,
++    WebkitOverflowScrolling: 'touch',
++    transition: 'transform 225ms cubic-bezier(0, 0, 0.2, 1) 0ms',
++    ...(ownerState.anchor === 'left' && {
++      top: 0,
++      left: 0,
++      bottom: 0,
++      width: 'var(--Drawer-contentSize)',
++      height: '100%',
++      transform: ownerState.open ? 'translateX(0)' : 'translateX(-100%)',
++      borderRight: `1px solid ${theme.vars.palette.divider}`,
++    }),
++    ...(ownerState.anchor === 'right' && {
++      top: 0,
++      right: 0,
++      bottom: 0,
++      width: 'var(--Drawer-contentSize)',
++      height: '100%',
++      transform: ownerState.open ? 'translateX(0)' : 'translateX(100%)',
++      borderLeft: `1px solid ${theme.vars.palette.divider}`,
++    }),
++    ...(ownerState.anchor === 'top' && {
++      top: 0,
++      left: 0,
++      right: 0,
++      width: '100%',
++      height: 'var(--Drawer-contentSize)',
++      transform: ownerState.open ? 'translateY(0)' : 'translateY(-100%)',
++      borderBottom: `1px solid ${theme.vars.palette.divider}`,
++    }),
++    ...(ownerState.anchor === 'bottom' && {
++      bottom: 0,
++      left: 0,
++      right: 0,
++      width: '100%',
++      height: 'var(--Drawer-contentSize)',
++      transform: ownerState.open ? 'translateY(0)' : 'translateY(100%)',
++      borderTop: `1px solid ${theme.vars.palette.divider}`,
++    }),
++  };
++});
++
++/**
++ *
++ * Demos:
++ *
++ * - [Drawer](https://mui.com/joy-ui/react-drawer/)
++ *
++ * API:
++ *
++ * - [Drawer API](https://mui.com/joy-ui/api/drawer/)
++ */
++const Drawer = React.forwardRef(function Drawer(inProps, ref) {
++  const props = useThemeProps<typeof inProps & DrawerProps>({
++    props: inProps,
++    name: 'JoyDrawer',
++  });
++
++  const {
++    anchor: anchorProp = 'left',
++    children,
++    className,
++    color: colorProp = 'neutral',
++    open = false,
++    size = 'md',
++    variant = 'plain',
++    invertedColors = false,
++    component,
++    slots = {},
++    slotProps = {},
++    ...other
++  } = props;
++
++  const ownerState: DrawerOwnerState = {
++    ...props,
++    anchor: anchorProp,
++    color: colorProp,
++    component,
++    open,
++    size,
++    variant,
++    invertedColors,
++  };
++
++  const classes = useUtilityClasses(ownerState);
++  const externalForwardedProps = { ...other, component, slots, slotProps };
++
++  // When the root slot is overridden, the Modal is replaced entirely, so the
++  // Modal-specific props (and the backdrop slot config) must not be forwarded
++  // to the replacement element (they would leak to the DOM as unknown attributes).
++  const rootIsOverridden = slots.root !== undefined;
++
++  // Resolve the backdrop slot props (they can be a callback receiving the
++  // owner state) so that the Drawer's `backdrop` class is always applied while
++  // preserving the consumer's customization.
++  const resolvedBackdropSlotProps = resolveComponentProps(slotProps.backdrop, ownerState);
++
++  const [SlotRoot, rootProps] = useSlot('root', {
++    ref,
++    className: clsx(classes.root, className),
++    elementType: Modal,
++    externalForwardedProps,
++    ownerState,
++    additionalProps: rootIsOverridden
++      ? undefined
++      : {
++          open,
++          slots: { backdrop: slots.backdrop },
++          slotProps: {
++            backdrop: {
++              ...resolvedBackdropSlotProps,
++              className: clsx(classes.backdrop, resolvedBackdropSlotProps?.className),
++            },
++          },
++        },
++  });
++
++  const [SlotContent, contentProps] = useSlot('content', {
++    className: classes.content,
++    elementType: DrawerContent,
++    externalForwardedProps,
++    ownerState,
++  });
++
++  const result = (
++    <SlotRoot {...rootProps}>
++      <SlotContent {...contentProps}>{children}</SlotContent>
++    </SlotRoot>
++  );
++
++  if (invertedColors) {
++    return <ColorInversionProvider variant={variant}>{result}</ColorInversionProvider>;
++  }
++  return result;
++}) as OverridableComponent<DrawerTypeMap>;
++
++Drawer.propTypes /* remove-proptypes */ = {
++  // ----------------------------- Warning --------------------------------
++  // | These PropTypes are generated from the TypeScript type definitions |
++  // |     To update them edit TypeScript types and run "yarn proptypes"  |
++  // ----------------------------------------------------------------------
++  /**
++   * Side from which the drawer will appear.
++   * @default 'left'
++   */
++  anchor: PropTypes.oneOf(['bottom', 'left', 'right', 'top']),
++  /**
++   * The content of the component.
++   */
++  children: PropTypes.node,
++  /**
++   * @ignore
++   */
++  className: PropTypes.string,
++  /**
++   * The color of the component. It supports those theme colors that make sense for this component.
++   * @default 'neutral'
++   */
++  color: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['danger', 'neutral', 'primary', 'success', 'warning']),
++    PropTypes.string,
++  ]),
++  /**
++   * The component used for the root node.
++   * Either a string to use a HTML element or a component.
++   */
++  component: PropTypes.elementType,
++  /**
++   * If `true`, the children with an implicit color prop invert their colors to match the component's variant and color.
++   * @default false
++   */
++  invertedColors: PropTypes.bool,
++  /**
++   * If `true`, the component is shown.
++   * @default false
++   */
++  open: PropTypes.bool,
++  /**
++   * The size of the component.
++   * @default 'md'
++   */
++  size: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['sm', 'md', 'lg']),
++    PropTypes.string,
++  ]),
++  /**
++   * The props used for each slot inside.
++   * @default {}
++   */
++  slotProps: PropTypes.shape({
++    backdrop: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++    content: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++    root: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++  }),
++  /**
++   * The components used for each slot inside.
++   * @default {}
++   */
++  slots: PropTypes.shape({
++    backdrop: PropTypes.elementType,
++    content: PropTypes.elementType,
++    root: PropTypes.elementType,
++  }),
++  /**
++   * The system prop that allows defining system overrides as well as additional CSS styles.
++   */
++  sx: PropTypes.oneOfType([
++    PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.func, PropTypes.object, PropTypes.bool])),
++    PropTypes.func,
++    PropTypes.object,
++  ]),
++  /**
++   * The [global variant](https://mui.com/joy-ui/main-features/global-variants/) to use.
++   * @default 'plain'
++   */
++  variant: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['outlined', 'plain', 'soft', 'solid']),
++    PropTypes.string,
++  ]),
++} as any;
++
++export default Drawer;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Drawer/DrawerProps.ts b/packages/mui-joy/src/Drawer/DrawerProps.ts
+new file mode 100644
+index 00000000..5367863f
+--- /dev/null
++++ b/packages/mui-joy/src/Drawer/DrawerProps.ts
+@@ -0,0 +1,90 @@
++import * as React from 'react';
++import { OverridableStringUnion, OverrideProps } from '@mui/types';
++import { ColorPaletteProp, SxProps, VariantProp, ApplyColorInversion } from '../styles/types';
++import { SlotProps, CreateSlotsAndSlotProps } from '../utils/types';
++import { ModalProps } from '../Modal/ModalProps';
++
++export type DrawerSlot = 'root' | 'backdrop' | 'content';
++
++export interface DrawerSlots {
++  /**
++   * The component that renders the root.
++   * @default 'div'
++   */
++  root?: React.ElementType;
++  /**
++   * The component that renders the backdrop.
++   * @default 'div'
++   */
++  backdrop?: React.ElementType;
++  /**
++   * The component that renders the content.
++   * @default 'div'
++   */
++  content?: React.ElementType;
++}
++
++export type DrawerSlotsAndSlotProps = CreateSlotsAndSlotProps<
++  DrawerSlots,
++  {
++    root: SlotProps<'div', {}, DrawerOwnerState>;
++    backdrop: SlotProps<'div', {}, DrawerOwnerState>;
++    content: SlotProps<'div', {}, DrawerOwnerState>;
++  }
++>;
++
++export interface DrawerPropsColorOverrides {}
++export interface DrawerPropsVariantOverrides {}
++export interface DrawerPropsSizeOverrides {}
++
++export interface DrawerTypeMap<
++  P = {},
++  D extends React.ElementType = 'div',
++> {
++  props: P &
++    Omit<ModalProps, 'slots' | 'slotProps'> & {
++      /**
++       * Side from which the drawer will appear.
++       * @default 'left'
++       */
++      anchor?: 'bottom' | 'left' | 'right' | 'top';
++      /**
++       * The color of the component. It supports those theme colors that make sense for this component.
++       * @default 'neutral'
++       */
++      color?: OverridableStringUnion<ColorPaletteProp, DrawerPropsColorOverrides>;
++      /**
++       * If `true`, the children with an implicit color prop invert their colors to match the component's variant and color.
++       * @default false
++       */
++      invertedColors?: boolean;
++      /**
++       * The size of the component.
++       * @default 'md'
++       */
++      size?: OverridableStringUnion<'sm' | 'md' | 'lg', DrawerPropsSizeOverrides>;
++      /**
++       * The system prop that allows defining system overrides as well as additional CSS styles.
++       */
++      sx?: SxProps;
++      /**
++       * The [global variant](https://mui.com/joy-ui/main-features/global-variants/) to use.
++       * @default 'plain'
++       */
++      variant?: OverridableStringUnion<VariantProp, DrawerPropsVariantOverrides>;
++    } & DrawerSlotsAndSlotProps;
++  defaultComponent: D;
++}
++
++export type DrawerProps<
++  D extends React.ElementType = DrawerTypeMap['defaultComponent'],
++  P = { component?: React.ElementType },
++> = OverrideProps<DrawerTypeMap<P, D>, D>;
++
++export interface DrawerOwnerState
++  extends ApplyColorInversion<Omit<DrawerProps, 'slots' | 'slotProps'>> {
++  anchor: NonNullable<DrawerProps['anchor']>;
++  size: NonNullable<DrawerProps['size']>;
++  variant: NonNullable<DrawerProps['variant']>;
++  open: boolean;
++}
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Drawer/drawerClasses.ts b/packages/mui-joy/src/Drawer/drawerClasses.ts
+new file mode 100644
+index 00000000..e46b2fd3
+--- /dev/null
++++ b/packages/mui-joy/src/Drawer/drawerClasses.ts
+@@ -0,0 +1,90 @@
++import { generateUtilityClass, generateUtilityClasses } from '../className';
++
++export interface DrawerClasses {
++  /** Class name applied to the root element. */
++  root: string;
++  /** Class name applied to the root element if `open={false}`. */
++  hidden: string;
++  /** Class name applied to the root element if `anchor="left"`. */
++  anchorLeft: string;
++  /** Class name applied to the root element if `anchor="right"`. */
++  anchorRight: string;
++  /** Class name applied to the root element if `anchor="top"`. */
++  anchorTop: string;
++  /** Class name applied to the root element if `anchor="bottom"`. */
++  anchorBottom: string;
++  /** Class name applied to the backdrop element. */
++  backdrop: string;
++  /** Class name applied to the content element. */
++  content: string;
++  /** Class name applied to the content element if `anchor="left"`. */
++  contentAnchorLeft: string;
++  /** Class name applied to the content element if `anchor="right"`. */
++  contentAnchorRight: string;
++  /** Class name applied to the content element if `anchor="top"`. */
++  contentAnchorTop: string;
++  /** Class name applied to the content element if `anchor="bottom"`. */
++  contentAnchorBottom: string;
++  /** Class name applied to the content element if `color="primary"`. */
++  colorPrimary: string;
++  /** Class name applied to the content element if `color="neutral"`. */
++  colorNeutral: string;
++  /** Class name applied to the content element if `color="danger"`. */
++  colorDanger: string;
++  /** Class name applied to the content element if `color="success"`. */
++  colorSuccess: string;
++  /** Class name applied to the content element if `color="warning"`. */
++  colorWarning: string;
++  /** Class name applied to the content element when color inversion is triggered. */
++  colorContext: string;
++  /** Class name applied to the content element if `variant="plain"`. */
++  variantPlain: string;
++  /** Class name applied to the content element if `variant="outlined"`. */
++  variantOutlined: string;
++  /** Class name applied to the content element if `variant="soft"`. */
++  variantSoft: string;
++  /** Class name applied to the content element if `variant="solid"`. */
++  variantSolid: string;
++  /** Class name applied to the content element if `size="sm"`. */
++  sizeSm: string;
++  /** Class name applied to the content element if `size="md"`. */
++  sizeMd: string;
++  /** Class name applied to the content element if `size="lg"`. */
++  sizeLg: string;
++}
++
++export type DrawerClassKey = keyof DrawerClasses;
++
++export function getDrawerUtilityClass(slot: string): string {
++  return generateUtilityClass('MuiDrawer', slot);
++}
++
++const drawerClasses: DrawerClasses = generateUtilityClasses('MuiDrawer', [
++  'root',
++  'hidden',
++  'anchorLeft',
++  'anchorRight',
++  'anchorTop',
++  'anchorBottom',
++  'backdrop',
++  'content',
++  'contentAnchorLeft',
++  'contentAnchorRight',
++  'contentAnchorTop',
++  'contentAnchorBottom',
++  'colorPrimary',
++  'colorNeutral',
++  'colorDanger',
++  'colorSuccess',
++  'colorWarning',
++  'colorContext',
++  'variantPlain',
++  'variantOutlined',
++  'variantSoft',
++  'variantSolid',
++  'sizeSm',
++  'sizeMd',
++  'sizeLg',
++]);
++
++export default drawerClasses;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Drawer/index.ts b/packages/mui-joy/src/Drawer/index.ts
+new file mode 100644
+index 00000000..80c86593
+--- /dev/null
++++ b/packages/mui-joy/src/Drawer/index.ts
+@@ -0,0 +1,5 @@
++'use client';
++export { default } from './Drawer';
++export * from './drawerClasses';
++export { default as drawerClasses } from './drawerClasses';
++export * from './DrawerProps';
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/index.ts b/packages/mui-joy/src/index.ts
+index c6bd25e7..388ba8cd 100644
+--- a/packages/mui-joy/src/index.ts
++++ b/packages/mui-joy/src/index.ts
+@@ -97,6 +97,9 @@ export * from './DialogTitle';
+ export { default as Divider } from './Divider';
+ export * from './Divider';
+ 
++export { default as Drawer } from './Drawer';
++export * from './Drawer';
++
+ export { default as Dropdown } from './Dropdown';
+ export * from './Dropdown';
+ 
+diff --git a/packages/mui-joy/src/styles/components.d.ts b/packages/mui-joy/src/styles/components.d.ts
+index dd53c6ff..7ce180a7 100644
+--- a/packages/mui-joy/src/styles/components.d.ts
++++ b/packages/mui-joy/src/styles/components.d.ts
+@@ -107,6 +107,7 @@ import {
+   ScopedCssBaselineSlot,
+ } from '../ScopedCssBaseline/ScopedCssBaselineProps';
+ import { DividerProps, DividerOwnerState, DividerSlot } from '../Divider/DividerProps';
++import { DrawerProps, DrawerOwnerState, DrawerSlot } from '../Drawer/DrawerProps';
+ import {
+   FormControlProps,
+   FormControlOwnerState,
+@@ -357,6 +358,10 @@ export interface Components<Theme = unknown> {
+     defaultProps?: Partial<DividerProps>;
+     styleOverrides?: StyleOverrides<DividerSlot, DividerOwnerState, Theme>;
+   };
++  JoyDrawer?: {
++    defaultProps?: Partial<DrawerProps>;
++    styleOverrides?: StyleOverrides<DrawerSlot, DrawerOwnerState, Theme>;
++  };
+   JoyFormControl?: {
+     defaultProps?: Partial<FormControlProps>;
+     styleOverrides?: StyleOverrides<FormControlSlot, FormControlOwnerState, Theme>;

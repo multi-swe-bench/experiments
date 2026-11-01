@@ -1,0 +1,151 @@
+diff --git a/packages/mui-material/src/TablePagination/TablePagination.d.ts b/packages/mui-material/src/TablePagination/TablePagination.d.ts
+index 3c72b57d..7f66aac5 100644
+--- a/packages/mui-material/src/TablePagination/TablePagination.d.ts
++++ b/packages/mui-material/src/TablePagination/TablePagination.d.ts
+@@ -41,6 +41,10 @@ export interface TablePaginationOwnProps extends TablePaginationBaseProps {
+    * To enable server side pagination for an unknown number of items, provide -1.
+    */
+   count: number;
++  /**
++   * Props applied to the first page [`IconButton`](/material-ui/api/icon-button/) component.
++   */
++  firstIconButtonProps?: Partial<IconButtonProps>;
+   /**
+    * Accepts a function which returns a string value that provides a user-friendly name for the current page.
+    * This is important for screen reader users.
+@@ -70,6 +74,10 @@ export interface TablePaginationOwnProps extends TablePaginationBaseProps {
+    * @default 'Rows per page:'
+    */
+   labelRowsPerPage?: React.ReactNode;
++  /**
++   * Props applied to the last page [`IconButton`](/material-ui/api/icon-button/) component.
++   */
++  lastIconButtonProps?: Partial<IconButtonProps>;
+   /**
+    * Props applied to the next arrow [`IconButton`](/material-ui/api/icon-button/) element.
+    */
+diff --git a/packages/mui-material/src/TablePagination/TablePagination.js b/packages/mui-material/src/TablePagination/TablePagination.js
+index 4e040523..74ecb9bb 100644
+--- a/packages/mui-material/src/TablePagination/TablePagination.js
++++ b/packages/mui-material/src/TablePagination/TablePagination.js
+@@ -145,9 +145,11 @@ const TablePagination = React.forwardRef(function TablePagination(inProps, ref)
+     colSpan: colSpanProp,
+     component = TableCell,
+     count,
++    firstIconButtonProps,
+     getItemAriaLabel = defaultGetAriaLabel,
+     labelDisplayedRows = defaultLabelDisplayedRows,
+     labelRowsPerPage = 'Rows per page:',
++    lastIconButtonProps,
+     nextIconButtonProps,
+     onPageChange,
+     onRowsPerPageChange,
+@@ -249,6 +251,8 @@ const TablePagination = React.forwardRef(function TablePagination(inProps, ref)
+           showFirstButton={showFirstButton}
+           showLastButton={showLastButton}
+           getItemAriaLabel={getItemAriaLabel}
++          firstIconButtonProps={firstIconButtonProps}
++          lastIconButtonProps={lastIconButtonProps}
+         />
+       </TablePaginationToolbar>
+     </TablePaginationRoot>
+@@ -293,6 +297,10 @@ TablePagination.propTypes /* remove-proptypes */ = {
+    * To enable server side pagination for an unknown number of items, provide -1.
+    */
+   count: integerPropType.isRequired,
++  /**
++   * Props applied to the first page [`IconButton`](/material-ui/api/icon-button/) component.
++   */
++  firstIconButtonProps: PropTypes.object,
+   /**
+    * Accepts a function which returns a string value that provides a user-friendly name for the current page.
+    * This is important for screen reader users.
+@@ -322,6 +330,10 @@ TablePagination.propTypes /* remove-proptypes */ = {
+    * @default 'Rows per page:'
+    */
+   labelRowsPerPage: PropTypes.node,
++  /**
++   * Props applied to the last page [`IconButton`](/material-ui/api/icon-button/) component.
++   */
++  lastIconButtonProps: PropTypes.object,
+   /**
+    * Props applied to the next arrow [`IconButton`](/material-ui/api/icon-button/) element.
+    */
+diff --git a/packages/mui-material/src/TablePagination/TablePaginationActions.d.ts b/packages/mui-material/src/TablePagination/TablePaginationActions.d.ts
+index 843b2fdd..f6df9bc6 100644
+--- a/packages/mui-material/src/TablePagination/TablePaginationActions.d.ts
++++ b/packages/mui-material/src/TablePagination/TablePaginationActions.d.ts
+@@ -8,6 +8,10 @@ export interface TablePaginationActionsProps extends React.HTMLAttributes<HTMLDi
+    */
+   classes?: {};
+   count: number;
++  /**
++   * Props applied to the first page [`IconButton`](/material-ui/api/icon-button/) element.
++   */
++  firstIconButtonProps?: Partial<IconButtonProps>;
+   /**
+    * Accepts a function which returns a string value that provides a user-friendly name for the current page.
+    * This is important for screen reader users.
+@@ -17,6 +21,10 @@ export interface TablePaginationActionsProps extends React.HTMLAttributes<HTMLDi
+    * @returns {string}
+    */
+   getItemAriaLabel: (type: 'first' | 'last' | 'next' | 'previous') => string;
++  /**
++   * Props applied to the last page [`IconButton`](/material-ui/api/icon-button/) element.
++   */
++  lastIconButtonProps?: Partial<IconButtonProps>;
+   nextIconButtonProps?: Partial<IconButtonProps>;
+   onPageChange: (event: React.MouseEvent<HTMLButtonElement> | null, page: number) => void;
+   page: number;
+diff --git a/packages/mui-material/src/TablePagination/TablePaginationActions.js b/packages/mui-material/src/TablePagination/TablePaginationActions.js
+index 9e3e1d61..7e5c080d 100644
+--- a/packages/mui-material/src/TablePagination/TablePaginationActions.js
++++ b/packages/mui-material/src/TablePagination/TablePaginationActions.js
+@@ -15,7 +15,9 @@ const TablePaginationActions = React.forwardRef(function TablePaginationActions(
+   const {
+     backIconButtonProps,
+     count,
++    firstIconButtonProps,
+     getItemAriaLabel,
++    lastIconButtonProps,
+     nextIconButtonProps,
+     onPageChange,
+     page,
+@@ -51,6 +53,7 @@ const TablePaginationActions = React.forwardRef(function TablePaginationActions(
+           disabled={page === 0}
+           aria-label={getItemAriaLabel('first', page)}
+           title={getItemAriaLabel('first', page)}
++          {...firstIconButtonProps}
+         >
+           {theme.direction === 'rtl' ? <LastPageIcon /> : <FirstPageIcon />}
+         </IconButton>
+@@ -81,6 +84,7 @@ const TablePaginationActions = React.forwardRef(function TablePaginationActions(
+           disabled={page >= Math.ceil(count / rowsPerPage) - 1}
+           aria-label={getItemAriaLabel('last', page)}
+           title={getItemAriaLabel('last', page)}
++          {...lastIconButtonProps}
+         >
+           {theme.direction === 'rtl' ? <FirstPageIcon /> : <LastPageIcon />}
+         </IconButton>
+@@ -94,6 +98,10 @@ TablePaginationActions.propTypes = {
+    * Props applied to the back arrow [`IconButton`](/material-ui/api/icon-button/) element.
+    */
+   backIconButtonProps: PropTypes.object,
++  /**
++   * Props applied to the first page [`IconButton`](/material-ui/api/icon-button/) element.
++   */
++  firstIconButtonProps: PropTypes.object,
+   /**
+    * The total number of rows.
+    */
+@@ -108,6 +116,10 @@ TablePaginationActions.propTypes = {
+    * @returns {string}
+    */
+   getItemAriaLabel: PropTypes.func.isRequired,
++  /**
++   * Props applied to the last page [`IconButton`](/material-ui/api/icon-button/) element.
++   */
++  lastIconButtonProps: PropTypes.object,
+   /**
+    * Props applied to the next arrow [`IconButton`](/material-ui/api/icon-button/) element.
+    */

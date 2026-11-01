@@ -1,0 +1,385 @@
+diff --git a/docs/pages/api-docs/autocomplete.json b/docs/pages/api-docs/autocomplete.json
+index d217be5..9a79434 100644
+--- a/docs/pages/api-docs/autocomplete.json
++++ b/docs/pages/api-docs/autocomplete.json
+@@ -40,7 +40,7 @@
+       "type": { "name": "func" },
+       "default": "(option) => option.label ?? option"
+     },
+-    "getOptionSelected": { "type": { "name": "func" } },
++    "optionEqualValue": { "type": { "name": "func" }, "default": "(option, value) => option === value" },
+     "groupBy": { "type": { "name": "func" } },
+     "handleHomeEndKeys": { "type": { "name": "bool" }, "default": "!props.freeSolo" },
+     "id": { "type": { "name": "string" } },
+diff --git a/docs/src/pages/components/autocomplete/Asynchronous.js b/docs/src/pages/components/autocomplete/Asynchronous.js
+index de74b3b..4bd8aad 100644
+--- a/docs/src/pages/components/autocomplete/Asynchronous.js
++++ b/docs/src/pages/components/autocomplete/Asynchronous.js
+@@ -52,7 +52,7 @@ export default function Asynchronous() {
+       onClose={() => {
+         setOpen(false);
+       }}
+-      getOptionSelected={(option, value) => option.title === value.title}
++      optionEqualValue={(option, value) => option.title === value.title}
+       getOptionLabel={(option) => option.title}
+       options={options}
+       loading={loading}
+diff --git a/docs/src/pages/components/autocomplete/Asynchronous.tsx b/docs/src/pages/components/autocomplete/Asynchronous.tsx
+index e99c328..919d213 100644
+--- a/docs/src/pages/components/autocomplete/Asynchronous.tsx
++++ b/docs/src/pages/components/autocomplete/Asynchronous.tsx
+@@ -57,7 +57,7 @@ export default function Asynchronous() {
+       onClose={() => {
+         setOpen(false);
+       }}
+-      getOptionSelected={(option, value) => option.title === value.title}
++      optionEqualValue={(option, value) => option.title === value.title}
+       getOptionLabel={(option) => option.title}
+       options={options}
+       loading={loading}
+diff --git a/docs/translations/api-docs/autocomplete/autocomplete-de.json b/docs/translations/api-docs/autocomplete/autocomplete-de.json
+index 688de8b..86f59e5 100644
+--- a/docs/translations/api-docs/autocomplete/autocomplete-de.json
++++ b/docs/translations/api-docs/autocomplete/autocomplete-de.json
+@@ -27,7 +27,7 @@
+     "getLimitTagsText": "The label to display when the tags are truncated (<code>limitTags</code>).<br><br><strong>Signature:</strong><br><code>function(more: number) =&gt; ReactNode</code><br><em>more:</em> The number of truncated tags.",
+     "getOptionDisabled": "Used to determine the disabled state for a given option.<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; boolean</code><br><em>option:</em> The option to test.",
+     "getOptionLabel": "Used to determine the string value for a given option. It&#39;s used to fill the input (and the list box options if <code>renderOption</code> is not provided).<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; string</code><br>",
+-    "getOptionSelected": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
++    "optionEqualValue": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
+     "groupBy": "If provided, the options will be grouped under the returned string. The groupBy value is also used as the text for group headings when <code>renderGroup</code> is not provided.<br><br><strong>Signature:</strong><br><code>function(options: T) =&gt; string</code><br><em>options:</em> The options to group.",
+     "handleHomeEndKeys": "If <code>true</code>, the component handles the &quot;Home&quot; and &quot;End&quot; keys when the popup is open. It should move focus to the first option and last option, respectively.",
+     "id": "This prop is used to help implement the accessibility logic. If you don&#39;t provide this prop. It falls back to a randomly generated id.",
+@@ -58,7 +58,7 @@
+     "renderTags": "Render the selected value.<br><br><strong>Signature:</strong><br><code>function(value: T[], getTagProps: function) =&gt; ReactNode</code><br><em>value:</em> The <code>value</code> provided to the component.<br><em>getTagProps:</em> A tag props getter.",
+     "selectOnFocus": "If <code>true</code>, the input&#39;s text is selected on focus. It helps the user clear the selected value.",
+     "size": "The size of the autocomplete.",
+-    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>getOptionSelected</code> prop."
++    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>optionEqualValue</code> prop."
+   },
+   "classDescriptions": {
+     "root": {
+diff --git a/docs/translations/api-docs/autocomplete/autocomplete-es.json b/docs/translations/api-docs/autocomplete/autocomplete-es.json
+index 46efcce..8cdc8ef 100644
+--- a/docs/translations/api-docs/autocomplete/autocomplete-es.json
++++ b/docs/translations/api-docs/autocomplete/autocomplete-es.json
+@@ -27,7 +27,7 @@
+     "getLimitTagsText": "The label to display when the tags are truncated (<code>limitTags</code>).<br><br><strong>Signature:</strong><br><code>function(more: number) =&gt; ReactNode</code><br><em>more:</em> The number of truncated tags.",
+     "getOptionDisabled": "Used to determine the disabled state for a given option.<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; boolean</code><br><em>option:</em> The option to test.",
+     "getOptionLabel": "Used to determine the string value for a given option. It&#39;s used to fill the input (and the list box options if <code>renderOption</code> is not provided).<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; string</code><br>",
+-    "getOptionSelected": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
++    "optionEqualValue": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
+     "groupBy": "If provided, the options will be grouped under the returned string. The groupBy value is also used as the text for group headings when <code>renderGroup</code> is not provided.<br><br><strong>Signature:</strong><br><code>function(options: T) =&gt; string</code><br><em>options:</em> The options to group.",
+     "handleHomeEndKeys": "If <code>true</code>, the component handles the &quot;Home&quot; and &quot;End&quot; keys when the popup is open. It should move focus to the first option and last option, respectively.",
+     "id": "This prop is used to help implement the accessibility logic. If you don&#39;t provide this prop. It falls back to a randomly generated id.",
+@@ -58,7 +58,7 @@
+     "renderTags": "Render the selected value.<br><br><strong>Signature:</strong><br><code>function(value: T[], getTagProps: function) =&gt; ReactNode</code><br><em>value:</em> The <code>value</code> provided to the component.<br><em>getTagProps:</em> A tag props getter.",
+     "selectOnFocus": "If <code>true</code>, the input&#39;s text is selected on focus. It helps the user clear the selected value.",
+     "size": "The size of the autocomplete.",
+-    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>getOptionSelected</code> prop."
++    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>optionEqualValue</code> prop."
+   },
+   "classDescriptions": {
+     "root": {
+diff --git a/docs/translations/api-docs/autocomplete/autocomplete-fr.json b/docs/translations/api-docs/autocomplete/autocomplete-fr.json
+index 46efcce..8cdc8ef 100644
+--- a/docs/translations/api-docs/autocomplete/autocomplete-fr.json
++++ b/docs/translations/api-docs/autocomplete/autocomplete-fr.json
+@@ -27,7 +27,7 @@
+     "getLimitTagsText": "The label to display when the tags are truncated (<code>limitTags</code>).<br><br><strong>Signature:</strong><br><code>function(more: number) =&gt; ReactNode</code><br><em>more:</em> The number of truncated tags.",
+     "getOptionDisabled": "Used to determine the disabled state for a given option.<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; boolean</code><br><em>option:</em> The option to test.",
+     "getOptionLabel": "Used to determine the string value for a given option. It&#39;s used to fill the input (and the list box options if <code>renderOption</code> is not provided).<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; string</code><br>",
+-    "getOptionSelected": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
++    "optionEqualValue": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
+     "groupBy": "If provided, the options will be grouped under the returned string. The groupBy value is also used as the text for group headings when <code>renderGroup</code> is not provided.<br><br><strong>Signature:</strong><br><code>function(options: T) =&gt; string</code><br><em>options:</em> The options to group.",
+     "handleHomeEndKeys": "If <code>true</code>, the component handles the &quot;Home&quot; and &quot;End&quot; keys when the popup is open. It should move focus to the first option and last option, respectively.",
+     "id": "This prop is used to help implement the accessibility logic. If you don&#39;t provide this prop. It falls back to a randomly generated id.",
+@@ -58,7 +58,7 @@
+     "renderTags": "Render the selected value.<br><br><strong>Signature:</strong><br><code>function(value: T[], getTagProps: function) =&gt; ReactNode</code><br><em>value:</em> The <code>value</code> provided to the component.<br><em>getTagProps:</em> A tag props getter.",
+     "selectOnFocus": "If <code>true</code>, the input&#39;s text is selected on focus. It helps the user clear the selected value.",
+     "size": "The size of the autocomplete.",
+-    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>getOptionSelected</code> prop."
++    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>optionEqualValue</code> prop."
+   },
+   "classDescriptions": {
+     "root": {
+diff --git a/docs/translations/api-docs/autocomplete/autocomplete-ja.json b/docs/translations/api-docs/autocomplete/autocomplete-ja.json
+index 46efcce..8cdc8ef 100644
+--- a/docs/translations/api-docs/autocomplete/autocomplete-ja.json
++++ b/docs/translations/api-docs/autocomplete/autocomplete-ja.json
+@@ -27,7 +27,7 @@
+     "getLimitTagsText": "The label to display when the tags are truncated (<code>limitTags</code>).<br><br><strong>Signature:</strong><br><code>function(more: number) =&gt; ReactNode</code><br><em>more:</em> The number of truncated tags.",
+     "getOptionDisabled": "Used to determine the disabled state for a given option.<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; boolean</code><br><em>option:</em> The option to test.",
+     "getOptionLabel": "Used to determine the string value for a given option. It&#39;s used to fill the input (and the list box options if <code>renderOption</code> is not provided).<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; string</code><br>",
+-    "getOptionSelected": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
++    "optionEqualValue": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
+     "groupBy": "If provided, the options will be grouped under the returned string. The groupBy value is also used as the text for group headings when <code>renderGroup</code> is not provided.<br><br><strong>Signature:</strong><br><code>function(options: T) =&gt; string</code><br><em>options:</em> The options to group.",
+     "handleHomeEndKeys": "If <code>true</code>, the component handles the &quot;Home&quot; and &quot;End&quot; keys when the popup is open. It should move focus to the first option and last option, respectively.",
+     "id": "This prop is used to help implement the accessibility logic. If you don&#39;t provide this prop. It falls back to a randomly generated id.",
+@@ -58,7 +58,7 @@
+     "renderTags": "Render the selected value.<br><br><strong>Signature:</strong><br><code>function(value: T[], getTagProps: function) =&gt; ReactNode</code><br><em>value:</em> The <code>value</code> provided to the component.<br><em>getTagProps:</em> A tag props getter.",
+     "selectOnFocus": "If <code>true</code>, the input&#39;s text is selected on focus. It helps the user clear the selected value.",
+     "size": "The size of the autocomplete.",
+-    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>getOptionSelected</code> prop."
++    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>optionEqualValue</code> prop."
+   },
+   "classDescriptions": {
+     "root": {
+diff --git a/docs/translations/api-docs/autocomplete/autocomplete-pt.json b/docs/translations/api-docs/autocomplete/autocomplete-pt.json
+index 46efcce..8cdc8ef 100644
+--- a/docs/translations/api-docs/autocomplete/autocomplete-pt.json
++++ b/docs/translations/api-docs/autocomplete/autocomplete-pt.json
+@@ -27,7 +27,7 @@
+     "getLimitTagsText": "The label to display when the tags are truncated (<code>limitTags</code>).<br><br><strong>Signature:</strong><br><code>function(more: number) =&gt; ReactNode</code><br><em>more:</em> The number of truncated tags.",
+     "getOptionDisabled": "Used to determine the disabled state for a given option.<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; boolean</code><br><em>option:</em> The option to test.",
+     "getOptionLabel": "Used to determine the string value for a given option. It&#39;s used to fill the input (and the list box options if <code>renderOption</code> is not provided).<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; string</code><br>",
+-    "getOptionSelected": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
++    "optionEqualValue": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
+     "groupBy": "If provided, the options will be grouped under the returned string. The groupBy value is also used as the text for group headings when <code>renderGroup</code> is not provided.<br><br><strong>Signature:</strong><br><code>function(options: T) =&gt; string</code><br><em>options:</em> The options to group.",
+     "handleHomeEndKeys": "If <code>true</code>, the component handles the &quot;Home&quot; and &quot;End&quot; keys when the popup is open. It should move focus to the first option and last option, respectively.",
+     "id": "This prop is used to help implement the accessibility logic. If you don&#39;t provide this prop. It falls back to a randomly generated id.",
+@@ -58,7 +58,7 @@
+     "renderTags": "Render the selected value.<br><br><strong>Signature:</strong><br><code>function(value: T[], getTagProps: function) =&gt; ReactNode</code><br><em>value:</em> The <code>value</code> provided to the component.<br><em>getTagProps:</em> A tag props getter.",
+     "selectOnFocus": "If <code>true</code>, the input&#39;s text is selected on focus. It helps the user clear the selected value.",
+     "size": "The size of the autocomplete.",
+-    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>getOptionSelected</code> prop."
++    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>optionEqualValue</code> prop."
+   },
+   "classDescriptions": {
+     "root": {
+diff --git a/docs/translations/api-docs/autocomplete/autocomplete-ru.json b/docs/translations/api-docs/autocomplete/autocomplete-ru.json
+index 46efcce..8cdc8ef 100644
+--- a/docs/translations/api-docs/autocomplete/autocomplete-ru.json
++++ b/docs/translations/api-docs/autocomplete/autocomplete-ru.json
+@@ -27,7 +27,7 @@
+     "getLimitTagsText": "The label to display when the tags are truncated (<code>limitTags</code>).<br><br><strong>Signature:</strong><br><code>function(more: number) =&gt; ReactNode</code><br><em>more:</em> The number of truncated tags.",
+     "getOptionDisabled": "Used to determine the disabled state for a given option.<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; boolean</code><br><em>option:</em> The option to test.",
+     "getOptionLabel": "Used to determine the string value for a given option. It&#39;s used to fill the input (and the list box options if <code>renderOption</code> is not provided).<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; string</code><br>",
+-    "getOptionSelected": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
++    "optionEqualValue": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
+     "groupBy": "If provided, the options will be grouped under the returned string. The groupBy value is also used as the text for group headings when <code>renderGroup</code> is not provided.<br><br><strong>Signature:</strong><br><code>function(options: T) =&gt; string</code><br><em>options:</em> The options to group.",
+     "handleHomeEndKeys": "If <code>true</code>, the component handles the &quot;Home&quot; and &quot;End&quot; keys when the popup is open. It should move focus to the first option and last option, respectively.",
+     "id": "This prop is used to help implement the accessibility logic. If you don&#39;t provide this prop. It falls back to a randomly generated id.",
+@@ -58,7 +58,7 @@
+     "renderTags": "Render the selected value.<br><br><strong>Signature:</strong><br><code>function(value: T[], getTagProps: function) =&gt; ReactNode</code><br><em>value:</em> The <code>value</code> provided to the component.<br><em>getTagProps:</em> A tag props getter.",
+     "selectOnFocus": "If <code>true</code>, the input&#39;s text is selected on focus. It helps the user clear the selected value.",
+     "size": "The size of the autocomplete.",
+-    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>getOptionSelected</code> prop."
++    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>optionEqualValue</code> prop."
+   },
+   "classDescriptions": {
+     "root": {
+diff --git a/docs/translations/api-docs/autocomplete/autocomplete-zh.json b/docs/translations/api-docs/autocomplete/autocomplete-zh.json
+index 495fb07..fca84fd 100644
+--- a/docs/translations/api-docs/autocomplete/autocomplete-zh.json
++++ b/docs/translations/api-docs/autocomplete/autocomplete-zh.json
+@@ -27,7 +27,7 @@
+     "getLimitTagsText": "The label to display when the tags are truncated (<code>limitTags</code>).<br><br><strong>Signature:</strong><br><code>function(more: number) =&gt; ReactNode</code><br><em>more:</em> The number of truncated tags.",
+     "getOptionDisabled": "Used to determine the disabled state for a given option.<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; boolean</code><br><em>option:</em> The option to test.",
+     "getOptionLabel": "Used to determine the string value for a given option. It&#39;s used to fill the input (and the list box options if <code>renderOption</code> is not provided).<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; string</code><br>",
+-    "getOptionSelected": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
++    "optionEqualValue": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
+     "groupBy": "If provided, the options will be grouped under the returned string. The groupBy value is also used as the text for group headings when <code>renderGroup</code> is not provided.<br><br><strong>Signature:</strong><br><code>function(options: T) =&gt; string</code><br><em>options:</em> The options to group.",
+     "handleHomeEndKeys": "If <code>true</code>, the component handles the &quot;Home&quot; and &quot;End&quot; keys when the popup is open. It should move focus to the first option and last option, respectively.",
+     "id": "This prop is used to help implement the accessibility logic. If you don&#39;t provide this prop. It falls back to a randomly generated id.",
+@@ -58,7 +58,7 @@
+     "renderTags": "Render the selected value.<br><br><strong>Signature:</strong><br><code>function(value: T[], getTagProps: function) =&gt; ReactNode</code><br><em>value:</em> The <code>value</code> provided to the component.<br><em>getTagProps:</em> A tag props getter.",
+     "selectOnFocus": "If <code>true</code>, the input&#39;s text is selected on focus. It helps the user clear the selected value.",
+     "size": "The size of the autocomplete.",
+-    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>getOptionSelected</code> prop."
++    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>optionEqualValue</code> prop."
+   },
+   "classDescriptions": {
+     "root": {
+diff --git a/docs/translations/api-docs/autocomplete/autocomplete.json b/docs/translations/api-docs/autocomplete/autocomplete.json
+index 1184204..1a6cd67 100644
+--- a/docs/translations/api-docs/autocomplete/autocomplete.json
++++ b/docs/translations/api-docs/autocomplete/autocomplete.json
+@@ -27,7 +27,7 @@
+     "getLimitTagsText": "The label to display when the tags are truncated (<code>limitTags</code>).<br><br><strong>Signature:</strong><br><code>function(more: number) =&gt; ReactNode</code><br><em>more:</em> The number of truncated tags.",
+     "getOptionDisabled": "Used to determine the disabled state for a given option.<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; boolean</code><br><em>option:</em> The option to test.",
+     "getOptionLabel": "Used to determine the string value for a given option. It&#39;s used to fill the input (and the list box options if <code>renderOption</code> is not provided).<br><br><strong>Signature:</strong><br><code>function(option: T) =&gt; string</code><br>",
+-    "getOptionSelected": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
++    "optionEqualValue": "Used to determine if an option is selected, considering the current value(s). Uses strict equality by default. ⚠️ Both arguments need to be handled, an option can only match with one value.<br><br><strong>Signature:</strong><br><code>function(option: T, value: T) =&gt; boolean</code><br><em>option:</em> The option to test.<br><em>value:</em> The value to test against.",
+     "groupBy": "If provided, the options will be grouped under the returned string. The groupBy value is also used as the text for group headings when <code>renderGroup</code> is not provided.<br><br><strong>Signature:</strong><br><code>function(options: T) =&gt; string</code><br><em>options:</em> The options to group.",
+     "handleHomeEndKeys": "If <code>true</code>, the component handles the &quot;Home&quot; and &quot;End&quot; keys when the popup is open. It should move focus to the first option and last option, respectively.",
+     "id": "This prop is used to help implement the accessibility logic. If you don&#39;t provide an id it will fall back to a randomly generated one.",
+@@ -59,7 +59,7 @@
+     "selectOnFocus": "If <code>true</code>, the input&#39;s text is selected on focus. It helps the user clear the selected value.",
+     "size": "The size of the component.",
+     "sx": "The system prop that allows defining system overrides as well as additional CSS styles. See the <a href=\"/system/basics/#the-sx-prop\">`sx` page</a> for more details.",
+-    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>getOptionSelected</code> prop."
++    "value": "The value of the autocomplete.<br>The value must have reference equality with the option in order to be selected. You can customize the equality behavior with the <code>optionEqualValue</code> prop."
+   },
+   "classDescriptions": {
+     "root": { "description": "Styles applied to the root element." },
+diff --git a/packages/material-ui/src/Autocomplete/Autocomplete.js b/packages/material-ui/src/Autocomplete/Autocomplete.js
+index c956ba0..fb70084 100644
+--- a/packages/material-ui/src/Autocomplete/Autocomplete.js
++++ b/packages/material-ui/src/Autocomplete/Autocomplete.js
+@@ -437,6 +437,7 @@ const Autocomplete = React.forwardRef(function Autocomplete(inProps, ref) {
+     getOptionDisabled,
+     getOptionLabel = (option) => option.label ?? option,
+     getOptionSelected,
++    optionEqualValue,
+     groupBy,
+     handleHomeEndKeys = !props.freeSolo,
+     id: idProp,
+@@ -861,6 +862,8 @@ Autocomplete.propTypes /* remove-proptypes */ = {
+    * @param {T} option The option to test.
+    * @param {T} value The value to test against.
+    * @returns {boolean}
++   * @default (option, value) => option === value
++   * @deprecated Use the `optionEqualValue` prop instead.
+    */
+   getOptionSelected: PropTypes.func,
+   /**
+@@ -986,6 +989,17 @@ Autocomplete.propTypes /* remove-proptypes */ = {
+    * @default 'Open'
+    */
+   openText: PropTypes.string,
++  /**
++   * Used to determine if an option is selected, considering the current value(s).
++   * Uses strict equality by default.
++   * ⚠️ Both arguments need to be handled, an option can only match with one value.
++   *
++   * @param {T} option The option to test.
++   * @param {T} value The value to test against.
++   * @returns {boolean}
++   * @default (option, value) => option === value
++   */
++  optionEqualValue: PropTypes.func,
+   /**
+    * Array of options.
+    */
+@@ -1058,7 +1072,7 @@ Autocomplete.propTypes /* remove-proptypes */ = {
+    * The value of the autocomplete.
+    *
+    * The value must have reference equality with the option in order to be selected.
+-   * You can customize the equality behavior with the `getOptionSelected` prop.
++   * You can customize the equality behavior with the `optionEqualValue` prop.
+    */
+   value: chainPropTypes(PropTypes.any, (props) => {
+     if (props.multiple && props.value !== undefined && !Array.isArray(props.value)) {
+diff --git a/packages/material-ui/src/useAutocomplete/useAutocomplete.d.ts b/packages/material-ui/src/useAutocomplete/useAutocomplete.d.ts
+index 09502ad..3dc4449 100644
+--- a/packages/material-ui/src/useAutocomplete/useAutocomplete.d.ts
++++ b/packages/material-ui/src/useAutocomplete/useAutocomplete.d.ts
+@@ -147,8 +147,9 @@ export interface UseAutocompleteProps<
+    * @param {T} option The option to test.
+    * @param {T} value The value to test against.
+    * @returns {boolean}
++   * @default (option, value) => option === value
+    */
+-  getOptionSelected?: (option: T, value: T) => boolean;
++  optionEqualValue?: (option: T, value: T) => boolean;
+   /**
+    * If provided, the options will be grouped under the returned string.
+    * The groupBy value is also used as the text for group headings when `renderGroup` is not provided.
+@@ -244,7 +245,7 @@ export interface UseAutocompleteProps<
+    * The value of the autocomplete.
+    *
+    * The value must have reference equality with the option in order to be selected.
+-   * You can customize the equality behavior with the `getOptionSelected` prop.
++   * You can customize the equality behavior with the `optionEqualValue` prop.
+    */
+   value?: Value<T, Multiple, DisableClearable, FreeSolo>;
+   /**
+diff --git a/packages/material-ui/src/useAutocomplete/useAutocomplete.js b/packages/material-ui/src/useAutocomplete/useAutocomplete.js
+index b18d99d..c29d585 100644
+--- a/packages/material-ui/src/useAutocomplete/useAutocomplete.js
++++ b/packages/material-ui/src/useAutocomplete/useAutocomplete.js
+@@ -80,7 +80,8 @@ export default function useAutocomplete(props) {
+     freeSolo = false,
+     getOptionDisabled,
+     getOptionLabel: getOptionLabelProp = (option) => option.label ?? option,
+-    getOptionSelected = (option, value) => option === value,
++    getOptionSelected,
++    optionEqualValue = getOptionSelected ?? ((option, value) => option === value),
+     groupBy,
+     handleHomeEndKeys = !props.freeSolo,
+     id: idProp,
+@@ -190,7 +191,7 @@ export default function useAutocomplete(props) {
+           if (
+             filterSelectedOptions &&
+             (multiple ? value : [value]).some(
+-              (value2) => value2 !== null && getOptionSelected(option, value2),
++              (value2) => value2 !== null && optionEqualValue(option, value2),
+             )
+           ) {
+             return false;
+@@ -211,7 +212,7 @@ export default function useAutocomplete(props) {
+   if (process.env.NODE_ENV !== 'production') {
+     if (value !== null && !freeSolo && options.length > 0) {
+       const missingValue = (multiple ? value : [value]).filter(
+-        (value2) => !options.some((option) => getOptionSelected(option, value2)),
++        (value2) => !options.some((option) => optionEqualValue(option, value2)),
+       );
+ 
+       if (missingValue.length > 0) {
+@@ -223,7 +224,7 @@ export default function useAutocomplete(props) {
+                 ? JSON.stringify(missingValue)
+                 : JSON.stringify(missingValue[0])
+             }\`.`,
+-            'You can use the `getOptionSelected` prop to customize the equality test.',
++            'You can use the `optionEqualValue` prop to customize the equality test.',
+           ].join('\n'),
+         );
+       }
+@@ -443,13 +444,13 @@ export default function useAutocomplete(props) {
+       if (
+         multiple &&
+         currentOption &&
+-        findIndex(value, (val) => getOptionSelected(currentOption, val)) !== -1
++        findIndex(value, (val) => optionEqualValue(currentOption, val)) !== -1
+       ) {
+         return;
+       }
+ 
+       const itemIndex = findIndex(filteredOptions, (optionItem) =>
+-        getOptionSelected(optionItem, valueItem),
++        optionEqualValue(optionItem, valueItem),
+       );
+       if (itemIndex === -1) {
+         changeHighlightedIndex({ diff: 'reset' });
+@@ -467,7 +468,7 @@ export default function useAutocomplete(props) {
+ 
+     // Restore the focus to the previous index.
+     setHighlightedIndex({ index: highlightedIndexRef.current });
+-    // Ignore filteredOptions (and options, getOptionSelected, getOptionLabel) not to break the scroll position
++    // Ignore filteredOptions (and options, optionEqualValue, getOptionLabel) not to break the scroll position
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [
+     // Only sync the highlighted index when the option switch between empty and not
+@@ -562,19 +563,19 @@ export default function useAutocomplete(props) {
+       newValue = Array.isArray(value) ? value.slice() : [];
+ 
+       if (process.env.NODE_ENV !== 'production') {
+-        const matches = newValue.filter((val) => getOptionSelected(option, val));
++        const matches = newValue.filter((val) => optionEqualValue(option, val));
+ 
+         if (matches.length > 1) {
+           console.error(
+             [
+-              `Material-UI: The \`getOptionSelected\` method of ${componentName} do not handle the arguments correctly.`,
++              `Material-UI: The \`optionEqualValue\` method of ${componentName} do not handle the arguments correctly.`,
+               `The component expects a single value to match a given option but found ${matches.length} matches.`,
+             ].join('\n'),
+           );
+         }
+       }
+ 
+-      const itemIndex = findIndex(newValue, (valueItem) => getOptionSelected(option, valueItem));
++      const itemIndex = findIndex(newValue, (valueItem) => optionEqualValue(option, valueItem));
+ 
+       if (itemIndex === -1) {
+         newValue.push(option);
+@@ -1018,7 +1019,7 @@ export default function useAutocomplete(props) {
+     }),
+     getOptionProps: ({ index, option }) => {
+       const selected = (multiple ? value : [value]).some(
+-        (value2) => value2 != null && getOptionSelected(option, value2),
++        (value2) => value2 != null && optionEqualValue(option, value2),
+       );
+       const disabled = getOptionDisabled ? getOptionDisabled(option) : false;
+ 

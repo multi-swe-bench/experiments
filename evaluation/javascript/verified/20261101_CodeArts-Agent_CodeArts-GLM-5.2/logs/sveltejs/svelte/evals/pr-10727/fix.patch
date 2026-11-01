@@ -1,0 +1,75 @@
+diff --git a/packages/svelte/src/internal/client/reactivity/store.js b/packages/svelte/src/internal/client/reactivity/store.js
+index fe2ef12..5b3c85c 100644
+--- a/packages/svelte/src/internal/client/reactivity/store.js
++++ b/packages/svelte/src/internal/client/reactivity/store.js
+@@ -1,7 +1,13 @@
+ import { subscribe_to_store } from '../../../store/utils.js';
+ import { noop } from '../../common.js';
+ import { UNINITIALIZED } from '../constants.js';
+-import { get, set_ignore_mutation_validation, untrack } from '../runtime.js';
++import {
++	current_effect,
++	get,
++	push_destroy_fn,
++	set_ignore_mutation_validation,
++	untrack
++} from '../runtime.js';
+ import { user_effect } from './effects.js';
+ import { mutable_source, set } from './sources.js';
+ 
+@@ -25,7 +31,12 @@ export function store_get(store, store_name, stores) {
+ 			store: null,
+ 			last_value: null,
+ 			value: mutable_source(UNINITIALIZED),
+-			unsubscribe: noop
++			unsubscribe: noop,
++			// Stores are auto-subscribed on first access and need to be unsubscribed
++			// when the last effect that consumes them is destroyed, otherwise the
++			// subscription would leak (e.g. when the store is only used inside a block
++			// that is removed). This tracks the effects that currently consume the store.
++			consumers: null
+ 		};
+ 		// TODO: can we remove this code? it was refactored out when we split up source/comptued signals
+ 		// push_destroy_fn(entry.value, () => {
+@@ -41,6 +52,29 @@ export function store_get(store, store_name, stores) {
+ 		entry.unsubscribe = connect_store_to_signal(store, entry.value);
+ 	}
+ 
++	// Tie the subscription lifetime to the effect that consumes it. When the last
++	// consuming effect is destroyed, the store is unsubscribed automatically.
++	if (current_effect !== null) {
++		const effect = current_effect;
++		const e = entry;
++		const consumers = (e.consumers ??= new Set());
++		if (!consumers.has(effect)) {
++			consumers.add(effect);
++			push_destroy_fn(effect, () => {
++				const current_consumers = e.consumers;
++				if (current_consumers !== null) {
++					current_consumers.delete(effect);
++					if (current_consumers.size === 0) {
++						e.unsubscribe();
++						e.unsubscribe = noop;
++						e.store = null;
++						e.consumers = null;
++					}
++				}
++			});
++		}
++	}
++
+ 	const value = get(entry.value);
+ 	// This could happen if the store was cleaned up because the component was destroyed and there's a leak on the user side.
+ 	// In that case we don't want to fail with a cryptic Symbol error, but rather return the last value we got.
+diff --git a/packages/svelte/src/internal/client/types.d.ts b/packages/svelte/src/internal/client/types.d.ts
+index 5638353..97c9112 100644
+--- a/packages/svelte/src/internal/client/types.d.ts
++++ b/packages/svelte/src/internal/client/types.d.ts
+@@ -293,6 +293,7 @@ export type StoreReferencesContainer = Record<
+ 		last_value: any;
+ 		unsubscribe: Function;
+ 		value: Source<any>;
++		consumers: null | Set<Effect>;
+ 	}
+ >;
+ 

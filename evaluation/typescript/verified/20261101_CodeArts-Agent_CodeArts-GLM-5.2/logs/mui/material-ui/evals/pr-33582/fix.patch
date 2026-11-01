@@ -1,0 +1,97 @@
+diff --git a/docs/pages/material-ui/api/alert.json b/docs/pages/material-ui/api/alert.json
+index be6954fa..77477ba5 100644
+--- a/docs/pages/material-ui/api/alert.json
++++ b/docs/pages/material-ui/api/alert.json
+@@ -3,6 +3,7 @@
+     "action": { "type": { "name": "node" } },
+     "children": { "type": { "name": "node" } },
+     "classes": { "type": { "name": "object" } },
++    "closeIcon": { "type": { "name": "node" }, "default": "<CloseIcon fontSize=\"small\" />" },
+     "closeText": { "type": { "name": "string" }, "default": "'Close'" },
+     "color": {
+       "type": {
+diff --git a/docs/translations/api-docs/alert/alert-pt.json b/docs/translations/api-docs/alert/alert-pt.json
+index 2c379ad0..5adc24c9 100644
+--- a/docs/translations/api-docs/alert/alert-pt.json
++++ b/docs/translations/api-docs/alert/alert-pt.json
+@@ -4,6 +4,7 @@
+     "action": "A ação a exibir. Ela renderiza após a mensagem, no final do alerta.",
+     "children": "O conteúdo do componente.",
+     "classes": "Sobrescreve ou extende os estilos aplicados para o componente. Veja a <a href=\"#css\">API CSS</a> abaixo para maiores detalhes.",
++    "closeIcon": "Override the icon displayed when the <code>onClose</code> prop is set.",
+     "closeText": "Override the default label for the <em>close popup</em> icon button.<br>For localization purposes, you can use the provided <a href=\"/material-ui/guides/localization/\">translations</a>.",
+     "color": "The color of the component. Unless provided, the value is taken from the <code>severity</code> prop. It supports both default and custom theme colors, which can be added as shown in the <a href=\"https://mui.com/material-ui/customization/palette/#adding-new-colors\">palette customization guide</a>.",
+     "icon": "Sobrescreve o ícone exibido antes do elemento filho. Caso não seja fornecida, o ícone é determinado com base na propriedade <code>severity</code>.",
+diff --git a/docs/translations/api-docs/alert/alert-zh.json b/docs/translations/api-docs/alert/alert-zh.json
+index 1ae0450e..f2e88f7c 100644
+--- a/docs/translations/api-docs/alert/alert-zh.json
++++ b/docs/translations/api-docs/alert/alert-zh.json
+@@ -4,6 +4,7 @@
+     "action": "The action to display. It renders after the message, at the end of the alert.",
+     "children": "The content of the component.",
+     "classes": "Override or extend the styles applied to the component. See <a href=\"#css\">CSS API</a> below for more details.",
++    "closeIcon": "Override the icon displayed when the <code>onClose</code> prop is set.",
+     "closeText": "Override the default label for the <em>close popup</em> icon button.<br>For localization purposes, you can use the provided <a href=\"/material-ui/guides/localization/\">translations</a>.",
+     "color": "The color of the component. Unless provided, the value is taken from the <code>severity</code> prop. It supports both default and custom theme colors, which can be added as shown in the <a href=\"https://mui.com/material-ui/customization/palette/#adding-new-colors\">palette customization guide</a>.",
+     "icon": "Override the icon displayed before the children. Unless provided, the icon is mapped to the value of the <code>severity</code> prop. Set to <code>false</code> to remove the <code>icon</code>.",
+diff --git a/docs/translations/api-docs/alert/alert.json b/docs/translations/api-docs/alert/alert.json
+index 413996d2..4d0964a9 100644
+--- a/docs/translations/api-docs/alert/alert.json
++++ b/docs/translations/api-docs/alert/alert.json
+@@ -4,6 +4,7 @@
+     "action": "The action to display. It renders after the message, at the end of the alert.",
+     "children": "The content of the component.",
+     "classes": "Override or extend the styles applied to the component. See <a href=\"#css\">CSS API</a> below for more details.",
++    "closeIcon": "Override the icon displayed when the <code>onClose</code> prop is set.",
+     "closeText": "Override the default label for the <em>close popup</em> icon button.<br>For localization purposes, you can use the provided <a href=\"/material-ui/guides/localization/\">translations</a>.",
+     "color": "The color of the component. Unless provided, the value is taken from the <code>severity</code> prop. It supports both default and custom theme colors, which can be added as shown in the <a href=\"https://mui.com/material-ui/customization/palette/#adding-new-colors\">palette customization guide</a>.",
+     "icon": "Override the icon displayed before the children. Unless provided, the icon is mapped to the value of the <code>severity</code> prop. Set to <code>false</code> to remove the <code>icon</code>.",
+diff --git a/packages/mui-material/src/Alert/Alert.d.ts b/packages/mui-material/src/Alert/Alert.d.ts
+index fc9da6a6..dda06f98 100644
+--- a/packages/mui-material/src/Alert/Alert.d.ts
++++ b/packages/mui-material/src/Alert/Alert.d.ts
+@@ -27,6 +27,11 @@ export interface AlertProps extends StandardProps<PaperProps, 'variant'> {
+    * @default 'Close'
+    */
+   closeText?: string;
++  /**
++   * Override the icon displayed when the `onClose` prop is set.
++   * @default <CloseIcon fontSize="small" />
++   */
++  closeIcon?: React.ReactNode;
+   /**
+    * The color of the component. Unless provided, the value is taken from the `severity` prop.
+    * It supports both default and custom theme colors, which can be added as shown in the
+diff --git a/packages/mui-material/src/Alert/Alert.js b/packages/mui-material/src/Alert/Alert.js
+index 5cfcd049..e3a95f4b 100644
+--- a/packages/mui-material/src/Alert/Alert.js
++++ b/packages/mui-material/src/Alert/Alert.js
+@@ -152,6 +152,7 @@ const Alert = React.forwardRef(function Alert(inProps, ref) {
+     action,
+     children,
+     className,
++    closeIcon,
+     closeText = 'Close',
+     color,
+     icon,
+@@ -203,7 +204,7 @@ const Alert = React.forwardRef(function Alert(inProps, ref) {
+             color="inherit"
+             onClick={onClose}
+           >
+-            <CloseIcon fontSize="small" />
++            {closeIcon || <CloseIcon fontSize="small" />}
+           </IconButton>
+         </AlertAction>
+       ) : null}
+@@ -239,6 +240,11 @@ Alert.propTypes /* remove-proptypes */ = {
+    * @default 'Close'
+    */
+   closeText: PropTypes.string,
++  /**
++   * Override the icon displayed when the `onClose` prop is set.
++   * @default <CloseIcon fontSize="small" />
++   */
++  closeIcon: PropTypes.node,
+   /**
+    * The color of the component. Unless provided, the value is taken from the `severity` prop.
+    * It supports both default and custom theme colors, which can be added as shown in the

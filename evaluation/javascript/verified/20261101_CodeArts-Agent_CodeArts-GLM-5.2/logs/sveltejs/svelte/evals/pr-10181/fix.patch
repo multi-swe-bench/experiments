@@ -1,0 +1,174 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 0c207f9..bb12abf 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -993,7 +993,7 @@ const common_visitors = {
+ 			}
+ 		}
+ 
+-		const id = object(node.expression);
++		const id = object(unwrap_ts_expression(node.expression));
+ 
+ 		const binding = id === null ? null : context.state.scope.get(id.name);
+ 		assert.ok(binding);
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 49aea8c..601d232 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -336,9 +336,10 @@ function is_tag_valid_with_parent(tag, parent_tag) {
+  */
+ export const validation = {
+ 	BindDirective(node, context) {
+-		validate_no_const_assignment(node, node.expression, context.state.scope, true);
++		const expression = unwrap_ts_expression(node.expression);
++		validate_no_const_assignment(node, expression, context.state.scope, true);
+ 
+-		let left = node.expression;
++		let left = expression;
+ 		while (left.type === 'MemberExpression') {
+ 			left = /** @type {import('estree').MemberExpression} */ (left.object);
+ 		}
+@@ -348,7 +349,7 @@ export const validation = {
+ 		}
+ 
+ 		if (
+-			node.expression.type === 'Identifier' &&
++			expression.type === 'Identifier' &&
+ 			node.name !== 'this' // bind:this also works for regular variables
+ 		) {
+ 			const binding = context.state.scope.get(left.name);
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index ae7cbbe..8a54b0d 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -3,7 +3,8 @@ import {
+ 	extract_paths,
+ 	is_event_attribute,
+ 	is_text_attribute,
+-	object
++	object,
++	unwrap_ts_expression
+ } from '../../../../utils/ast.js';
+ import { binding_properties } from '../../../bindings.js';
+ import {
+@@ -2583,20 +2584,21 @@ export const template_visitors = {
+ 		/** @type {import('estree').Expression[]} */
+ 		const properties = [];
+ 
+-		let expression = node.expression;
+-		while (expression.type === 'MemberExpression') {
++		const expression = unwrap_ts_expression(node.expression);
++		let left = expression;
++		while (left.type === 'MemberExpression') {
+ 			properties.unshift(
+-				expression.computed
+-					? /** @type {import('estree').Expression} */ (expression.property)
+-					: b.literal(/** @type {import('estree').Identifier} */ (expression.property).name)
++				left.computed
++					? /** @type {import('estree').Expression} */ (left.property)
++					: b.literal(/** @type {import('estree').Identifier} */ (left.property).name)
+ 			);
+-			expression = /** @type {import('estree').Identifier | import('estree').MemberExpression} */ (
+-				expression.object
++			left = /** @type {import('estree').Identifier | import('estree').MemberExpression} */ (
++				left.object
+ 			);
+ 		}
+ 
+-		const getter = b.thunk(/** @type {import('estree').Expression} */ (visit(node.expression)));
+-		const assignment = b.assignment('=', node.expression, b.id('$$value'));
++		const getter = b.thunk(/** @type {import('estree').Expression} */ (visit(expression)));
++		const assignment = b.assignment('=', expression, b.id('$$value'));
+ 		const setter = b.arrow(
+ 			[b.id('$$value')],
+ 			serialize_set_binding(
+@@ -2716,7 +2718,7 @@ export const template_visitors = {
+ 						setter,
+ 						/** @type {import('estree').Expression} */ (
+ 							// if expression is not an identifier, we know it can't be a signal
+-							node.expression.type === 'Identifier' ? node.expression : undefined
++							expression.type === 'Identifier' ? expression : undefined
+ 						)
+ 					);
+ 					break;
+@@ -2765,7 +2767,7 @@ export const template_visitors = {
+ 							group_getter = b.thunk(
+ 								b.block([
+ 									b.stmt(serialize_attribute_value(value, context)[1]),
+-									b.return(/** @type {import('estree').Expression} */ (visit(node.expression)))
++									b.return(/** @type {import('estree').Expression} */ (visit(expression)))
+ 								])
+ 							);
+ 						}
+diff --git a/packages/svelte/src/compiler/phases/scope.js b/packages/svelte/src/compiler/phases/scope.js
+index 0530535..8fcb66e 100644
+--- a/packages/svelte/src/compiler/phases/scope.js
++++ b/packages/svelte/src/compiler/phases/scope.js
+@@ -3,7 +3,11 @@ import { walk } from 'zimmerframe';
+ import { is_element_node } from './nodes.js';
+ import * as b from '../utils/builders.js';
+ import { error } from '../errors.js';
+-import { extract_identifiers, extract_identifiers_from_expression } from '../utils/ast.js';
++import {
++	extract_identifiers,
++	extract_identifiers_from_expression,
++	unwrap_ts_expression
++} from '../utils/ast.js';
+ import { JsKeywords, Runes } from './constants.js';
+ 
+ export class Scope {
+@@ -611,7 +615,7 @@ export function create_scopes(ast, root, allow_reactive_declarations, parent) {
+ 			updates.push([
+ 				context.state.scope,
+ 				/** @type {import('estree').Identifier | import('estree').MemberExpression} */ (
+-					node.expression
++					unwrap_ts_expression(node.expression)
+ 				)
+ 			]);
+ 			context.next();
+diff --git a/packages/svelte/src/compiler/utils/ast.js b/packages/svelte/src/compiler/utils/ast.js
+index dd9bbfc..7b1531a 100644
+--- a/packages/svelte/src/compiler/utils/ast.js
++++ b/packages/svelte/src/compiler/utils/ast.js
+@@ -1,6 +1,15 @@
+ import { error } from '../errors.js';
+ import * as b from '../utils/builders.js';
+ 
++/** The TypeScript wrapper expression node types produced by the acorn TS plugin. */
++const ts_wrapper_types = new Set([
++	'TSNonNullExpression',
++	'TSAsExpression',
++	'TSSatisfiesExpression',
++	'TSTypeAssertion',
++	'TSInstantiationExpression'
++]);
++
+ /**
+  * Gets the left-most identifier of a member expression or identifier.
+  * @param {import('estree').MemberExpression | import('estree').Identifier} expression
+@@ -267,8 +276,9 @@ function _extract_paths(assignments = [], param, expression, update_expression)
+ }
+ 
+ /**
+- * The Acorn TS plugin defines `foo!` as a `TSNonNullExpression` node, and
+- * `foo as Bar` as a `TSAsExpression` node. This function unwraps those.
++ * The Acorn TS plugin defines `foo!` as a `TSNonNullExpression` node,
++ * `foo as Bar` as a `TSAsExpression` node and `foo satisfies Bar` as a
++ * `TSSatisfiesExpression` node. This function unwraps those (and any nested ones).
+  *
+  * @template {import('#compiler').SvelteNode | undefined | null} T
+  * @param {T} node
+@@ -279,10 +289,10 @@ export function unwrap_ts_expression(node) {
+ 		return node;
+ 	}
+ 
+-	// @ts-expect-error these types don't exist on the base estree types
+-	if (node.type === 'TSNonNullExpression' || node.type === 'TSAsExpression') {
++	// @ts-expect-error node.type is fine, but TS doesn't narrow the generic after the null check
++	while (ts_wrapper_types.has(node.type)) {
+ 		// @ts-expect-error
+-		return node.expression;
++		node = node.expression;
+ 	}
+ 
+ 	return node;

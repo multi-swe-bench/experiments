@@ -1,0 +1,47 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/element.js b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+index f40bccd..62bfe85 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/element.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+@@ -51,6 +51,33 @@ function parent_is_head(stack) {
+ 	return false;
+ }
+ 
++/**
++ * Returns true if the given node is a `<template>` element with a
++ * `shadowrootmode` attribute, i.e. a Declarative Shadow DOM root.
++ * @param {import('#compiler').TemplateNode} node
++ * @returns {node is import('#compiler').RegularElement}
++ */
++function is_shadow_root_template(node) {
++	return (
++		node.type === 'RegularElement' &&
++		node.name === 'template' &&
++		node.attributes.some((attr) => attr.type === 'Attribute' && attr.name === 'shadowrootmode')
++	);
++}
++
++/**
++ * Returns true if any ancestor on the stack is a Declarative Shadow DOM root.
++ * A native `<slot>` element inside such a root must not be treated as a Svelte
++ * slot, otherwise it gets stripped from the output.
++ * @param {import('#compiler').TemplateNode[]} stack
++ */
++function is_inside_shadow_root(stack) {
++	for (let i = stack.length - 1; i >= 0; i--) {
++		if (is_shadow_root_template(stack[i])) return true;
++	}
++	return false;
++}
++
+ const regex_closing_textarea_tag = /^<\/textarea(\s[^>]*)?>/i;
+ const regex_closing_comment = /-->/;
+ const regex_capital_letter = /[A-Z]/;
+@@ -112,7 +139,7 @@ export default function tag(parser) {
+ 			? 'Component'
+ 			: name === 'title' && parent_is_head(parser.stack)
+ 				? 'TitleElement'
+-				: name === 'slot'
++				: name === 'slot' && !is_inside_shadow_root(parser.stack)
+ 					? 'SlotElement'
+ 					: 'RegularElement';
+ 

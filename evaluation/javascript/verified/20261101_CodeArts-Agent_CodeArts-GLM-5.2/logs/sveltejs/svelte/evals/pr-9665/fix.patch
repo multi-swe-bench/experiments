@@ -1,0 +1,52 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index b5b58c3..0f7b7b0 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -1737,15 +1737,16 @@ export const template_visitors = {
+ 		const snippet_function = /** @type {import('estree').Expression} */ (
+ 			context.visit(node.expression)
+ 		);
+-		const init = b.call(
+-			context.state.options.dev ? b.call('$.validate_snippet', snippet_function) : snippet_function,
+-			...args
+-		);
++		const snippet_fn_expression = context.state.options.dev
++			? b.call('$.validate_snippet', snippet_function)
++			: snippet_function;
+ 
+ 		if (is_reactive) {
+-			context.state.init.push(b.stmt(b.call('$.snippet_effect', b.thunk(init))));
++			context.state.init.push(
++				b.stmt(b.call('$.snippet_effect', b.thunk(snippet_fn_expression), ...args))
++			);
+ 		} else {
+-			context.state.init.push(b.stmt(init));
++			context.state.init.push(b.stmt(b.call(snippet_fn_expression, ...args)));
+ 		}
+ 	},
+ 	AnimateDirective(node, { state, visit }) {
+diff --git a/packages/svelte/src/internal/client/render.js b/packages/svelte/src/internal/client/render.js
+index afb0606..bfc671c 100644
+--- a/packages/svelte/src/internal/client/render.js
++++ b/packages/svelte/src/internal/client/render.js
+@@ -3170,13 +3170,17 @@ export function sanitize_slots(props) {
+ }
+ 
+ /**
+- * @param {() => void} create_snippet
++ * @param {() => ((...args: any[]) => void) | undefined} get_snippet
++ * @param {any[]} args
+  * @returns {void}
+  */
+-export function snippet_effect(create_snippet) {
++export function snippet_effect(get_snippet, ...args) {
+ 	const block = create_snippet_block();
+ 	render_effect(() => {
+-		create_snippet();
++		const snippet = get_snippet();
++		if (snippet !== undefined) {
++			untrack(() => snippet(...args));
++		}
+ 		return () => {
+ 			if (block.d !== null) {
+ 				remove(block.d);

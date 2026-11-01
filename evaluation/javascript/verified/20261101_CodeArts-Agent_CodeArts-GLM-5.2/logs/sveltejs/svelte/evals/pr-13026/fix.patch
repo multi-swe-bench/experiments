@@ -1,0 +1,106 @@
+diff --git a/_app_compiled.mjs b/_app_compiled.mjs
+new file mode 100644
+index 0000000..c85234c
+--- /dev/null
++++ b/_app_compiled.mjs
+@@ -0,0 +1,27 @@
++import "./packages/svelte/src/internal/disclose-version.js";
++import * as $ from "./packages/svelte/src/internal/client/index.js";
++
++function increment(_, count) {
++	$.update(count);
++	console.log('count in script:', $.get(count));
++}
++
++var root = $.template(`<button>+</button>`);
++
++export default function App($$anchor, $$props) {
++	$.push($$props, true);
++
++	let count = $.state(0);
++
++	$.user_effect(() => {
++		console.log('count in effect:', $.get(count));
++	});
++
++	var button = root();
++
++	button.__click = [increment, count];
++	$.append($$anchor, button);
++	$.pop();
++}
++
++$.delegate(["click"]);
+\ No newline at end of file
+diff --git a/runtime_repro.mjs b/runtime_repro.mjs
+new file mode 100644
+index 0000000..f310146
+--- /dev/null
++++ b/runtime_repro.mjs
+@@ -0,0 +1,66 @@
++import { JSDOM } from 'jsdom';
++import { compile } from './packages/svelte/src/compiler/index.js';
++import { writeFileSync } from 'node:fs';
++
++const dom = new JSDOM('<!DOCTYPE html><div id="app"></div>', { url: 'http://localhost' });
++global.window = dom.window;
++global.document = dom.window.document;
++global.Event = dom.window.Event;
++global.MouseEvent = dom.window.MouseEvent;
++global.InputEvent = dom.window.InputEvent;
++global.KeyboardEvent = dom.window.KeyboardEvent;
++global.Node = dom.window.Node;
++global.Element = dom.window.Element;
++global.HTMLElement = dom.window.HTMLElement;
++global.Text = dom.window.Text;
++global.Comment = dom.window.Comment;
++global.DocumentFragment = dom.window.DocumentFragment;
++global.NodeFilter = dom.window.NodeFilter;
++global.DOMException = dom.window.DOMException;
++global.requestAnimationFrame = (cb) => setTimeout(cb, 0);
++
++const source = `
++<script>
++  let count = $state(0);
++
++  function increment() {
++    count++;
++    console.log('count in script:', count);
++  }
++
++  $effect(() => {
++    console.log('count in effect:', count);
++  });
++</script>
++
++<button onclick={increment}>+</button>
++`;
++
++const compiled = compile(source, { runes: true, filename: 'App.svelte' });
++
++let code = compiled.js.code
++  .replace('svelte/internal/client', './packages/svelte/src/internal/client/index.js')
++  .replace('svelte/internal/disclose-version', './packages/svelte/src/internal/disclose-version.js');
++
++writeFileSync('/workspace/svelte/_app_compiled.mjs', code);
++const mod = await import('/workspace/svelte/_app_compiled.mjs');
++
++const logs = [];
++const origLog = console.log;
++console.log = (...args) => { logs.push(args.map(String).join(' ')); };
++
++const { mount, flushSync } = await import('./packages/svelte/src/index-client.js');
++
++mount(mod.default, { target: dom.window.document.getElementById('app') });
++flushSync();
++
++const btn = dom.window.document.querySelector('button');
++btn.dispatchEvent(new dom.window.Event('click', { bubbles: true }));
++flushSync();
++
++btn.dispatchEvent(new dom.window.Event('click', { bubbles: true }));
++flushSync();
++
++console.log = origLog;
++origLog('--- LOGS ---');
++for (const l of logs) origLog(l);

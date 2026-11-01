@@ -1,0 +1,13 @@
+diff --git a/lib/utils.js b/lib/utils.js
+index 6a38872..1cd30e4 100644
+--- a/lib/utils.js
++++ b/lib/utils.js
+@@ -192,7 +192,7 @@ const isFormData = (thing) => {
+   return thing && (
+     (typeof FormData === 'function' && thing instanceof FormData) ||
+     toString.call(thing) === pattern ||
+-    (isFunction(thing.toString) && thing.toString() === pattern)
++    (isFunction(thing.toString) && !isBuffer(thing) && !isArrayBufferView(thing) && thing.toString() === pattern)
+   );
+ }
+ 

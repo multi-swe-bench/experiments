@@ -1,0 +1,132 @@
+diff --git a/packages/mui-codemod/src/v5.0.0/preset-safe.js b/packages/mui-codemod/src/v5.0.0/preset-safe.js
+index 73b0c78b..222a47e4 100644
+--- a/packages/mui-codemod/src/v5.0.0/preset-safe.js
++++ b/packages/mui-codemod/src/v5.0.0/preset-safe.js
+@@ -49,63 +49,75 @@ import transformWithWidth from './with-width';
+ import transformUseAutocomplete from './use-autocomplete';
+ import transformMuiReplace from './mui-replace';
+ 
++// Each transform is only applied if the file source contains one of the
++// associated `triggers`. This avoids parsing the AST (and, for some transforms,
++// resolving modules with babel) for files that the transform would leave
++// untouched. It keeps `preset-safe` fast on large codebases where most files
++// are not related to Material UI.
++// `mui-replace` is intentionally kept last.
++const transforms = [
++  { transform: transformAdapterV4, triggers: ['createMuiTheme', 'adaptV4Theme', 'createTheme'] },
++  { transform: transformAutocompleteRenaming, triggers: ['closeIcon'] },
++  { transform: transformAutocompleteOption, triggers: ['getOptionSelected'] },
++  { transform: transformAvatarCircular, triggers: ['Avatar', 'MuiAvatar-circle'] },
++  { transform: transformBadgeOverlap, triggers: ['Badge', 'MuiBadge-'] },
++  { transform: transformBoxBorderRadius, triggers: ['borderRadius'] },
++  { transform: transformBoxRenameGap, triggers: ['gridGap', 'gridColumnGap', 'gridRowGap'] },
++  { transform: transformBoxRenameCss, triggers: ['css'] },
++  { transform: transformButtonColorProp, triggers: ['Button'] },
++  { transform: transformChipVariantProp, triggers: ['Chip'] },
++  { transform: transformCircularProgressVariant, triggers: ['CircularProgress'] },
++  { transform: transformCollapsedHeight, triggers: ['Collapse'] },
++  { transform: transformCoreStylesImport, triggers: ['@material-ui/core/styles'] },
++  { transform: transformCreateTheme, triggers: ['createMuiTheme'] },
++  { transform: transformDialogProps, triggers: ['disableBackdropClick'] },
++  { transform: transformDialogTitleProps, triggers: ['disableTypography'] },
++  { transform: transformEmotionPrependCache, triggers: ['@emotion/cache'] },
++  { transform: transformExpansionPanelComponent, triggers: ['ExpansionPanel'] },
++  { transform: transformFabVariant, triggers: ['Fab', 'MuiFab-round'] },
++  { transform: transformFade, triggers: ['fade'] },
++  { transform: transformGridJustify, triggers: ['Grid'] },
++  { transform: transformGridListComponent, triggers: ['GridList'] },
++  { transform: transformHiddenDownProps, triggers: ['Hidden'] },
++  { transform: transformIconButtonSize, triggers: ['IconButton'] },
++  { transform: transformMuiStyles, triggers: ['@material-ui/core'] },
++  { transform: transformModalProps, triggers: ['disableBackdropClick', 'onEscapeKeyDown'] },
++  { transform: transformMovedLabModules, triggers: ['@material-ui/lab'] },
++  { transform: transformPaginationRoundCircular, triggers: ['Pagination'] },
++  { transform: transformPrivateImports, triggers: ['@material-ui/core'] },
++  { transform: transformRootRef, triggers: ['RootRef'] },
++  { transform: transformSkeletonVariant, triggers: ['Skeleton'] },
++  { transform: transformStyledEngineProvider, triggers: ['ThemeProvider'] },
++  { transform: transformTableProps, triggers: ['Table'] },
++  { transform: transformTabsScrollButtons, triggers: ['scrollButtons'] },
++  { transform: transformTextareaMinMaxRows, triggers: ['TextareaAutosize', 'TextField'] },
++  { transform: transformThemeAugment, triggers: ['ThemeProvider'] },
++  { transform: transformThemeBreakpoints, triggers: ['breakpoints'] },
++  { transform: transformThemeBreakpointsWidth, triggers: ['breakpoints.width'] },
++  { transform: transformThemeOptions, triggers: ['ThemeOptions'] },
++  { transform: transformThemePaletteMode, triggers: ['palette'] },
++  { transform: transformThemeProvider, triggers: ['MuiThemeProvider'] },
++  { transform: transformThemeSpacing, triggers: ['spacing('] },
++  { transform: transformThemeTypographyRound, triggers: ['typography.round'] },
++  { transform: transformTransitions, triggers: ['@material-ui/core/styles/transitions'] },
++  { transform: transformTypes, triggers: ['@material-ui/types'] },
++  { transform: transformUseTransitionProps, triggers: ['Dialog', 'Menu', 'Popover', 'Snackbar'] },
++  { transform: transformWithMobileDialog, triggers: ['withMobileDialog'] },
++  { transform: transformWithWidth, triggers: ['withWidth'] },
++  { transform: transformUseAutocomplete, triggers: ['@material-ui/lab'] },
++  { transform: transformMuiReplace, triggers: ['@material-ui/'] },
++];
++
+ /**
+  * @param {import('jscodeshift').FileInfo} file
+  * @param {import('jscodeshift').API} api
+  */
+ export default function transformer(file, api, options) {
+-  file.source = transformAdapterV4(file, api, options);
+-  file.source = transformAutocompleteRenaming(file, api, options);
+-  file.source = transformAutocompleteOption(file, api, options);
+-  file.source = transformAvatarCircular(file, api, options);
+-  file.source = transformBadgeOverlap(file, api, options);
+-  file.source = transformBoxBorderRadius(file, api, options);
+-  file.source = transformBoxRenameGap(file, api, options);
+-  file.source = transformBoxRenameCss(file, api, options);
+-  file.source = transformButtonColorProp(file, api, options);
+-  file.source = transformChipVariantProp(file, api, options);
+-  file.source = transformCircularProgressVariant(file, api, options);
+-  file.source = transformCollapsedHeight(file, api, options);
+-  file.source = transformCoreStylesImport(file, api, options);
+-  file.source = transformCreateTheme(file, api, options);
+-  file.source = transformDialogProps(file, api, options);
+-  file.source = transformDialogTitleProps(file, api, options);
+-  file.source = transformEmotionPrependCache(file, api, options);
+-  file.source = transformExpansionPanelComponent(file, api, options);
+-  file.source = transformFabVariant(file, api, options);
+-  file.source = transformFade(file, api, options);
+-  file.source = transformGridJustify(file, api, options);
+-  file.source = transformGridListComponent(file, api, options);
+-  file.source = transformHiddenDownProps(file, api, options);
+-  file.source = transformIconButtonSize(file, api, options);
+-  file.source = transformMuiStyles(file, api, options);
+-  file.source = transformModalProps(file, api, options);
+-  file.source = transformMovedLabModules(file, api, options);
+-  file.source = transformPaginationRoundCircular(file, api, options);
+-  file.source = transformPrivateImports(file, api, options);
+-  file.source = transformRootRef(file, api, options);
+-  file.source = transformSkeletonVariant(file, api, options);
+-  file.source = transformStyledEngineProvider(file, api, options);
+-  file.source = transformTableProps(file, api, options);
+-  file.source = transformTabsScrollButtons(file, api, options);
+-  file.source = transformTextareaMinMaxRows(file, api, options);
+-  file.source = transformThemeAugment(file, api, options);
+-  file.source = transformThemeBreakpoints(file, api, options);
+-  file.source = transformThemeBreakpointsWidth(file, api, options);
+-  file.source = transformThemeOptions(file, api, options);
+-  file.source = transformThemePaletteMode(file, api, options);
+-  file.source = transformThemeProvider(file, api, options);
+-  file.source = transformThemeSpacing(file, api, options);
+-  file.source = transformThemeTypographyRound(file, api, options);
+-  file.source = transformTransitions(file, api, options);
+-  file.source = transformTypes(file, api, options);
+-  file.source = transformUseTransitionProps(file, api, options);
+-  file.source = transformWithMobileDialog(file, api, options);
+-  file.source = transformWithWidth(file, api, options);
+-  file.source = transformUseAutocomplete(file, api, options);
+-
+-  // mui-replace should be the last
+-  file.source = transformMuiReplace(file, api, options);
++  transforms.forEach(({ transform, triggers }) => {
++    if (triggers.some((trigger) => file.source.includes(trigger))) {
++      file.source = transform(file, api, options);
++    }
++  });
+ 
+   return file.source;
+ }

@@ -1,0 +1,29 @@
+diff --git a/packages/runtime-core/src/apiWatch.ts b/packages/runtime-core/src/apiWatch.ts
+index 3a2d9e4..2162ba5 100644
+--- a/packages/runtime-core/src/apiWatch.ts
++++ b/packages/runtime-core/src/apiWatch.ts
+@@ -313,20 +313,14 @@ function doWatch(
+   }
+ 
+   // in SSR there is no need to setup an actual effect, and it should be noop
+-  // unless it's eager or sync flush
++  // unless it's sync flush. Note that eagerly running watch/watchEffect
++  // callbacks during SSR can produce side effects (e.g. generating ids) that
++  // leak into the SSR output and cause hydration mismatches, so we intentionally
++  // avoid running them. (#10230)
+   let ssrCleanup: (() => void)[] | undefined
+   if (__SSR__ && isInSSRComponentSetup) {
+     // we will also not call the invalidate callback (+ runner is not set up)
+     onCleanup = NOOP
+-    if (!cb) {
+-      getter()
+-    } else if (immediate) {
+-      callWithAsyncErrorHandling(cb, instance, ErrorCodes.WATCH_CALLBACK, [
+-        getter(),
+-        isMultiSource ? [] : undefined,
+-        onCleanup,
+-      ])
+-    }
+     if (flush === 'sync') {
+       const ctx = useSSRContext()!
+       ssrCleanup = ctx.__watcherHandles || (ctx.__watcherHandles = [])

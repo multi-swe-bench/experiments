@@ -1,0 +1,61 @@
+diff --git a/packages/material-ui/src/Autocomplete/Autocomplete.d.ts b/packages/material-ui/src/Autocomplete/Autocomplete.d.ts
+index a9f7d3a..f48cfe5 100644
+--- a/packages/material-ui/src/Autocomplete/Autocomplete.d.ts
++++ b/packages/material-ui/src/Autocomplete/Autocomplete.d.ts
+@@ -54,11 +54,27 @@ export interface AutocompleteProps<
+   FreeSolo extends boolean | undefined,
+   ChipComponent extends React.ElementType = ChipTypeMap['defaultComponent']
+ > extends UseAutocompleteProps<T, Multiple, DisableClearable, FreeSolo>,
+-    StandardProps<React.HTMLAttributes<HTMLDivElement>, 'defaultValue' | 'onChange' | 'children'> {
++    StandardProps<
++      React.HTMLAttributes<HTMLDivElement>,
++      'defaultValue' | 'onChange' | 'children' | 'onKeyDown'
++    > {
+   /**
+    * Props applied to the [`Chip`](/api/chip/) element.
+    */
+   ChipProps?: ChipProps<ChipComponent>;
++  /**
++   * Callback fired when a key is pressed down.
++   *
++   * The callback receives a second argument that contains the default key down handler.
++   * You can call it to keep the default behavior, or omit the call to override it.
++   *
++   * @param {object} event The event source of the callback.
++   * @param {function} defaultHandler The default key down handler. Call it to keep the default behavior for the key.
++   */
++  onKeyDown?: (
++    event: React.KeyboardEvent<HTMLDivElement>,
++    defaultHandler: (event: React.KeyboardEvent<HTMLDivElement>) => void
++  ) => void;
+   /**
+    * Override or extend the styles applied to the component.
+    */
+diff --git a/packages/material-ui/src/useAutocomplete/useAutocomplete.js b/packages/material-ui/src/useAutocomplete/useAutocomplete.js
+index c5ae7de..3e63395 100644
+--- a/packages/material-ui/src/useAutocomplete/useAutocomplete.js
++++ b/packages/material-ui/src/useAutocomplete/useAutocomplete.js
+@@ -655,7 +655,7 @@ export default function useAutocomplete(props) {
+     handleValue(event, multiple ? [] : null, 'clear');
+   };
+ 
+-  const handleKeyDown = (other) => (event) => {
++  const defaultKeyDownHandler = (event) => {
+     if (focusedTag !== -1 && ['ArrowLeft', 'ArrowRight'].indexOf(event.key) === -1) {
+       setFocusedTag(-1);
+       focusTag(-1);
+@@ -775,9 +775,13 @@ export default function useAutocomplete(props) {
+         default:
+       }
+     }
++  };
+ 
++  const handleKeyDown = (other) => (event) => {
+     if (other.onKeyDown) {
+-      other.onKeyDown(event);
++      other.onKeyDown(event, defaultKeyDownHandler);
++    } else {
++      defaultKeyDownHandler(event);
+     }
+   };
+ 

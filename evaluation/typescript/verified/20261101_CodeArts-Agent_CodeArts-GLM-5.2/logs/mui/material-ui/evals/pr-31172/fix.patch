@@ -1,0 +1,111 @@
+diff --git a/packages/mui-base/src/MultiSelectUnstyled/MultiSelectUnstyledProps.ts b/packages/mui-base/src/MultiSelectUnstyled/MultiSelectUnstyledProps.ts
+index 1da1a618..bce711ef 100644
+--- a/packages/mui-base/src/MultiSelectUnstyled/MultiSelectUnstyledProps.ts
++++ b/packages/mui-base/src/MultiSelectUnstyled/MultiSelectUnstyledProps.ts
+@@ -1,7 +1,7 @@
+ import { SelectOption, SelectUnstyledCommonProps } from '../SelectUnstyled';
+ 
+ export default interface MultiSelectUnstyledProps<TValue extends {}>
+-  extends SelectUnstyledCommonProps {
++  extends SelectUnstyledCommonProps<TValue> {
+   /**
+    * The default selected values. Use when the component is not controlled.
+    * @default []
+diff --git a/packages/mui-base/src/OptionUnstyled/OptionUnstyledProps.ts b/packages/mui-base/src/OptionUnstyled/OptionUnstyledProps.ts
+index 1903fa58..f59041d4 100644
+--- a/packages/mui-base/src/OptionUnstyled/OptionUnstyledProps.ts
++++ b/packages/mui-base/src/OptionUnstyled/OptionUnstyledProps.ts
+@@ -3,6 +3,13 @@ import { OptionState } from '../ListboxUnstyled';
+ 
+ export interface OptionUnstyledComponentsPropsOverrides {}
+ 
++export interface OptionUnstyledRootSlotProps<TValue> extends React.ComponentPropsWithRef<'li'> {
++  /**
++   * The state of the component.
++   */
++  ownerState?: OptionUnstyledOwnerState<TValue>;
++}
++
+ export default interface OptionUnstyledProps<TValue> {
+   /**
+    * The value of the option.
+@@ -31,11 +38,11 @@ export default interface OptionUnstyledProps<TValue> {
+     Root?: React.ElementType;
+   };
+   /**
+-   * The props used for each slot inside the Input.
++   * The props used for each slot inside the Option.
+    * @default {}
+    */
+   componentsProps?: {
+-    root?: React.ComponentPropsWithRef<'li'> & OptionUnstyledComponentsPropsOverrides;
++    root?: OptionUnstyledRootSlotProps<TValue> & OptionUnstyledComponentsPropsOverrides;
+   };
+ }
+ 
+diff --git a/packages/mui-base/src/SelectUnstyled/SelectUnstyledProps.ts b/packages/mui-base/src/SelectUnstyled/SelectUnstyledProps.ts
+index 3ed0cfa2..7c6ecba3 100644
+--- a/packages/mui-base/src/SelectUnstyled/SelectUnstyledProps.ts
++++ b/packages/mui-base/src/SelectUnstyled/SelectUnstyledProps.ts
+@@ -1,9 +1,30 @@
+ import { SelectOption } from './useSelectProps';
+-import PopperUnstyled from '../PopperUnstyled';
++import { PopperUnstyledProps } from '../PopperUnstyled';
+ 
+ export interface SelectUnstyledComponentsPropsOverrides {}
+ 
+-export interface SelectUnstyledCommonProps {
++export interface SelectUnstyledRootSlotProps<TValue> extends React.ComponentPropsWithRef<'button'> {
++  /**
++   * The state of the component.
++   */
++  ownerState?: SelectUnstyledOwnerState<TValue>;
++}
++
++export interface SelectUnstyledListboxSlotProps<TValue> extends React.ComponentPropsWithRef<'ul'> {
++  /**
++   * The state of the component.
++   */
++  ownerState?: SelectUnstyledOwnerState<TValue>;
++}
++
++export type SelectUnstyledPopperSlotProps = Partial<PopperUnstyledProps> & {
++  /**
++   * The state of the component.
++   */
++  ownerState?: SelectUnstyledOwnerState<any>;
++};
++
++export interface SelectUnstyledCommonProps<TValue extends {} = {}> {
+   /**
+    * If `true`, the select element is focused during the first mount
+    * @default false
+@@ -23,15 +44,13 @@ export interface SelectUnstyledCommonProps {
+     Popper?: React.ElementType;
+   };
+   /**
+-   * The props used for each slot inside the Input.
++   * The props used for each slot inside the Select.
+    * @default {}
+    */
+   componentsProps?: {
+-    root?: React.ComponentPropsWithRef<'button'> & SelectUnstyledComponentsPropsOverrides;
+-    listbox?: React.ComponentPropsWithRef<'ul'> & SelectUnstyledComponentsPropsOverrides;
+-    // PopperUnstyled has a required prop: open, but it is not necessary to provide it in componentsProps.
+-    popper?: Partial<React.ComponentPropsWithRef<typeof PopperUnstyled>> &
+-      SelectUnstyledComponentsPropsOverrides;
++    root?: SelectUnstyledRootSlotProps<TValue> & SelectUnstyledComponentsPropsOverrides;
++    listbox?: SelectUnstyledListboxSlotProps<TValue> & SelectUnstyledComponentsPropsOverrides;
++    popper?: SelectUnstyledPopperSlotProps & SelectUnstyledComponentsPropsOverrides;
+   };
+   /**
+    * If `true`, the select is disabled.
+@@ -55,7 +74,7 @@ export interface SelectUnstyledCommonProps {
+   onListboxOpenChange?: (isOpen: boolean) => void;
+ }
+ 
+-export interface SelectUnstyledProps<TValue extends {}> extends SelectUnstyledCommonProps {
++export interface SelectUnstyledProps<TValue extends {}> extends SelectUnstyledCommonProps<TValue> {
+   /**
+    * The default selected value. Use when the component is not controlled.
+    */

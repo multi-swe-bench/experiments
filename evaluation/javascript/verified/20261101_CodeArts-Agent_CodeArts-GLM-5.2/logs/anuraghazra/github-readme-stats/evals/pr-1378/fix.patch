@@ -1,0 +1,144 @@
+diff --git a/src/cards/repo-card.js b/src/cards/repo-card.js
+index 5e6a28d..22fac44 100644
+--- a/src/cards/repo-card.js
++++ b/src/cards/repo-card.js
+@@ -65,6 +65,26 @@ const iconWithLabel = (icon, label, testid) => {
+   return flexLayout({ items: [iconSvg, text], gap: 20 }).join("");
+ };
+ 
++/**
++ * Truncates `text` (appending "...") if its rendered width exceeds `maxWidth`.
++ *
++ * @param {string} text
++ * @param {number} maxWidth
++ * @param {number} fontSize
++ * @returns {string}
++ */
++const truncateText = (text, maxWidth, fontSize = 18) => {
++  if (measureText(text, fontSize) <= maxWidth) return text;
++  let truncated = text;
++  while (
++    truncated.length > 0 &&
++    measureText(`${truncated}...`, fontSize) > maxWidth
++  ) {
++    truncated = truncated.slice(0, -1);
++  }
++  return `${truncated}...`;
++};
++
+ const renderRepoCard = (repo, options = {}) => {
+   const {
+     name,
+@@ -90,7 +110,12 @@ const renderRepoCard = (repo, options = {}) => {
+   } = options;
+ 
+   const lineHeight = 10;
+-  const header = show_owner ? nameWithOwner : name;
++  // Available width for the title: card width minus the left/right padding,
++  // the prefix icon and the gap between the icon and the title.
++  const header = truncateText(
++    show_owner ? nameWithOwner : name,
++    400 - 25 - 25 - ICON_SIZE - 25,
++  );
+   const langName = (primaryLanguage && primaryLanguage.name) || "Unspecified";
+   const langColor = (primaryLanguage && primaryLanguage.color) || "#333";
+ 
+diff --git a/src/common/utils.js b/src/common/utils.js
+index 79d6af0..c1fc2b8 100644
+--- a/src/common/utils.js
++++ b/src/common/utils.js
+@@ -1,6 +1,5 @@
+ // @ts-check
+ const axios = require("axios");
+-const wrap = require("word-wrap");
+ const themes = require("../../themes");
+ const toEmoji = require("emoji-name-map");
+ 
+@@ -221,20 +220,79 @@ function getCardColors({
+  * @returns {string[]}
+  */
+ function wrapTextMultiline(text, width = 60, maxLines = 3) {
+-  const wrapped = wrap(encodeHTML(text), { width })
+-    .split("\n") // Split wrapped lines to get an array of lines
+-    .map((line) => line.trim()); // Remove leading and trailing whitespace of each line
++  // Characters that are rendered double-width (CJK, full-width forms, etc.)
++  const fullWidthChars =
++    /[\u1100-\u115f\u2329-\u232a\u2e80-\u303e\u3040-\u33bf\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\ufe30-\ufe6f\uff00-\uff60\uffe0-\uffe6]/;
++
++  const charWidth = (ch) => {
++    const cp = ch.codePointAt(0);
++    if (fullWidthChars.test(ch)) return 2;
++    if (cp < 128) return 1;
++    return ("&#" + cp + ";").length;
++  };
++
++  const wordWidth = (word) => {
++    let w = 0;
++    for (const ch of word) {
++      w += charWidth(ch);
++    }
++    return w;
++  };
++
++  // Breaks a single word (longer than `width`) into smaller chunks so that
++  // each chunk's rendered width is less than or equal to `width`.
++  const chunkWord = (word, maxWidth) => {
++    const chunks = [];
++    let cur = "";
++    let curW = 0;
++    for (const ch of word) {
++      const cw = charWidth(ch);
++      if (cur && curW + cw > maxWidth) {
++        chunks.push(cur);
++        cur = ch;
++        curW = cw;
++      } else {
++        cur += ch;
++        curW += cw;
++      }
++    }
++    if (cur) chunks.push(cur);
++    return chunks;
++  };
++
++  const words = text.split(/\s+/).filter(Boolean);
++
++  const lines = [];
++  let line = "";
++  let lineW = 0;
++  for (const word of words) {
++    const parts = wordWidth(word) > width ? chunkWord(word, width) : [word];
++    for (const part of parts) {
++      const pw = wordWidth(part);
++      if (!line) {
++        line = part;
++        lineW = pw;
++      } else if (lineW + 1 + pw <= width) {
++        line += " " + part;
++        lineW += 1 + pw;
++      } else {
++        lines.push(line);
++        line = part;
++        lineW = pw;
++      }
++    }
++  }
++  if (line) lines.push(line);
+ 
+-  const lines = wrapped.slice(0, maxLines); // Only consider maxLines lines
++  const result = lines.slice(0, maxLines).map(encodeHTML);
+ 
+   // Add "..." to the last line if the text exceeds maxLines
+-  if (wrapped.length > maxLines) {
+-    lines[maxLines - 1] += "...";
++  if (lines.length > maxLines) {
++    result[maxLines - 1] += "...";
+   }
+ 
+   // Remove empty lines if text fits in less than maxLines lines
+-  const multiLineText = lines.filter(Boolean);
+-  return multiLineText;
++  return result.filter(Boolean);
+ }
+ 
+ const noop = () => {};

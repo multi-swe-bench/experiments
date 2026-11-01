@@ -1,0 +1,237 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+index e6fdb90..d3d63a1 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+@@ -228,10 +228,15 @@ export function serialize_set_binding(node, context, fallback, options) {
+ 			}
+ 		} else if (
+ 			assignee.object.type === 'ThisExpression' &&
+-			assignee.property.type === 'Identifier' &&
+-			state.in_constructor
++			state.in_constructor &&
++			((assignee.property.type === 'Identifier' && !assignee.computed) ||
++				(assignee.property.type === 'Literal' && assignee.computed))
+ 		) {
+-			const public_state = context.state.public_state.get(assignee.property.name);
++			const public_state = context.state.public_state.get(
++				/** @type {string} */ (
++					assignee.property.type === 'Identifier' ? assignee.property.name : assignee.property.value
++				)
++			);
+ 			const value = get_assignment_value(node, context);
+ 			// See if we should wrap value in $.proxy
+ 			if (
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/global.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/global.js
+index 811407b..b77be51 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/global.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/global.js
+@@ -30,6 +30,15 @@ export const global_visitors = {
+ 					return b.member(b.member(b.this, field.id), b.id('v'));
+ 				}
+ 			}
++
++			// rewrite `this["foo"]` as `this.#foo.v` inside a constructor
++			if (node.property.type === 'Literal' && node.computed && state.in_constructor) {
++				const field = state.public_state.get(/** @type {string} */ (node.property.value));
++
++				if (field) {
++					return b.member(b.member(b.this, field.id), b.id('v'));
++				}
++			}
+ 		}
+ 		next();
+ 	},
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
+index 5c5b177..020b960 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
+@@ -20,11 +20,17 @@ export const javascript_visitors_runes = {
+ 		for (const definition of node.body) {
+ 			if (
+ 				definition.type === 'PropertyDefinition' &&
+-				(definition.key.type === 'Identifier' || definition.key.type === 'PrivateIdentifier')
++				(definition.key.type === 'Identifier' ||
++					definition.key.type === 'PrivateIdentifier' ||
++					definition.key.type === 'Literal')
+ 			) {
+-				const { type, name } = definition.key;
++				const is_private = definition.key.type === 'PrivateIdentifier';
++				const name = is_private
++					? definition.key.name
++					: definition.key.type === 'Identifier'
++						? definition.key.name
++						: /** @type {string} */ (definition.key.value);
+ 
+-				const is_private = type === 'PrivateIdentifier';
+ 				if (is_private) private_ids.push(name);
+ 
+ 				if (definition.value?.type === 'CallExpression') {
+@@ -61,7 +67,10 @@ export const javascript_visitors_runes = {
+ 
+ 		// each `foo = $state()` needs a backing `#foo` field
+ 		for (const [name, field] of public_state) {
+-			let deconflicted = name;
++			let deconflicted = /^[a-zA-Z_$][\w$]*$/.test(name)
++				? name
++				: '_' + String(name).replace(/[^\w$]/g, '_');
++
+ 			while (private_ids.includes(deconflicted)) {
+ 				deconflicted = '_' + deconflicted;
+ 			}
+@@ -79,11 +88,18 @@ export const javascript_visitors_runes = {
+ 		for (const definition of node.body) {
+ 			if (
+ 				definition.type === 'PropertyDefinition' &&
+-				(definition.key.type === 'Identifier' || definition.key.type === 'PrivateIdentifier')
++				(definition.key.type === 'Identifier' ||
++					definition.key.type === 'PrivateIdentifier' ||
++					definition.key.type === 'Literal')
+ 			) {
+-				const name = definition.key.name;
+-
+ 				const is_private = definition.key.type === 'PrivateIdentifier';
++				const is_computed = definition.key.type === 'Literal';
++				const name = is_private
++					? definition.key.name
++					: definition.key.type === 'Identifier'
++						? definition.key.name
++						: /** @type {string} */ (definition.key.value);
++
+ 				const field = (is_private ? private_state : public_state).get(name);
+ 
+ 				if (definition.value?.type === 'CallExpression' && field !== undefined) {
+@@ -121,7 +137,9 @@ export const javascript_visitors_runes = {
+ 						body.push(b.prop_def(field.id, value));
+ 
+ 						// get foo() { return this.#foo; }
+-						body.push(b.method('get', definition.key, [], [b.return(b.call('$.get', member))]));
++						body.push(
++							b.method('get', definition.key, [], [b.return(b.call('$.get', member))], is_computed)
++						);
+ 
+ 						if (field.kind === 'state') {
+ 							// set foo(value) { this.#foo = value; }
+@@ -131,7 +149,8 @@ export const javascript_visitors_runes = {
+ 									'set',
+ 									definition.key,
+ 									[value],
+-									[b.stmt(b.call('$.set', member, b.call('$.proxy', value)))]
++									[b.stmt(b.call('$.set', member, b.call('$.proxy', value)))],
++									is_computed
+ 								)
+ 							);
+ 						}
+@@ -144,7 +163,8 @@ export const javascript_visitors_runes = {
+ 									'set',
+ 									definition.key,
+ 									[value],
+-									[b.stmt(b.call('$.set', member, b.call('$.freeze', value)))]
++									[b.stmt(b.call('$.set', member, b.call('$.freeze', value)))],
++									is_computed
+ 								)
+ 							);
+ 						}
+@@ -155,7 +175,8 @@ export const javascript_visitors_runes = {
+ 									'set',
+ 									definition.key,
+ 									[b.id('_')],
+-									[b.throw_error(`Cannot update a derived property ('${name}')`)]
++									[b.throw_error(`Cannot update a derived property ('${name}')`)],
++									is_computed
+ 								)
+ 							);
+ 						}
+@@ -175,13 +196,9 @@ export const javascript_visitors_runes = {
+ 					'method',
+ 					b.id('$.ADD_OWNER'),
+ 					[b.id('owner')],
+-					Array.from(public_state.keys()).map((name) =>
++					Array.from(public_state.values()).map((field) =>
+ 						b.stmt(
+-							b.call(
+-								'$.add_owner',
+-								b.call('$.get', b.member(b.this, b.private_id(name))),
+-								b.id('owner')
+-							)
++							b.call('$.add_owner', b.call('$.get', b.member(b.this, field.id)), b.id('owner'))
+ 						)
+ 					),
+ 					true
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 2f5ed1d..6709fe8 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -560,11 +560,17 @@ const javascript_visitors_runes = {
+ 		for (const definition of node.body) {
+ 			if (
+ 				definition.type === 'PropertyDefinition' &&
+-				(definition.key.type === 'Identifier' || definition.key.type === 'PrivateIdentifier')
++				(definition.key.type === 'Identifier' ||
++					definition.key.type === 'PrivateIdentifier' ||
++					definition.key.type === 'Literal')
+ 			) {
+-				const { type, name } = definition.key;
++				const is_private = definition.key.type === 'PrivateIdentifier';
++				const name = is_private
++					? definition.key.name
++					: definition.key.type === 'Identifier'
++						? definition.key.name
++						: /** @type {string} */ (definition.key.value);
+ 
+-				const is_private = type === 'PrivateIdentifier';
+ 				if (is_private) private_ids.push(name);
+ 
+ 				if (definition.value?.type === 'CallExpression') {
+@@ -589,7 +595,10 @@ const javascript_visitors_runes = {
+ 
+ 		// each `foo = $derived()` needs a backing `#foo` field
+ 		for (const [name, field] of public_derived) {
+-			let deconflicted = name;
++			let deconflicted = /^[a-zA-Z_$][\w$]*$/.test(name)
++				? name
++				: '_' + String(name).replace(/[^\w$]/g, '_');
++
+ 			while (private_ids.includes(deconflicted)) {
+ 				deconflicted = '_' + deconflicted;
+ 			}
+@@ -607,11 +616,18 @@ const javascript_visitors_runes = {
+ 		for (const definition of node.body) {
+ 			if (
+ 				definition.type === 'PropertyDefinition' &&
+-				(definition.key.type === 'Identifier' || definition.key.type === 'PrivateIdentifier')
++				(definition.key.type === 'Identifier' ||
++					definition.key.type === 'PrivateIdentifier' ||
++					definition.key.type === 'Literal')
+ 			) {
+-				const name = definition.key.name;
+-
+ 				const is_private = definition.key.type === 'PrivateIdentifier';
++				const is_computed = definition.key.type === 'Literal';
++				const name = is_private
++					? definition.key.name
++					: definition.key.type === 'Identifier'
++						? definition.key.name
++						: /** @type {string} */ (definition.key.value);
++
+ 				const field = (is_private ? private_derived : public_derived).get(name);
+ 
+ 				if (definition.value?.type === 'CallExpression' && field !== undefined) {
+@@ -631,7 +647,7 @@ const javascript_visitors_runes = {
+ 						body.push(b.prop_def(field.id, value));
+ 
+ 						// get foo() { return this.#foo; }
+-						body.push(b.method('get', definition.key, [], [b.return(b.call(member))]));
++						body.push(b.method('get', definition.key, [], [b.return(b.call(member))], is_computed));
+ 
+ 						if ((field.kind === 'derived' || field.kind === 'derived_call') && state.options.dev) {
+ 							body.push(
+@@ -639,7 +655,8 @@ const javascript_visitors_runes = {
+ 									'set',
+ 									definition.key,
+ 									[b.id('_')],
+-									[b.throw_error(`Cannot update a derived property ('${name}')`)]
++									[b.throw_error(`Cannot update a derived property ('${name}')`)],
++									is_computed
+ 								)
+ 							);
+ 						}

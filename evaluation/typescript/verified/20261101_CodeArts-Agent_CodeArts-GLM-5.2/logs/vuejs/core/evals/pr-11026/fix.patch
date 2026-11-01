@@ -1,0 +1,29 @@
+diff --git a/packages/compiler-sfc/src/script/resolveType.ts b/packages/compiler-sfc/src/script/resolveType.ts
+index bbed11b..a44e71d 100644
+--- a/packages/compiler-sfc/src/script/resolveType.ts
++++ b/packages/compiler-sfc/src/script/resolveType.ts
+@@ -1238,15 +1238,15 @@ function recordTypes(
+     ? !body.some(s => importExportRE.test(s.type))
+     : false
+   for (const stmt of body) {
+-    if (asGlobal) {
+-      if (isAmbient) {
+-        if ((stmt as any).declare) {
+-          recordType(stmt, types, declares)
+-        }
+-      } else if (stmt.type === 'TSModuleDeclaration' && stmt.global) {
+-        for (const s of (stmt.body as TSModuleBlock).body) {
+-          recordType(s, types, declares)
+-        }
++    if (stmt.type === 'TSModuleDeclaration' && stmt.global) {
++      // `declare global {}` block - record its inner types into the
++      // current scope so they can be resolved as global types
++      for (const s of (stmt.body as TSModuleBlock).body) {
++        recordType(s, types, declares)
++      }
++    } else if (asGlobal) {
++      if (isAmbient && (stmt as any).declare) {
++        recordType(stmt, types, declares)
+       }
+     } else {
+       recordType(stmt, types, declares)

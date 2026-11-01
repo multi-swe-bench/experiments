@@ -1,0 +1,479 @@
+diff --git a/packages/mui-joy/src/Snackbar/Snackbar.tsx b/packages/mui-joy/src/Snackbar/Snackbar.tsx
+new file mode 100644
+index 00000000..975b903c
+--- /dev/null
++++ b/packages/mui-joy/src/Snackbar/Snackbar.tsx
+@@ -0,0 +1,253 @@
++'use client';
++import * as React from 'react';
++import PropTypes from 'prop-types';
++import { OverridableComponent } from '@mui/types';
++import { unstable_capitalize as capitalize } from '@mui/utils';
++import { unstable_composeClasses as composeClasses } from '@mui/base/composeClasses';
++import { ClickAwayListener } from '@mui/base/ClickAwayListener';
++import { useSnackbar } from '@mui/base/useSnackbar';
++import styled from '../styles/styled';
++import useThemeProps from '../styles/useThemeProps';
++import useSlot from '../utils/useSlot';
++import { getSnackbarUtilityClass } from './snackbarClasses';
++import { SnackbarProps, SnackbarOwnerState, SnackbarTypeMap } from './SnackbarProps';
++
++const useUtilityClasses = (ownerState: SnackbarOwnerState) => {
++  const { anchorOrigin } = ownerState;
++
++  const slots = {
++    root: [
++      'root',
++      `anchorOrigin${capitalize(anchorOrigin.vertical)}${capitalize(anchorOrigin.horizontal)}`,
++    ],
++  };
++
++  return composeClasses(slots, getSnackbarUtilityClass, {});
++};
++
++const SnackbarRoot = styled('div', {
++  name: 'JoySnackbar',
++  slot: 'Root',
++  overridesResolver: (props, styles) => styles.root,
++})<{ ownerState: SnackbarOwnerState }>(({ theme, ownerState }) => ({
++  zIndex: theme.vars.zIndex.snackbar,
++  position: 'fixed',
++  display: 'flex',
++  left: 16,
++  right: 16,
++  justifyContent: 'center',
++  alignItems: 'center',
++  pointerEvents: 'none',
++  [theme.breakpoints.up('sm')]: {
++    left: 'auto',
++    right: 'auto',
++    justifyContent: 'flex-end',
++    ...(ownerState.anchorOrigin.horizontal === 'left' && {
++      left: 16,
++      right: 'auto',
++      justifyContent: 'flex-start',
++    }),
++    ...(ownerState.anchorOrigin.horizontal === 'center' && {
++      left: '50%',
++      right: 'auto',
++      transform: 'translateX(-50%)',
++      justifyContent: 'center',
++    }),
++  },
++  ...(ownerState.anchorOrigin.vertical === 'top' && {
++    top: 16,
++  }),
++  ...(ownerState.anchorOrigin.vertical === 'bottom' && {
++    bottom: 16,
++  }),
++  ...(ownerState.anchorOrigin.horizontal === 'left' && {
++    justifyContent: 'flex-start',
++  }),
++  ...(ownerState.anchorOrigin.horizontal === 'right' && {
++    justifyContent: 'flex-end',
++  }),
++  '& > *': {
++    pointerEvents: 'auto',
++  },
++}));
++/**
++ *
++ * Demos:
++ *
++ * - [Snackbar](https://mui.com/joy-ui/react-snackbar/)
++ *
++ * API:
++ *
++ * - [Snackbar API](https://mui.com/joy-ui/api/snackbar/)
++ */
++const Snackbar = React.forwardRef(function Snackbar(inProps, ref) {
++  const props = useThemeProps<typeof inProps & SnackbarProps>({
++    props: inProps,
++    name: 'JoySnackbar',
++  });
++
++  const {
++    anchorOrigin = { vertical: 'bottom', horizontal: 'right' },
++    autoHideDuration = null,
++    children,
++    disableWindowBlurListener = false,
++    exited = true,
++    onClose,
++    open,
++    resumeHideDuration,
++    component,
++    slots = {},
++    slotProps = {},
++    ...other
++  } = props;
++
++  const ownerState = {
++    ...props,
++    anchorOrigin,
++    autoHideDuration,
++    disableWindowBlurListener,
++    exited,
++    resumeHideDuration,
++  };
++
++  const { getRootProps, onClickAway } = useSnackbar({
++    ...props,
++    autoHideDuration,
++    disableWindowBlurListener,
++    onClose,
++    open,
++    resumeHideDuration,
++  });
++
++  const classes = useUtilityClasses(ownerState);
++  const externalForwardedProps = { ...other, component, slots, slotProps };
++
++  const [SlotRoot, rootProps] = useSlot('root', {
++    ref,
++    className: classes.root,
++    elementType: SnackbarRoot,
++    externalForwardedProps,
++    getSlotProps: getRootProps,
++    ownerState,
++  });
++
++  const [SlotClickAwayListener, clickAwayListenerProps] = useSlot('clickAwayListener', {
++    className: '',
++    elementType: ClickAwayListener,
++    externalForwardedProps,
++    additionalProps: {
++      onClickAway,
++    },
++    ownerState,
++  });
++
++  // ClickAwayListener doesn't support ownerState
++  delete (clickAwayListenerProps as any).ownerState;
++
++  // So that we only render active snackbars.
++  if (!open && exited) {
++    return null;
++  }
++
++  return (
++    <SlotClickAwayListener {...clickAwayListenerProps}>
++      <SlotRoot {...rootProps}>{children}</SlotRoot>
++    </SlotClickAwayListener>
++  );
++}) as OverridableComponent<SnackbarTypeMap>;
++
++Snackbar.propTypes /* remove-proptypes */ = {
++  // ----------------------------- Warning --------------------------------
++  // | These PropTypes are generated from the TypeScript type definitions |
++  // |     To update them edit TypeScript types and run "yarn proptypes"  |
++  // ----------------------------------------------------------------------
++  /**
++   * The anchor of the `Snackbar`.
++   * On smaller screens, the component grows to occupy all the available width
++   * and the horizontal alignment is controlled by the `logical` prop.
++   * @default { vertical: 'bottom', horizontal: 'right' }
++   */
++  anchorOrigin: PropTypes.shape({
++    horizontal: PropTypes.oneOf(['center', 'left', 'right']).isRequired,
++    vertical: PropTypes.oneOf(['bottom', 'top']).isRequired,
++  }),
++  /**
++   * The number of milliseconds to wait before automatically calling the
++   * `onClose` function. `onClose` should then set the state of the `open`
++   * prop to hide the Snackbar. This behavior is disabled by default with
++   * the `null` value.
++   * @default null
++   */
++  autoHideDuration: PropTypes.number,
++  /**
++   * @ignore
++   */
++  children: PropTypes.node,
++  /**
++   * @ignore
++   */
++  className: PropTypes.string,
++  /**
++   * The component used for the root node.
++   * Either a string to use a HTML element or a component.
++   */
++  component: PropTypes.elementType,
++  /**
++   * If `true`, the `autoHideDuration` timer will expire even if the window is not focused.
++   * @default false
++   */
++  disableWindowBlurListener: PropTypes.bool,
++  /**
++   * The prop used to handle exited transition and unmount the component.
++   * @default true
++   */
++  exited: PropTypes.bool,
++  /**
++   * Callback fired when the component requests to be closed.
++   * Typically `onClose` is used to set state in the parent component,
++   * which is used to control the `Snackbar` `open` prop.
++   * The `reason` parameter can optionally be used to control the response to `onClose`,
++   * for example ignoring `clickaway`.
++   *
++   * @param {React.SyntheticEvent<any> | Event} event The event source of the callback.
++   * @param {string} reason Can be: `"timeout"` (`autoHideDuration` expired), `"clickaway"`, or `"escapeKeyDown"`.
++   */
++  onClose: PropTypes.func,
++  /**
++   * If `true`, the component is shown.
++   */
++  open: PropTypes.bool,
++  /**
++   * The number of milliseconds to wait before dismissing after user interaction.
++   * If `autoHideDuration` prop isn't specified, it does nothing.
++   * If `autoHideDuration` prop is specified but `resumeHideDuration` isn't,
++   * we default to `autoHideDuration / 2` ms.
++   */
++  resumeHideDuration: PropTypes.number,
++  /**
++   * The props used for each slot inside.
++   * @default {}
++   */
++  slotProps: PropTypes.shape({
++    clickAwayListener: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++    root: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++  }),
++  /**
++   * The components used for each slot inside.
++   * @default {}
++   */
++  slots: PropTypes.shape({
++    clickAwayListener: PropTypes.elementType,
++    root: PropTypes.elementType,
++  }),
++  /**
++   * The system prop that allows defining system overrides as well as additional CSS styles.
++   */
++  sx: PropTypes.oneOfType([
++    PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.func, PropTypes.object, PropTypes.bool])),
++    PropTypes.func,
++    PropTypes.object,
++  ]),
++} as any;
++
++export default Snackbar;
+diff --git a/packages/mui-joy/src/Snackbar/SnackbarProps.ts b/packages/mui-joy/src/Snackbar/SnackbarProps.ts
+new file mode 100644
+index 00000000..c0fdc4b3
+--- /dev/null
++++ b/packages/mui-joy/src/Snackbar/SnackbarProps.ts
+@@ -0,0 +1,100 @@
++import * as React from 'react';
++import { OverrideProps } from '@mui/types';
++import { SxProps } from '../styles/types';
++import { CreateSlotsAndSlotProps, SlotProps } from '../utils/types';
++
++export type SnackbarSlot = 'root' | 'clickAwayListener';
++
++export interface SnackbarSlots {
++  /**
++   * The component that renders the root.
++   * @default 'div'
++   */
++  root?: React.ElementType;
++  /**
++   * The component that renders the ClickAwayListener.
++   * @default ClickAwayListener
++   */
++  clickAwayListener?: React.ElementType;
++}
++
++export type SnackbarSlotsAndSlotProps = CreateSlotsAndSlotProps<
++  SnackbarSlots,
++  {
++    root: SlotProps<'div', {}, SnackbarOwnerState>;
++    clickAwayListener: SlotProps<'div', {}, SnackbarOwnerState>;
++  }
++>;
++
++export interface SnackbarTypeMap<P = {}, D extends React.ElementType = 'div'> {
++  props: P &
++    SnackbarSlotsAndSlotProps & {
++      /**
++       * The anchor of the `Snackbar`.
++       * On smaller screens, the component grows to occupy all the available width
++       * and the horizontal alignment is controlled by the `logical` prop.
++       * @default { vertical: 'bottom', horizontal: 'right' }
++       */
++      anchorOrigin?: {
++        vertical: 'top' | 'bottom';
++        horizontal: 'left' | 'center' | 'right';
++      };
++      /**
++       * The number of milliseconds to wait before automatically calling the
++       * `onClose` function. `onClose` should then set the state of the `open`
++       * prop to hide the Snackbar. This behavior is disabled by default with
++       * the `null` value.
++       * @default null
++       */
++      autoHideDuration?: number | null;
++      /**
++       * If `true`, the `autoHideDuration` timer will expire even if the window is not focused.
++       * @default false
++       */
++      disableWindowBlurListener?: boolean;
++      /**
++       * The prop used to handle exited transition and unmount the component.
++       * @default true
++       */
++      exited?: boolean;
++      /**
++       * Callback fired when the component requests to be closed.
++       * Typically `onClose` is used to set state in the parent component,
++       * which is used to control the `Snackbar` `open` prop.
++       * The `reason` parameter can optionally be used to control the response to `onClose`,
++       * for example ignoring `clickaway`.
++       *
++       * @param {React.SyntheticEvent<any> | Event} event The event source of the callback.
++       * @param {string} reason Can be: `"timeout"` (`autoHideDuration` expired), `"clickaway"`, or `"escapeKeyDown"`.
++       */
++      onClose?: (event: React.SyntheticEvent<any> | Event | null, reason: string) => void;
++      /**
++       * If `true`, the component is shown.
++       */
++      open?: boolean;
++      /**
++       * The number of milliseconds to wait before dismissing after user interaction.
++       * If `autoHideDuration` prop isn't specified, it does nothing.
++       * If `autoHideDuration` prop is specified but `resumeHideDuration` isn't,
++       * we default to `autoHideDuration / 2` ms.
++       */
++      resumeHideDuration?: number;
++      /**
++       * The system prop that allows defining system overrides as well as additional CSS styles.
++       */
++      sx?: SxProps;
++    };
++  defaultComponent: D;
++}
++
++export type SnackbarProps<
++  D extends React.ElementType = SnackbarTypeMap['defaultComponent'],
++  P = { component?: React.ElementType },
++> = OverrideProps<SnackbarTypeMap<P, D>, D>;
++
++export interface SnackbarOwnerState extends SnackbarProps {
++  anchorOrigin: {
++    vertical: 'top' | 'bottom';
++    horizontal: 'left' | 'center' | 'right';
++  };
++}
+diff --git a/packages/mui-joy/src/Snackbar/index.ts b/packages/mui-joy/src/Snackbar/index.ts
+new file mode 100644
+index 00000000..9a1de25f
+--- /dev/null
++++ b/packages/mui-joy/src/Snackbar/index.ts
+@@ -0,0 +1,5 @@
++'use client';
++export { default } from './Snackbar';
++export * from './snackbarClasses';
++export { default as snackbarClasses } from './snackbarClasses';
++export * from './SnackbarProps';
+diff --git a/packages/mui-joy/src/Snackbar/snackbarClasses.ts b/packages/mui-joy/src/Snackbar/snackbarClasses.ts
+new file mode 100644
+index 00000000..261305d1
+--- /dev/null
++++ b/packages/mui-joy/src/Snackbar/snackbarClasses.ts
+@@ -0,0 +1,36 @@
++import { generateUtilityClass, generateUtilityClasses } from '../className';
++
++export interface SnackbarClasses {
++  /** Class name applied to the root element. */
++  root: string;
++  /** Class name applied to the root element if `anchorOrigin={{ 'bottom', 'center' }}`. */
++  anchorOriginBottomCenter: string;
++  /** Class name applied to the root element if `anchorOrigin={{ 'bottom', 'left' }}`. */
++  anchorOriginBottomLeft: string;
++  /** Class name applied to the root element if `anchorOrigin={{ 'bottom', 'right' }}`. */
++  anchorOriginBottomRight: string;
++  /** Class name applied to the root element if `anchorOrigin={{ 'top', 'center' }}`. */
++  anchorOriginTopCenter: string;
++  /** Class name applied to the root element if `anchorOrigin={{ 'top', 'left' }}`. */
++  anchorOriginTopLeft: string;
++  /** Class name applied to the root element if `anchorOrigin={{ 'top', 'right' }}`. */
++  anchorOriginTopRight: string;
++}
++
++export type SnackbarClassKey = keyof SnackbarClasses;
++
++export function getSnackbarUtilityClass(slot: string): string {
++  return generateUtilityClass('MuiSnackbar', slot);
++}
++
++const snackbarClasses: SnackbarClasses = generateUtilityClasses('MuiSnackbar', [
++  'root',
++  'anchorOriginTopLeft',
++  'anchorOriginTopCenter',
++  'anchorOriginTopRight',
++  'anchorOriginBottomLeft',
++  'anchorOriginBottomCenter',
++  'anchorOriginBottomRight',
++]);
++
++export default snackbarClasses;
+diff --git a/packages/mui-joy/src/index.ts b/packages/mui-joy/src/index.ts
+index 388ba8cd..4a65f4e0 100644
+--- a/packages/mui-joy/src/index.ts
++++ b/packages/mui-joy/src/index.ts
+@@ -193,6 +193,9 @@ export * from './Sheet';
+ export { default as Skeleton } from './Skeleton';
+ export * from './Skeleton';
+ 
++export { default as Snackbar } from './Snackbar';
++export * from './Snackbar';
++
+ export { default as Slider } from './Slider';
+ export * from './Slider';
+ 
+diff --git a/packages/mui-joy/src/styles/components.d.ts b/packages/mui-joy/src/styles/components.d.ts
+index f12a710f..cef5598b 100644
+--- a/packages/mui-joy/src/styles/components.d.ts
++++ b/packages/mui-joy/src/styles/components.d.ts
+@@ -191,6 +191,7 @@ import {
+ } from '../RadioGroup/RadioGroupProps';
+ import { SheetProps, SheetOwnerState, SheetSlot } from '../Sheet/SheetProps';
+ import { SkeletonProps, SkeletonOwnerState, SkeletonSlot } from '../Skeleton/SkeletonProps';
++import { SnackbarProps, SnackbarOwnerState, SnackbarSlot } from '../Snackbar/SnackbarProps';
+ import { SelectProps, SelectOwnerState, SelectSlot } from '../Select/SelectProps';
+ import { OptionProps, OptionOwnerState, OptionSlot } from '../Option/OptionProps';
+ import { SliderProps, SliderOwnerState, SliderSlot } from '../Slider/SliderProps';
+@@ -446,6 +447,10 @@ export interface Components<Theme = unknown> {
+     defaultProps?: Partial<SkeletonProps>;
+     styleOverrides?: StyleOverrides<SkeletonSlot, SkeletonOwnerState, Theme>;
+   };
++  JoySnackbar?: {
++    defaultProps?: Partial<SnackbarProps>;
++    styleOverrides?: StyleOverrides<SnackbarSlot, SnackbarOwnerState, Theme>;
++  };
+   JoyStack?: {
+     defaultProps?: Partial<StackProps>;
+     styleOverrides?: StyleOverrides<StackSlot, StackProps, Theme>;
+diff --git a/packages/mui-joy/src/styles/extendTheme.ts b/packages/mui-joy/src/styles/extendTheme.ts
+index 818cd124..546d3347 100644
+--- a/packages/mui-joy/src/styles/extendTheme.ts
++++ b/packages/mui-joy/src/styles/extendTheme.ts
+@@ -419,6 +419,7 @@ export default function extendTheme(themeOptions?: CssVarsThemeOptions): Theme {
+       table: 10,
+       popup: 1000,
+       modal: 1300,
++      snackbar: 1400,
+       tooltip: 1500,
+     },
+ 
+diff --git a/packages/mui-joy/src/styles/types/zIndex.ts b/packages/mui-joy/src/styles/types/zIndex.ts
+index f91fb675..3bdee897 100644
+--- a/packages/mui-joy/src/styles/types/zIndex.ts
++++ b/packages/mui-joy/src/styles/types/zIndex.ts
+@@ -14,6 +14,7 @@ export interface DefaultZIndex {
+    */
+   popup: number;
+   modal: number;
++  snackbar: number;
+   tooltip: number;
+ }
+ export interface ZIndexOverrides {}

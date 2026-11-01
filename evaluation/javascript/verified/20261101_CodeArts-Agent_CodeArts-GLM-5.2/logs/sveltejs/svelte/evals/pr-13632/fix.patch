@@ -1,0 +1,63 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 42727ea..e0764d6 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -198,15 +198,17 @@ export function migrate(source, { filename } = {}) {
+ 				const type_name = state.scope.root.unique('Props').name;
+ 				let type = '';
+ 				if (uses_ts) {
+-					if (analysis.uses_props || analysis.uses_rest_props) {
++					if (analysis.uses_props) {
+ 						type = `interface ${type_name} { [key: string]: any }`;
+ 					} else {
+-						type = `interface ${type_name} {${newline_separator}${state.props
+-							.map((prop) => {
+-								const comment = prop.comment ? `${prop.comment}${newline_separator}` : '';
+-								return `${comment}${prop.exported}${prop.optional ? '?' : ''}: ${prop.type};`;
+-							})
+-							.join(newline_separator)}\n${indent}}`;
++						const members = state.props.map((prop) => {
++							const comment = prop.comment ? `${prop.comment}${newline_separator}` : '';
++							return `${comment}${prop.exported}${prop.optional ? '?' : ''}: ${prop.type};`;
++						});
++						if (analysis.uses_rest_props) {
++							members.push('[key: string]: any;');
++						}
++						type = `interface ${type_name} {${newline_separator}${members.join(newline_separator)}\n${indent}}`;
+ 					}
+ 				} else {
+ 					if (analysis.uses_props || analysis.uses_rest_props) {
+diff --git a/packages/svelte/tests/migrate/samples/props-rest-props-ts/input.svelte b/packages/svelte/tests/migrate/samples/props-rest-props-ts/input.svelte
+new file mode 100644
+index 0000000..52fc695
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/props-rest-props-ts/input.svelte
+@@ -0,0 +1,7 @@
++<script lang="ts">
++	/** docs for prop1 */
++	export let prop1: string;
++	export let prop2: number;
++</script>
++
++<button {prop1} {prop2} {...$$restProps}>click me</button>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/migrate/samples/props-rest-props-ts/output.svelte b/packages/svelte/tests/migrate/samples/props-rest-props-ts/output.svelte
+new file mode 100644
+index 0000000..6668ca6
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/props-rest-props-ts/output.svelte
+@@ -0,0 +1,13 @@
++<script lang="ts">
++	
++	interface Props {
++		/** docs for prop1 */
++		prop1: string;
++		prop2: number;
++		[key: string]: any;
++	}
++
++	let { prop1, prop2, ...rest }: Props = $props();
++</script>
++
++<button {prop1} {prop2} {...rest}>click me</button>
+\ No newline at end of file

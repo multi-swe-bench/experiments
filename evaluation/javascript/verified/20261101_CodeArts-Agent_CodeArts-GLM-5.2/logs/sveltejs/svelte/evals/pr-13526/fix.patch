@@ -1,0 +1,22 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index e363ea9..caa0538 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -376,7 +376,7 @@ export function analyze_component(root, source, options) {
+ 		template,
+ 		elements: [],
+ 		runes,
+-		immutable: runes || options.immutable,
++		immutable: runes || (root.options?.immutable ?? options.immutable),
+ 		exports: [],
+ 		uses_props: false,
+ 		uses_rest_props: false,
+@@ -529,7 +529,7 @@ export function analyze_component(root, source, options) {
+ 				w.options_missing_custom_element(attribute);
+ 			}
+ 
+-			if (attribute.name === 'immutable') {
++			if (attribute.name === 'immutable' && runes) {
+ 				w.options_deprecated_immutable(attribute);
+ 			}
+ 		}

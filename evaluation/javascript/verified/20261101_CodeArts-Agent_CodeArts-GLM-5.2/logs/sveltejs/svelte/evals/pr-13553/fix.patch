@@ -1,0 +1,74 @@
+diff --git a/packages/svelte/src/internal/client/dom/blocks/each.js b/packages/svelte/src/internal/client/dom/blocks/each.js
+index 922fdb0..270f896 100644
+--- a/packages/svelte/src/internal/client/dom/blocks/each.js
++++ b/packages/svelte/src/internal/client/dom/blocks/each.js
+@@ -433,8 +433,15 @@ function reconcile(array, state, anchor, render_fn, flags, get_key) {
+ 		});
+ 	}
+ 
+-	/** @type {Effect} */ (active_effect).first = state.first && state.first.e;
+-	/** @type {Effect} */ (active_effect).last = prev && prev.e;
++	// Update the effect's first/last pointers to reflect the items, but only if
++	// there are items. When the array is empty, the fallback branch (if any) is
++	// the only child of this effect, so we must not reset these pointers to null
++	// or else the fallback and its reactive descendants get orphaned from the
++	// effect tree and stop reacting to updates.
++	if (state.first !== null) {
++		/** @type {Effect} */ (active_effect).first = state.first.e;
++		/** @type {Effect} */ (active_effect).last = /** @type {EachItem} */ (prev).e;
++	}
+ }
+ 
+ /**
+diff --git a/packages/svelte/tests/runtime-runes/samples/each-fallback-if/_config.js b/packages/svelte/tests/runtime-runes/samples/each-fallback-if/_config.js
+new file mode 100644
+index 0000000..443f7ab
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/each-fallback-if/_config.js
+@@ -0,0 +1,20 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++
++export default test({
++	async test({ assert, target }) {
++		const [button] = target.querySelectorAll('button');
++
++		assert.htmlEqual(target.innerHTML, '<p>Loading list...</p><button>set null</button>');
++
++		// list becomes null, still empty array -> fallback stays, but the if block should react
++		flushSync(() => {
++			button.click();
++		});
++
++		assert.htmlEqual(
++			target.innerHTML,
++			"<p>The list doesn't have any data.</p><button>set null</button>"
++		);
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/each-fallback-if/main.svelte b/packages/svelte/tests/runtime-runes/samples/each-fallback-if/main.svelte
+new file mode 100644
+index 0000000..941125c
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/each-fallback-if/main.svelte
+@@ -0,0 +1,18 @@
++<script>
++	let list = $state(undefined);
++
++	function set_null() {
++		list = null;
++	}
++</script>
++
++{#each list ?? [] as item}
++	{item}
++{:else}
++	{#if list === null}
++		<p>The list doesn't have any data.</p>
++	{:else}
++		<p>Loading list...</p>
++	{/if}
++{/each}
++<button onclick={set_null}>set null</button>
+\ No newline at end of file

@@ -1,0 +1,132 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/css/index.js b/packages/svelte/src/compiler/phases/3-transform/css/index.js
+index d1f3d3b..f2095fc 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/css/index.js
++++ b/packages/svelte/src/compiler/phases/3-transform/css/index.js
+@@ -222,8 +222,11 @@ const visitors = {
+ 								state.code.prependRight(selector.start, '/* (unused) ');
+ 							}
+ 						} else {
+-							// If this is not the last selector add a separator
+-							const separator = i !== children.length - 1 ? ',' : '';
++							// If there's a used selector after this unused block, add a separator
++							const has_used_after = children
++								.slice(i + 1)
++								.some((s) => s.metadata.used);
++							const separator = has_used_after ? ',' : '';
+ 
+ 							if (state.minify) {
+ 								prune_start = last;
+diff --git a/packages/svelte/tests/css/samples/unused-selector-multiple-trailing/_config.js b/packages/svelte/tests/css/samples/unused-selector-multiple-trailing/_config.js
+new file mode 100644
+index 0000000..8ef0e83
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/unused-selector-multiple-trailing/_config.js
+@@ -0,0 +1,60 @@
++import { test } from '../../test';
++
++export default test({
++	warnings: [
++		{
++			code: 'css_unused_selector',
++			message: 'Unused CSS selector "h2"',
++			start: { line: 5, column: 5, character: 152 },
++			end: { line: 5, column: 7, character: 154 }
++		},
++		{
++			code: 'css_unused_selector',
++			message: 'Unused CSS selector "h3"',
++			start: { line: 5, column: 9, character: 156 },
++			end: { line: 5, column: 11, character: 158 }
++		},
++		{
++			code: 'css_unused_selector',
++			message: 'Unused CSS selector "h2"',
++			start: { line: 8, column: 5, character: 183 },
++			end: { line: 8, column: 7, character: 185 }
++		},
++		{
++			code: 'css_unused_selector',
++			message: 'Unused CSS selector "h2"',
++			start: { line: 12, column: 5, character: 227 },
++			end: { line: 12, column: 7, character: 229 }
++		},
++		{
++			code: 'css_unused_selector',
++			message: 'Unused CSS selector "h3"',
++			start: { line: 12, column: 9, character: 231 },
++			end: { line: 12, column: 11, character: 233 }
++		},
++		{
++			code: 'css_unused_selector',
++			message: 'Unused CSS selector "h2"',
++			start: { line: 16, column: 5, character: 278 },
++			end: { line: 16, column: 7, character: 280 }
++		},
++		{
++			code: 'css_unused_selector',
++			message: 'Unused CSS selector "h3"',
++			start: { line: 16, column: 9, character: 282 },
++			end: { line: 16, column: 11, character: 284 }
++		},
++		{
++			code: 'css_unused_selector',
++			message: 'Unused CSS selector "h5"',
++			start: { line: 16, column: 17, character: 290 },
++			end: { line: 16, column: 19, character: 292 }
++		},
++		{
++			code: 'css_unused_selector',
++			message: 'Unused CSS selector "h6"',
++			start: { line: 16, column: 21, character: 294 },
++			end: { line: 16, column: 23, character: 296 }
++		}
++	]
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/unused-selector-multiple-trailing/expected.css b/packages/svelte/tests/css/samples/unused-selector-multiple-trailing/expected.css
+new file mode 100644
+index 0000000..472b098
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/unused-selector-multiple-trailing/expected.css
+@@ -0,0 +1,14 @@
++h1.svelte-xyz /* (unused) h2, h3*/ {
++		color: red;
++	}
++	h1.svelte-xyz /* (unused) h2*/ {
++		text-decoration: underline;
++	}
++
++	h1.svelte-xyz, /* (unused) h2, h3*/ h4.svelte-xyz {
++		text-transform: uppercase;
++	}
++
++	h1.svelte-xyz, /* (unused) h2, h3*/ h4.svelte-xyz /* (unused) h5, h6*/ {
++		background-color: green;
++	}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/unused-selector-multiple-trailing/input.svelte b/packages/svelte/tests/css/samples/unused-selector-multiple-trailing/input.svelte
+new file mode 100644
+index 0000000..c2a4cb3
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/unused-selector-multiple-trailing/input.svelte
+@@ -0,0 +1,19 @@
++<h1>This should be red, underlined, uppercase, and with green background</h1>
++<h4>This should be uppercase and with green background</h4>
++
++<style>
++	h1, h2, h3 {
++		color: red;
++	}
++	h1, h2 {
++		text-decoration: underline;
++	}
++
++	h1, h2, h3, h4 {
++		text-transform: uppercase;
++	}
++
++	h1, h2, h3, h4, h5, h6 {
++		background-color: green;
++	}
++</style>
+\ No newline at end of file

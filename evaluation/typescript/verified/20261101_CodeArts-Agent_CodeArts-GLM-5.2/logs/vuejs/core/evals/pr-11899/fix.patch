@@ -1,0 +1,72 @@
+diff --git a/packages/compiler-sfc/src/style/pluginScoped.ts b/packages/compiler-sfc/src/style/pluginScoped.ts
+index 6a588b5..9f61e29 100644
+--- a/packages/compiler-sfc/src/style/pluginScoped.ts
++++ b/packages/compiler-sfc/src/style/pluginScoped.ts
+@@ -234,15 +234,28 @@ function rewriteSelector(
+   if (rule.nodes.some(node => node.type === 'rule')) {
+     const deep = (rule as any).__deep
+     const decls = rule.nodes.filter(node => node.type === 'decl')
+-    if (!deep && decls.length) {
+-      for (const decl of decls) {
+-        rule.removeChild(decl)
++    if (!deep) {
++      if (decls.length) {
++        for (const decl of decls) {
++          rule.removeChild(decl)
++        }
++        const hostRule = new Rule({
++          nodes: decls,
++          selector: '&',
++        })
++        rule.prepend(hostRule)
++      }
++      // Wrap declarations directly inside nested at-rules (e.g. `@media`,
++      // `@container`) in a `&` host rule so that they receive the scope
++      // attribute, since the parent rule's selector no longer carries it.
++      for (const child of rule.nodes) {
++        if (
++          child.type === 'atrule' &&
++          !/-?keyframes$/.test((child as AtRule).name)
++        ) {
++          wrapAtRuleDecls(child as AtRule)
++        }
+       }
+-      const hostRule = new Rule({
+-        nodes: decls,
+-        selector: '&',
+-      })
+-      rule.prepend(hostRule)
+     }
+     shouldInject = deep
+   }
+@@ -286,5 +299,30 @@ function isSpaceCombinator(node: selectorParser.Node) {
+   return node.type === 'combinator' && /^\s+$/.test(node.value)
+ }
+ 
++function wrapAtRuleDecls(atRule: AtRule) {
++  const nodes = atRule.nodes
++  if (!nodes) return
++  const decls = nodes.filter(node => node.type === 'decl')
++  if (decls.length) {
++    for (const decl of decls) {
++      atRule.removeChild(decl)
++    }
++    atRule.prepend(
++      new Rule({
++        nodes: decls,
++        selector: '&',
++      }),
++    )
++  }
++  for (const child of nodes) {
++    if (
++      child.type === 'atrule' &&
++      !/-?keyframes$/.test((child as AtRule).name)
++    ) {
++      wrapAtRuleDecls(child as AtRule)
++    }
++  }
++}
++
+ scopedPlugin.postcss = true
+ export default scopedPlugin

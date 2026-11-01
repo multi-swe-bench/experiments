@@ -1,0 +1,42 @@
+diff --git a/packages/svelte/src/reactivity/media-query.js b/packages/svelte/src/reactivity/media-query.js
+index 7da9ada..152871e 100644
+--- a/packages/svelte/src/reactivity/media-query.js
++++ b/packages/svelte/src/reactivity/media-query.js
+@@ -11,7 +11,7 @@ import { ReactiveValue } from './reactive-value.js';
+  * <script>
+  * 	import { MediaQuery } from 'svelte/reactivity';
+  *
+- * 	const large = new MediaQuery('min-width: 800px');
++ * 	const large = new MediaQuery('(min-width: 800px)');
+  * </script>
+  *
+  * <h1>{large.current ? 'large screen' : 'small screen'}</h1>
+@@ -25,7 +25,14 @@ export class MediaQuery extends ReactiveValue {
+ 	 * @param {boolean} [fallback] Fallback value for the server
+ 	 */
+ 	constructor(query, fallback) {
+-		const q = window.matchMedia(`(${query})`);
++		const q = window.matchMedia(
++			query.includes('(') ||
++				query.includes(',') ||
++				query.startsWith('not') ||
++				query.startsWith('only')
++				? query
++				: `(${query})`
++		);
+ 		super(
+ 			() => q.matches,
+ 			(update) => on(q, 'change', update)
+diff --git a/packages/svelte/types/index.d.ts b/packages/svelte/types/index.d.ts
+index a36be7f..97b5600 100644
+--- a/packages/svelte/types/index.d.ts
++++ b/packages/svelte/types/index.d.ts
+@@ -1918,7 +1918,7 @@ declare module 'svelte/reactivity' {
+ 	 * <script>
+ 	 * 	import { MediaQuery } from 'svelte/reactivity';
+ 	 *
+-	 * 	const large = new MediaQuery('min-width: 800px');
++	 * 	const large = new MediaQuery('(min-width: 800px)');
+ 	 * </script>
+ 	 *
+ 	 * <h1>{large.current ? 'large screen' : 'small screen'}</h1>

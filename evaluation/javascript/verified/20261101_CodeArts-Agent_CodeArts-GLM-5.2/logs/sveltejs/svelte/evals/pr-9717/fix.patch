@@ -1,0 +1,56 @@
+diff --git a/packages/svelte/src/internal/client/runtime.js b/packages/svelte/src/internal/client/runtime.js
+index 00e6ee9..01bcc4c 100644
+--- a/packages/svelte/src/internal/client/runtime.js
++++ b/packages/svelte/src/internal/client/runtime.js
+@@ -1431,25 +1431,47 @@ export function prop_source(props_obj, key, default_value, call_default_value) {
+ 	let ignore_next1 = false;
+ 	let ignore_next2 = false;
+ 
++	// Tracks the last value that was propagated from the parent for this key.
++	// This is used to ensure that the default value is not overridden when the
++	// parent keeps passing `undefined` (for example because the props object is
++	// recreated due to a spread of props where another prop changed).
+ 	let mount = true;
++	let last_propagating_value = props[key];
+ 	sync_effect(() => {
+ 		const props = is_signal(props_obj) ? get(props_obj) : props_obj;
+ 		// Before if to ensure signal dependency is registered
+ 		const propagating_value = props[key];
+ 		if (mount) {
+ 			mount = false;
++			last_propagating_value = propagating_value;
+ 			return;
+ 		}
+ 		if (ignore_next1) {
+ 			ignore_next1 = false;
++			last_propagating_value = propagating_value;
+ 			return;
+ 		}
+ 
+ 		if (not_equal(immutable, propagating_value, source_signal.v)) {
+-			ignore_next2 = true;
+-			// TODO figure out why we need it this way and the explain in a comment;
+-			// some tests fail is we just do set_signal_value(source_signal, propagating_value)
+-			untrack(() => set_signal_value(source_signal, propagating_value));
++			// If the prop has a default value and the parent never provided a
++			// defined value for it (it has been `undefined` all along), we keep
++			// the default value instead of overriding it with `undefined`. This
++			// ensures that fallback props stay intact when other props change.
++			if (
++				!(
++					propagating_value === undefined &&
++					default_value !== undefined &&
++					last_propagating_value === undefined
++				)
++			) {
++				last_propagating_value = propagating_value;
++				ignore_next2 = true;
++				// TODO figure out why we need it this way and the explain in a comment;
++				// some tests fail is we just do set_signal_value(source_signal, propagating_value)
++				untrack(() => set_signal_value(source_signal, propagating_value));
++			}
++		} else {
++			last_propagating_value = propagating_value;
+ 		}
+ 	});
+ 

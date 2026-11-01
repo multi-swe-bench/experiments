@@ -1,0 +1,62 @@
+diff --git a/packages/svelte/messages/compile-errors/script.md b/packages/svelte/messages/compile-errors/script.md
+index 861ac2f..a2b8a49 100644
+--- a/packages/svelte/messages/compile-errors/script.md
++++ b/packages/svelte/messages/compile-errors/script.md
+@@ -46,6 +46,10 @@
+ 
+ > `$host()` can only be used inside custom element component instances
+ 
++## import_svelte_internal
++
++> Cannot import from `svelte/internal/*`. Use `svelte` instead
++
+ ## legacy_export_invalid
+ 
+ > Cannot use `export let` in runes mode — use `$props()` instead
+diff --git a/packages/svelte/src/compiler/errors.js b/packages/svelte/src/compiler/errors.js
+index ab7197b..cfc958b 100644
+--- a/packages/svelte/src/compiler/errors.js
++++ b/packages/svelte/src/compiler/errors.js
+@@ -198,6 +198,15 @@ export function host_invalid_placement(node) {
+ 	e(node, "host_invalid_placement", "`$host()` can only be used inside custom element component instances");
+ }
+ 
++/**
++ * Cannot import from `svelte/internal/*`. Use `svelte` instead
++ * @param {null | number | NodeLike} node
++ * @returns {never}
++ */
++export function import_svelte_internal(node) {
++	e(node, "import_svelte_internal", "Cannot import from `svelte/internal/*`. Use `svelte` instead");
++}
++
+ /**
+  * Cannot use `export let` in runes mode — use `$props()` instead
+  * @param {null | number | NodeLike} node
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 2c0296d..85cd64c 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -478,6 +478,10 @@ const validation = {
+ 		}
+ 	},
+ 	ImportDeclaration(node, context) {
++		if (node.source.value.startsWith('svelte/internal/')) {
++			e.import_svelte_internal(node);
++		}
++
+ 		if (node.source.value === 'svelte' && context.state.analysis.runes) {
+ 			for (const specifier of node.specifiers) {
+ 				if (specifier.type === 'ImportSpecifier') {
+@@ -920,6 +924,11 @@ export const validation_runes_js = {
+ 			}
+ 		}
+ 	},
++	ImportDeclaration(node) {
++		if (node.source.value.startsWith('svelte/internal/')) {
++			e.import_svelte_internal(node);
++		}
++	},
+ 	CallExpression(node, { state, path }) {
+ 		if (get_rune(node, state.scope) === '$host') {
+ 			e.host_invalid_placement(node);

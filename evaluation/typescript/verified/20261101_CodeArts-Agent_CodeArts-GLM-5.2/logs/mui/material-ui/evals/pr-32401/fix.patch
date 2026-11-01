@@ -1,0 +1,47 @@
+diff --git a/packages/mui-base/src/InputUnstyled/InputUnstyled.tsx b/packages/mui-base/src/InputUnstyled/InputUnstyled.tsx
+index bafe313e..d2d8a25a 100644
+--- a/packages/mui-base/src/InputUnstyled/InputUnstyled.tsx
++++ b/packages/mui-base/src/InputUnstyled/InputUnstyled.tsx
+@@ -143,6 +143,17 @@ const InputUnstyled = React.forwardRef(function InputUnstyled(
+   if (multiline) {
+     const hasHostTexarea = isHostComponent(components.Textarea ?? 'textarea');
+ 
++    // `minRows`, `maxRows` and `ownerState` are not valid DOM attributes.
++    // They must not be forwarded to a host element, otherwise React logs a
++    // warning about unknown props. They are removed here (instead of being
++    // set to `undefined`, which would still trigger the warning) and only
++    // forwarded to custom (non-host) Textarea components.
++    if (hasHostTexarea) {
++      delete inputProps.minRows;
++      delete inputProps.maxRows;
++      delete inputProps.ownerState;
++    }
++
+     if (rows) {
+       if (process.env.NODE_ENV !== 'production') {
+         if (minRows || maxRows) {
+@@ -153,22 +164,14 @@ const InputUnstyled = React.forwardRef(function InputUnstyled(
+       }
+       inputProps = {
+         type: undefined,
+-        minRows: hasHostTexarea ? undefined : rows,
+-        maxRows: hasHostTexarea ? undefined : rows,
+         ...inputProps,
+-        ...(hasHostTexarea && {
+-          ownerState: undefined,
+-        }),
++        ...(hasHostTexarea ? {} : { minRows: rows, maxRows: rows }),
+       };
+     } else {
+       inputProps = {
+         type: undefined,
+-        maxRows: hasHostTexarea ? undefined : maxRows,
+-        minRows: hasHostTexarea ? undefined : minRows,
+         ...inputProps,
+-        ...(hasHostTexarea && {
+-          ownerState: undefined,
+-        }),
++        ...(hasHostTexarea ? {} : { minRows, maxRows }),
+       };
+     }
+ 

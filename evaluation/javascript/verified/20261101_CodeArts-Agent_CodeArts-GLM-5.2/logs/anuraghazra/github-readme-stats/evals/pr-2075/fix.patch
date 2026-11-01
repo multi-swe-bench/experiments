@@ -1,0 +1,118 @@
+diff --git a/api/index.js b/api/index.js
+index 10dd484..959a634 100644
+--- a/api/index.js
++++ b/api/index.js
+@@ -38,6 +38,7 @@ export default async (req, res) => {
+     disable_animations,
+     border_radius,
+     border_color,
++    ring_color,
+   } = req.query;
+   res.setHeader("Content-Type", "image/svg+xml");
+ 
+@@ -84,6 +85,7 @@ export default async (req, res) => {
+         custom_title,
+         border_radius,
+         border_color,
++        ring_color,
+         locale: locale ? locale.toLowerCase() : null,
+         disable_animations: parseBoolean(disable_animations),
+       }),
+diff --git a/readme.md b/readme.md
+index 9c35b70..d701d0c 100644
+--- a/readme.md
++++ b/readme.md
+@@ -171,6 +171,7 @@ You can customize the appearance of your `Stats Card` or `Repo Card` however you
+ -   `cache_seconds` - set the cache header manually _(min: 7200, max: 86400)_. Default: `14400 seconds (4 hours)`.
+ -   `locale` - set the language in the card _(e.g. cn, de, es, etc.)_. Default: `en`.
+ -   `border_radius` - Corner rounding on the card. Default: `4.5`.
++-   `ring_color` - Color of the rank circle _(hex color)_. Default: `title_color` (Stats Card only).
+ 
+ > **Warning**
+ > We use caching to decrease the load on our servers (see https://github.com/anuraghazra/github-readme-stats/issues/1471#issuecomment-1271551425). Our cards have a default cache of 4 hours (14400 seconds). Also, note that the cache is clamped to a minimum of 4 hours and a maximum of 24 hours.
+diff --git a/src/cards/stats-card.js b/src/cards/stats-card.js
+index c9ab66e..ef351f2 100644
+--- a/src/cards/stats-card.js
++++ b/src/cards/stats-card.js
+@@ -4,6 +4,7 @@ import { I18n } from "../common/I18n.js";
+ import { icons } from "../common/icons.js";
+ import {
+   clampValue,
++  fallbackColor,
+   flexLayout,
+   getCardColors,
+   kFormatter,
+@@ -97,6 +98,7 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
+     custom_title,
+     border_radius,
+     border_color,
++    ring_color,
+     locale,
+     disable_animations = false,
+   } = options;
+@@ -114,6 +116,9 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
+       theme,
+     });
+ 
++  // the rank circle ring color falls back to the title color
++  const ringColor = fallbackColor(ring_color || "", titleColor);
++
+   const apostrophe = ["x", "s"].includes(name.slice(-1).toLocaleLowerCase())
+     ? ""
+     : "s";
+@@ -202,6 +207,7 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
+     titleColor,
+     textColor,
+     iconColor,
++    ringColor,
+     show_icons,
+     progress,
+   });
+diff --git a/src/cards/types.d.ts b/src/cards/types.d.ts
+index 502314c..e189f5c 100644
+--- a/src/cards/types.d.ts
++++ b/src/cards/types.d.ts
+@@ -8,6 +8,7 @@ export type CommonOptions = {
+   theme: ThemeNames;
+   border_radius: number;
+   border_color: string;
++  ring_color: string;
+   locale: string;
+ };
+ 
+diff --git a/src/getStyles.js b/src/getStyles.js
+index 79692e8..f919a6e 100644
+--- a/src/getStyles.js
++++ b/src/getStyles.js
+@@ -69,6 +69,7 @@ const getAnimations = () => {
+  * @param {string} colors.titleColor The title color.
+  * @param {string} colors.textColor The text color.
+  * @param {string} colors.iconColor The icon color.
++ * @param {string} colors.ringColor The rank circle color.
+  * @param {boolean} colors.show_icons Whether to show icons.
+  * @param {number} colors.progress The progress value to animate to.
+  * @returns {string} Card CSS styles.
+@@ -77,6 +78,7 @@ const getStyles = ({
+   titleColor,
+   textColor,
+   iconColor,
++  ringColor = titleColor,
+   show_icons,
+   progress,
+ }) => {
+@@ -105,13 +107,13 @@ const getStyles = ({
+     }
+ 
+     .rank-circle-rim {
+-      stroke: ${titleColor};
++      stroke: ${ringColor};
+       fill: none;
+       stroke-width: 6;
+       opacity: 0.2;
+     }
+     .rank-circle {
+-      stroke: ${titleColor};
++      stroke: ${ringColor};
+       stroke-dasharray: 250;
+       fill: none;
+       stroke-width: 6;

@@ -1,0 +1,156 @@
+diff --git a/packages/compiler-sfc/src/script/resolveType.ts b/packages/compiler-sfc/src/script/resolveType.ts
+index d9b4dd1..5bb8036 100644
+--- a/packages/compiler-sfc/src/script/resolveType.ts
++++ b/packages/compiler-sfc/src/script/resolveType.ts
+@@ -177,6 +177,15 @@ function innerResolveTypeElements(
+       }
+       const resolved = resolveTypeReference(ctx, node, scope)
+       if (resolved) {
++        // support generic type references: substitute type parameters in the
++        // declaration body with the concrete type arguments before resolving.
++        if (node.typeParameters) {
++          const map = buildTypeParamMap(node, resolved, scope)
++          if (map) {
++            const substituted = substituteTypeParams(resolved, map)
++            return resolveTypeElements(ctx, substituted, resolved._ownerScope)
++          }
++        }
+         return resolveTypeElements(ctx, resolved, resolved._ownerScope)
+       } else {
+         if (typeof typeName === 'string') {
+@@ -224,6 +233,13 @@ function innerResolveTypeElements(
+       )
+       const resolved = resolveTypeReference(ctx, node, sourceScope)
+       if (resolved) {
++        if (node.typeParameters) {
++          const map = buildTypeParamMap(node, resolved, sourceScope)
++          if (map) {
++            const substituted = substituteTypeParams(resolved, map)
++            return resolveTypeElements(ctx, substituted, resolved._ownerScope)
++          }
++        }
+         return resolveTypeElements(ctx, resolved, resolved._ownerScope)
+       }
+       break
+@@ -320,6 +336,110 @@ function createProperty(
+   }
+ }
+ 
++/**
++ * Keys that should not be recursed into when substituting type parameters,
++ * either because they are metadata or because they may contain cycles
++ * (e.g. `_ownerScope`).
++ */
++const SUBSTITUTION_SKIP_KEYS = new Set([
++  'loc',
++  'range',
++  'start',
++  'end',
++  'leadingComments',
++  'trailingComments',
++  'innerComments',
++  'extra',
++  '_ownerScope',
++  '_resolvedElements',
++  '_resolvedReference',
++  '_typeParameters',
++  '_ns'
++])
++
++/**
++ * Recursively substitute type parameter references in a type node with the
++ * corresponding type argument nodes. This allows resolving the body of a
++ * generic type alias / interface when it is referenced with concrete type
++ * arguments, e.g. `type SomeProps<T> = T & { isVisible: boolean }` referenced
++ * as `SomeProps<Foo>`.
++ *
++ * Nodes that don't contain any type parameter reference are returned as-is
++ * (no cloning). Nodes that do contain references are rebuilt via shallow
++ * copies so that the original AST is not mutated.
++ */
++function substituteTypeParams(
++  node: Node,
++  map: Record<string, Node>
++): Node {
++  if (!map || !Object.keys(map).length) return node
++  return substituteTypeParamsInner(node, map)
++}
++
++function substituteTypeParamsInner(
++  node: any,
++  map: Record<string, Node>
++): any {
++  if (!node || typeof node !== 'object') return node
++  if (
++    node.type === 'TSTypeReference' &&
++    node.typeName &&
++    node.typeName.type === 'Identifier' &&
++    hasOwn(map, node.typeName.name)
++  ) {
++    return map[node.typeName.name]
++  }
++  let changed = false
++  const out: any = Array.isArray(node) ? [] : {}
++  for (const key in node) {
++    if (SUBSTITUTION_SKIP_KEYS.has(key)) {
++      out[key] = node[key]
++      continue
++    }
++    const child = node[key]
++    if (child && typeof child === 'object') {
++      const replaced = substituteTypeParamsInner(child, map)
++      out[key] = replaced
++      if (replaced !== child) changed = true
++    } else {
++      out[key] = child
++    }
++  }
++  return changed ? out : node
++}
++
++/**
++ * Build a map of type parameter name -> type argument node for a generic
++ * type reference, attaching the reference's scope to each argument node so
++ * that the arguments can be resolved in the correct scope later.
++ *
++ * `decl` is the resolved type node. For interfaces this is the
++ * `TSInterfaceDeclaration` itself which carries `typeParameters`. For type
++ * aliases, `recordType` only stores the alias's type annotation, so the
++ * type parameters are attached to it as `_typeParameters`.
++ */
++function buildTypeParamMap(
++  ref: Node,
++  decl: Node,
++  scope: TypeScope
++): Record<string, Node> | undefined {
++  const refParams = (ref as any).typeParameters?.params as Node[] | undefined
++  const typeParams = ((decl as any).typeParameters ||
++    (decl as any)._typeParameters)?.params as { name: string }[] | undefined
++  if (!refParams || !typeParams || !refParams.length || !typeParams.length) {
++    return
++  }
++  const map: Record<string, Node> = Object.create(null)
++  for (let i = 0; i < typeParams.length; i++) {
++    const arg = refParams[i]
++    if (arg) {
++      ;(arg as MaybeWithScope)._ownerScope = scope
++      map[typeParams[i].name] = arg
++    }
++  }
++  return map
++}
++
+ function resolveInterfaceMembers(
+   ctx: TypeResolveContext,
+   node: TSInterfaceDeclaration & MaybeWithScope,
+@@ -1262,6 +1382,10 @@ function recordType(
+       if (overwriteId || node.id) types[overwriteId || getId(node.id!)] = node
+       break
+     case 'TSTypeAliasDeclaration':
++      // store the type annotation, but keep a reference to the type
++      // parameters so that generic type aliases can be resolved when
++      // referenced with concrete type arguments.
++      ;(node.typeAnnotation as any)._typeParameters = node.typeParameters
+       types[node.id.name] = node.typeAnnotation
+       break
+     case 'TSDeclareFunction':

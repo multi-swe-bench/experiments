@@ -1,0 +1,168 @@
+diff --git a/.changeset/each-snippet-reorder-fix.md b/.changeset/each-snippet-reorder-fix.md
+new file mode 100644
+index 0000000..6306d2a
+--- /dev/null
++++ b/.changeset/each-snippet-reorder-fix.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: prevent crash when reordering keyed `each` items rendered via snippets
+\ No newline at end of file
+diff --git a/packages/svelte/src/internal/client/dom/blocks/each.js b/packages/svelte/src/internal/client/dom/blocks/each.js
+index e20d4ec..90af5d1 100644
+--- a/packages/svelte/src/internal/client/dom/blocks/each.js
++++ b/packages/svelte/src/internal/client/dom/blocks/each.js
+@@ -487,6 +487,25 @@ function create_item(anchor, prev, next, value, key, index, render_fn, flags) {
+  */
+ function get_adjusted_first_node(dom, effect) {
+ 	if ((dom.nodeType === 3 && /** @type {Text} */ (dom).data === '') || dom.nodeType === 8) {
++		// `dom` is a marker (an empty text node or a comment). The actual first
++		// node of the effect is not the marker itself — it is whichever of the
++		// effect's `dom` nodes (including those inlined by e.g. a snippet) and
++		// the first nodes of its child effects comes first in document order.
++		var nodes = effect.dom;
++
++		/** @type {import('#client').TemplateNode | null} */
++		var first = null;
++
++		if (nodes !== null) {
++			if (is_array(nodes)) {
++				for (var i = 0; i < nodes.length; i++) {
++					first = get_first_node_preceding(first, nodes[i]);
++				}
++			} else {
++				first = nodes;
++			}
++		}
++
+ 		var adjusted = effect.first;
+ 		var next;
+ 		while (adjusted !== null) {
+@@ -494,15 +513,41 @@ function get_adjusted_first_node(dom, effect) {
+ 			if (adjusted.dom !== null) {
+ 				break;
+ 			} else if (next === null) {
+-				return /** @type {import('#client').TemplateNode} */ (dom.previousSibling);
++				adjusted = null;
++				break;
+ 			}
+ 			adjusted = next;
+ 		}
+-		return get_first_node(/** @type {import("#client").Effect} */ (adjusted));
++
++		if (adjusted !== null) {
++			first = get_first_node_preceding(first, get_first_node(adjusted));
++		}
++
++		return first ?? dom;
+ 	}
++
+ 	return dom;
+ }
+ 
++/**
++ * Returns whichever of `a` or `b` comes first in document order, treating `null`
++ * as "no node".
++ * @param {import('#client').TemplateNode | null} a
++ * @param {import('#client').TemplateNode | null} b
++ * @returns {import('#client').TemplateNode | null}
++ */
++function get_first_node_preceding(a, b) {
++	if (a === null) return b;
++	if (b === null) return a;
++	if (a === b) return a;
++	// `compareDocumentPosition` returns a bitmask; the bit `DOCUMENT_POSITION_PRECEDING` (2)
++	// is set on `b` when `a` precedes it in document order.
++	if (/** @type {number} */ (b.compareDocumentPosition(a) & 2) !== 0) {
++		return a;
++	}
++	return b;
++}
++
+ /**
+  *
+  * @param {import('#client').Effect} effect
+diff --git a/packages/svelte/tests/runtime-runes/samples/each-keyed-snippet-reorder/_config.js b/packages/svelte/tests/runtime-runes/samples/each-keyed-snippet-reorder/_config.js
+new file mode 100644
+index 0000000..9a5b246
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/each-keyed-snippet-reorder/_config.js
+@@ -0,0 +1,50 @@
++import { flushSync } from 'svelte';
++import { ok, test } from '../../test';
++
++let initial = `
++<button>move</button>
++<ul>
++	<li>a<span>red</span></li>
++	<li>b</li>
++	<li>c</li>
++</ul>
++`;
++
++let moved_1 = `
++<button>move</button>
++<ul>
++	<li>b</li>
++	<li>c</li>
++	<li>a<span>red</span></li>
++</ul>
++`;
++
++let moved_2 = `
++<button>move</button>
++<ul>
++	<li>c</li>
++	<li>a<span>red</span></li>
++	<li>b</li>
++</ul>
++`;
++
++export default test({
++	html: initial,
++
++	async test({ assert, target }) {
++		const btn = target.querySelector('button');
++		ok(btn);
++
++		// move first item (a) to the end
++		flushSync(() => btn.click());
++		assert.htmlEqual(target.innerHTML, moved_1);
++
++		// move first item (b) to the end
++		flushSync(() => btn.click());
++		assert.htmlEqual(target.innerHTML, moved_2);
++
++		// move first item (c) to the end — back to initial order
++		flushSync(() => btn.click());
++		assert.htmlEqual(target.innerHTML, initial);
++	}
++});
+diff --git a/packages/svelte/tests/runtime-runes/samples/each-keyed-snippet-reorder/main.svelte b/packages/svelte/tests/runtime-runes/samples/each-keyed-snippet-reorder/main.svelte
+new file mode 100644
+index 0000000..9da7b26
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/each-keyed-snippet-reorder/main.svelte
+@@ -0,0 +1,19 @@
++<script>
++	let items = $state([
++		{ name: 'a', id: 1, color: 'red' },
++		{ name: 'b', id: 2 },
++		{ name: 'c', id: 3 }
++	]);
++</script>
++
++<button onclick={() => items.splice(2, 0, items.splice(0, 1)[0])}>move</button>
++
++{#snippet renderItem(item)}
++	<li>{item.name}{#if item.color}<span>{item.color}</span>{/if}</li>
++{/snippet}
++
++<ul>
++	{#each items as item (item.id)}
++		{@render renderItem(item)}
++	{/each}
++</ul>
+\ No newline at end of file

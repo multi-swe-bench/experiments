@@ -1,0 +1,25 @@
+diff --git a/packages/compiler-sfc/src/style/cssVars.ts b/packages/compiler-sfc/src/style/cssVars.ts
+index 9fe727b..960af41 100644
+--- a/packages/compiler-sfc/src/style/cssVars.ts
++++ b/packages/compiler-sfc/src/style/cssVars.ts
+@@ -21,9 +21,17 @@ export function genCssVarsFromList(
+   isSSR = false
+ ): string {
+   return `{\n  ${vars
+-    .map(
+-      key => `"${isSSR ? `--` : ``}${genVarName(id, key, isProd)}": (${key})`
+-    )
++    .map(key => {
++      const varName = genVarName(id, key, isProd)
++      if (isSSR) {
++        // During SSR, the variable name is serialized into an inline `style`
++        // attribute, so the CSS-escaped characters (e.g. `\.`) must survive the
++        // JS string parsing. Use `JSON.stringify` so the backslashes are kept
++        // in the generated code and the runtime key retains the CSS escapes.
++        return `${JSON.stringify(`--${varName}`)}: (${key})`
++      }
++      return `"${varName}": (${key})`
++    })
+     .join(',\n  ')}\n}`
+ }
+ 

@@ -1,0 +1,13 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index c2c7dec..00985e8 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -622,6 +622,8 @@ const validation = {
+ 	SnippetBlock(node, context) {
+ 		validate_block_not_empty(node.body, context);
+ 
++		context.next({ ...context.state, parent_element: null });
++
+ 		if (node.expression.name !== 'children') return;
+ 
+ 		const { path } = context;

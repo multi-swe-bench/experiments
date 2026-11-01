@@ -1,0 +1,30 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/VariableDeclaration.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/VariableDeclaration.js
+index 04685b6..9da3189 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/VariableDeclaration.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/VariableDeclaration.js
+@@ -37,6 +37,25 @@ export function VariableDeclaration(node, context) {
+ 
+ 					continue;
+ 				}
++
++				if (declarator.id.type === 'Identifier') {
++					const binding = /** @type {Binding | null} */ (
++						context.state.scope.get(declarator.id.name)
++					);
++
++					if (binding && is_state_source(binding, context.state.analysis)) {
++						let value =
++							init != null ? /** @type {Expression} */ (context.visit(init)) : b.id('undefined');
++
++						if (should_proxy(init, context.state.scope)) {
++							value = b.call('$.proxy', value);
++						}
++
++						declarations.push(b.declarator(declarator.id, b.call('$.state', value)));
++						continue;
++					}
++				}
++
+ 				declarations.push(/** @type {VariableDeclarator} */ (context.visit(declarator)));
+ 				continue;
+ 			}

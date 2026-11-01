@@ -1,0 +1,471 @@
+diff --git a/packages/svelte/src/compiler/errors.js b/packages/svelte/src/compiler/errors.js
+index 98741e2..58fa11e 100644
+--- a/packages/svelte/src/compiler/errors.js
++++ b/packages/svelte/src/compiler/errors.js
+@@ -89,8 +89,7 @@ const parse = {
+ 	'duplicate-style-element': () => `A component can have a single top-level <style> element`,
+ 	'duplicate-script-element': () =>
+ 		`A component can have a single top-level <script> element and/or a single top-level <script context="module"> element`,
+-	'invalid-render-expression': () => 'expected an identifier followed by (...)',
+-	'invalid-render-arguments': () => 'expected at most one argument'
++	'invalid-render-expression': () => 'expected an identifier followed by (...)'
+ };
+ 
+ /** @satisfies {Errors} */
+diff --git a/packages/svelte/src/compiler/legacy.js b/packages/svelte/src/compiler/legacy.js
+index e8595fd..363742e 100644
+--- a/packages/svelte/src/compiler/legacy.js
++++ b/packages/svelte/src/compiler/legacy.js
+@@ -356,7 +356,7 @@ export function convert(source, ast) {
+ 					start: node.start,
+ 					end: node.end,
+ 					expression: node.expression,
+-					context: node.context,
++					parameters: node.parameters,
+ 					children: node.body.nodes.map((child) => visit(child))
+ 				};
+ 			},
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/tag.js b/packages/svelte/src/compiler/phases/1-parse/state/tag.js
+index 88a444a..de4addf 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/tag.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/tag.js
+@@ -274,9 +274,17 @@ function open(parser) {
+ 
+ 		parser.allow_whitespace();
+ 
+-		const context = parser.match(')') ? null : read_context(parser);
++		const parameters = [];
++		if (!parser.match(')')) {
++			parameters.push(read_context(parser));
++			parser.allow_whitespace();
++			while (parser.eat(',')) {
++				parser.allow_whitespace();
++				parameters.push(read_context(parser));
++				parser.allow_whitespace();
++			}
++		}
+ 
+-		parser.allow_whitespace();
+ 		parser.eat(')', true);
+ 
+ 		parser.allow_whitespace();
+@@ -294,7 +302,7 @@ function open(parser) {
+ 					end: name_end,
+ 					name
+ 				},
+-				context,
++				parameters,
+ 				body: create_fragment()
+ 			})
+ 		);
+@@ -589,10 +597,6 @@ function special(parser) {
+ 			error(expression, 'invalid-render-expression');
+ 		}
+ 
+-		if (expression.arguments.length > 1) {
+-			error(expression.arguments[1], 'invalid-render-arguments');
+-		}
+-
+ 		parser.allow_whitespace();
+ 		parser.eat('}', true);
+ 
+@@ -602,7 +606,7 @@ function special(parser) {
+ 				start,
+ 				end: parser.index,
+ 				expression: expression.callee,
+-				argument: expression.arguments[0] ?? null
++				arguments: expression.arguments
+ 			})
+ 		);
+ 	}
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 61d426a..5d6bc28 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -1776,8 +1776,8 @@ export const template_visitors = {
+ 
+ 		/** @type {import('estree').Expression[]} */
+ 		const args = [context.state.node];
+-		if (node.argument) {
+-			args.push(b.thunk(/** @type {import('estree').Expression} */ (context.visit(node.argument))));
++		for (const arg of node.arguments) {
++			args.push(b.thunk(/** @type {import('estree').Expression} */ (context.visit(arg))));
+ 		}
+ 
+ 		let snippet_function = /** @type {import('estree').Expression} */ (
+@@ -2474,24 +2474,23 @@ export const template_visitors = {
+ 		// TODO hoist where possible
+ 		const args = [b.id('$$anchor')];
+ 
+-		/** @type {import('estree').BlockStatement} */
+-		let body;
+-
+-		if (node.context) {
+-			const id = node.context.type === 'Identifier' ? node.context : b.id('$$context');
+-			args.push(id);
++		/** @type {import('estree').Statement[]} */
++		const declarations = [];
+ 
+-			/** @type {import('estree').Statement[]} */
+-			const declarations = [];
++		for (const param of node.parameters) {
++			if (param.type === 'Identifier') {
++				args.push(param);
+ 
+-			// some of this is duplicated with EachBlock — TODO dedupe?
+-			if (node.context.type === 'Identifier') {
+ 				const binding = /** @type {import('#compiler').Binding} */ (
+-					context.state.scope.get(id.name)
++					context.state.scope.get(param.name)
+ 				);
+-				binding.expression = b.call(id);
++				binding.expression = b.call(param);
+ 			} else {
+-				const paths = extract_paths(node.context);
++				const id = b.id(context.state.scope.generate('$$context'));
++				args.push(id);
++
++				// some of this is duplicated with EachBlock — TODO dedupe?
++				const paths = extract_paths(param);
+ 
+ 				for (const path of paths) {
+ 					const name = /** @type {import('estree').Identifier} */ (path.node).name;
+@@ -2503,7 +2502,7 @@ export const template_visitors = {
+ 							path.node,
+ 							b.thunk(
+ 								/** @type {import('estree').Expression} */ (
+-									context.visit(path.expression?.(b.call('$$context')))
++									context.visit(path.expression?.(b.call(id)))
+ 								)
+ 							)
+ 						)
+@@ -2518,7 +2517,12 @@ export const template_visitors = {
+ 					binding.expression = b.call(name);
+ 				}
+ 			}
++		}
++
++		/** @type {import('estree').BlockStatement} */
++		let body;
+ 
++		if (declarations.length > 0) {
+ 			body = b.block([
+ 				...declarations,
+ 				.../** @type {import('estree').BlockStatement} */ (context.visit(node.body)).body
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 5c92d4e..61fb641 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -1134,22 +1134,15 @@ const template_visitors = {
+ 		const snippet_function = state.options.dev
+ 			? b.call('$.validate_snippet', expression)
+ 			: expression;
+-		if (node.argument) {
+-			state.template.push(
+-				t_statement(
+-					b.stmt(
+-						b.call(
+-							snippet_function,
+-							b.id('$$payload'),
+-							/** @type {import('estree').Expression} */ (context.visit(node.argument))
+-						)
+-					)
+-				)
+-			);
+-		} else {
+-			state.template.push(t_statement(b.stmt(b.call(snippet_function, b.id('$$payload')))));
++
++		/** @type {import('estree').Expression[]} */
++		const args = [b.id('$$payload')];
++		for (const arg of node.arguments) {
++			args.push(/** @type {import('estree').Expression} */ (context.visit(arg)));
+ 		}
+ 
++		state.template.push(t_statement(b.stmt(b.call(snippet_function, ...args))));
++
+ 		state.template.push(t_expression(anchor_id));
+ 	},
+ 	ClassDirective(node) {
+@@ -1453,8 +1446,8 @@ const template_visitors = {
+ 		// TODO hoist where possible
+ 		/** @type {import('estree').Pattern[]} */
+ 		const args = [b.id('$$payload')];
+-		if (node.context) {
+-			args.push(node.context);
++		for (const param of node.parameters) {
++			args.push(param);
+ 		}
+ 
+ 		context.state.init.push(
+diff --git a/packages/svelte/src/compiler/phases/scope.js b/packages/svelte/src/compiler/phases/scope.js
+index 0530535..7cf05ae 100644
+--- a/packages/svelte/src/compiler/phases/scope.js
++++ b/packages/svelte/src/compiler/phases/scope.js
+@@ -592,9 +592,11 @@ export function create_scopes(ast, root, allow_reactive_declarations, parent) {
+ 			const child_scope = state.scope.child();
+ 			scopes.set(node, child_scope);
+ 
+-			if (node.context) {
+-				for (const id of extract_identifiers(node.context)) {
+-					child_scope.declare(id, 'each', 'let');
++			if (node.parameters.length > 0) {
++				for (const context of node.parameters) {
++					for (const id of extract_identifiers(context)) {
++						child_scope.declare(id, 'each', 'let');
++					}
+ 				}
+ 			}
+ 
+diff --git a/packages/svelte/src/compiler/types/legacy-nodes.d.ts b/packages/svelte/src/compiler/types/legacy-nodes.d.ts
+index ba89520..d4f3f1c 100644
+--- a/packages/svelte/src/compiler/types/legacy-nodes.d.ts
++++ b/packages/svelte/src/compiler/types/legacy-nodes.d.ts
+@@ -161,14 +161,14 @@ export interface LegacyThenBlock extends BaseNode {
+ export interface SnippetBlock extends BaseNode {
+ 	type: 'SnippetBlock';
+ 	expression: Identifier;
+-	context: null | Pattern;
++	parameters: Pattern[];
+ 	children: LegacySvelteNode[];
+ }
+ 
+ export interface RenderTag extends BaseNode {
+ 	type: 'RenderTag';
+ 	expression: Identifier;
+-	argument: null | Expression;
++	arguments: Expression[];
+ }
+ 
+ export interface LegacyTitle extends BaseElement {
+diff --git a/packages/svelte/src/compiler/types/template.d.ts b/packages/svelte/src/compiler/types/template.d.ts
+index f63fb36..ef56634 100644
+--- a/packages/svelte/src/compiler/types/template.d.ts
++++ b/packages/svelte/src/compiler/types/template.d.ts
+@@ -146,7 +146,7 @@ export interface DebugTag extends BaseNode {
+ export interface RenderTag extends BaseNode {
+ 	type: 'RenderTag';
+ 	expression: Identifier;
+-	argument: null | Expression;
++	arguments: Expression[];
+ }
+ 
+ type Tag = ExpressionTag | HtmlTag | ConstTag | DebugTag | RenderTag;
+@@ -416,7 +416,7 @@ export interface KeyBlock extends BaseNode {
+ export interface SnippetBlock extends BaseNode {
+ 	type: 'SnippetBlock';
+ 	expression: Identifier;
+-	context: null | Pattern;
++	parameters: Pattern[];
+ 	body: Fragment;
+ }
+ 
+diff --git a/packages/svelte/src/internal/client/render.js b/packages/svelte/src/internal/client/render.js
+index f8cd1a0..05a058a 100644
+--- a/packages/svelte/src/internal/client/render.js
++++ b/packages/svelte/src/internal/client/render.js
+@@ -2960,16 +2960,16 @@ export function sanitize_slots(props) {
+ /**
+  * @param {() => Function} get_snippet
+  * @param {Node} node
+- * @param {() => any} args
++ * @param {Array<() => any>} args
+  * @returns {void}
+  */
+-export function snippet_effect(get_snippet, node, args) {
++export function snippet_effect(get_snippet, node, ...args) {
+ 	const block = create_snippet_block();
+ 	render_effect(() => {
+ 		// Only rerender when the snippet function itself changes,
+ 		// not when an eagerly-read prop inside the snippet function changes
+ 		const snippet = get_snippet();
+-		untrack(() => snippet(node, args));
++		untrack(() => snippet(node, ...args));
+ 		return () => {
+ 			if (block.d !== null) {
+ 				remove(block.d);
+diff --git a/packages/svelte/src/main/public.d.ts b/packages/svelte/src/main/public.d.ts
+index dce74ff..89950b9 100644
+--- a/packages/svelte/src/main/public.d.ts
++++ b/packages/svelte/src/main/public.d.ts
+@@ -190,8 +190,11 @@ declare const SnippetReturn: unique symbol;
+  * ```
+  * You can only call a snippet through the `{@render ...}` tag.
+  */
+-export interface Snippet<T = void> {
+-	(arg: T): typeof SnippetReturn & {
++export interface Snippet<Args = void, This = any> {
++	(
++		this: This,
++		...args: Args extends any[] ? Args : [Args]
++	): typeof SnippetReturn & {
+ 		_: 'functions passed to {@render ...} tags must use the `Snippet` type imported from "svelte"';
+ 	};
+ }
+diff --git a/packages/svelte/tests/parser-modern/samples/snippets/output.json b/packages/svelte/tests/parser-modern/samples/snippets/output.json
+index 7d7e414..7a581a7 100644
+--- a/packages/svelte/tests/parser-modern/samples/snippets/output.json
++++ b/packages/svelte/tests/parser-modern/samples/snippets/output.json
+@@ -24,27 +24,29 @@
+ 					"end": 42,
+ 					"name": "foo"
+ 				},
+-				"context": {
+-					"type": "Identifier",
+-					"name": "msg",
+-					"start": 43,
+-					"end": 54,
+-					"typeAnnotation": {
+-						"type": "TSStringKeyword",
+-						"start": 48,
++				"parameters": [
++					{
++						"type": "Identifier",
++						"name": "msg",
++						"start": 43,
+ 						"end": 54,
+-						"loc": {
+-							"start": {
+-								"line": 1,
+-								"column": 48
+-							},
+-							"end": {
+-								"line": 1,
+-								"column": 54
++						"typeAnnotation": {
++							"type": "TSStringKeyword",
++							"start": 48,
++							"end": 54,
++							"loc": {
++								"start": {
++									"line": 1,
++									"column": 48
++								},
++								"end": {
++									"line": 1,
++									"column": 54
++								}
+ 							}
+ 						}
+ 					}
+-				},
++				],
+ 				"body": {
+ 					"type": "Fragment",
+ 					"nodes": [
+@@ -127,22 +129,24 @@
+ 					},
+ 					"name": "foo"
+ 				},
+-				"argument": {
+-					"type": "Identifier",
+-					"start": 96,
+-					"end": 99,
+-					"loc": {
+-						"start": {
+-							"line": 7,
+-							"column": 13
++				"arguments": [
++					{
++						"type": "Identifier",
++						"start": 96,
++						"end": 99,
++						"loc": {
++							"start": {
++								"line": 7,
++								"column": 13
++							},
++							"end": {
++								"line": 7,
++								"column": 16
++							}
+ 						},
+-						"end": {
+-							"line": 7,
+-							"column": 16
+-						}
+-					},
+-					"name": "msg"
+-				}
++						"name": "msg"
++					}
++				]
+ 			}
+ 		],
+ 		"transparent": false
+diff --git a/packages/svelte/types/index.d.ts b/packages/svelte/types/index.d.ts
+index 0e6a7cd..4a9877a 100644
+--- a/packages/svelte/types/index.d.ts
++++ b/packages/svelte/types/index.d.ts
+@@ -191,8 +191,11 @@ declare module 'svelte' {
+ 	 * ```
+ 	 * You can only call a snippet through the `{@render ...}` tag.
+ 	 */
+-	export interface Snippet<T = void> {
+-		(arg: T): typeof SnippetReturn & {
++	export interface Snippet<Args = void, This = any> {
++		(
++			this: This,
++			...args: Args extends any[] ? Args : [Args]
++		): typeof SnippetReturn & {
+ 			_: 'functions passed to {@render ...} tags must use the `Snippet` type imported from "svelte"';
+ 		};
+ 	}
+@@ -316,7 +319,7 @@ declare module 'svelte' {
+ 		new (options: ComponentConstructorOptions<Props & (Props extends {
+ 			children?: any;
+ 		} ? {} : {} | {
+-			children?: Snippet<void> | undefined;
++			children?: Snippet<void, any> | undefined;
+ 		})>): SvelteComponent<Props, Events, any>;
+ 	}, options: {
+ 		target: Node;
+@@ -339,7 +342,7 @@ declare module 'svelte' {
+ 		new (options: ComponentConstructorOptions<Props & (Props extends {
+ 			children?: any;
+ 		} ? {} : {} | {
+-			children?: Snippet<void> | undefined;
++			children?: Snippet<void, any> | undefined;
+ 		})>): SvelteComponent<Props, Events, any>;
+ 	}, options: {
+ 		target: Node;
+@@ -1180,7 +1183,7 @@ declare module 'svelte/compiler' {
+ 	interface RenderTag extends BaseNode {
+ 		type: 'RenderTag';
+ 		expression: Identifier;
+-		argument: null | Expression;
++		arguments: Expression[];
+ 	}
+ 
+ 	type Tag = ExpressionTag | HtmlTag | ConstTag | DebugTag | RenderTag;
+@@ -1450,7 +1453,7 @@ declare module 'svelte/compiler' {
+ 	interface SnippetBlock extends BaseNode {
+ 		type: 'SnippetBlock';
+ 		expression: Identifier;
+-		context: null | Pattern;
++		parameters: Pattern[];
+ 		body: Fragment;
+ 	}
+ 
+@@ -1727,7 +1730,7 @@ declare module 'svelte/legacy' {
+ 		} ? {} : Slots extends {
+ 			default: any;
+ 		} ? {
+-			children?: Snippet<void> | undefined;
++			children?: Snippet<void, any> | undefined;
+ 		} : {})>): SvelteComponent<Props, Events, Slots>;
+ 	} & Exports;
+ 	// This should contain all the public interfaces (not all of them are actually importable, check current Svelte for which ones are).
+@@ -1853,8 +1856,11 @@ declare module 'svelte/legacy' {
+ 	 * ```
+ 	 * You can only call a snippet through the `{@render ...}` tag.
+ 	 */
+-	interface Snippet<T = void> {
+-		(arg: T): typeof SnippetReturn & {
++	interface Snippet<Args = void, This = any> {
++		(
++			this: This,
++			...args: Args extends any[] ? Args : [Args]
++		): typeof SnippetReturn & {
+ 			_: 'functions passed to {@render ...} tags must use the `Snippet` type imported from "svelte"';
+ 		};
+ 	}

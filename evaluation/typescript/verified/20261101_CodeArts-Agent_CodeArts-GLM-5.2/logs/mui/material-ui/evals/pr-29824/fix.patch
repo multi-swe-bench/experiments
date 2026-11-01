@@ -1,0 +1,205 @@
+diff --git a/packages/mui-codemod/src/v5.0.0/jss-to-styled.js b/packages/mui-codemod/src/v5.0.0/jss-to-styled.js
+index f482d759..c6fcb074 100644
+--- a/packages/mui-codemod/src/v5.0.0/jss-to-styled.js
++++ b/packages/mui-codemod/src/v5.0.0/jss-to-styled.js
+@@ -289,6 +289,145 @@ export default function transformer(file, api, options) {
+     quote: 'single',
+   };
+ 
++  /**
++   * Whether `name` resolves to a component defined locally in this file
++   * (a function or class declaration / expression). This lets us tell apart
++   * `withStyles(styles)(LocallyDefinedComponent)` (handled by the legacy flow,
++   * which extracts the component's root JSX) from
++   * `withStyles(styles)(ImportedComponent)` (handled as a direct styled component).
++   */
++  function hasLocalComponentDef(name) {
++    let found = false;
++    root.find(j.VariableDeclarator, { id: { name } }).forEach((path) => {
++      const init = path.node.init;
++      if (
++        init &&
++        (init.type === 'ArrowFunctionExpression' ||
++          init.type === 'FunctionExpression' ||
++          init.type === 'ClassExpression')
++      ) {
++        found = true;
++      }
++    });
++    root.find(j.FunctionDeclaration, { id: { name } }).forEach(() => {
++      found = true;
++    });
++    root.find(j.ClassDeclaration, { id: { name } }).forEach(() => {
++      found = true;
++    });
++    return found;
++  }
++
++  /**
++   * Finds `withStyles(styles, options?)(Component)` calls where `Component` is an
++   * identifier that does not resolve to a locally defined component. Each of these
++   * is a self-contained styled-component definition and is converted to
++   * `styled(Component)(styles)` instead of being merged into a single root wrapper.
++   */
++  function findDirectStyledWithStylesCalls() {
++    const paths = [];
++    root.find(j.CallExpression).forEach((path) => {
++      const node = path.node;
++      if (!node.callee || node.callee.type !== 'CallExpression') {
++        return;
++      }
++      const inner = node.callee;
++      if (!inner.callee || inner.callee.name !== 'withStyles') {
++        return;
++      }
++      if (!node.arguments || node.arguments.length !== 1) {
++        return;
++      }
++      const component = node.arguments[0];
++      if (component.type !== 'Identifier') {
++        return;
++      }
++      if (hasLocalComponentDef(component.name)) {
++        return;
++      }
++      paths.push(path);
++    });
++    return paths;
++  }
++
++  /**
++   * Prepares the styles argument for use with `styled(Component)(...)`.
++   * Unwraps `createStyles(...)` and converts the `theme` callback parameter to
++   * the `{ theme }` shape expected by `styled`.
++   */
++  function convertStylesForDirectStyled(stylesArg) {
++    let arg = stylesArg;
++    if (arg.type === 'CallExpression' && arg.callee.name === 'createStyles') {
++      arg = arg.arguments[0];
++    }
++    if (arg.type === 'ArrowFunctionExpression' || arg.type === 'FunctionExpression') {
++      if (arg.body.type === 'CallExpression' && arg.body.callee.name === 'createStyles') {
++        arg.body = arg.body.arguments[0];
++      }
++      if (arg.body.type === 'ObjectExpression' && arg.body.extra) {
++        arg.body.extra.parenthesized = false;
++      }
++      if (arg.params) {
++        arg.params = arg.params.map((param) => {
++          if (param.type === 'ObjectPattern') {
++            return j.objectPattern([j.objectProperty(j.identifier('theme'), param)]);
++          }
++          const prop = j.objectProperty(param, param);
++          prop.shorthand = true;
++          return j.objectPattern([prop]);
++        });
++      }
++    }
++    return arg;
++  }
++
++  function addStyledImport() {
++    const existing = root
++      .find(j.ImportDeclaration)
++      .filter(({ node }) =>
++        node.source.value.match(/^(@material-ui\/core\/styles|@mui\/material\/styles)$/),
++      )
++      .forEach(({ node }) => {
++        const existed = node.specifiers.find((s) => s.imported.name === 'styled');
++        if (!existed) {
++          node.specifiers.push(j.importSpecifier(j.identifier('styled')));
++        }
++      });
++    if (!existing.size()) {
++      root
++        .find(j.ImportDeclaration)
++        .at(0)
++        .forEach((path) =>
++          path.insertAfter(
++            j.importDeclaration(
++              [j.importSpecifier(j.identifier('styled'))],
++              j.literal('@mui/material/styles'),
++            ),
++          ),
++        );
++    }
++  }
++
++  function removeStyleImports() {
++    root
++      .find(j.ImportDeclaration)
++      .filter((path) =>
++        path.node.source.value.match(
++          /^(@material-ui|@mui)\/styles\/?(withStyles|makeStyles|createStyles)?$/,
++        ),
++      )
++      .forEach((path) => {
++        path.node.specifiers = path.node.specifiers.filter(
++          (s) =>
++            s.local.name !== 'withStyles' &&
++            s.local.name !== 'makeStyles' &&
++            s.local.name !== 'createStyles',
++        );
++      })
++      .filter((path) => !path.node.specifiers.length)
++      .remove();
++  }
++
+   /**
+    * find withStyles, makeStyles arg variable
+    * ex. withStyles(styles, options)
+@@ -309,6 +448,54 @@ export default function transformer(file, api, options) {
+     return file.source;
+   }
+ 
++  const withStylesCallCount = root.find(j.CallExpression, { callee: { name: 'withStyles' } }).size();
++  const directStyledPaths = findDirectStyledWithStylesCalls();
++
++  // Every `withStyles` call is a direct styled-component definition
++  // (`withStyles(styles)(ImportedComponent)`), and there is no `makeStyles`.
++  // Convert each one to `styled(Component)(styles)` rather than producing a
++  // single root wrapper, which would discard the other components' styles.
++  if (
++    directStyledPaths.length > 0 &&
++    !makeStylesCall &&
++    directStyledPaths.length === withStylesCallCount
++  ) {
++    const convertedStyleVariables = new Set();
++    directStyledPaths.forEach((path) => {
++      const component = path.node.arguments[0];
++      const stylesArg = path.node.callee.arguments[0];
++      let convertedStyles;
++      if (stylesArg.type === 'Identifier') {
++        // Keep the reference and convert the variable definition in place so the
++        // `theme` callback parameter and `createStyles` wrapper are adapted.
++        convertedStyles = stylesArg;
++        if (!convertedStyleVariables.has(stylesArg.name)) {
++          convertedStyleVariables.add(stylesArg.name);
++          root
++            .find(j.VariableDeclarator, { id: { name: stylesArg.name } })
++            .at(0)
++            .forEach((varPath) => {
++              if (varPath.node.init) {
++                varPath.node.init = convertStylesForDirectStyled(varPath.node.init);
++              }
++            });
++        }
++      } else {
++        convertedStyles = convertStylesForDirectStyled(stylesArg);
++      }
++      path.replace(
++        j.callExpression(
++          j.callExpression(j.identifier('styled'), [component]),
++          [convertedStyles],
++        ),
++      );
++    });
++
++    addStyledImport();
++    removeStyleImports();
++    return root.toSource(printOptions);
++  }
++
+   const rootJsxName = getFirstJsxName();
+   if (isTagNameSuspense(rootJsxName)) {
+     return file.source;

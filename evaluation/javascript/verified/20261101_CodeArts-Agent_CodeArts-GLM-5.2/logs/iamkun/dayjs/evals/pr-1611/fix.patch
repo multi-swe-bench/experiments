@@ -1,0 +1,20 @@
+diff --git a/src/plugin/duration/index.js b/src/plugin/duration/index.js
+index 4e89464..f88cbe3 100644
+--- a/src/plugin/duration/index.js
++++ b/src/plugin/duration/index.js
+@@ -95,6 +95,15 @@ class Duration {
+           this.$d.seconds
+         ] = numberD
+         this.calMilliseconds()
++        const seconds = this.$d.seconds || 0
++        this.$d.years = this.$d.years || 0
++        this.$d.months = this.$d.months || 0
++        this.$d.weeks = this.$d.weeks || 0
++        this.$d.days = this.$d.days || 0
++        this.$d.hours = this.$d.hours || 0
++        this.$d.minutes = this.$d.minutes || 0
++        this.$d.seconds = Math.floor(seconds)
++        this.$d.milliseconds = Math.round((seconds - this.$d.seconds) * 1000) || 0
+         return this
+       }
+     }

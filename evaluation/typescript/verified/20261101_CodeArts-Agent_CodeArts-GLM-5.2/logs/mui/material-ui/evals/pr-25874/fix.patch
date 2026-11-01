@@ -1,0 +1,462 @@
+diff --git a/docs/src/pages/components/buttons/LoadingButtons.js b/docs/src/pages/components/buttons/LoadingButtons.js
+index a92d24a..add6385 100644
+--- a/docs/src/pages/components/buttons/LoadingButtons.js
++++ b/docs/src/pages/components/buttons/LoadingButtons.js
+@@ -10,15 +10,15 @@ export default function LoadingButtons() {
+         '& > :not(style)': { m: 1 },
+       }}
+     >
+-      <LoadingButton pending variant="outlined">
++      <LoadingButton loading variant="outlined">
+         Submit
+       </LoadingButton>
+-      <LoadingButton pending pendingIndicator="Loading..." variant="outlined">
++      <LoadingButton loading loadingIndicator="Loading..." variant="outlined">
+         Fetch data
+       </LoadingButton>
+       <LoadingButton
+-        pending
+-        pendingPosition="start"
++        loading
++        loadingPosition="start"
+         startIcon={<SaveIcon />}
+         variant="outlined"
+       >
+@@ -26,4 +26,4 @@ export default function LoadingButtons() {
+       </LoadingButton>
+     </Box>
+   );
+-}
++}
+\ No newline at end of file
+diff --git a/docs/src/pages/components/buttons/LoadingButtons.tsx b/docs/src/pages/components/buttons/LoadingButtons.tsx
+index a92d24a..add6385 100644
+--- a/docs/src/pages/components/buttons/LoadingButtons.tsx
++++ b/docs/src/pages/components/buttons/LoadingButtons.tsx
+@@ -10,15 +10,15 @@ export default function LoadingButtons() {
+         '& > :not(style)': { m: 1 },
+       }}
+     >
+-      <LoadingButton pending variant="outlined">
++      <LoadingButton loading variant="outlined">
+         Submit
+       </LoadingButton>
+-      <LoadingButton pending pendingIndicator="Loading..." variant="outlined">
++      <LoadingButton loading loadingIndicator="Loading..." variant="outlined">
+         Fetch data
+       </LoadingButton>
+       <LoadingButton
+-        pending
+-        pendingPosition="start"
++        loading
++        loadingPosition="start"
+         startIcon={<SaveIcon />}
+         variant="outlined"
+       >
+@@ -26,4 +26,4 @@ export default function LoadingButtons() {
+       </LoadingButton>
+     </Box>
+   );
+-}
++}
+\ No newline at end of file
+diff --git a/docs/src/pages/components/buttons/LoadingButtonsTransition.js b/docs/src/pages/components/buttons/LoadingButtonsTransition.js
+index f39906f..2a61661 100644
+--- a/docs/src/pages/components/buttons/LoadingButtonsTransition.js
++++ b/docs/src/pages/components/buttons/LoadingButtonsTransition.js
+@@ -7,9 +7,9 @@ import SaveIcon from '@material-ui/icons/Save';
+ import SendIcon from '@material-ui/icons/Send';
+ 
+ export default function LoadingButtonsTransition() {
+-  const [pending, setPending] = React.useState(false);
++  const [loading, setLoading] = React.useState(false);
+   function handleClick() {
+-    setPending(true);
++    setLoading(true);
+   }
+ 
+   return (
+@@ -26,21 +26,21 @@ export default function LoadingButtonsTransition() {
+         }}
+         control={
+           <Switch
+-            checked={pending}
+-            onChange={() => setPending(!pending)}
+-            name="pending"
++            checked={loading}
++            onChange={() => setLoading(!loading)}
++            name="loading"
+             color="primary"
+           />
+         }
+-        label="Pending"
++        label="Loading"
+       />
+-      <LoadingButton onClick={handleClick} pending={pending} variant="outlined">
++      <LoadingButton onClick={handleClick} loading={loading} variant="outlined">
+         Submit
+       </LoadingButton>
+       <LoadingButton
+         onClick={handleClick}
+-        pending={pending}
+-        pendingIndicator="Loading..."
++        loading={loading}
++        loadingIndicator="Loading..."
+         variant="outlined"
+       >
+         Fetch data
+@@ -48,8 +48,8 @@ export default function LoadingButtonsTransition() {
+       <LoadingButton
+         onClick={handleClick}
+         endIcon={<SendIcon />}
+-        pending={pending}
+-        pendingPosition="end"
++        loading={loading}
++        loadingPosition="end"
+         variant="contained"
+       >
+         Send
+@@ -57,8 +57,8 @@ export default function LoadingButtonsTransition() {
+       <LoadingButton
+         color="secondary"
+         onClick={handleClick}
+-        pending={pending}
+-        pendingPosition="start"
++        loading={loading}
++        loadingPosition="start"
+         startIcon={<SaveIcon />}
+         variant="contained"
+       >
+@@ -66,4 +66,4 @@ export default function LoadingButtonsTransition() {
+       </LoadingButton>
+     </Box>
+   );
+-}
++}
+\ No newline at end of file
+diff --git a/docs/src/pages/components/buttons/LoadingButtonsTransition.tsx b/docs/src/pages/components/buttons/LoadingButtonsTransition.tsx
+index f39906f..2a61661 100644
+--- a/docs/src/pages/components/buttons/LoadingButtonsTransition.tsx
++++ b/docs/src/pages/components/buttons/LoadingButtonsTransition.tsx
+@@ -7,9 +7,9 @@ import SaveIcon from '@material-ui/icons/Save';
+ import SendIcon from '@material-ui/icons/Send';
+ 
+ export default function LoadingButtonsTransition() {
+-  const [pending, setPending] = React.useState(false);
++  const [loading, setLoading] = React.useState(false);
+   function handleClick() {
+-    setPending(true);
++    setLoading(true);
+   }
+ 
+   return (
+@@ -26,21 +26,21 @@ export default function LoadingButtonsTransition() {
+         }}
+         control={
+           <Switch
+-            checked={pending}
+-            onChange={() => setPending(!pending)}
+-            name="pending"
++            checked={loading}
++            onChange={() => setLoading(!loading)}
++            name="loading"
+             color="primary"
+           />
+         }
+-        label="Pending"
++        label="Loading"
+       />
+-      <LoadingButton onClick={handleClick} pending={pending} variant="outlined">
++      <LoadingButton onClick={handleClick} loading={loading} variant="outlined">
+         Submit
+       </LoadingButton>
+       <LoadingButton
+         onClick={handleClick}
+-        pending={pending}
+-        pendingIndicator="Loading..."
++        loading={loading}
++        loadingIndicator="Loading..."
+         variant="outlined"
+       >
+         Fetch data
+@@ -48,8 +48,8 @@ export default function LoadingButtonsTransition() {
+       <LoadingButton
+         onClick={handleClick}
+         endIcon={<SendIcon />}
+-        pending={pending}
+-        pendingPosition="end"
++        loading={loading}
++        loadingPosition="end"
+         variant="contained"
+       >
+         Send
+@@ -57,8 +57,8 @@ export default function LoadingButtonsTransition() {
+       <LoadingButton
+         color="secondary"
+         onClick={handleClick}
+-        pending={pending}
+-        pendingPosition="start"
++        loading={loading}
++        loadingPosition="start"
+         startIcon={<SaveIcon />}
+         variant="contained"
+       >
+@@ -66,4 +66,4 @@ export default function LoadingButtonsTransition() {
+       </LoadingButton>
+     </Box>
+   );
+-}
++}
+\ No newline at end of file
+diff --git a/docs/src/pages/components/buttons/buttons.md b/docs/src/pages/components/buttons/buttons.md
+index a351a27..8d65044 100644
+--- a/docs/src/pages/components/buttons/buttons.md
++++ b/docs/src/pages/components/buttons/buttons.md
+@@ -106,7 +106,7 @@ Here are some examples of customizing the component. You can learn more about th
+ 
+ ## Loading buttons
+ 
+-The loading buttons can show pending state and disable interactions.
++The loading buttons can show loading state and disable interactions.
+ 
+ {{"demo": "pages/components/buttons/LoadingButtons.js"}}
+ 
+diff --git a/packages/material-ui-lab/src/LoadingButton/LoadingButton.d.ts b/packages/material-ui-lab/src/LoadingButton/LoadingButton.d.ts
+index 5edb30d..a61512d 100644
+--- a/packages/material-ui-lab/src/LoadingButton/LoadingButton.d.ts
++++ b/packages/material-ui-lab/src/LoadingButton/LoadingButton.d.ts
+@@ -12,38 +12,38 @@ export type LoadingButtonTypeMap<
+     classes?: {
+       /** Styles applied to the root element. */
+       root?: string;
+-      /** Styles applied to the root element if `pending={true}`. */
+-      pending?: string;
+-      /** Styles applied to the pendingIndicator element. */
+-      pendingIndicator?: string;
+-      /** Styles applied to the pendingIndicator element if `pendingPosition="center"`. */
+-      pendingIndicatorCenter?: string;
+-      /** Styles applied to the pendingIndicator element if `pendingPosition="start"`. */
+-      pendingIndicatorStart?: string;
+-      /** Styles applied to the pendingIndicator element if `pendingPosition="end"`. */
+-      pendingIndicatorEnd?: string;
+-      /** Styles applied to the endIcon element if `pending={true}` and `pendingPosition="end"`. */
+-      endIconPendingEnd?: string;
+-      /** Styles applied to the startIcon element if `pending={true}` and `pendingPosition="start"`. */
+-      startIconPendingStart?: string;
+-      /** Styles applied to the label element if `pending={true}` and `pendingPosition="center"`. */
+-      labelPendingCenter?: string;
++      /** Styles applied to the root element if `loading={true}`. */
++      loading?: string;
++      /** Styles applied to the loadingIndicator element. */
++      loadingIndicator?: string;
++      /** Styles applied to the loadingIndicator element if `loadingPosition="center"`. */
++      loadingIndicatorCenter?: string;
++      /** Styles applied to the loadingIndicator element if `loadingPosition="start"`. */
++      loadingIndicatorStart?: string;
++      /** Styles applied to the loadingIndicator element if `loadingPosition="end"`. */
++      loadingIndicatorEnd?: string;
++      /** Styles applied to the endIcon element if `loading={true}` and `loadingPosition="end"`. */
++      endIconLoadingEnd?: string;
++      /** Styles applied to the startIcon element if `loading={true}` and `loadingPosition="start"`. */
++      startIconLoadingStart?: string;
++      /** Styles applied to the label element if `loading={true}` and `loadingPosition="center"`. */
++      labelLoadingCenter?: string;
+     };
+     /**
+-     * If `true`, the pending indicator is shown.
++     * If `true`, the loading indicator is shown.
+      * @default false
+      */
+-    pending?: boolean;
++    loading?: boolean;
+     /**
+-     * Element placed before the children if the button is in pending state.
++     * Element placed before the children if the button is in loading state.
+      * @default <CircularProgress color="inherit" size={16} />
+      */
+-    pendingIndicator?: React.ReactNode;
++    loadingIndicator?: React.ReactNode;
+     /**
+-     * The pending indicator can be positioned on the start, end, or the center of the button.
++     * The loading indicator can be positioned on the start, end, or the center of the button.
+      * @default 'center'
+      */
+-    pendingPosition?: 'start' | 'end' | 'center';
++    loadingPosition?: 'start' | 'end' | 'center';
+   };
+   defaultComponent: D;
+ }>;
+@@ -68,4 +68,4 @@ export type LoadingButtonProps<
+ 
+ export type LoadingButtonClassKey = keyof NonNullable<LoadingButtonTypeMap['props']['classes']>;
+ 
+-export default LoadingButton;
++export default LoadingButton;
+\ No newline at end of file
+diff --git a/packages/material-ui-lab/src/LoadingButton/LoadingButton.js b/packages/material-ui-lab/src/LoadingButton/LoadingButton.js
+index dc35fd0..7ff97fb 100644
+--- a/packages/material-ui-lab/src/LoadingButton/LoadingButton.js
++++ b/packages/material-ui-lab/src/LoadingButton/LoadingButton.js
+@@ -10,37 +10,37 @@ import CircularProgress from '@material-ui/core/CircularProgress';
+ export const styles = () => ({
+   /* Styles applied to the root element. */
+   root: {},
+-  /* Styles applied to the root element if `pending={true}`. */
+-  pending: {},
+-  /* Styles applied to the pendingIndicator element. */
+-  pendingIndicator: {
++  /* Styles applied to the root element if `loading={true}`. */
++  loading: {},
++  /* Styles applied to the loadingIndicator element. */
++  loadingIndicator: {
+     position: 'absolute',
+     visibility: 'visible',
+     display: 'flex',
+   },
+-  /* Styles applied to the pendingIndicator element if `pendingPosition="center"`. */
+-  pendingIndicatorCenter: {
++  /* Styles applied to the loadingIndicator element if `loadingPosition="center"`. */
++  loadingIndicatorCenter: {
+     left: '50%',
+     transform: 'translate(-50%)',
+   },
+-  /* Styles applied to the pendingIndicator element if `pendingPosition="start"`. */
+-  pendingIndicatorStart: {
++  /* Styles applied to the loadingIndicator element if `loadingPosition="start"`. */
++  loadingIndicatorStart: {
+     left: 14,
+   },
+-  /* Styles applied to the pendingIndicator element if `pendingPosition="end"`. */
+-  pendingIndicatorEnd: {
++  /* Styles applied to the loadingIndicator element if `loadingPosition="end"`. */
++  loadingIndicatorEnd: {
+     right: 14,
+   },
+-  /* Styles applied to the endIcon element if `pending={true}` and `pendingPosition="end"`. */
+-  endIconPendingEnd: {
++  /* Styles applied to the endIcon element if `loading={true}` and `loadingPosition="end"`. */
++  endIconLoadingEnd: {
+     visibility: 'hidden',
+   },
+-  /* Styles applied to the startIcon element if `pending={true}` and `pendingPosition="start"`. */
+-  startIconPendingStart: {
++  /* Styles applied to the startIcon element if `loading={true}` and `loadingPosition="start"`. */
++  startIconLoadingStart: {
+     visibility: 'hidden',
+   },
+-  /* Styles applied to the label element if `pending={true}` and `pendingPosition="center"`. */
+-  labelPendingCenter: {
++  /* Styles applied to the label element if `loading={true}` and `loadingPosition="center"`. */
++  labelLoadingCenter: {
+     visibility: 'hidden',
+   },
+ });
+@@ -53,38 +53,51 @@ const LoadingButton = React.forwardRef(function LoadingButton(props, ref) {
+     classes,
+     className,
+     disabled = false,
+-    pending = false,
+-    pendingIndicator = PendingIndicator,
+-    pendingPosition = 'center',
++    loading: loadingProp,
++    loadingIndicator: loadingIndicatorProp,
++    loadingPosition: loadingPositionProp,
++    pending: pendingProp = false,
++    pendingIndicator: pendingIndicatorProp,
++    pendingPosition: pendingPositionProp = 'center',
+     ...other
+   } = props;
+ 
++  const loading = loadingProp !== undefined ? loadingProp : pendingProp;
++  const loadingIndicator =
++    loadingIndicatorProp !== undefined
++      ? loadingIndicatorProp
++      : pendingIndicatorProp !== undefined
++      ? pendingIndicatorProp
++      : PendingIndicator;
++  const loadingPosition =
++    loadingPositionProp !== undefined ? loadingPositionProp : pendingPositionProp;
++
+   return (
+     <Button
+       className={clsx(
+         classes.root,
+         {
+-          [classes.pending]: pending,
++          [classes.loading]: loading,
+         },
+         className,
+       )}
+-      disabled={disabled || pending}
++      disabled={disabled || loading}
+       ref={ref}
+       classes={{
+-        startIcon: classes[`startIcon${pending ? 'Pending' : ''}${capitalize(pendingPosition)}`],
+-        endIcon: classes[`endIcon${pending ? 'Pending' : ''}${capitalize(pendingPosition)}`],
+-        label: classes[`label${pending ? 'Pending' : ''}${capitalize(pendingPosition)}`],
++        startIcon: classes[`startIcon${loading ? 'Loading' : ''}${capitalize(loadingPosition)}`],
++        endIcon: classes[`endIcon${loading ? 'Loading' : ''}${capitalize(loadingPosition)}`],
++        label: classes[`label${loading ? 'Loading' : ''}${capitalize(loadingPosition)}`],
+       }}
+       {...other}
+     >
+-      {pending && (
++      {loading && (
+         <div
+           className={clsx(
+-            classes.pendingIndicator,
+-            classes[`pendingIndicator${capitalize(pendingPosition)}`],
++            classes.loadingIndicator,
++            classes[`loadingIndicator${capitalize(loadingPosition)}`],
+           )}
+         >
+-          {pendingIndicator}
++          {loadingIndicator}
+         </div>
+       )}
+ 
+@@ -116,32 +129,32 @@ LoadingButton.propTypes /* remove-proptypes */ = {
+    */
+   disabled: PropTypes.bool,
+   /**
+-   * If `true`, the pending indicator is shown.
++   * If `true`, the loading indicator is shown.
+    * @default false
+    */
+-  pending: PropTypes.bool,
++  loading: PropTypes.bool,
+   /**
+-   * Element placed before the children if the button is in pending state.
++   * Element placed before the children if the button is in loading state.
+    * @default <CircularProgress color="inherit" size={16} />
+    */
+-  pendingIndicator: PropTypes.node,
++  loadingIndicator: PropTypes.node,
+   /**
+-   * The pending indicator can be positioned on the start, end, or the center of the button.
++   * The loading indicator can be positioned on the start, end, or the center of the button.
+    * @default 'center'
+    */
+-  pendingPosition: chainPropTypes(PropTypes.oneOf(['start', 'end', 'center']), (props) => {
+-    if (props.pendingPosition === 'start' && !props.startIcon) {
++  loadingPosition: chainPropTypes(PropTypes.oneOf(['start', 'end', 'center']), (props) => {
++    if (props.loadingPosition === 'start' && !props.startIcon) {
+       return new Error(
+-        `Material-UI: The pendingPosition="start" should be used in combination with startIcon.`,
++        `Material-UI: The loadingPosition="start" should be used in combination with startIcon.`,
+       );
+     }
+-    if (props.pendingPosition === 'end' && !props.endIcon) {
++    if (props.loadingPosition === 'end' && !props.endIcon) {
+       return new Error(
+-        `Material-UI: The pendingPosition="end" should be used in combination with endIcon.`,
++        `Material-UI: The loadingPosition="end" should be used in combination with endIcon.`,
+       );
+     }
+     return null;
+   }),
+ };
+ 
+-export default withStyles(styles, { name: 'MuiLoadingButton' })(LoadingButton);
++export default withStyles(styles, { name: 'MuiLoadingButton' })(LoadingButton);
+\ No newline at end of file

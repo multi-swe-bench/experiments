@@ -1,0 +1,144 @@
+$ bash /home/test-run.sh
+
+
+> github-readme-stats@1.0.0 test
+> jest --coverage --verbose --maxWorkers=4
+
+PASS tests/fetchRepo.test.js
+  Test fetchRepo
+    ✓ should fetch correct user repo (3 ms)
+    ✓ should fetch correct org repo
+    ✓ should throw error if user is found but repo is null (3 ms)
+    ✓ should throw error if org is found but repo is null (1 ms)
+    ✓ should throw error if both user & org data not found
+    ✓ should throw error if repository is private (1 ms)
+
+PASS tests/top-langs.test.js
+  Test /api/top-langs
+    ✓ should test the request (56 ms)
+    ✓ should work with the query options (1 ms)
+    ✓ should render error card on error (1 ms)
+
+PASS tests/api.test.js
+  Test /api/
+    ✓ should test the request (2 ms)
+    ✓ should render error card on error (1 ms)
+    ✓ should get the query options (52 ms)
+    ✓ should have proper cache (1 ms)
+    ✓ should set proper cache
+    ✓ should set proper cache with clamped values (2 ms)
+    ✓ should add private contributions (1 ms)
+
+PASS tests/renderTopLanguages.test.js
+  Test renderTopLanguages
+    ✓ should render correctly (17 ms)
+    ✓ should hide languages when hide is passed (48 ms)
+    ✓ should resize the height correctly depending on langs (9 ms)
+    ✓ should hide_title (7 ms)
+    ✓ should render with custom width set (6 ms)
+    ✓ should render default colors properly (5 ms)
+    ✓ should render custom colors properly (4 ms)
+    ✓ should render custom colors with themes (3 ms)
+    ✓ should render with all the themes (83 ms)
+
+PASS tests/renderRepoCard.test.js
+  Test renderRepoCard
+    ✓ should render correctly (64 ms)
+    ✓ should display username in title (full repo name) (6 ms)
+    ✓ should trim description (9 ms)
+    ✓ should shift the text position depending on language length (7 ms)
+    ✓ should hide language if primaryLanguage is null & fallback to correct values (5 ms)
+    ✓ should render default colors properly (6 ms)
+    ✓ should render custom colors properly (3 ms)
+    ✓ should render with all the themes (77 ms)
+    ✓ should render custom colors with themes (2 ms)
+    ✓ should render custom colors with themes and fallback to default colors if invalid (3 ms)
+    ✓ should not render star count or fork count if either of the are zero (9 ms)
+    ✓ should render badges (6 ms)
+    ✓ should not render template (2 ms)
+
+PASS tests/fetchStats.test.js
+  Test fetchStats
+    ✓ should fetch correct stats (1 ms)
+    ✓ should throw error (3 ms)
+    ✓ should fetch and add private contributions (1 ms)
+
+PASS tests/retryer.test.js
+  Test Retryer
+    ✓ retryer should return value and have zero retries on first try (2 ms)
+    ✓ retryer should return value and have 2 retries
+    ✓ retryer should throw error if maximum retries reached
+
+PASS tests/calculateRank.test.js
+  Test calculateRank
+    ✓ should calculate rank correctly (1 ms)
+
+PASS tests/utils.test.js
+  Test utils.js
+    ✓ should test kFormatter (1 ms)
+    ✓ should test encodeHTML
+    ✓ should test renderError (42 ms)
+    ✓ should test FlexLayout
+    ✓ getCardColors: should return expected values
+    ✓ getCardColors: should fallback to default colors if color is invalid
+    ✓ getCardColors: should fallback to specified theme colors if is not defined (1 ms)
+
+PASS tests/fetchTopLanguages.test.js
+  FetchTopLanguages
+    ✓ should fetch correct language data (2 ms)
+    ✓ should throw error (3 ms)
+
+PASS tests/pin.test.js
+  Test /api/pin
+    ✓ should test the request (3 ms)
+    ✓ should get the query options (1 ms)
+    ✓ should render error card if user repo not found (1 ms)
+    ✓ should render error card if org repo not found
+
+PASS tests/renderStatsCard.test.js
+  Test renderStatsCard
+    ✓ should render correctly (50 ms)
+    ✓ should have proper name apostrophe (11 ms)
+    ✓ should hide individual stats (4 ms)
+    ✓ should hide_border (4 ms)
+    ✓ should hide_rank (3 ms)
+    ✓ should render default colors properly (10 ms)
+    ✓ should render custom colors properly (5 ms)
+    ✓ should render custom colors with themes (5 ms)
+    ✓ should render with all the themes (87 ms)
+    ✓ should render custom colors with themes and fallback to default colors if invalid (3 ms)
+    ✓ should hide the title (6 ms)
+    ✓ should not hide the title (2 ms)
+    ✓ should render icons correctly (4 ms)
+    ✓ should not have icons if show_icons is false (3 ms)
+
+------------------------|---------|----------|---------|---------|-------------------
+File                    | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+------------------------|---------|----------|---------|---------|-------------------
+All files               |    92.3 |     83.5 |   95.91 |   93.44 |                   
+ api                    |   97.82 |    86.66 |     100 |   97.82 |                   
+  index.js              |     100 |      100 |     100 |     100 |                   
+  pin.js                |      95 |    81.81 |     100 |      95 | 52                
+  top-langs.js          |     100 |      100 |     100 |     100 |                   
+ src                    |   91.28 |    83.24 |   95.65 |    92.6 |                   
+  calculateRank.js      |   90.24 |       65 |     100 |   90.24 | 69,75,81,87       
+  fetchRepo.js          |   95.23 |    91.66 |     100 |   95.23 | 48                
+  fetchStats.js         |   96.15 |       70 |     100 |     100 | 50,66-71          
+  fetchTopLanguages.js  |      96 |       80 |     100 |     100 | 36,42             
+  getStyles.js          |   35.71 |     37.5 |   33.33 |   41.66 | 2-9,13            
+  icons.js              |     100 |      100 |     100 |     100 |                   
+  renderRepoCard.js     |     100 |    96.42 |     100 |     100 | 36                
+  renderStatsCard.js    |     100 |     93.1 |     100 |     100 | 26,157            
+  renderTopLanguages.js |     100 |     92.3 |     100 |     100 | 96                
+  retryer.js            |   73.68 |    63.63 |     100 |   73.68 | 34-40             
+  utils.js              |   94.28 |    88.46 |     100 |   94.11 | 39,41             
+ themes                 |     100 |      100 |     100 |     100 |                   
+  index.js              |     100 |      100 |     100 |     100 |                   
+------------------------|---------|----------|---------|---------|-------------------
+Test Suites: 12 passed, 12 total
+Tests:       72 passed, 72 total
+Snapshots:   0 total
+Time:        2.73 s
+Ran all test suites.
+
+[exit code: 0]

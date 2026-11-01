@@ -1,0 +1,83 @@
+diff --git a/packages/svelte/src/internal/client/reactivity/store.js b/packages/svelte/src/internal/client/reactivity/store.js
+index 46e57b0..fa7c2b7 100644
+--- a/packages/svelte/src/internal/client/reactivity/store.js
++++ b/packages/svelte/src/internal/client/reactivity/store.js
+@@ -2,9 +2,10 @@
+ /** @import { Store } from '#shared' */
+ import { subscribe_to_store } from '../../../store/utils.js';
+ import { noop } from '../../shared/utils.js';
+-import { get } from '../runtime.js';
++import { get, current_reaction, is_runes } from '../runtime.js';
+ import { teardown } from './effects.js';
+ import { mutable_source, set } from './sources.js';
++import { DERIVED } from '../constants.js';
+ 
+ /**
+  * Gets the current value of a store. If the store isn't subscribed to yet, it will create a proxy
+@@ -28,7 +29,16 @@ export function store_get(store, store_name, stores) {
+ 		entry.store = store ?? null;
+ 
+ 		if (store == null) {
+-			set(entry.source, undefined);
++			// If this is called inside a derived, calling `set` would throw the
++			// `state_unsafe_mutation` error. Setting the value directly is safe
++			// because the derived will read the value via `get` immediately after,
++			// registering the dependency — the same way the synchronous callback
++			// case below is handled.
++			if (current_reaction !== null && is_runes() && (current_reaction.f & DERIVED) !== 0) {
++				entry.source.v = undefined;
++			} else {
++				set(entry.source, undefined);
++			}
+ 			entry.unsubscribe = noop;
+ 		} else {
+ 			var is_synchronous_callback = true;
+diff --git a/packages/svelte/tests/runtime-runes/samples/store-undefined-in-derived/_config.js b/packages/svelte/tests/runtime-runes/samples/store-undefined-in-derived/_config.js
+new file mode 100644
+index 0000000..509b4e5
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/store-undefined-in-derived/_config.js
+@@ -0,0 +1,21 @@
++import { test } from '../../test';
++
++export default test({
++	compileOptions: {
++		dev: true
++	},
++
++	html: `<button>toggle</button> <span></span>`,
++
++	async test({ assert, target }) {
++		const btn = target.querySelector('button');
++
++		btn.click();
++		await new Promise((r) => setTimeout(r));
++		assert.htmlEqual(target.innerHTML, `<button>toggle</button> <span>hello</span>`);
++
++		btn.click();
++		await new Promise((r) => setTimeout(r));
++		assert.htmlEqual(target.innerHTML, `<button>toggle</button> <span></span>`);
++	}
++});
+diff --git a/packages/svelte/tests/runtime-runes/samples/store-undefined-in-derived/main.svelte b/packages/svelte/tests/runtime-runes/samples/store-undefined-in-derived/main.svelte
+new file mode 100644
+index 0000000..66b7713
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/store-undefined-in-derived/main.svelte
+@@ -0,0 +1,15 @@
++<script>
++	import { writable } from 'svelte/store';
++
++	let maybe = $state(false);
++	let store = $derived(maybe ? writable('hello') : undefined);
++
++	// Reading a store that is `undefined` inside a derived should not throw
++	// the `state_unsafe_mutation` error, and transitioning to/from `undefined`
++	// should keep the value in sync.
++	let value = $derived($store);
++</script>
++
++<button onclick={() => (maybe = !maybe)}>toggle</button>
++
++<span>{value}</span>
+\ No newline at end of file

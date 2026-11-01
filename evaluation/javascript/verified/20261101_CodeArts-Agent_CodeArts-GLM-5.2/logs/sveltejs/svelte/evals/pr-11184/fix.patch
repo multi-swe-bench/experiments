@@ -1,0 +1,72 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+index b6b5d7e..23d00bd 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+@@ -209,7 +209,7 @@ export function serialize_set_binding(node, context, fallback, options) {
+ 							assignment.right =
+ 								private_state.kind === 'frozen_state'
+ 									? b.call('$.freeze', value)
+-									: b.call('$.proxy', value);
++									: b.call('$.proxy', value, b.true, b.literal(null));
+ 							return assignment;
+ 						}
+ 					}
+@@ -222,7 +222,7 @@ export function serialize_set_binding(node, context, fallback, options) {
+ 							should_proxy_or_freeze(value, context.state.scope)
+ 							? private_state.kind === 'frozen_state'
+ 								? b.call('$.freeze', value)
+-								: b.call('$.proxy', value)
++								: b.call('$.proxy', value, b.true, b.literal(null))
+ 							: value
+ 					);
+ 				}
+@@ -246,7 +246,7 @@ export function serialize_set_binding(node, context, fallback, options) {
+ 					assignment.right =
+ 						public_state.kind === 'frozen_state'
+ 							? b.call('$.freeze', value)
+-							: b.call('$.proxy', value);
++							: b.call('$.proxy', value, b.true, b.literal(null));
+ 					return assignment;
+ 				}
+ 			}
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
+index c4b87e8..655575d 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
+@@ -98,7 +98,9 @@ export const javascript_visitors_runes = {
+ 							field.kind === 'state'
+ 								? b.call(
+ 										'$.source',
+-										should_proxy_or_freeze(init, state.scope) ? b.call('$.proxy', init) : init
++										should_proxy_or_freeze(init, state.scope)
++											? b.call('$.proxy', init, b.true, b.literal(null))
++											: init
+ 									)
+ 								: field.kind === 'frozen_state'
+ 									? b.call(
+@@ -131,7 +133,11 @@ export const javascript_visitors_runes = {
+ 									'set',
+ 									definition.key,
+ 									[value],
+-									[b.stmt(b.call('$.set', member, b.call('$.proxy', value)))]
++									[
++										b.stmt(
++											b.call('$.set', member, b.call('$.proxy', value, b.true, b.literal(null)))
++										)
++									]
+ 								)
+ 							);
+ 						}
+diff --git a/packages/svelte/tests/snapshot/samples/class-state-field-constructor-assignment/_expected/client/index.svelte.js b/packages/svelte/tests/snapshot/samples/class-state-field-constructor-assignment/_expected/client/index.svelte.js
+index 2b0a847..6cce633 100644
+--- a/packages/svelte/tests/snapshot/samples/class-state-field-constructor-assignment/_expected/client/index.svelte.js
++++ b/packages/svelte/tests/snapshot/samples/class-state-field-constructor-assignment/_expected/client/index.svelte.js
+@@ -14,7 +14,7 @@ function Class_state_field_constructor_assignment($$anchor, $$props) {
+ 		}
+ 
+ 		set a(value) {
+-			$.set(this.#a, $.proxy(value));
++			$.set(this.#a, $.proxy(value, true, null));
+ 		}
+ 
+ 		#b = $.source();

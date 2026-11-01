@@ -1,0 +1,20 @@
+diff --git a/packages/runtime-core/src/hydration.ts b/packages/runtime-core/src/hydration.ts
+index b22afdb..1faf6d8 100644
+--- a/packages/runtime-core/src/hydration.ts
++++ b/packages/runtime-core/src/hydration.ts
+@@ -748,6 +748,15 @@ function propHasMismatch(
+         }
+       }
+     }
++    // CSS custom properties (e.g. `--foo`) injected via `useCssVars` are not
++    // part of the vnode's `style` prop on the client (they are applied to the
++    // DOM after mount), so they only exist on the server-rendered style.
++    // Exclude them from the mismatch check to avoid false positives.
++    for (const key of actualMap.keys()) {
++      if (key.startsWith('--') && !expectedMap.has(key)) {
++        actualMap.delete(key)
++      }
++    }
+     if (!isMapEqual(actualMap, expectedMap)) {
+       mismatchType = mismatchKey = 'style'
+     }

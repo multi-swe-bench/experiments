@@ -1,0 +1,18 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+index 35e200b..f0d2545 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+@@ -379,7 +379,12 @@ export function get_props_method(binding, state, name, default_value) {
+ 
+ 		if (default_value) {
+ 			// To avoid eagerly evaluating the right-hand-side, we wrap it in a thunk if necessary
+-			if (is_simple_expression(default_value)) {
++			if (state.options.dev && state.analysis.runes) {
++				// default values are readonly, just like props, so wrap the value in `$.readonly`.
++				// we use a thunk so that the right-hand-side is only evaluated when needed.
++				arg = b.thunk(b.call('$.readonly', default_value));
++				flags |= PROPS_CALL_DEFAULT_VALUE;
++			} else if (is_simple_expression(default_value)) {
+ 				arg = default_value;
+ 			} else {
+ 				if (

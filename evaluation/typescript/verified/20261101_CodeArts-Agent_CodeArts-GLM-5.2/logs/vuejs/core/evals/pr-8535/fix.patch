@@ -1,0 +1,59 @@
+diff --git a/packages/compiler-sfc/src/compileScript.ts b/packages/compiler-sfc/src/compileScript.ts
+index 2c15b7f..7bc3174 100644
+--- a/packages/compiler-sfc/src/compileScript.ts
++++ b/packages/compiler-sfc/src/compileScript.ts
+@@ -514,7 +514,13 @@ export function compileScript(
+         processDefineOptions(ctx, expr) ||
+         processDefineSlots(ctx, expr)
+       ) {
+-        ctx.s.remove(node.start! + startOffset, node.end! + startOffset)
++        const start = node.start! + startOffset
++        const end = getStatementRemovalEnd(
++          ctx.source,
++          start,
++          node.end! + startOffset
++        )
++        ctx.s.remove(start, end)
+       } else if (processDefineExpose(ctx, expr)) {
+         // defineExpose({}) -> expose({})
+         const callee = (expr as CallExpression).callee
+@@ -554,7 +560,13 @@ export function compileScript(
+ 
+           if (isDefineProps || isDefineEmits) {
+             if (left === 1) {
+-              ctx.s.remove(node.start! + startOffset, node.end! + startOffset)
++              const start = node.start! + startOffset
++              const end = getStatementRemovalEnd(
++                ctx.source,
++                start,
++                node.end! + startOffset
++              )
++              ctx.s.remove(start, end)
+             } else {
+               let start = decl.start! + startOffset
+               let end = decl.end! + startOffset
+@@ -1044,6 +1056,24 @@ function registerBinding(
+   bindings[node.name] = type
+ }
+ 
++/**
++ * When removing a statement, babel may include a trailing semicolon in the
++ * node's `end` position. If that semicolon is located on a new line, it is
++ * actually a leading semicolon for the *next* statement (used to guard against
++ * ASI, e.g. `foo()\n;(window).x = 1`). Removing it together with the statement
++ * would break the next statement, so it needs to be preserved.
++ */
++function getStatementRemovalEnd(
++  source: string,
++  start: number,
++  end: number
++): number {
++  if (source[end - 1] === ';' && /\n\s*$/.test(source.slice(start, end - 1))) {
++    return end - 1
++  }
++  return end
++}
++
+ function walkDeclaration(
+   from: 'script' | 'scriptSetup',
+   node: Declaration,

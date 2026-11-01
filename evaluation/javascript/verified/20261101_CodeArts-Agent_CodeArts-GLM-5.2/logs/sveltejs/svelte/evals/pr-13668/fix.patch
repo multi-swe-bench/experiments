@@ -1,0 +1,55 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index a554d0f..771a588 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -100,7 +100,8 @@ export function migrate(source, { filename } = {}) {
+ 			script_insertions: new Set(),
+ 			derived_components: new Map(),
+ 			derived_labeled_statements: new Set(),
+-			has_svelte_self: false
++			has_svelte_self: false,
++			migration_tasks: 0
+ 		};
+ 
+ 		if (parsed.module) {
+@@ -299,6 +300,16 @@ export function migrate(source, { filename } = {}) {
+ 		if (!parsed.instance && need_script) {
+ 			str.appendRight(insertion_point, '\n</script>\n\n');
+ 		}
++
++		if (state.migration_tasks > 0) {
++			// eslint-disable-next-line no-console
++			console.warn(
++				`Migration is not complete: ${state.migration_tasks} @migration-task ${
++					state.migration_tasks === 1 ? 'comment was' : 'comments were'
++				} added to the code that need to be fixed manually. Search for '@migration-task' in the migrated code.`
++			);
++		}
++
+ 		return { code: str.toString() };
+ 	} catch (e) {
+ 		// eslint-disable-next-line no-console
+@@ -327,6 +338,7 @@ export function migrate(source, { filename } = {}) {
+  *  derived_components: Map<string, string>;
+  * 	derived_labeled_statements: Set<LabeledStatement>;
+  *  has_svelte_self: boolean;
++ * 	migration_tasks: number;
+  * }} State
+  */
+ 
+@@ -824,6 +836,7 @@ const template = {
+ 				node.start,
+ 				`<!-- @migration-task: svelte:self is deprecated, import this Svelte file into itself instead -->\n${indent}`
+ 			);
++			state.migration_tasks++;
+ 			next();
+ 			return;
+ 		}
+@@ -1088,6 +1101,7 @@ function migrate_slot_usage(node, path, state) {
+ 					node.start,
+ 					`<!-- @migration-task: migrate this slot by hand, \`${snippet_name}\` is an invalid identifier -->\n${state.indent}`
+ 				);
++				state.migration_tasks++;
+ 				return;
+ 			}
+ 			state.str.remove(attribute.start, attribute.end);

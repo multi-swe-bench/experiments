@@ -1,0 +1,25 @@
+diff --git a/.changeset/unicode-component-names.md b/.changeset/unicode-component-names.md
+new file mode 100644
+index 0000000..87c6345
+--- /dev/null
++++ b/.changeset/unicode-component-names.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: allow Unicode alphanumeric characters in component names
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/element.js b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+index e1a2382..2b23ec8 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/element.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+@@ -24,7 +24,7 @@ const regex_attribute_value = /^(?:"([^"]*)"|'([^'])*'|([^>\s]+))/;
+ const regex_valid_element_name =
+ 	/^(?:![a-zA-Z]+|[a-zA-Z](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?|[a-zA-Z][a-zA-Z0-9]*:[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])$/;
+ const regex_valid_component_name =
+-	/^(?:[A-Z][A-Za-z0-9_$.]*|[a-z][A-Za-z0-9_$]*(?:\.[A-Za-z0-9_$]+)+)$/;
++	/^(?:\p{Lu}[\p{L}\p{N}_$.]*|[\p{Ll}\p{Lm}\p{Lt}\p{Lo}][\p{L}\p{N}_$]*(?:\.[\p{L}\p{N}_$]+)+)$/u;
+ 
+ /** @type {Map<string, ElementLike['type']>} */
+ const root_only_meta_tags = new Map([

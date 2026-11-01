@@ -1,0 +1,80 @@
+diff --git a/packages/runtime-core/src/helpers/renderSlot.ts b/packages/runtime-core/src/helpers/renderSlot.ts
+index f0b1390..d1f8f1d 100644
+--- a/packages/runtime-core/src/helpers/renderSlot.ts
++++ b/packages/runtime-core/src/helpers/renderSlot.ts
+@@ -87,7 +87,7 @@ export function renderSlot(
+   return rendered
+ }
+ 
+-function ensureValidVNode(vnodes: VNodeArrayChildren) {
++export function ensureValidVNode(vnodes: VNodeArrayChildren) {
+   return vnodes.some(child => {
+     if (!isVNode(child)) return true
+     if (child.type === Comment) return false
+diff --git a/packages/runtime-core/src/index.ts b/packages/runtime-core/src/index.ts
+index 8adbe91..99ac4ac 100644
+--- a/packages/runtime-core/src/index.ts
++++ b/packages/runtime-core/src/index.ts
+@@ -371,6 +371,7 @@ import {
+ import { renderComponentRoot } from './componentRenderUtils'
+ import { setCurrentRenderingInstance } from './componentRenderContext'
+ import { isVNode, normalizeVNode } from './vnode'
++import { ensureValidVNode } from './helpers/renderSlot'
+ 
+ const _ssrUtils = {
+   createComponentInstance,
+@@ -379,6 +380,7 @@ const _ssrUtils = {
+   setCurrentRenderingInstance,
+   isVNode,
+   normalizeVNode,
++  ensureValidVNode,
+   getComponentPublicInstance,
+ }
+ 
+diff --git a/packages/server-renderer/src/helpers/ssrRenderSlot.ts b/packages/server-renderer/src/helpers/ssrRenderSlot.ts
+index 2069591..b81d795 100644
+--- a/packages/server-renderer/src/helpers/ssrRenderSlot.ts
++++ b/packages/server-renderer/src/helpers/ssrRenderSlot.ts
+@@ -3,6 +3,7 @@ import {
+   type Props,
+   type PushFn,
+   type SSRBufferItem,
++  ensureValidVNode,
+   renderVNodeChildren,
+ } from '../render'
+ import { isArray } from '@vue/shared'
+@@ -62,7 +63,17 @@ export function ssrRenderSlotInner(
+     )
+     if (isArray(ret)) {
+       // normal slot
+-      renderVNodeChildren(push, ret, parentComponent, slotScopeId)
++      // filter out comment-only slot content to match client-side renderSlot
++      // behavior, which uses ensureValidVNode to treat all-comment slots as
++      // empty. This avoids hydration mismatches when slot content consists
++      // only of v-if placeholders (e.g. `<div v-if="false">` in a slot of an
++      // externally-provided component).
++      const validContent = ensureValidVNode(ret)
++      if (validContent) {
++        renderVNodeChildren(push, validContent, parentComponent, slotScopeId)
++      } else if (fallbackRenderFn) {
++        fallbackRenderFn()
++      }
+     } else {
+       // ssr slot.
+       // check if the slot renders all comments, in which case use the fallback
+diff --git a/packages/server-renderer/src/render.ts b/packages/server-renderer/src/render.ts
+index ab84dd2..8220424 100644
+--- a/packages/server-renderer/src/render.ts
++++ b/packages/server-renderer/src/render.ts
+@@ -35,8 +35,11 @@ const {
+   setupComponent,
+   renderComponentRoot,
+   normalizeVNode,
++  ensureValidVNode,
+ } = ssrUtils
+ 
++export { ensureValidVNode }
++
+ export type SSRBuffer = SSRBufferItem[] & { hasAsync?: boolean }
+ export type SSRBufferItem = string | SSRBuffer | Promise<SSRBuffer>
+ export type PushFn = (item: SSRBufferItem) => void

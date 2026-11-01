@@ -1,0 +1,26 @@
+diff --git a/packages/runtime-core/src/renderer.ts b/packages/runtime-core/src/renderer.ts
+index 3f4a6f4..dcc6ca6 100644
+--- a/packages/runtime-core/src/renderer.ts
++++ b/packages/runtime-core/src/renderer.ts
+@@ -1137,6 +1137,21 @@ function baseCreateRenderer(
+         // for keyed & unkeyed, since they are compiler generated from v-for,
+         // each child is guaranteed to be a block so the fragment will never
+         // have dynamicChildren.
++        // #11189 if this is a stable fragment with dynamicChildren, but the
++        // previous render was a BAILed one (e.g. a slot fragment whose previous
++        // render had no valid children, see #2715), n1.dynamicChildren is null
++        // and we fall back to a full diff. In that case we must disable the
++        // optimization so that nested dynamic children (which are tracked in
++        // n2.dynamicChildren but not reachable through the optimized block
++        // patching path) are still properly patched.
++        if (
++          patchFlag > 0 &&
++          patchFlag & PatchFlags.STABLE_FRAGMENT &&
++          dynamicChildren &&
++          !n1.dynamicChildren
++        ) {
++          optimized = false
++        }
+         patchChildren(
+           n1,
+           n2,

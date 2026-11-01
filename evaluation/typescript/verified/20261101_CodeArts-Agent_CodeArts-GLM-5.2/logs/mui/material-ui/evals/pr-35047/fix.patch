@@ -1,0 +1,13 @@
+diff --git a/packages/mui-material/src/MenuItem/MenuItem.js b/packages/mui-material/src/MenuItem/MenuItem.js
+index f574398a..e928a3f1 100644
+--- a/packages/mui-material/src/MenuItem/MenuItem.js
++++ b/packages/mui-material/src/MenuItem/MenuItem.js
+@@ -34,7 +34,7 @@ const useUtilityClasses = (ownerState) => {
+       disabled && 'disabled',
+       !disableGutters && 'gutters',
+       divider && 'divider',
+-      selected && 'selected',
++      selected && ownerState['aria-selected'] !== 'false' && 'selected',
+     ],
+   };
+ 

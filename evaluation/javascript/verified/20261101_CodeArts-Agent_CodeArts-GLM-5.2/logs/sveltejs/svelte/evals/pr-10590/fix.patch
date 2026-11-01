@@ -1,0 +1,16 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index fbf6392..366e47c 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -475,7 +475,10 @@ const validation = {
+ 					);
+ 					if (!contenteditable) {
+ 						error(node, 'missing-contenteditable-attribute');
+-					} else if (!is_text_attribute(contenteditable)) {
++					} else if (
++						contenteditable.value !== true &&
++						!is_text_attribute(contenteditable)
++					) {
+ 						error(contenteditable, 'dynamic-contenteditable-attribute');
+ 					}
+ 				}

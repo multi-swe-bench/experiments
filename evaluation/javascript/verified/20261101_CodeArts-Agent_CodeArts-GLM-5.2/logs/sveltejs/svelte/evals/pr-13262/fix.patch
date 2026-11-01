@@ -1,0 +1,96 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/utils.js
+index 6007ab4..1ce68d5 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/utils.js
+@@ -4,7 +4,10 @@
+ import { walk } from 'zimmerframe';
+ import { object } from '../../../../../utils/ast.js';
+ import * as b from '../../../../../utils/builders.js';
+-import { sanitize_template_string } from '../../../../../utils/sanitize_template_string.js';
++import {
++	sanitize_template_string,
++	escape_template_string_boundary
++} from '../../../../../utils/sanitize_template_string.js';
+ import { regex_is_valid_identifier } from '../../../../patterns.js';
+ import { create_derived } from '../../utils.js';
+ import is_reference from 'is-reference';
+@@ -57,7 +60,9 @@ export function build_template_literal(values, visit, state) {
+ 			quasi.value.raw += sanitize_template_string(node.data);
+ 		} else if (node.type === 'ExpressionTag' && node.expression.type === 'Literal') {
+ 			if (node.expression.value != null) {
+-				quasi.value.raw += sanitize_template_string(node.expression.value + '');
++				const value = node.expression.value + '';
++				quasi.value.raw = escape_template_string_boundary(quasi.value.raw, value);
++				quasi.value.raw += sanitize_template_string(value);
+ 			}
+ 		} else {
+ 			if (contains_multiple_call_expression) {
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/utils.js b/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/utils.js
+index 26b9263..3abb8a9 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/utils.js
+@@ -9,7 +9,10 @@ import {
+ 	EMPTY_COMMENT
+ } from '../../../../../../internal/server/hydration.js';
+ import * as b from '../../../../../utils/builders.js';
+-import { sanitize_template_string } from '../../../../../utils/sanitize_template_string.js';
++import {
++	sanitize_template_string,
++	escape_template_string_boundary
++} from '../../../../../utils/sanitize_template_string.js';
+ import { regex_whitespaces_strict } from '../../../../patterns.js';
+ 
+ /** Opens an if/each block, so that we can remove nodes in the case of a mismatch */
+@@ -47,7 +50,9 @@ export function process_children(nodes, { visit, state }) {
+ 				);
+ 			} else if (node.type === 'ExpressionTag' && node.expression.type === 'Literal') {
+ 				if (node.expression.value != null) {
+-					quasi.value.raw += sanitize_template_string(escape_html(node.expression.value + ''));
++					const value = escape_html(node.expression.value + '');
++					quasi.value.raw = escape_template_string_boundary(quasi.value.raw, value);
++					quasi.value.raw += sanitize_template_string(value);
+ 				}
+ 			} else {
+ 				expressions.push(b.call('$.escape', /** @type {Expression} */ (visit(node.expression))));
+@@ -124,9 +129,14 @@ export function build_template(template, out = b.id('$$payload.out'), operator =
+ 			if (!last) quasis.push((last = b.quasi('', false)));
+ 
+ 			if (node.type === 'Literal') {
+-				last.value.raw +=
+-					typeof node.value === 'string' ? sanitize_template_string(node.value) : node.value;
++				if (typeof node.value === 'string') {
++					last.value.raw = escape_template_string_boundary(last.value.raw, node.value);
++					last.value.raw += sanitize_template_string(node.value);
++				} else {
++					last.value.raw += node.value;
++				}
+ 			} else if (node.type === 'TemplateLiteral') {
++				last.value.raw = escape_template_string_boundary(last.value.raw, node.quasis[0].value.raw);
+ 				last.value.raw += node.quasis[0].value.raw;
+ 				quasis.push(...node.quasis.slice(1));
+ 				expressions.push(...node.expressions);
+diff --git a/packages/svelte/src/compiler/utils/sanitize_template_string.js b/packages/svelte/src/compiler/utils/sanitize_template_string.js
+index 80357d9..d5e7b91 100644
+--- a/packages/svelte/src/compiler/utils/sanitize_template_string.js
++++ b/packages/svelte/src/compiler/utils/sanitize_template_string.js
+@@ -5,3 +5,20 @@
+ export function sanitize_template_string(str) {
+ 	return str.replace(/(`|\${|\\)/g, '\\$1');
+ }
++
++/**
++ * When two values that are sanitized separately are concatenated into the same
++ * template literal quasi, a `$` at the end of the first value and a `{` at the
++ * start of the second value would together form a `${...}` interpolation.
++ * This escapes the trailing `$` in that case so the literal value is preserved.
++ * @param {string} raw The current raw value of the quasi.
++ * @param {string} next The next string that will be appended.
++ * @returns {string} The (possibly modified) raw value.
++ */
++export function escape_template_string_boundary(raw, next) {
++	if (next[0] === '{' && raw.endsWith('$')) {
++		return raw.slice(0, -1) + '\\$';
++	}
++
++	return raw;
++}

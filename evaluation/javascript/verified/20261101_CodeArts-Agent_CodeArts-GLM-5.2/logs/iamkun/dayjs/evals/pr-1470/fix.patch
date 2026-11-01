@@ -1,0 +1,16 @@
+diff --git a/src/index.js b/src/index.js
+index f50b59e..156a177 100644
+--- a/src/index.js
++++ b/src/index.js
+@@ -251,7 +251,10 @@ class Dayjs {
+   }
+ 
+   format(formatStr) {
+-    if (!this.isValid()) return C.INVALID_DATE_STRING
++    if (!this.isValid()) {
++      const invalidDate = this.$locale() && this.$locale().invalidDate
++      return invalidDate || C.INVALID_DATE_STRING
++    }
+ 
+     const str = formatStr || C.FORMAT_DEFAULT
+     const zoneStr = Utils.z(this)

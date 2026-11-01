@@ -1,0 +1,19 @@
+diff --git a/packages/svelte/src/internal/client/runtime.js b/packages/svelte/src/internal/client/runtime.js
+index 97f7c5c..f5c86f5 100644
+--- a/packages/svelte/src/internal/client/runtime.js
++++ b/packages/svelte/src/internal/client/runtime.js
+@@ -231,6 +231,14 @@ export function check_dirtiness(reaction) {
+ 			}
+ 		}
+ 
++		// `reaction` might have become dirty as a result of recomputing one of its
++		// dependencies deeper down the chain (which could have marked it as dirty even
++		// when the directly-checked dependency didn't change). If so, ensure it is
++		// treated as dirty instead of being marked clean.
++		if ((reaction.f & DIRTY) !== 0) {
++			return true;
++		}
++
+ 		// Unowned signals are always maybe dirty, as we instead check their dependency versions.
+ 		if (!is_unowned) {
+ 			set_signal_status(reaction, CLEAN);

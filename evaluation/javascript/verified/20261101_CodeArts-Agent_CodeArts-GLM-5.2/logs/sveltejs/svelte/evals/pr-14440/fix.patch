@@ -1,0 +1,80 @@
+diff --git a/packages/svelte/src/internal/client/dom/blocks/await.js b/packages/svelte/src/internal/client/dom/blocks/await.js
+index 29ef154..eccb846 100644
+--- a/packages/svelte/src/internal/client/dom/blocks/await.js
++++ b/packages/svelte/src/internal/client/dom/blocks/await.js
+@@ -1,6 +1,7 @@
+ /** @import { Effect, Source, TemplateNode } from '#client' */
+ import { DEV } from 'esm-env';
+ import { is_promise } from '../../../shared/utils.js';
++import { UNINITIALIZED } from '../../../../constants.js';
+ import { block, branch, pause_effect, resume_effect } from '../../reactivity/effects.js';
+ import { internal_set, mutable_source, source } from '../../reactivity/sources.js';
+ import {
+@@ -40,8 +41,8 @@ export function await_block(node, get_input, pending_fn, then_fn, catch_fn) {
+ 	/** @type {any} */
+ 	var component_function = DEV ? component_context?.function : null;
+ 
+-	/** @type {V | Promise<V> | null} */
+-	var input;
++	/** @type {V | Promise<V> | null | typeof UNINITIALIZED} */
++	var input = UNINITIALIZED;
+ 
+ 	/** @type {Effect | null} */
+ 	var pending_effect;
+diff --git a/packages/svelte/tests/runtime-runes/samples/await-undefined-initial/_config.js b/packages/svelte/tests/runtime-runes/samples/await-undefined-initial/_config.js
+new file mode 100644
+index 0000000..c61eca7
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/await-undefined-initial/_config.js
+@@ -0,0 +1,31 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++
++export default test({
++	test({ assert, target, logs }) {
++		const [b1, b2] = target.querySelectorAll('button');
++
++		// initially x = undefined, the then block should render
++		assert.htmlEqual(
++			target.innerHTML,
++			'<button>set 0</button><button>set undefined</button> undefined'
++		);
++		assert.deepEqual(logs, [undefined]);
++
++		b1.click();
++		flushSync();
++		assert.htmlEqual(
++			target.innerHTML,
++			'<button>set 0</button><button>set undefined</button> 0'
++		);
++		assert.deepEqual(logs, [undefined, 0]);
++
++		b2.click();
++		flushSync();
++		assert.htmlEqual(
++			target.innerHTML,
++			'<button>set 0</button><button>set undefined</button> undefined'
++		);
++		assert.deepEqual(logs, [undefined, 0, undefined]);
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/await-undefined-initial/main.svelte b/packages/svelte/tests/runtime-runes/samples/await-undefined-initial/main.svelte
+new file mode 100644
+index 0000000..77866dd
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/await-undefined-initial/main.svelte
+@@ -0,0 +1,12 @@
++<script>
++	let x = $state(undefined);
++</script>
++
++<button onclick={() => (x = 0)}>set 0</button>
++<button onclick={() => (x = undefined)}>set undefined</button>
++
++{#await x}
++	loading
++{:then value}
++	{console.log(value)}{value === undefined ? 'undefined' : value}
++{/await}
+\ No newline at end of file

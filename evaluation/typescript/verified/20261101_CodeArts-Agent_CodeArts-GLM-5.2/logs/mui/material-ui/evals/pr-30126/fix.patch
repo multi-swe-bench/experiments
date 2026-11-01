@@ -1,0 +1,44 @@
+diff --git a/packages/mui-lab/src/LoadingButton/LoadingButton.js b/packages/mui-lab/src/LoadingButton/LoadingButton.js
+index b5bf0b7e..f73ec09e 100644
+--- a/packages/mui-lab/src/LoadingButton/LoadingButton.js
++++ b/packages/mui-lab/src/LoadingButton/LoadingButton.js
+@@ -1,9 +1,9 @@
+ import * as React from 'react';
+ import PropTypes from 'prop-types';
+-import { chainPropTypes } from '@mui/utils';
++import { chainPropTypes, internal_resolveProps as resolveProps } from '@mui/utils';
+ import { capitalize } from '@mui/material/utils';
+ import { unstable_composeClasses as composeClasses } from '@mui/base';
+-import { styled, useThemeProps } from '@mui/material/styles';
++import { styled, useTheme, useThemeProps } from '@mui/material/styles';
+ import Button from '@mui/material/Button';
+ import CircularProgress from '@mui/material/CircularProgress';
+ import loadingButtonClasses, { getLoadingButtonUtilityClass } from './loadingButtonClasses';
+@@ -137,7 +137,14 @@ const LoadingButtonLoadingIndicator = styled('div', {
+ const LoadingIndicator = <CircularProgress color="inherit" size={16} />;
+ 
+ const LoadingButton = React.forwardRef(function LoadingButton(inProps, ref) {
++  const theme = useTheme();
+   const props = useThemeProps({ props: inProps, name: 'MuiLoadingButton' });
++
++  const mergedProps = resolveProps(
++    (theme.components?.MuiButton?.defaultProps) || {},
++    props,
++  );
++
+   const {
+     children,
+     disabled = false,
+@@ -146,10 +153,10 @@ const LoadingButton = React.forwardRef(function LoadingButton(inProps, ref) {
+     loadingPosition = 'center',
+     variant = 'text',
+     ...other
+-  } = props;
++  } = mergedProps;
+ 
+   const ownerState = {
+-    ...props,
++    ...mergedProps,
+     disabled,
+     loading,
+     loadingIndicator,

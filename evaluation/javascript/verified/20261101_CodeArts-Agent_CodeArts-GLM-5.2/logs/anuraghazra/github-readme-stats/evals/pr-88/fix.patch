@@ -1,0 +1,56 @@
+diff --git a/api/index.js b/api/index.js
+index 6e25407..afc1e0c 100644
+--- a/api/index.js
++++ b/api/index.js
+@@ -9,6 +9,7 @@ module.exports = async (req, res) => {
+     hide,
+     hide_border,
+     hide_rank,
++    hide_title,
+     show_icons,
+     line_height,
+     title_color,
+@@ -33,6 +34,7 @@ module.exports = async (req, res) => {
+       show_icons: parseBoolean(show_icons),
+       hide_border: parseBoolean(hide_border),
+       hide_rank: parseBoolean(hide_rank),
++      hide_title: parseBoolean(hide_title),
+       line_height,
+       title_color,
+       icon_color,
+diff --git a/readme.md b/readme.md
+index bfa09e4..645d79f 100644
+--- a/readme.md
++++ b/readme.md
+@@ -68,6 +68,7 @@ Other options:
+ - `&hide_border=true` hide the border box if you don't like it :D
+ - `&line_height=30` control the line-height between text
+ - `&hide_rank=true` hides the ranking
++- `&hide_title=true` hides the stats title
+ 
+ ### Customization
+ 
+diff --git a/src/renderStatsCard.js b/src/renderStatsCard.js
+index 14d063c..85cab97 100644
+--- a/src/renderStatsCard.js
++++ b/src/renderStatsCard.js
+@@ -49,6 +49,7 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
+     show_icons = false,
+     hide_border = false,
+     hide_rank = false,
++    hide_title = false,
+     line_height = 25,
+     title_color,
+     icon_color,
+@@ -169,9 +170,9 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
+ 
+       ${rankCircle}
+       
+-      <text x="25" y="35" class="header">${name}'s GitHub Stats</text>
++      ${hide_title ? "" : `<text x="25" y="35" class="header">${name}'s GitHub Stats</text>`}
+ 
+-      <svg x="0" y="45">
++      <svg x="0" y="${hide_title ? 0 : 45}">
+         ${statItems.toString().replace(/\,/gm, "")}
+       </svg>
+     </svg>

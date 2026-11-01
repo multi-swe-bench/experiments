@@ -1,0 +1,13 @@
+diff --git a/packages/mui-system/src/Stack/createStack.tsx b/packages/mui-system/src/Stack/createStack.tsx
+index 71095536..afa2f0d0 100644
+--- a/packages/mui-system/src/Stack/createStack.tsx
++++ b/packages/mui-system/src/Stack/createStack.tsx
+@@ -135,7 +135,7 @@ export const style = ({ ownerState, theme }: StyleFunctionProps) => {
+         return { gap: getValue(transformer, propValue) };
+       }
+       return {
+-        '& > :not(style) + :not(style)': {
++        '& > :not(style) ~ :not(style)': {
+           margin: 0,
+           [`margin${getSideFromDirection(
+             breakpoint ? directionValues[breakpoint] : ownerState.direction,

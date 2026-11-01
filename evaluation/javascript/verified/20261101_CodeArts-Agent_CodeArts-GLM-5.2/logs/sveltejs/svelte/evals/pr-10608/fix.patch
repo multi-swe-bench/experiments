@@ -1,0 +1,13 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 27f61bf..552c541 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -430,7 +430,7 @@ const validation = {
+ 					);
+ 				}
+ 
+-				if (parent.name === 'input' && node.name !== 'this') {
++				if (parent.name === 'input' && node.name !== 'this' && node.name !== 'value') {
+ 					const type = /** @type {import('#compiler').Attribute | undefined} */ (
+ 						parent.attributes.find((a) => a.type === 'Attribute' && a.name === 'type')
+ 					);

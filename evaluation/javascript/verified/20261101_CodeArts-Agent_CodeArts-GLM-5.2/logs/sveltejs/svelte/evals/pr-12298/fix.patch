@@ -1,0 +1,56 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/types.d.ts b/packages/svelte/src/compiler/phases/3-transform/client/types.d.ts
+index aec2edb..649d583 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/types.d.ts
++++ b/packages/svelte/src/compiler/phases/3-transform/client/types.d.ts
+@@ -20,6 +20,13 @@ export interface ClientTransformState extends TransformState {
+ 	 */
+ 	readonly in_constructor: boolean;
+ 
++	/**
++	 * `true` if the current lexical scope belongs to a function that is hoisted out of
++	 * the component function. In that case `$$props` is not in scope, so certain
++	 * optimizations that reference `$$props` directly must be disabled.
++	 */
++	readonly in_hoisted_function: boolean;
++
+ 	/** The $: calls, which will be ordered in the end */
+ 	readonly legacy_reactive_statements: Map<LabeledStatement, Statement>;
+ }
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+index e17e190..5a60e27 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+@@ -487,7 +487,7 @@ export const function_visitor = (node, context) => {
+ 		return /** @type {import('estree').FunctionExpression} */ ({
+ 			...node,
+ 			params,
+-			body: context.visit(node.body, state)
++			body: context.visit(node.body, { ...state, in_hoisted_function: true })
+ 		});
+ 	}
+ 
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/global.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/global.js
+index a640fb0..2b7b047 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/global.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/global.js
+@@ -14,6 +14,7 @@ export const global_visitors = {
+ 			const binding = state.scope.get(node.name);
+ 			if (
+ 				state.analysis.runes && // can't do this in legacy mode because the proxy does more than just read/write
++				!state.in_hoisted_function && // $$props is not in scope inside hoisted functions
+ 				binding !== null &&
+ 				node !== binding.node &&
+ 				binding.kind === 'rest_prop'
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript.js
+index 9938998..81b4827 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript.js
+@@ -20,7 +20,7 @@ export const javascript_visitors = {
+ 					...node,
+ 					id: node.id !== null ? context.visit(node.id, state) : null,
+ 					params,
+-					body: context.visit(node.body, state)
++					body: context.visit(node.body, { ...state, in_hoisted_function: true })
+ 				})
+ 			);
+ 			return b.empty;

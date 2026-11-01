@@ -1,0 +1,485 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+index c51de75..640fe99 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+@@ -9,9 +9,11 @@ import { get_attribute_chunks, is_text_attribute } from '../../../utils/ast.js';
+  * @typedef {{
+  *   stylesheet: Compiler.Css.StyleSheet;
+  *   element: Compiler.AST.RegularElement | Compiler.AST.SvelteElement;
++ *   render_parents: SnippetRenderParents;
+  * }} State
+  */
+ /** @typedef {NODE_PROBABLY_EXISTS | NODE_DEFINITELY_EXISTS} NodeExistsValue */
++/** @typedef {Map<Compiler.AST.SnippetBlock, Compiler.SvelteNode[]>} SnippetRenderParents */
+ 
+ const NODE_PROBABLY_EXISTS = 0;
+ const NODE_DEFINITELY_EXISTS = 1;
+@@ -50,13 +52,66 @@ const nesting_selector = {
+ 	}
+ };
+ 
++/**
++ * For each `{#snippet}` block, collects the AST parents of the `{@render}` tags
++ * that render it. This is needed because elements inside a snippet are rendered
++ * at the `{@render}` location rather than where the snippet is defined, so the
++ * AST parent chain of those elements does not reflect their real DOM ancestors.
++ *
++ * Snippets that are not rendered locally (e.g. passed as props) are not
++ * included in the map.
++ *
++ * @param {Compiler.AST.Fragment} fragment
++ * @returns {SnippetRenderParents}
++ */
++export function get_snippet_render_parents(fragment) {
++	/** @type {Map<string, Compiler.AST.SnippetBlock>} */
++	const snippets_by_name = new Map();
++
++	/** @type {SnippetRenderParents} */
++	const render_parents = new Map();
++
++	/** @type {{ name: string; parent: Compiler.SvelteNode }[]} */
++	const render_tags = [];
++
++	/** @type {Visitors<Compiler.SvelteNode, {}>} */
++	const visitors = {
++		SnippetBlock(node, context) {
++			snippets_by_name.set(node.expression.name, node);
++			render_parents.set(node, []);
++			context.next();
++		},
++		RenderTag(node) {
++			const expression =
++				node.expression.type === 'ChainExpression' ? node.expression.expression : node.expression;
++			const callee = expression.callee;
++			if (callee.type === 'Identifier' && node.parent) {
++				render_tags.push({ name: callee.name, parent: node.parent });
++			}
++		}
++	};
++
++	walk(fragment, {}, visitors);
++
++	for (const { name, parent } of render_tags) {
++		const snippet = snippets_by_name.get(name);
++		const parents = snippet && render_parents.get(snippet);
++		if (parents) {
++			parents.push(parent);
++		}
++	}
++
++	return render_parents;
++}
++
+ /**
+  *
+  * @param {Compiler.Css.StyleSheet} stylesheet
+  * @param {Compiler.AST.RegularElement | Compiler.AST.SvelteElement} element
++ * @param {SnippetRenderParents} render_parents
+  */
+-export function prune(stylesheet, element) {
+-	walk(stylesheet, { stylesheet, element }, visitors);
++export function prune(stylesheet, element, render_parents) {
++	walk(stylesheet, { stylesheet, element, render_parents }, visitors);
+ }
+ 
+ /** @type {Visitors<Compiler.Css.Node, State>} */
+@@ -107,7 +162,8 @@ const visitors = {
+ 				/** @type {Compiler.Css.Rule} */ (node.metadata.rule),
+ 				context.state.element,
+ 				context.state.stylesheet,
+-				true
++				true,
++				context.state.render_parents
+ 			)
+ 		) {
+ 			mark(inner, context.state.element);
+@@ -144,9 +200,10 @@ function truncate(node) {
+  * @param {Compiler.AST.RegularElement | Compiler.AST.SvelteElement} element
+  * @param {Compiler.Css.StyleSheet} stylesheet
+  * @param {boolean} check_has Whether or not to check the `:has(...)` selectors
++ * @param {SnippetRenderParents} render_parents
+  * @returns {boolean}
+  */
+-function apply_selector(relative_selectors, rule, element, stylesheet, check_has) {
++function apply_selector(relative_selectors, rule, element, stylesheet, check_has, render_parents) {
+ 	const parent_selectors = relative_selectors.slice();
+ 	const relative_selector = parent_selectors.pop();
+ 
+@@ -157,7 +214,8 @@ function apply_selector(relative_selectors, rule, element, stylesheet, check_has
+ 		rule,
+ 		element,
+ 		stylesheet,
+-		check_has
++		check_has,
++		render_parents
+ 	);
+ 
+ 	if (!possible_match) {
+@@ -172,7 +230,8 @@ function apply_selector(relative_selectors, rule, element, stylesheet, check_has
+ 			rule,
+ 			element,
+ 			stylesheet,
+-			check_has
++			check_has,
++			render_parents
+ 		);
+ 	}
+ 
+@@ -194,6 +253,7 @@ function apply_selector(relative_selectors, rule, element, stylesheet, check_has
+  * @param {Compiler.AST.RegularElement | Compiler.AST.SvelteElement} element
+  * @param {Compiler.Css.StyleSheet} stylesheet
+  * @param {boolean} check_has Whether or not to check the `:has(...)` selectors
++ * @param {SnippetRenderParents} render_parents
+  * @returns {boolean}
+  */
+ function apply_combinator(
+@@ -203,40 +263,25 @@ function apply_combinator(
+ 	rule,
+ 	element,
+ 	stylesheet,
+-	check_has
++	check_has,
++	render_parents
+ ) {
+ 	const name = combinator.name;
+ 
+ 	switch (name) {
+ 		case ' ':
+ 		case '>': {
+-			let parent = /** @type {Compiler.TemplateNode | null} */ (element.parent);
+-
+-			let parent_matched = false;
+-			let crossed_component_boundary = false;
+-
+-			while (parent) {
+-				if (parent.type === 'Component' || parent.type === 'SvelteComponent') {
+-					crossed_component_boundary = true;
+-				}
+-
+-				if (parent.type === 'RegularElement' || parent.type === 'SvelteElement') {
+-					if (apply_selector(parent_selectors, rule, parent, stylesheet, check_has)) {
+-						// TODO the `name === ' '` causes false positives, but removing it causes false negatives...
+-						if (name === ' ' || crossed_component_boundary) {
+-							mark(parent_selectors[parent_selectors.length - 1], parent);
+-						}
+-
+-						parent_matched = true;
+-					}
+-
+-					if (name === '>') return parent_matched;
+-				}
+-
+-				parent = /** @type {Compiler.TemplateNode | null} */ (parent.parent);
+-			}
+-
+-			return parent_matched || parent_selectors.every((selector) => is_global(selector, rule));
++			return match_ancestor(
++				name,
++				parent_selectors,
++				rule,
++				/** @type {Compiler.TemplateNode | null} */ (element.parent),
++				stylesheet,
++				check_has,
++				false,
++				render_parents,
++				new Set()
++			);
+ 		}
+ 
+ 		case '+':
+@@ -253,7 +298,14 @@ function apply_combinator(
+ 						sibling_matched = true;
+ 					}
+ 				} else if (
+-					apply_selector(parent_selectors, rule, possible_sibling, stylesheet, check_has)
++					apply_selector(
++						parent_selectors,
++						rule,
++						possible_sibling,
++						stylesheet,
++						check_has,
++						render_parents
++					)
+ 				) {
+ 					mark(relative_selector, element);
+ 					sibling_matched = true;
+@@ -273,6 +325,103 @@ function apply_combinator(
+ 	}
+ }
+ 
++/**
++ * Walks up the (effective) DOM ancestor chain starting from `start` (inclusive)
++ * and tries to match `parent_selectors` against ancestor elements.
++ *
++ * Elements inside a `{#snippet}` are rendered at their `{@render}` tag locations
++ * rather than where the snippet is defined, so when the walk reaches a
++ * `SnippetBlock` it "teleports" to each of the snippet's render locations and
++ * continues from there.
++ *
++ * @param {string} name The combinator name (`' '` or `'>'`)
++ * @param {Compiler.Css.RelativeSelector[]} parent_selectors
++ * @param {Compiler.Css.Rule} rule
++ * @param {Compiler.TemplateNode | null} start
++ * @param {Compiler.Css.StyleSheet} stylesheet
++ * @param {boolean} check_has
++ * @param {boolean} crossed_component_boundary
++ * @param {SnippetRenderParents} render_parents
++ * @param {Set<Compiler.AST.SnippetBlock>} visited Snippets already entered, to prevent infinite recursion
++ * @returns {boolean}
++ */
++function match_ancestor(
++	name,
++	parent_selectors,
++	rule,
++	start,
++	stylesheet,
++	check_has,
++	crossed_component_boundary,
++	render_parents,
++	visited
++) {
++	let parent = start;
++	let parent_matched = false;
++
++	while (parent) {
++		if (parent.type === 'Component' || parent.type === 'SvelteComponent') {
++			crossed_component_boundary = true;
++		}
++
++		if (parent.type === 'SnippetBlock') {
++			if (!visited.has(parent)) {
++				visited.add(parent);
++				const parents = render_parents.get(parent);
++
++				if (parents && parents.length > 0) {
++					// The snippet's content is rendered at the `{@render}` tag locations,
++					// so continue the ancestor walk from each of those places instead of
++					// from where the snippet is defined.
++					for (const render_parent of parents) {
++						if (
++							match_ancestor(
++								name,
++								parent_selectors,
++								rule,
++								/** @type {Compiler.TemplateNode | null} */ (render_parent),
++								stylesheet,
++								check_has,
++								crossed_component_boundary,
++								render_parents,
++								visited
++							)
++						) {
++							parent_matched = true;
++						}
++					}
++
++					visited.delete(parent);
++					return parent_matched || parent_selectors.every((selector) => is_global(selector, rule));
++				}
++
++				visited.delete(parent);
++				// The snippet is not rendered locally (e.g. it is passed as a prop), so
++				// we can't know where its content ends up. Fall through and continue the
++				// walk up the AST as before — matching descendant/child selectors across
++				// such a boundary requires `:global()`, just like with components.
++			}
++		}
++
++		if (parent.type === 'RegularElement' || parent.type === 'SvelteElement') {
++			if (apply_selector(parent_selectors, rule, parent, stylesheet, check_has, render_parents)) {
++				// TODO the `name === ' '` causes false positives, but removing it causes false negatives...
++				if (name === ' ' || crossed_component_boundary) {
++					mark(parent_selectors[parent_selectors.length - 1], parent);
++				}
++
++				parent_matched = true;
++			}
++
++			if (name === '>') return parent_matched;
++		}
++
++		parent = /** @type {Compiler.TemplateNode | null} */ (parent.parent);
++	}
++
++	return parent_matched || parent_selectors.every((selector) => is_global(selector, rule));
++}
++
+ /**
+  * Mark both the compound selector and the node it selects as encapsulated,
+  * for transformation in a later step
+@@ -337,6 +486,7 @@ const regex_backslash_and_following_character = /\\(.)/g;
+  * @param {Compiler.AST.RegularElement | Compiler.AST.SvelteElement} element
+  * @param {Compiler.Css.StyleSheet} stylesheet
+  * @param {boolean} check_has Whether or not to check the `:has(...)` selectors
++ * @param {SnippetRenderParents} render_parents
+  * @returns {boolean}
+  */
+ function relative_selector_might_apply_to_node(
+@@ -344,7 +494,8 @@ function relative_selector_might_apply_to_node(
+ 	rule,
+ 	element,
+ 	stylesheet,
+-	check_has
++	check_has,
++	render_parents
+ ) {
+ 	// Sort :has(...) selectors in one bucket and everything else into another
+ 	const has_selectors = [];
+@@ -373,7 +524,7 @@ function relative_selector_might_apply_to_node(
+ 				const selectors = truncate(complex_selector);
+ 				if (
+ 					selectors.length === 0 /* is :global(...) */ ||
+-					apply_selector(selectors, rule, element, stylesheet, check_has)
++					apply_selector(selectors, rule, element, stylesheet, check_has, render_parents)
+ 				) {
+ 					// Treat e.g. `.x:has(.y)` as `.x .y` with the .y part already being matched,
+ 					// and now looking upwards for the .x part.
+@@ -385,7 +536,8 @@ function relative_selector_might_apply_to_node(
+ 							rule,
+ 							element,
+ 							stylesheet,
+-							false
++							false,
++							render_parents
+ 						)
+ 					) {
+ 						complex_selector.metadata.used = true;
+@@ -434,7 +586,14 @@ function relative_selector_might_apply_to_node(
+ 				) {
+ 					const args = selector.args;
+ 					const complex_selector = args.children[0];
+-					return apply_selector(complex_selector.children, rule, element, stylesheet, check_has);
++					return apply_selector(
++						complex_selector.children,
++						rule,
++						element,
++						stylesheet,
++						check_has,
++						render_parents
++					);
+ 				}
+ 
+ 				// We came across a :global, everything beyond it is global and therefore a potential match
+@@ -444,7 +603,16 @@ function relative_selector_might_apply_to_node(
+ 					let matched = false;
+ 
+ 					for (const complex_selector of selector.args.children) {
+-						if (apply_selector(truncate(complex_selector), rule, element, stylesheet, check_has)) {
++						if (
++							apply_selector(
++								truncate(complex_selector),
++								rule,
++								element,
++								stylesheet,
++								check_has,
++								render_parents
++							)
++						) {
+ 							complex_selector.metadata.used = true;
+ 							matched = true;
+ 						}
+@@ -518,7 +686,16 @@ function relative_selector_might_apply_to_node(
+ 				const parent = /** @type {Compiler.Css.Rule} */ (rule.metadata.parent_rule);
+ 
+ 				for (const complex_selector of parent.prelude.children) {
+-					if (apply_selector(truncate(complex_selector), parent, element, stylesheet, check_has)) {
++					if (
++						apply_selector(
++							truncate(complex_selector),
++							parent,
++							element,
++							stylesheet,
++							check_has,
++							render_parents
++						)
++					) {
+ 						complex_selector.metadata.used = true;
+ 						matched = true;
+ 					}
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 51365a1..1c6526c 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -11,7 +11,7 @@ import { Scope, ScopeRoot, create_scopes, get_rune, set_scope } from '../scope.j
+ import check_graph_for_cycles from './utils/check_graph_for_cycles.js';
+ import { create_attribute, is_custom_element_node } from '../nodes.js';
+ import { analyze_css } from './css/css-analyze.js';
+-import { prune } from './css/css-prune.js';
++import { prune, get_snippet_render_parents } from './css/css-prune.js';
+ import { hash, is_rune } from '../../../utils.js';
+ import { warn_unused } from './css/css-warn.js';
+ import { extract_svelte_ignore } from '../../utils/extract_svelte_ignore.js';
+@@ -674,9 +674,13 @@ export function analyze_component(root, source, options) {
+ 	if (analysis.css.ast) {
+ 		analyze_css(analysis.css.ast, analysis);
+ 
++		// map each `{#snippet}` block to the AST parents of the `{@render}` tags
++		// that render it, so that CSS scoping can follow snippet render locations
++		const render_parents = get_snippet_render_parents(template.ast);
++
+ 		// mark nodes as scoped/unused/empty etc
+ 		for (const element of analysis.elements) {
+-			prune(analysis.css.ast, element);
++			prune(analysis.css.ast, element, render_parents);
+ 		}
+ 
+ 		const { comment } = analysis.css.ast.content;
+diff --git a/packages/svelte/tests/css/samples/snippet-nested-selector/_config.js b/packages/svelte/tests/css/samples/snippet-nested-selector/_config.js
+new file mode 100644
+index 0000000..ff8b4c5
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/snippet-nested-selector/_config.js
+@@ -0,0 +1 @@
++export default {};
+diff --git a/packages/svelte/tests/css/samples/snippet-nested-selector/expected.css b/packages/svelte/tests/css/samples/snippet-nested-selector/expected.css
+new file mode 100644
+index 0000000..68b2a15
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/snippet-nested-selector/expected.css
+@@ -0,0 +1,11 @@
++div.svelte-xyz > span:where(.svelte-xyz) {
++		background-color: red;
++	}
++
++	div.svelte-xyz span:where(.svelte-xyz) {
++		color: blue;
++	}
++
++	span.svelte-xyz {
++		text-decoration: underline;
++	}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/snippet-nested-selector/expected.html b/packages/svelte/tests/css/samples/snippet-nested-selector/expected.html
+new file mode 100644
+index 0000000..af95f01
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/snippet-nested-selector/expected.html
+@@ -0,0 +1 @@
++<div class="svelte-xyz"><span class="svelte-xyz">Hello world</span></div>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/snippet-nested-selector/input.svelte b/packages/svelte/tests/css/samples/snippet-nested-selector/input.svelte
+new file mode 100644
+index 0000000..a260a6a
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/snippet-nested-selector/input.svelte
+@@ -0,0 +1,19 @@
++{#snippet my_snippet()}
++	<span>Hello world</span>
++{/snippet}
++
++<div>{@render my_snippet()}</div>
++
++<style>
++	div > span {
++		background-color: red;
++	}
++
++	div span {
++		color: blue;
++	}
++
++	span {
++		text-decoration: underline;
++	}
++</style>
+\ No newline at end of file

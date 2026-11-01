@@ -1,0 +1,239 @@
+diff --git a/.changeset/svg-namespace-dynamic-elements.md b/.changeset/svg-namespace-dynamic-elements.md
+new file mode 100644
+index 0000000..4fcbc28
+--- /dev/null
++++ b/.changeset/svg-namespace-dynamic-elements.md
+@@ -0,0 +1,7 @@
++---
++"svelte": patch
++---
++
++fix: render dynamic elements and components inside `<svg>` with the correct namespace
++
++Dynamic `<svelte:element>` nodes (and components containing them) that appear inside an `<svg>` were previously rendered in the HTML namespace on the first client-side render, because their anchor isn't attached to the DOM yet and the namespace couldn't be inferred. A runtime namespace stack now tracks the current namespace as SVG contexts are entered/exited, so dynamic elements inherit the correct namespace even before their anchor is connected. This also un-skips the `dynamic-element-svg-implicit-namespace` test which now passes.
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/element.js b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+index 42c48a8..6bae6af 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/element.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+@@ -160,7 +160,7 @@ export default function tag(parser) {
+ 					fragment: create_fragment(true),
+ 					parent: null,
+ 					metadata: {
+-						svg: false
++						svg: null
+ 					}
+ 				};
+ 
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 8e675ce..c8c9d47 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -37,7 +37,8 @@ import {
+ 	TEMPLATE_USE_IMPORT_NODE,
+ 	TRANSITION_GLOBAL,
+ 	TRANSITION_IN,
+-	TRANSITION_OUT
++	TRANSITION_OUT,
++	namespace_svg
+ } from '../../../../../constants.js';
+ import { regex_is_valid_identifier } from '../../../patterns.js';
+ import { javascript_visitors_runes } from './javascript-runes.js';
+@@ -1985,6 +1986,22 @@ export const template_visitors = {
+ 			context.visit(node, state);
+ 		}
+ 
++		// Ensure dynamic `<svelte:element>` nodes (which can be inside child components whose
++		// anchor isn't attached to the dom yet on first render) inherit the svg namespace.
++		const needs_namespace_tracking =
++			node.metadata.svg === true && child_metadata.namespace !== 'foreign' && trimmed.length > 0;
++
++		if (needs_namespace_tracking) {
++			context.state.init.push(
++				b.stmt(
++					b.call(
++						'$.push_namespace',
++						b.literal(child_metadata.namespace === 'svg' ? namespace_svg : null)
++					)
++				)
++			);
++		}
++
+ 		process_children(
+ 			trimmed,
+ 			() =>
+@@ -1998,6 +2015,10 @@ export const template_visitors = {
+ 			{ ...context, state }
+ 		);
+ 
++		if (needs_namespace_tracking) {
++			context.state.init.push(b.stmt(b.call('$.pop_namespace')));
++		}
++
+ 		if (!VoidElements.includes(node.name)) {
+ 			context.state.template.push(`</${node.name}>`);
+ 		}
+diff --git a/packages/svelte/src/internal/client/dom/blocks/svelte-element.js b/packages/svelte/src/internal/client/dom/blocks/svelte-element.js
+index ba447b2..fdcd240 100644
+--- a/packages/svelte/src/internal/client/dom/blocks/svelte-element.js
++++ b/packages/svelte/src/internal/client/dom/blocks/svelte-element.js
+@@ -1,6 +1,6 @@
+ import { namespace_svg } from '../../../../constants.js';
+ import { hydrate_anchor, hydrate_nodes, hydrating } from '../hydration.js';
+-import { empty } from '../operations.js';
++import { current_namespace, empty, pop_namespace, push_namespace } from '../operations.js';
+ import {
+ 	block,
+ 	branch,
+@@ -76,13 +76,14 @@ export function element(anchor, get_tag, is_svg, render_fn) {
+ 
+ 			// We try our best infering the namespace in case it's not possible to determine statically,
+ 			// but on the first render on the client (without hydration) the parent will be undefined,
+-			// since the anchor is not attached to its parent / the dom yet.
++			// since the anchor is not attached to its parent / the dom yet. In that case we fall back
++			// to the `current_namespace` which is tracked while entering svg contexts.
+ 			const ns =
+ 				is_svg || next_tag === 'svg'
+ 					? namespace_svg
+ 					: is_svg === false || anchor.parentElement?.tagName === 'foreignObject'
+ 						? null
+-						: anchor.parentElement?.namespaceURI ?? null;
++						: anchor.parentElement?.namespaceURI ?? current_namespace;
+ 
+ 			if (effect) {
+ 				if (next_tag === null) {
+@@ -111,29 +112,35 @@ export function element(anchor, get_tag, is_svg, render_fn) {
+ 							? document.createElementNS(ns, next_tag)
+ 							: document.createElement(next_tag);
+ 
+-					if (render_fn) {
+-						// If hydrating, use the existing ssr comment as the anchor so that the
+-						// inner open and close methods can pick up the existing nodes correctly
+-						var child_anchor = hydrating
+-							? element.firstChild && hydrate_anchor(/** @type {Comment} */ (element.firstChild))
+-							: element.appendChild(empty());
+-
+-						if (child_anchor) {
+-							// `child_anchor` can be undefined if this is a void element with children,
+-							// i.e. `<svelte:element this={"hr"}>...</svelte:element>`. This is
+-							// user error, but we warn on it elsewhere (in dev) so here we just
+-							// silently ignore it
+-							render_fn(element, child_anchor);
++					push_namespace(ns);
++
++					try {
++						if (render_fn) {
++							// If hydrating, use the existing ssr comment as the anchor so that the
++							// inner open and close methods can pick up the existing nodes correctly
++							var child_anchor = hydrating
++								? element.firstChild && hydrate_anchor(/** @type {Comment} */ (element.firstChild))
++								: element.appendChild(empty());
++
++							if (child_anchor) {
++								// `child_anchor` can be undefined if this is a void element with children,
++								// i.e. `<svelte:element this={"hr"}>...</svelte:element>`. This is
++								// user error, but we warn on it elsewhere (in dev) so here we just
++								// silently ignore it
++								render_fn(element, child_anchor);
++							}
+ 						}
+-					}
+ 
+-					anchor.before(element);
++						anchor.before(element);
+ 
+-					if (prev_element) {
+-						swap_block_dom(parent_effect, prev_element, element);
+-						prev_element.remove();
+-					} else if (!hydrating) {
+-						push_template_node(element, parent_effect);
++						if (prev_element) {
++							swap_block_dom(parent_effect, prev_element, element);
++							prev_element.remove();
++						} else if (!hydrating) {
++							push_template_node(element, parent_effect);
++						}
++					} finally {
++						pop_namespace();
+ 					}
+ 				});
+ 			}
+diff --git a/packages/svelte/src/internal/client/dom/operations.js b/packages/svelte/src/internal/client/dom/operations.js
+index 5861e26..8d68019 100644
+--- a/packages/svelte/src/internal/client/dom/operations.js
++++ b/packages/svelte/src/internal/client/dom/operations.js
+@@ -41,6 +41,33 @@ export var $window;
+  */
+ export var $document;
+ 
++/**
++ * The namespace the next element created via `$.element` (a dynamic `<svelte:element>`)
++ * is in, in case it can't be inferred from its anchor's parent (which is the case on the
++ * first client-side render, where the anchor isn't attached to the dom yet). This is
++ * updated whenever we enter an svg context so that dynamic elements inside components
++ * inherit the correct namespace.
++ * @type {string | null}
++ */
++export let current_namespace = null;
++
++/** @type {Array<string | null>} */
++var namespace_stack = [];
++
++/**
++ * @param {string | null} namespace
++ * @returns {void}
++ */
++export function push_namespace(namespace) {
++	namespace_stack.push(current_namespace);
++	current_namespace = namespace;
++}
++
++/** @returns {void} */
++export function pop_namespace() {
++	current_namespace = namespace_stack.pop() ?? null;
++}
++
+ /**
+  * Initialize these lazily to avoid issues when using the runtime in a server context
+  * where these globals are not available while avoiding a separate server entry point
+diff --git a/packages/svelte/src/internal/client/index.js b/packages/svelte/src/internal/client/index.js
+index 18bd474..4ba49dd 100644
+--- a/packages/svelte/src/internal/client/index.js
++++ b/packages/svelte/src/internal/client/index.js
+@@ -134,6 +134,8 @@ export {
+ 	child,
+ 	first_child,
+ 	sibling,
++	push_namespace,
++	pop_namespace,
+ 	$window as window,
+ 	$document as document
+ } from './dom/operations.js';
+diff --git a/packages/svelte/tests/runtime-legacy/samples/dynamic-element-svg-implicit-namespace/_config.js b/packages/svelte/tests/runtime-legacy/samples/dynamic-element-svg-implicit-namespace/_config.js
+index 12a0960..1a4df30 100644
+--- a/packages/svelte/tests/runtime-legacy/samples/dynamic-element-svg-implicit-namespace/_config.js
++++ b/packages/svelte/tests/runtime-legacy/samples/dynamic-element-svg-implicit-namespace/_config.js
+@@ -1,10 +1,6 @@
+ import { test } from '../../test';
+ 
+ export default test({
+-	// This is skipped for now, because it's not clear how to make this work on client-side initial run:
+-	// The anchor isn't connected to its parent at the time we can do a runtime check for the namespace, and we
+-	// need the parent for this check. (this didn't work in Svelte 4 either)
+-	skip: true,
+ 	html: '<svg><path></path></svg>',
+ 
+ 	test({ assert, target }) {
+diff --git a/packages/svelte/tests/snapshot/samples/svelte-element/_expected/client/index.svelte.js b/packages/svelte/tests/snapshot/samples/svelte-element/_expected/client/index.svelte.js
+index 0396cbe..1b0aed9 100644
+--- a/packages/svelte/tests/snapshot/samples/svelte-element/_expected/client/index.svelte.js
++++ b/packages/svelte/tests/snapshot/samples/svelte-element/_expected/client/index.svelte.js
+@@ -10,7 +10,7 @@ function Svelte_element($$anchor, $$props) {
+ 	var fragment = $.comment();
+ 	var node = $.first_child(fragment);
+ 
+-	$.element(node, tag, false);
++	$.element(node, tag, null);
+ 	$.append($$anchor, fragment);
+ 	$.pop();
+ }

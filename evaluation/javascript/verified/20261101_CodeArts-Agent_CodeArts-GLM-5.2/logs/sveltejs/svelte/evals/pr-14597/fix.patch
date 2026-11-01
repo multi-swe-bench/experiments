@@ -1,0 +1,16 @@
+diff --git a/packages/svelte/src/internal/client/dom/blocks/if.js b/packages/svelte/src/internal/client/dom/blocks/if.js
+index 6a880f2..e472661 100644
+--- a/packages/svelte/src/internal/client/dom/blocks/if.js
++++ b/packages/svelte/src/internal/client/dom/blocks/if.js
+@@ -101,6 +101,11 @@ export function if_block(node, fn, elseif = false) {
+ 		has_branch = false;
+ 		fn(set_branch);
+ 		if (!has_branch) {
++			if (hydrating && /** @type {Comment} */ (anchor).data !== HYDRATION_START_ELSE) {
++				anchor = remove_nodes();
++				set_hydrate_node(anchor);
++			}
++
+ 			update_branch(null, null);
+ 		}
+ 	}, flags);

@@ -1,0 +1,13 @@
+diff --git a/src/plugin/localeData/index.js b/src/plugin/localeData/index.js
+index 40032e0..8b79b10 100644
+--- a/src/plugin/localeData/index.js
++++ b/src/plugin/localeData/index.js
+@@ -18,6 +18,8 @@ export default (o, c, dayjs) => { // locale needed later
+       monthsShort: instance =>
+         (instance ? instance.format('MMM') : getShort(this, 'monthsShort', 'months', 3)),
+       firstDayOfWeek: () => this.$locale().weekStart || 0,
++      weekdays: instance =>
++        (instance ? instance.format('dddd') : getShort(this, 'weekdays')),
+       weekdaysMin: instance =>
+         (instance ? instance.format('dd') : getShort(this, 'weekdaysMin', 'weekdays', 2)),
+       weekdaysShort: instance =>

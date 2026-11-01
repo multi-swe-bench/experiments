@@ -1,0 +1,15 @@
+diff --git a/packages/mui-utils/src/exactProp.ts b/packages/mui-utils/src/exactProp.ts
+index 2baa5265..0d61c6fc 100644
+--- a/packages/mui-utils/src/exactProp.ts
++++ b/packages/mui-utils/src/exactProp.ts
+@@ -13,7 +13,9 @@ export default function exactProp<T>(propTypes: ValidationMap<T>): ValidationMap
+   return {
+     ...propTypes,
+     [specialProperty]: (props: { [key: string]: unknown }) => {
+-      const unsupportedProps = Object.keys(props).filter((prop) => !propTypes.hasOwnProperty(prop));
++      const unsupportedProps = Object.keys(props).filter(
++        (prop) => !propTypes.hasOwnProperty(prop) && !prop.startsWith('data-'),
++      );
+       if (unsupportedProps.length > 0) {
+         return new Error(
+           `The following props are not supported: ${unsupportedProps

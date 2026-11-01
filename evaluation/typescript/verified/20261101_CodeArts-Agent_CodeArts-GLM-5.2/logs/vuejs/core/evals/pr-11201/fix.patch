@@ -1,0 +1,46 @@
+diff --git a/packages/shared/src/toDisplayString.ts b/packages/shared/src/toDisplayString.ts
+index b63cb41..0fe522f 100644
+--- a/packages/shared/src/toDisplayString.ts
++++ b/packages/shared/src/toDisplayString.ts
+@@ -10,25 +10,30 @@ import {
+   objectToString,
+ } from './general'
+ 
++// can't use isRef from @vue/reactivity since @vue/shared has no deps
++const isRef = (val: unknown): val is { value: unknown } =>
++  !!(val && (val as any).__v_isRef)
++
+ /**
+  * For converting {{ interpolation }} values to displayed strings.
+  * @private
+  */
+ export const toDisplayString = (val: unknown): string => {
+-  return isString(val)
+-    ? val
+-    : val == null
+-      ? ''
+-      : isArray(val) ||
+-          (isObject(val) &&
+-            (val.toString === objectToString || !isFunction(val.toString)))
+-        ? JSON.stringify(val, replacer, 2)
+-        : String(val)
++  return val == null
++    ? ''
++    : isRef(val)
++      ? toDisplayString(val.value)
++      : isString(val)
++        ? val
++        : isArray(val) ||
++            (isObject(val) &&
++              (val.toString === objectToString || !isFunction(val.toString)))
++          ? JSON.stringify(val, replacer, 2)
++          : String(val)
+ }
+ 
+ const replacer = (_key: string, val: any): any => {
+-  // can't use isRef here since @vue/shared has no deps
+-  if (val && val.__v_isRef) {
++  if (isRef(val)) {
+     return replacer(_key, val.value)
+   } else if (isMap(val)) {
+     return {

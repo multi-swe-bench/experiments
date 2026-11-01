@@ -1,0 +1,100 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index ee5abc8..dcba73b 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -928,6 +928,51 @@ function trim_block(state, start, end) {
+ 	}
+ }
+ 
++/**
++ * When a component is bound via `bind:this`, the bound variable holds the
++ * component instance, not the component constructor. This migrates the type
++ * annotation of the bound variable so that a type referencing the component
++ * (e.g. `Component` or `Component | undefined`) uses `ReturnType<typeof Component>`
++ * instead, which is the correct forward-compatible instance type.
++ * @param {AST.Component} node
++ * @param {State} state
++ */
++function migrate_component_bind_this_type(node, state) {
++	for (const attribute of node.attributes) {
++		if (
++			attribute.type !== 'BindDirective' ||
++			attribute.name !== 'this' ||
++			attribute.expression?.type !== 'Identifier'
++		) {
++			continue;
++		}
++
++		const binding = state.scope.get(attribute.expression.name);
++		if (!binding || binding.kind === 'prop' || binding.kind === 'bindable_prop') continue;
++
++		const type_annotation = binding.node?.typeAnnotation;
++		if (!type_annotation) continue;
++
++		const component_name = node.name;
++
++		walk(type_annotation, null, {
++			TSTypeReference(reference) {
++				if (
++					!reference.typeParameters &&
++					reference.typeName?.type === 'Identifier' &&
++					reference.typeName.name === component_name
++				) {
++					state.str.update(
++						/** @type {number} */ (reference.typeName.start),
++						/** @type {number} */ (reference.typeName.end),
++						`ReturnType<typeof ${component_name}>`
++					);
++				}
++			}
++		});
++	}
++}
++
+ /** @type {Visitors<SvelteNode, State>} */
+ const template = {
+ 	Identifier(node, { state, path }) {
+@@ -1012,6 +1057,7 @@ const template = {
+ 	Component(node, { state, path, next }) {
+ 		next();
+ 		migrate_slot_usage(node, path, state);
++		migrate_component_bind_this_type(node, state);
+ 	},
+ 	SvelteComponent(node, { state, next, path }) {
+ 		next();
+diff --git a/packages/svelte/tests/migrate/samples/bind-this-component/input.svelte b/packages/svelte/tests/migrate/samples/bind-this-component/input.svelte
+new file mode 100644
+index 0000000..252c09e
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/bind-this-component/input.svelte
+@@ -0,0 +1,11 @@
++<script lang="ts">
++	import Component from "./Component.svelte";
++
++	let comp: Component | undefined = undefined;
++
++	onMount(() => {
++		comp.sayHi();
++	});
++</script>
++
++<Component bind:this={comp} />
+\ No newline at end of file
+diff --git a/packages/svelte/tests/migrate/samples/bind-this-component/output.svelte b/packages/svelte/tests/migrate/samples/bind-this-component/output.svelte
+new file mode 100644
+index 0000000..85cbf03
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/bind-this-component/output.svelte
+@@ -0,0 +1,11 @@
++<script lang="ts">
++	import Component from "./Component.svelte";
++
++	let comp: ReturnType<typeof Component> | undefined = $state(undefined);
++
++	onMount(() => {
++		comp.sayHi();
++	});
++</script>
++
++<Component bind:this={comp} />
+\ No newline at end of file

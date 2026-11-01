@@ -1,0 +1,50 @@
+diff --git a/packages/material-ui/src/Tabs/Tabs.js b/packages/material-ui/src/Tabs/Tabs.js
+index bfc1558..f018034 100644
+--- a/packages/material-ui/src/Tabs/Tabs.js
++++ b/packages/material-ui/src/Tabs/Tabs.js
+@@ -606,18 +606,41 @@ const Tabs = React.forwardRef(function Tabs(inProps, ref) {
+       nextItemKey = 'ArrowLeft';
+     }
+ 
++    const tabList = tabListRef.current.children;
++    const isTabDisabled = (tab) => tab.disabled || tab.getAttribute('aria-disabled') === 'true';
++
++    // Find the next focusable tab in `direction`, skipping disabled tabs and
++    // wrapping around. `start` is the currently focused tab and is not a candidate.
++    const getNavigableTab = (start, direction) => {
++      const tabs = Array.from(tabList);
++      const startIndex = tabs.indexOf(start);
++      if (startIndex === -1) {
++        return null;
++      }
++      const len = tabs.length;
++      for (let i = 1; i <= len; i += 1) {
++        const nextTab = tabs[(startIndex + direction * i + len) % len];
++        if (!isTabDisabled(nextTab)) {
++          return nextTab;
++        }
++      }
++      return null;
++    };
++
+     switch (event.key) {
+       case previousItemKey:
+-        newFocusTarget = target.previousElementSibling || tabListRef.current.lastChild;
++        newFocusTarget = getNavigableTab(target, -1);
+         break;
+       case nextItemKey:
+-        newFocusTarget = target.nextElementSibling || tabListRef.current.firstChild;
++        newFocusTarget = getNavigableTab(target, 1);
+         break;
+       case 'Home':
+-        newFocusTarget = tabListRef.current.firstChild;
++        newFocusTarget = Array.from(tabList).find((tab) => !isTabDisabled(tab)) || null;
+         break;
+       case 'End':
+-        newFocusTarget = tabListRef.current.lastChild;
++        newFocusTarget = Array.from(tabList)
++          .reverse()
++          .find((tab) => !isTabDisabled(tab)) || null;
+         break;
+       default:
+         break;

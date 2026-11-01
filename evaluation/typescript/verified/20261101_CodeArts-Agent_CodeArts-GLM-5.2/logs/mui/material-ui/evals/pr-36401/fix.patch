@@ -1,0 +1,17 @@
+diff --git a/packages/mui-material/src/Grid/Grid.js b/packages/mui-material/src/Grid/Grid.js
+index 789af09f..d17e0ea6 100644
+--- a/packages/mui-material/src/Grid/Grid.js
++++ b/packages/mui-material/src/Grid/Grid.js
+@@ -440,7 +440,11 @@ const Grid = React.forwardRef(function Grid(inProps, ref) {
+ 
+   const ownerState = {
+     ...props,
+-    columns,
++    // A grid item's width is relative to its parent container's columns, so the
++    // `columns` used for sizing the item must come from the parent (context).
++    // The grid's own `columns` only applies to its children, which receive it
++    // via `GridContext`.
++    columns: columnsContext ?? columns,
+     container,
+     direction,
+     item,

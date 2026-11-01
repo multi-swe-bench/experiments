@@ -1,0 +1,72 @@
+diff --git a/packages/svelte/src/internal/client/each.js b/packages/svelte/src/internal/client/each.js
+index 4c0e5de..b7f9f40 100644
+--- a/packages/svelte/src/internal/client/each.js
++++ b/packages/svelte/src/internal/client/each.js
+@@ -104,8 +104,16 @@ function each(anchor_node, collection, flags, key_fn, render_fn, fallback_fn, re
+ 				let anchor = block.a;
+ 				const is_controlled = (block.f & EACH_IS_CONTROLLED) !== 0;
+ 				if (is_controlled) {
+-					anchor = empty();
+-					block.a.appendChild(anchor);
++					if (current_hydration_fragment !== null) {
++						// The fallback content is already present in the DOM due to SSR,
++						// so we don't need to create a new anchor node - instead we let
++						// the fallback render function hydrate the existing nodes by
++						// passing `null` so it uses the current hydration fragment.
++						anchor = null;
++					} else {
++						anchor = empty();
++						block.a.appendChild(anchor);
++					}
+ 				}
+ 				/** @type {(anchor: Node) => void} */ (fallback_fn)(anchor);
+ 				fallback.d = block.d;
+diff --git a/packages/svelte/tests/hydration/samples/each-else-controlled/_before.html b/packages/svelte/tests/hydration/samples/each-else-controlled/_before.html
+new file mode 100644
+index 0000000..0b525a0
+--- /dev/null
++++ b/packages/svelte/tests/hydration/samples/each-else-controlled/_before.html
+@@ -0,0 +1 @@
++<!--ssr:0--><div><!--ssr:1-->...<!--ssr:1--></div><!--ssr:0-->
+\ No newline at end of file
+diff --git a/packages/svelte/tests/hydration/samples/each-else-controlled/_config.js b/packages/svelte/tests/hydration/samples/each-else-controlled/_config.js
+new file mode 100644
+index 0000000..4fef2d6
+--- /dev/null
++++ b/packages/svelte/tests/hydration/samples/each-else-controlled/_config.js
+@@ -0,0 +1,16 @@
++import { assert_ok, test } from '../../test';
++
++export default test({
++	test(assert, target, snapshot, component) {
++		const div = target.querySelector('div');
++		assert_ok(div);
++		// fallback is hydrated in place
++		assert.htmlEqual(div.innerHTML, '...');
++		// switch to non-empty: fallback removed, items rendered
++		component.array = ['a', 'b'];
++		assert.htmlEqual(div.innerHTML, '<p>a</p><p>b</p>');
++		// switch back to empty: fallback re-rendered
++		component.array = [];
++		assert.htmlEqual(div.innerHTML, '...');
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/hydration/samples/each-else-controlled/main.svelte b/packages/svelte/tests/hydration/samples/each-else-controlled/main.svelte
+new file mode 100644
+index 0000000..08f4b6a
+--- /dev/null
++++ b/packages/svelte/tests/hydration/samples/each-else-controlled/main.svelte
+@@ -0,0 +1,11 @@
++<script>
++	export let array = [];
++</script>
++
++<div>
++{#each array as foo}
++<p>{foo}</p>
++{:else}
++...
++{/each}
++</div>
+\ No newline at end of file

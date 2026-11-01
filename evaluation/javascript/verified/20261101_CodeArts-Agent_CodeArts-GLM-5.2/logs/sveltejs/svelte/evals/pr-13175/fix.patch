@@ -1,0 +1,211 @@
+diff --git a/.changeset/ownership-slice-binding.md b/.changeset/ownership-slice-binding.md
+new file mode 100644
+index 0000000..0839140
+--- /dev/null
++++ b/.changeset/ownership-slice-binding.md
+@@ -0,0 +1,5 @@
++---
++"svelte": patch
++---
++
++fix: widen ownership of contained state when state is reassigned to a slice of another state, preventing false `ownership_invalid_binding` warnings
+\ No newline at end of file
+diff --git a/packages/svelte/src/internal/client/proxy.js b/packages/svelte/src/internal/client/proxy.js
+index 48d6df4..f1b97de 100644
+--- a/packages/svelte/src/internal/client/proxy.js
++++ b/packages/svelte/src/internal/client/proxy.js
+@@ -67,6 +67,32 @@ export function proxy(value, parent = null, prev) {
+ 						: null
+ 					: new Set();
+ 		}
++
++		// If `value` contains state proxies that are owned by a different component
++		// (e.g. `rows2 = rows.slice(...)` where the elements are shared with `rows`),
++		// widen their ownership to include the owners of this new proxy. This ensures
++		// that bindings on the new state (e.g. `bind:rows={rows2}`) propagate ownership
++		// to the contained state, so that downstream `bind:` directives don't produce
++		// false `ownership_invalid_binding` warnings.
++		if (metadata.owners !== null && metadata.owners.size > 0) {
++			if (is_proxied_array) {
++				for (let i = 0; i < /** @type {any[]} */ (value).length; i++) {
++					var element = /** @type {any} */ (value)[i];
++					var element_metadata = element?.[STATE_SYMBOL_METADATA];
++					if (element_metadata && element_metadata.parent !== metadata) {
++						widen_ownership(metadata, element_metadata);
++					}
++				}
++			} else {
++				for (var key in value) {
++					var prop = /** @type {any} */ (value)[key];
++					var prop_metadata = prop?.[STATE_SYMBOL_METADATA];
++					if (prop_metadata && prop_metadata.parent !== metadata) {
++						widen_ownership(metadata, prop_metadata);
++					}
++				}
++			}
++		}
+ 	}
+ 
+ 	return new Proxy(/** @type {any} */ (value), {
+diff --git a/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/Check.svelte b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/Check.svelte
+new file mode 100644
+index 0000000..b9e2d9f
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/Check.svelte
+@@ -0,0 +1,5 @@
++<script>
++	let { check = $bindable() } = $props();
++</script>
++
++<input type="checkbox" bind:checked={check} />
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/Pages.svelte b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/Pages.svelte
+new file mode 100644
+index 0000000..1d8f2c5
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/Pages.svelte
+@@ -0,0 +1,8 @@
++<script>
++	let { pages = 1, page = $bindable(1) } = $props();
++</script>
++
++{#each Array(pages) as _, i}
++	{@const p = i + 1}
++	<button onclick={() => (page = p)} class:active={page == p}>{p}</button>
++{/each}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/Table.svelte b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/Table.svelte
+new file mode 100644
+index 0000000..398930f
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/Table.svelte
+@@ -0,0 +1,20 @@
++<script>
++	import Pages from './Pages.svelte';
++	import TableBody from './TableBody.svelte';
++
++	let { columns = [], limit = 10, rows = $bindable([]) } = $props();
++
++	let page = $state(1);
++	let rows2 = $state([]);
++	let pages = $derived(Math.ceil(rows.length / limit));
++
++	$effect(() => {
++		rows2 = rows.slice((page - 1) * limit, page * limit);
++	});
++</script>
++
++<TableBody {columns} bind:rows={rows2} />
++{#if pages > 1}
++	<hr />
++	<Pages bind:page {pages} />
++{/if}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/TableBody.svelte b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/TableBody.svelte
+new file mode 100644
+index 0000000..1b16564
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/TableBody.svelte
+@@ -0,0 +1,11 @@
++<script>
++	import TableRow from './TableRow.svelte';
++
++	let { columns = [], rows = $bindable([]) } = $props();
++</script>
++
++<tbody>
++	{#each rows as row, i}
++		<TableRow {columns} bind:row={rows[i]} />
++	{/each}
++</tbody>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/TableRow.svelte b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/TableRow.svelte
+new file mode 100644
+index 0000000..25d788b
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/TableRow.svelte
+@@ -0,0 +1,14 @@
++<script>
++	import Check from './Check.svelte';
++
++	let { columns = [], row = $bindable({}) } = $props();
++</script>
++
++<tr>
++	<td>
++		<Check bind:check={row.check} />
++	</td>
++	{#each columns as col}
++		<td>{row[col.key] || ''}</td>
++	{/each}
++</tr>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/_config.js b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/_config.js
+new file mode 100644
+index 0000000..74a3bf6
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/_config.js
+@@ -0,0 +1,36 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++
++export default test({
++	mode: ['client'],
++	compileOptions: {
++		dev: true
++	},
++
++	async test({ warnings, assert, target }) {
++		// We expect no ownership_invalid_binding warnings. The captured warning
++		// message has the form "<parent> passed a value to <child> with `bind:`, but the value is owned by <owner>"
++		const invalid = warnings.filter((w) => w.includes('passed a value to') && w.includes('`bind:`'));
++		assert.deepEqual(invalid, []);
++
++		const buttons = target.querySelectorAll('button');
++		// click page 2
++		flushSync(() => {
++			buttons[buttons.length - 1]?.click();
++		});
++
++		const invalid2 = warnings.filter((w) => w.includes('passed a value to') && w.includes('`bind:`'));
++		assert.deepEqual(invalid2, []);
++
++		// clicking a row checkbox mutates the bound item — should not warn either
++		const checkbox = /** @type {HTMLInputElement} */ (target.querySelector('input[type="checkbox"]'));
++		flushSync(() => {
++			checkbox?.click();
++		});
++
++		const invalid3 = warnings.filter((w) =>
++			w.includes('ownership_invalid_mutation')
++		);
++		assert.deepEqual(invalid3, []);
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/main.svelte b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/main.svelte
+new file mode 100644
+index 0000000..71fe345
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/ownership-binding-slice-effect/main.svelte
+@@ -0,0 +1,19 @@
++<script>
++	import Table from './Table.svelte';
++
++	let columns = [
++		{ key: 'no' },
++		{ key: 'title' },
++		{ key: 'length' }
++	];
++
++	let rows = $state([
++		{ no: 3, title: 'Wonderwall+', length: '4:18' },
++		{ no: 12, title: "Don't Look Back in Anger", length: '1:48' },
++		{ no: 5, title: 'Gooo Mega' },
++		{ no: 20, title: 'Blum Coi', length: '3:20' },
++		{ no: 17, title: 'Arm ban Van', length: '6:12' }
++	]);
++</script>
++
++<Table {columns} bind:rows limit={3} />
+\ No newline at end of file

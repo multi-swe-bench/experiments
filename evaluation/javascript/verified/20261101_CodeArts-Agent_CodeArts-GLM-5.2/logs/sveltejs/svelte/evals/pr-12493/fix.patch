@@ -1,0 +1,89 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+index ea0d3d5..b981f3f 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+@@ -519,6 +519,14 @@ function get_hoistable_params(node, context) {
+ 		let binding = scope.get(reference);
+ 
+ 		if (binding !== null && !scope.declarations.has(reference) && binding.initial !== node) {
++			// Imports are live bindings and the hoisted function is in module scope, so it can
++			// reference them directly. Capturing them by value would snapshot a stale value.
++			// Note: legacy reactive imports are rewritten to instance-scoped variables, so they
++			// must still be passed as params.
++			if (binding.declaration_kind === 'import' && binding.kind !== 'legacy_reactive_import') {
++				continue;
++			}
++
+ 			if (binding.kind === 'store_sub') {
+ 				// We need both the subscription for getting the value and the store for updating
+ 				push_unique(b.id(binding.node.name));
+diff --git a/packages/svelte/tests/runtime-runes/samples/event-delegation-imported-var/Component.svelte b/packages/svelte/tests/runtime-runes/samples/event-delegation-imported-var/Component.svelte
+new file mode 100644
+index 0000000..e810ea6
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/event-delegation-imported-var/Component.svelte
+@@ -0,0 +1,11 @@
++<script>
++	import { num } from './Store.svelte.js';
++	let { foo } = $props();
++
++	function onclick() {
++		foo();
++		console.log(num);
++	}
++</script>
++
++<button {onclick}>Click me! :)</button>
+diff --git a/packages/svelte/tests/runtime-runes/samples/event-delegation-imported-var/Store.svelte.js b/packages/svelte/tests/runtime-runes/samples/event-delegation-imported-var/Store.svelte.js
+new file mode 100644
+index 0000000..96d9992
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/event-delegation-imported-var/Store.svelte.js
+@@ -0,0 +1,9 @@
++export let num = 0;
++
++export function increment() {
++	num += 1;
++}
++
++export function reset() {
++	num = 0;
++}
+diff --git a/packages/svelte/tests/runtime-runes/samples/event-delegation-imported-var/_config.js b/packages/svelte/tests/runtime-runes/samples/event-delegation-imported-var/_config.js
+new file mode 100644
+index 0000000..6f4f093
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/event-delegation-imported-var/_config.js
+@@ -0,0 +1,13 @@
++import { test } from '../../test';
++
++export default test({
++	async test({ assert, target, logs }) {
++		const btn = target.querySelector('button');
++
++		btn?.click();
++		assert.deepEqual(logs, [1, 1]);
++
++		btn?.click();
++		assert.deepEqual(logs, [1, 1, 2, 2]);
++	}
++});
+diff --git a/packages/svelte/tests/runtime-runes/samples/event-delegation-imported-var/main.svelte b/packages/svelte/tests/runtime-runes/samples/event-delegation-imported-var/main.svelte
+new file mode 100644
+index 0000000..2de6fb8
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/event-delegation-imported-var/main.svelte
+@@ -0,0 +1,13 @@
++<script>
++	import { num, increment, reset } from './Store.svelte.js';
++	import Component from './Component.svelte';
++
++	reset();
++
++	function foo() {
++		increment();
++		console.log(num);
++	}
++</script>
++
++<Component {foo} />

@@ -1,0 +1,28 @@
+diff --git a/packages/mui-material/src/Link/Link.js b/packages/mui-material/src/Link/Link.js
+index f3aa809c..c38542bd 100644
+--- a/packages/mui-material/src/Link/Link.js
++++ b/packages/mui-material/src/Link/Link.js
+@@ -25,6 +25,13 @@ const transformDeprecatedColors = (color) => {
+   return colorTransformations[color] || color;
+ };
+ 
++const resolveColor = (theme, color) => {
++  if (typeof color === 'function') {
++    return color(theme);
++  }
++  return color;
++};
++
+ const useUtilityClasses = (ownerState) => {
+   const { classes, component, focusVisible, underline } = ownerState;
+ 
+@@ -149,7 +156,8 @@ const Link = React.forwardRef(function Link(inProps, ref) {
+     ...props,
+     // It is too complex to support any types of `sx`.
+     // Need to find a better way to get rid of the color manipulation for `textDecorationColor`.
+-    color: (typeof sx === 'function' ? sx(theme).color : sx?.color) || color,
++    color:
++      resolveColor(theme, typeof sx === 'function' ? sx(theme).color : sx?.color) || color,
+     component,
+     focusVisible,
+     underline,

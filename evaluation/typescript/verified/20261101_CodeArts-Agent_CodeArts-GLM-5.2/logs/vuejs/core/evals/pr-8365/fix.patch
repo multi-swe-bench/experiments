@@ -1,0 +1,49 @@
+diff --git a/packages/compiler-sfc/src/script/resolveType.ts b/packages/compiler-sfc/src/script/resolveType.ts
+index f4e1915..deb92db 100644
+--- a/packages/compiler-sfc/src/script/resolveType.ts
++++ b/packages/compiler-sfc/src/script/resolveType.ts
+@@ -1085,7 +1085,7 @@ function recordTypes(
+   scope: TypeScope,
+   asGlobal = false
+ ) {
+-  const { types, declares, exportedTypes, exportedDeclares, imports } = scope
++  const { types, declares, exportedTypes, exportedDeclares } = scope
+   const isAmbient = asGlobal
+     ? !body.some(s => importExportRE.test(s.type))
+     : false
+@@ -1116,17 +1116,26 @@ function recordTypes(
+               const local = spec.local.name
+               const exported = getId(spec.exported)
+               if (stmt.source) {
+-                // re-export, register an import + export as a type reference
+-                imports[local] = {
+-                  source: stmt.source.value,
+-                  imported: local
+-                }
++                // re-export, register an export as a type reference that
++                // directly imports from the original source. We use a
++                // TSImportType here instead of registering a synthetic import
++                // binding, because multiple re-exports of default exports
++                // would otherwise collide on the `default` import key.
++                // #8897
+                 exportedTypes[exported] = {
+-                  type: 'TSTypeReference',
+-                  typeName: {
+-                    type: 'Identifier',
+-                    name: local
++                  type: 'TSImportType',
++                  argument: {
++                    type: 'StringLiteral',
++                    value: stmt.source.value
+                   },
++                  ...(local !== 'default'
++                    ? {
++                        qualifier: {
++                          type: 'Identifier',
++                          name: local
++                        }
++                      }
++                    : {}),
+                   _ownerScope: scope
+                 }
+               } else if (types[local]) {

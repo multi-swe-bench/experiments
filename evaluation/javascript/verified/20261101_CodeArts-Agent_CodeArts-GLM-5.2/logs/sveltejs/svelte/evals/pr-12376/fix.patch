@@ -1,0 +1,184 @@
+diff --git a/packages/svelte/src/internal/client/reactivity/effects.js b/packages/svelte/src/internal/client/reactivity/effects.js
+index c0cb219..1918b7e 100644
+--- a/packages/svelte/src/internal/client/reactivity/effects.js
++++ b/packages/svelte/src/internal/client/reactivity/effects.js
+@@ -102,6 +102,16 @@ function create_effect(type, fn, sync, push = true) {
+ 		effect.component_function = dev_current_component_function;
+ 	}
+ 
++	// Add the effect to the tree *before* running it. If it throws (for example
++	// because of a hydration mismatch) this ensures it can be cleaned up via its
++	// parent instead of being orphaned, which would leak things like event
++	// listeners added to `window`/`document`.
++	var should_push_to_parent = !is_root && push && current_effect !== null;
++
++	if (should_push_to_parent) {
++		push_effect(effect, current_effect);
++	}
++
+ 	if (sync) {
+ 		var previously_flushing_effect = is_flushing_effect;
+ 
+@@ -109,6 +119,15 @@ function create_effect(type, fn, sync, push = true) {
+ 			set_is_flushing_effect(true);
+ 			update_effect(effect);
+ 			effect.f |= EFFECT_RAN;
++		} catch (error) {
++			// A root effect has no parent to clean it up, so if it fails we need to
++			// destroy it ourselves to avoid leaking the effects that were created
++			// before the error was thrown (e.g. event listeners on `window`).
++			if (is_root) {
++				destroy_effect(effect);
++			}
++
++			throw error;
+ 		} finally {
+ 			set_is_flushing_effect(previously_flushing_effect);
+ 		}
+@@ -117,19 +136,19 @@ function create_effect(type, fn, sync, push = true) {
+ 	}
+ 
+ 	// if an effect has no dependencies, no DOM and no teardown function,
+-	// don't bother adding it to the effect tree
+-	var inert =
++	// don't bother keeping it in the effect tree
++	if (
+ 		sync &&
+ 		effect.deps === null &&
+ 		effect.first === null &&
+ 		effect.nodes === null &&
+-		effect.teardown === null;
+-
+-	if (!inert && !is_root && push) {
+-		if (current_effect !== null) {
+-			push_effect(effect, current_effect);
++		effect.teardown === null
++	) {
++		if (should_push_to_parent) {
++			unlink_effect(effect);
++			effect.next = effect.prev = effect.parent = null;
+ 		}
+-
++	} else if (!is_root && push) {
+ 		// if we're in a derived, add the effect there too
+ 		if (current_reaction !== null && (current_reaction.f & DERIVED) !== 0) {
+ 			push_effect(effect, current_reaction);
+diff --git a/packages/svelte/src/internal/client/render.js b/packages/svelte/src/internal/client/render.js
+index a00fd23..9c1883b 100644
+--- a/packages/svelte/src/internal/client/render.js
++++ b/packages/svelte/src/internal/client/render.js
+@@ -159,8 +159,9 @@ export function hydrate(component, options) {
+ 		}, false);
+ 	} catch (error) {
+ 		if (error === HYDRATION_ERROR) {
+-			// TODO it's possible for event listeners to have been added and
+-			// not removed, e.g. with `<svelte:window>` or `<svelte:document>`
++			// The failed hydration attempt has already been torn down (including
++			// any event listeners that were added to `window`/`document` before the
++			// mismatch was hit), so we can safely mount from scratch.
+ 
+ 			if (options.recover === false) {
+ 				e.hydration_failed();
+@@ -227,49 +228,63 @@ function _mount(Component, { target, anchor, props = {}, events, context, intro
+ 	// @ts-expect-error will be defined because the render effect runs synchronously
+ 	let component = undefined;
+ 
+-	const unmount = effect_root(() => {
+-		branch(() => {
+-			if (context) {
+-				push({});
+-				var ctx = /** @type {import('#client').ComponentContext} */ (current_component_context);
+-				ctx.c = context;
+-			}
+-
+-			if (events) {
+-				// We can't spread the object or else we'd lose the state proxy stuff, if it is one
+-				/** @type {any} */ (props).$$events = events;
+-			}
+-
+-			if (hydrating) {
+-				assign_nodes(/** @type {import('#client').TemplateNode} */ (anchor), null);
+-			}
++	const cleanup = () => {
++		for (const event_name of registered_events) {
++			target.removeEventListener(event_name, handle_event_propagation);
++			document.removeEventListener(event_name, handle_event_propagation);
++		}
+ 
+-			should_intro = intro;
+-			// @ts-expect-error the public typings are not what the actual function looks like
+-			component = Component(anchor, props) || {};
+-			should_intro = true;
++		root_event_handles.delete(event_handle);
++		mounted_components.delete(component);
++	};
+ 
+-			if (hydrating) {
+-				/** @type {import('#client').Effect & { nodes: import('#client').EffectNodes }} */ (
+-					current_effect
+-				).nodes.end = hydrate_node;
+-			}
++	let unmount;
+ 
+-			if (context) {
+-				pop();
+-			}
++	try {
++		unmount = effect_root(() => {
++			branch(() => {
++				if (context) {
++					push({});
++					var ctx = /** @type {import('#client').ComponentContext} */ (current_component_context);
++					ctx.c = context;
++				}
++
++				if (events) {
++					// We can't spread the object or else we'd lose the state proxy stuff, if it is one
++					/** @type {any} */ (props).$$events = events;
++				}
++
++				if (hydrating) {
++					assign_nodes(/** @type {import('#client').TemplateNode} */ (anchor), null);
++				}
++
++				should_intro = intro;
++				// @ts-expect-error the public typings are not what the actual function looks like
++				component = Component(anchor, props) || {};
++				should_intro = true;
++
++				if (hydrating) {
++					/** @type {import('#client').Effect & { nodes: import('#client').EffectNodes }} */ (
++						current_effect
++					).nodes.end = hydrate_node;
++				}
++
++				if (context) {
++					pop();
++				}
++			});
++
++			return cleanup;
+ 		});
+-
+-		return () => {
+-			for (const event_name of registered_events) {
+-				target.removeEventListener(event_name, handle_event_propagation);
+-				document.removeEventListener(event_name, handle_event_propagation);
+-			}
+-
+-			root_event_handles.delete(event_handle);
+-			mounted_components.delete(component);
+-		};
+-	});
++	} catch (error) {
++		// `effect_root` already destroyed the effects that were created before the
++		// error (e.g. removing event listeners on `window`/`document`), but the
++		// root effect's own teardown — which removes the delegated event listeners
++		// and the `root_event_handles` entry — was never registered because the
++		// render function threw before returning it. Clean those up here.
++		cleanup();
++		throw error;
++	}
+ 
+ 	mounted_components.set(component, unmount);
+ 	return component;

@@ -1,0 +1,16 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+index ed7da23..b9dab7b 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+@@ -548,6 +548,11 @@ export function client_module(analysis, options) {
+ 		)
+ 	);
+ 
++	if (options.dev) {
++		module.body.unshift(b.stmt(b.call(b.id('$.mark_module_start'), b.literal(null))));
++		module.body.push(b.stmt(b.call(b.id('$.mark_module_end'))));
++	}
++
+ 	return {
+ 		type: 'Program',
+ 		sourceType: 'module',

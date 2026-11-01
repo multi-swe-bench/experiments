@@ -1,0 +1,32 @@
+diff --git a/.changeset/css-selector-newline.md b/.changeset/css-selector-newline.md
+new file mode 100644
+index 0000000..66f98c0
+--- /dev/null
++++ b/.changeset/css-selector-newline.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: allow whitespace/newlines inside CSS selector function arguments like `:is(...)`
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/1-parse/read/style.js b/packages/svelte/src/compiler/phases/1-parse/read/style.js
+index 600c10f..3165f8b 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/read/style.js
++++ b/packages/svelte/src/compiler/phases/1-parse/read/style.js
+@@ -230,6 +230,7 @@ function read_selector(parser, inside_pseudo_class = false) {
+ 			// We read the inner selectors of a pseudo element to ensure it parses correctly,
+ 			// but we don't do anything with the result.
+ 			if (parser.eat('(')) {
++				allow_comment_or_whitespace(parser);
+ 				read_selector_list(parser, true);
+ 				parser.eat(')', true);
+ 			}
+@@ -240,6 +241,7 @@ function read_selector(parser, inside_pseudo_class = false) {
+ 			let args = null;
+ 
+ 			if (parser.eat('(')) {
++				allow_comment_or_whitespace(parser);
+ 				args = read_selector_list(parser, true);
+ 				parser.eat(')', true);
+ 			} else if (name === 'global') {

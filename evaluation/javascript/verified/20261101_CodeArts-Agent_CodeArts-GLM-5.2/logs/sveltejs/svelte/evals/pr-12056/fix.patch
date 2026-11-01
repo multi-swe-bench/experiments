@@ -1,0 +1,126 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 7a8f966..234f462 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -2177,6 +2177,9 @@ export const template_visitors = {
+ 		/** @type {import('#compiler').Attribute['value'] | undefined} */
+ 		let dynamic_namespace = undefined;
+ 
++		/** @type {import('#compiler').Attribute['value'] | undefined} */
++		let is_value = undefined;
++
+ 		/** @type {import('#compiler').ClassDirective[]} */
+ 		const class_directives = [];
+ 
+@@ -2207,6 +2210,8 @@ export const template_visitors = {
+ 			if (attribute.type === 'Attribute') {
+ 				if (attribute.name === 'xmlns' && !is_text_attribute(attribute)) {
+ 					dynamic_namespace = attribute.value;
++				} else if (attribute.name === 'is') {
++					is_value = attribute.value;
+ 				}
+ 				attributes.push(attribute);
+ 			} else if (attribute.type === 'SpreadAttribute') {
+@@ -2273,7 +2278,8 @@ export const template_visitors = {
+ 					node.metadata.svg || node.metadata.mathml ? b.true : b.false,
+ 					inner.length > 0 && b.arrow([element_id, b.id('$$anchor')], b.block(inner)),
+ 					dynamic_namespace && b.thunk(serialize_attribute_value(dynamic_namespace, context)[1]),
+-					location && b.array([b.literal(location.line), b.literal(location.column)])
++					location && b.array([b.literal(location.line), b.literal(location.column)]),
++					is_value && b.thunk(serialize_attribute_value(is_value, context)[1])
+ 				)
+ 			)
+ 		);
+diff --git a/packages/svelte/src/internal/client/dom/blocks/svelte-element.js b/packages/svelte/src/internal/client/dom/blocks/svelte-element.js
+index 651c5fd..60e3428 100644
+--- a/packages/svelte/src/internal/client/dom/blocks/svelte-element.js
++++ b/packages/svelte/src/internal/client/dom/blocks/svelte-element.js
+@@ -44,9 +44,10 @@ function swap_block_dom(effect, from, to) {
+  * @param {undefined | ((element: Element, anchor: Node | null) => void)} render_fn,
+  * @param {undefined | (() => string)} get_namespace
+  * @param {undefined | [number, number]} location
++ * @param {undefined | (() => string)} get_is
+  * @returns {void}
+  */
+-export function element(node, get_tag, is_svg, render_fn, get_namespace, location) {
++export function element(node, get_tag, is_svg, render_fn, get_namespace, location, get_is) {
+ 	const parent_effect = /** @type {import('#client').Effect} */ (current_effect);
+ 	const filename = DEV && location && current_component_context?.function.filename;
+ 
+@@ -56,6 +57,12 @@ export function element(node, get_tag, is_svg, render_fn, get_namespace, locatio
+ 	/** @type {string | null} */
+ 	let current_tag;
+ 
++	/** @type {string | null} */
++	let is;
++
++	/** @type {string | null} */
++	let current_is;
++
+ 	/** @type {null | Element} */
+ 	let element = hydrating && node.nodeType === 1 ? /** @type {Element} */ (node) : null;
+ 
+@@ -73,6 +80,7 @@ export function element(node, get_tag, is_svg, render_fn, get_namespace, locatio
+ 
+ 	block(() => {
+ 		const next_tag = get_tag() || null;
++		const next_is = get_is ? get_is() : null;
+ 		const ns = get_namespace
+ 			? get_namespace()
+ 			: is_svg || next_tag === 'svg'
+@@ -80,7 +88,7 @@ export function element(node, get_tag, is_svg, render_fn, get_namespace, locatio
+ 				: null;
+ 
+ 		// Assumption: Noone changes the namespace but not the tag (what would that even mean?)
+-		if (next_tag === tag) return;
++		if (next_tag === tag && next_is === is) return;
+ 
+ 		// See explanation of `each_item_block` above
+ 		var previous_each_item = current_each_item;
+@@ -92,9 +100,10 @@ export function element(node, get_tag, is_svg, render_fn, get_namespace, locatio
+ 				pause_effect(effect, () => {
+ 					effect = null;
+ 					current_tag = null;
++					current_is = null;
+ 					element?.remove();
+ 				});
+-			} else if (next_tag === current_tag) {
++			} else if (next_tag === current_tag && next_is === current_is) {
+ 				// same tag as is currently rendered — abort outro
+ 				resume_effect(effect);
+ 			} else {
+@@ -104,14 +113,18 @@ export function element(node, get_tag, is_svg, render_fn, get_namespace, locatio
+ 			}
+ 		}
+ 
+-		if (next_tag && next_tag !== current_tag) {
++		if (next_tag && (next_tag !== current_tag || next_is !== current_is)) {
+ 			effect = branch(() => {
+ 				const prev_element = element;
+ 				element = hydrating
+ 					? /** @type {Element} */ (element)
+ 					: ns
+-						? document.createElementNS(ns, next_tag)
+-						: document.createElement(next_tag);
++						? next_is
++							? document.createElementNS(ns, next_tag, { is: next_is })
++							: document.createElementNS(ns, next_tag)
++						: next_is
++							? document.createElement(next_tag, { is: next_is })
++							: document.createElement(next_tag);
+ 
+ 				if (DEV && location) {
+ 					// @ts-expect-error
+@@ -159,7 +172,11 @@ export function element(node, get_tag, is_svg, render_fn, get_namespace, locatio
+ 		}
+ 
+ 		tag = next_tag;
+-		if (tag) current_tag = tag;
++		is = next_is;
++		if (tag) {
++			current_tag = tag;
++			current_is = is;
++		}
+ 		set_should_intro(true);
+ 
+ 		set_current_each_item(previous_each_item);

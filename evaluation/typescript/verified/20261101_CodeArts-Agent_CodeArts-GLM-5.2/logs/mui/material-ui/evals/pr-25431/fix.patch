@@ -1,0 +1,36 @@
+diff --git a/packages/material-ui/src/Snackbar/Snackbar.d.ts b/packages/material-ui/src/Snackbar/Snackbar.d.ts
+index 2bab339..a1d0b95 100644
+--- a/packages/material-ui/src/Snackbar/Snackbar.d.ts
++++ b/packages/material-ui/src/Snackbar/Snackbar.d.ts
+@@ -70,13 +70,6 @@ export interface SnackbarProps
+    * @default false
+    */
+   disableWindowBlurListener?: boolean;
+-  /**
+-   * When displaying multiple consecutive Snackbars from a parent rendering a single
+-   * <Snackbar/>, add the key prop to ensure independent treatment of each message.
+-   * e.g. <Snackbar key={message} />, otherwise, the message may update-in-place and
+-   * features such as autoHideDuration may be canceled.
+-   */
+-  key?: any;
+   /**
+    * The message to display.
+    */
+diff --git a/packages/material-ui/src/Snackbar/Snackbar.js b/packages/material-ui/src/Snackbar/Snackbar.js
+index 62e4d39..f7664b7 100644
+--- a/packages/material-ui/src/Snackbar/Snackbar.js
++++ b/packages/material-ui/src/Snackbar/Snackbar.js
+@@ -291,13 +291,6 @@ Snackbar.propTypes /* remove-proptypes */ = {
+    * @default false
+    */
+   disableWindowBlurListener: PropTypes.bool,
+-  /**
+-   * When displaying multiple consecutive Snackbars from a parent rendering a single
+-   * <Snackbar/>, add the key prop to ensure independent treatment of each message.
+-   * e.g. <Snackbar key={message} />, otherwise, the message may update-in-place and
+-   * features such as autoHideDuration may be canceled.
+-   */
+-  key: PropTypes.any,
+   /**
+    * The message to display.
+    */

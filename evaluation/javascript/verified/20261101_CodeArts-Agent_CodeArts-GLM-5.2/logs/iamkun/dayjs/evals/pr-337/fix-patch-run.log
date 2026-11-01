@@ -1,0 +1,321 @@
+$ bash /home/test-run.sh
+
+
+> dayjs@0.0.0-development test
+> jest --verbose --maxWorkers=4
+
+FAIL test/display.test.js
+  ✓ Format no formatStr (4ms)
+  ✓ Format invalid date
+  ✓ Format Year YY YYYY (1ms)
+  ✓ Format Month M MM MMM MMMM (1ms)
+  ✓ Format Day of Month D DD 1 - 31 (1ms)
+  ✓ Format Day of Week d Sun - Sat (2ms)
+  ✓ Format Hour H HH 24-hour (1ms)
+  ✓ Format Hour h hh 12-hour
+  ✓ Format meridiens a A am / pm (1ms)
+  ✓ Format Minute m mm
+  ✓ Format Second s ss SSS (2ms)
+  ✓ Format Time Zone ZZ (1ms)
+  ✓ Format ddd dd MMM with short locale (1ms)
+  ✓ Format Complex with other string - : / 
+  ✓ Format Escaping characters (1ms)
+  ✓ Unix Timestamp (milliseconds) (1ms)
+  ✓ Unix Timestamp (seconds)
+  ✓ Days in Month
+  ✓ As Javascript Date -> toDate
+  ✓ As Array -> toArray (1ms)
+  ✓ As JSON -> toJSON
+  ✓ As ISO 8601 String -> toISOString e.g. 2013-02-04T22:44:30.652Z
+  ✓ As Object -> toObject
+  Difference
+    ✓ empty -> default milliseconds (2ms)
+    ✓ diff -> none dayjs object
+    ✕ diff -> in seconds, minutes, hours, days, weeks, months, quarters, years  (15ms)
+    ✓ Special diff in month according to moment.js (2ms)
+    ✓ MonthDiff (1ms)
+
+  ● Difference › diff -> in seconds, minutes, hours, days, weeks, months, quarters, years 
+
+    expect(received).toBe(expected) // Object.is equality
+    
+    Expected value to be:
+      32.86666666666667
+    Received:
+      32.87096774193548
+
+      151 |       expect(dayjsA.diff(dayjsB, unit, true)).toBe(momentA.diff(momentB, unit, true))
+      152 |       expect(dayjsA.diff(dayjsC, unit)).toBe(momentA.diff(momentC, unit))
+    > 153 |       expect(dayjsA.diff(dayjsC, unit, true)).toBe(momentA.diff(momentC, unit, true))
+      154 |     })
+      155 |   })
+      156 |
+      
+      at forEach (test/display.test.js:153:47)
+          at Array.forEach (<anonymous>)
+      at Object.<anonymous> (test/display.test.js:149:11)
+
+PASS test/locale/keys.test.js
+  ✓ Locale keys (12ms)
+
+PASS test/comparison.test.js
+  ✓ is same without units (1ms)
+  ✓ is same year (1ms)
+  ✓ is same month (1ms)
+  ✓ is same day
+  ✓ is same hour (1ms)
+  ✓ is same minute (1ms)
+  ✓ is same second
+  ✓ is same millisecond (1ms)
+  ✓ is same with invalid moments (1ms)
+  ✓ is after year
+  ✓ is after month (1ms)
+  ✓ is after day
+  ✓ is after hour (1ms)
+  ✓ is after minute (1ms)
+  ✓ is after second
+  ✓ is after millisecond (1ms)
+  ✓ is after without units (1ms)
+  ✓ is after invalid
+  ✓ is after without units (1ms)
+  ✓ is before year
+  ✓ is before month (1ms)
+  ✓ is before day
+  ✓ is before hour (2ms)
+  ✓ is before minute (1ms)
+  ✓ is before second (1ms)
+  ✓ is before millisecond
+  ✓ is before invalid (1ms)
+
+PASS test/plugin/relativeTime.test.js
+  ✓ Time from X (12ms)
+  ✓ Time from now
+  ✓ Time to now (1ms)
+  ✓ Time to X (1ms)
+
+PASS test/plugin/isSameOrAfter.test.js
+  ✓ is same or after year (1ms)
+  ✓ is same or after without units (1ms)
+  ✓ is same or after month (1ms)
+  ✓ is same or after day (1ms)
+  ✓ is same or after hour
+  ✓ is same or after minute (1ms)
+  ✓ is same or after second (1ms)
+  ✓ is same or after millisecond (1ms)
+  ✓ is same or after with invalid moments (1ms)
+
+PASS test/plugin/customParseFormat.test.js
+  ✓ does not break the built-in parsing (1ms)
+  ✓ parse padded string (2ms)
+  ✓ parse unpadded string (1ms)
+  ✓ parse time zone abbreviation
+  ✓ recognizes midnight in small letters
+  ✓ recognizes noon in small letters (1ms)
+  ✓ leaves non-token parts of the format intact
+  ✓ fails with an invalid format
+  ✓ fails with an unmatched token part
+  ✓ fails with an unmatched non-token part (1ms)
+  ✓ fails with invalid time zone offset
+  ✓ fails with invalid number (1ms)
+
+PASS test/plugin/isSameOrBefore.test.js
+  ✓ is same or before without units (1ms)
+  ✓ is same or before year (1ms)
+  ✓ is same or before month (1ms)
+  ✓ is same or before day
+  ✓ is same or before hour (1ms)
+  ✓ is same or before minute (1ms)
+  ✓ is same or before second (1ms)
+  ✓ is same or before millisecond (3ms)
+  ✓ is same with invalid moments (1ms)
+
+PASS test/parse.test.js
+  ✓ Unix Timestamp Number (milliseconds) 1523520536000 (1ms)
+  ✓ Unix Timestamp Number (seconds) 1318781876
+  ✓ String and Number 20180101
+  ✓ Number 0
+  ✓ Clone not affect each other
+  ✓ Clone with same value (1ms)
+  Parse
+    ✓ Now
+    ✓ String 20130208 (9ms)
+    ✓ String ISO 8601 date, time and zone
+    ✓ String Other, Null and isValid
+
+PASS test/plugin/isBetween.test.js
+  ✓ bounds can be swapped
+  ✓ is between without units (4ms)
+  ✓ is between year (1ms)
+  ✓ is between month (1ms)
+  ✓ is between day
+  ✓ is between hour (1ms)
+  ✓ is between minute
+  ✓ is between second (1ms)
+  ✓ is between millisecond
+
+PASS test/manipulate.test.js
+  ✓ Add Time days (2ms)
+  ✓ Subtract Time days
+  ✓ Add Time days (DST) (2ms)
+  StartOf EndOf
+    ✓ StartOf EndOf Year ... with s and upper case (2ms)
+    ✓ StartOf EndOf Other -> no change
+
+PASS test/plugin/advancedFormat.test.js
+  ✓ Format empty string (1ms)
+  ✓ Format Quarter Q
+  ✓ Format Timestamp X x (1ms)
+  ✓ Format Day of Month Do 1 - 31 (1ms)
+  ✓ Format Hour k kk 24-hour 1 - 24
+
+PASS test/get-set.test.js
+  ✓ Year
+  ✓ Month (1ms)
+  ✓ Day of Week
+  ✓ Date
+  ✓ Hour
+  ✓ Minute
+  ✓ Second
+  ✓ Millisecond
+  ✓ Set Day (1ms)
+  ✓ Set Day of Week
+  ✓ Set Month
+  ✓ Set Year
+  ✓ Set Hour
+  ✓ Set Minute
+  ✓ Set Second (1ms)
+  ✓ Set Millisecond
+  ✓ Set Unknown String
+  ✓ Immutable Set
+
+PASS test/locale.test.js
+  ✓ Uses spanish locale through constructor (1ms)
+  ✓ set locale for one instance only
+  ✓ set global locale (1ms)
+  ✓ immutable instance locale
+  ✓ User custom locale
+  Instance locale inheritance
+    ✓ Clone
+    ✓ StartOf EndOf (1ms)
+    ✓ Set
+    ✓ Add (1ms)
+
+PASS test/plugin/weekOfYear.test.js
+  ✓ Week of year (2ms)
+
+PASS test/plugin/buddhistEra.test.js
+  ✓ Format empty string (1ms)
+  ✓ Format Buddhist Era 2 digit (1ms)
+  ✓ Format Buddhist Era 4 digit
+  ✓ Format Buddhist Era 4 digit with other format
+
+PASS test/query.test.js
+  Is Before Is After Is Same
+    ✓ Compare to dayjs object
+    ✓ No value (1ms)
+    ✓ With string
+
+PASS test/utils.test.js
+  ✓ PrettyUnit
+  ✓ PadZoneStr (1ms)
+  ✓ PadStart
+
+PASS test/plugin/isLeapYear.test.js
+  ✓ IsLeapYear
+
+PASS test/plugin.test.js
+  ✓ Plugin extend method and option (1ms)
+  ✓ Plugin extend dayjs
+  ✓ Plugin use core utils
+
+PASS test/constructor.test.js
+  ✓ supports instanceof dayjs
+  ✓ does not break isDayjs
+
+------------------------------|----------|----------|----------|----------|-------------------|
+File                          |  % Stmts | % Branch |  % Funcs |  % Lines | Uncovered Line #s |
+------------------------------|----------|----------|----------|----------|-------------------|
+All files                     |      100 |      100 |      100 |      100 |                   |
+ src                          |      100 |      100 |      100 |      100 |                   |
+  constant.js                 |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+  utils.js                    |      100 |      100 |      100 |      100 |                   |
+ src/locale                   |      100 |      100 |      100 |      100 |                   |
+  ar.js                       |      100 |      100 |      100 |      100 |                   |
+  bg.js                       |      100 |      100 |      100 |      100 |                   |
+  ca.js                       |      100 |      100 |      100 |      100 |                   |
+  da.js                       |      100 |      100 |      100 |      100 |                   |
+  de.js                       |      100 |      100 |      100 |      100 |                   |
+  el.js                       |      100 |      100 |      100 |      100 |                   |
+  es-es.js                    |      100 |      100 |      100 |      100 |                   |
+  es.js                       |      100 |      100 |      100 |      100 |                   |
+  et.js                       |      100 |      100 |      100 |      100 |                   |
+  fa.js                       |      100 |      100 |      100 |      100 |                   |
+  fi.js                       |      100 |      100 |      100 |      100 |                   |
+  fr.js                       |      100 |      100 |      100 |      100 |                   |
+  he.js                       |      100 |      100 |      100 |      100 |                   |
+  hr.js                       |      100 |      100 |      100 |      100 |                   |
+  hu.js                       |      100 |      100 |      100 |      100 |                   |
+  id.js                       |      100 |      100 |      100 |      100 |                   |
+  it.js                       |      100 |      100 |      100 |      100 |                   |
+  ja.js                       |      100 |      100 |      100 |      100 |                   |
+  ka.js                       |      100 |      100 |      100 |      100 |                   |
+  kk.js                       |      100 |      100 |      100 |      100 |                   |
+  ko.js                       |      100 |      100 |      100 |      100 |                   |
+  lt.js                       |      100 |      100 |      100 |      100 |                   |
+  nb.js                       |      100 |      100 |      100 |      100 |                   |
+  nl.js                       |      100 |      100 |      100 |      100 |                   |
+  nn.js                       |      100 |      100 |      100 |      100 |                   |
+  pl.js                       |      100 |      100 |      100 |      100 |                   |
+  pt-br.js                    |      100 |      100 |      100 |      100 |                   |
+  pt.js                       |      100 |      100 |      100 |      100 |                   |
+  ro.js                       |      100 |      100 |      100 |      100 |                   |
+  ru.js                       |      100 |      100 |      100 |      100 |                   |
+  sk.js                       |      100 |      100 |      100 |      100 |                   |
+  sr-cyrl.js                  |      100 |      100 |      100 |      100 |                   |
+  sr.js                       |      100 |      100 |      100 |      100 |                   |
+  sv.js                       |      100 |      100 |      100 |      100 |                   |
+  th.js                       |      100 |      100 |      100 |      100 |                   |
+  tr.js                       |      100 |      100 |      100 |      100 |                   |
+  uk.js                       |      100 |      100 |      100 |      100 |                   |
+  zh-cn.js                    |      100 |      100 |      100 |      100 |                   |
+  zh-tw.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/advancedFormat    |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/buddhistEra       |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/customParseFormat |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+  parseFormattedInput.js      |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isBetween         |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isLeapYear        |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isSameOrAfter     |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isSameOrBefore    |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/relativeTime      |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+ src/plugin/weekOfYear        |      100 |      100 |      100 |      100 |                   |
+  index.js                    |      100 |      100 |      100 |      100 |                   |
+------------------------------|----------|----------|----------|----------|-------------------|
+Handlebars: Access has been denied to resolve the property "statements" because it is not an "own property" of its parent.
+You can add a runtime option to disable the check or this warning:
+See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details
+Handlebars: Access has been denied to resolve the property "branches" because it is not an "own property" of its parent.
+You can add a runtime option to disable the check or this warning:
+See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details
+Handlebars: Access has been denied to resolve the property "functions" because it is not an "own property" of its parent.
+You can add a runtime option to disable the check or this warning:
+See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details
+Handlebars: Access has been denied to resolve the property "lines" because it is not an "own property" of its parent.
+You can add a runtime option to disable the check or this warning:
+See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details
+Test Suites: 1 failed, 19 passed, 20 total
+Tests:       1 failed, 162 passed, 163 total
+Snapshots:   0 total
+Time:        1.468s
+Ran all test suites.
+
+[exit code: 1]

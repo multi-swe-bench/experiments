@@ -1,0 +1,45 @@
+diff --git a/documentation/docs/02-template-syntax/09-special-elements.md b/documentation/docs/02-template-syntax/09-special-elements.md
+index a46779c..b4716b2 100644
+--- a/documentation/docs/02-template-syntax/09-special-elements.md
++++ b/documentation/docs/02-template-syntax/09-special-elements.md
+@@ -186,6 +186,7 @@ The `<svelte:options>` element provides a place to specify per-component compile
+ - `accessors={false}` — the default
+ - `namespace="..."` — the namespace where this component will be used, most commonly "svg"; use the "foreign" namespace to opt out of case-insensitive attribute names and HTML-specific warnings
+ - `customElement="..."` — the name to use when compiling this component as a custom element
++- `css="injected"` / `css="external"` — overrides the `css` compiler option for this component only. Use `css="injected"` to inline styles into the document (or shadow root for custom elements) when the component is rendered, for example when rendering OG images, while leaving the rest of your components' CSS external
+ 
+ ```svelte
+ <svelte:options customElement="my-custom-element" />
+diff --git a/packages/svelte/src/compiler/phases/1-parse/read/options.js b/packages/svelte/src/compiler/phases/1-parse/read/options.js
+index 27527dd..b59b0f1 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/read/options.js
++++ b/packages/svelte/src/compiler/phases/1-parse/read/options.js
+@@ -187,6 +187,16 @@ export default function read_options(node) {
+ 				component_options.accessors = get_boolean_value(attribute);
+ 				break;
+ 			}
++			case 'css': {
++				const value = get_static_value(attribute);
++
++				if (value !== 'injected' && value !== 'external') {
++					e.svelte_options_invalid_attribute_value(attribute, '"injected" or "external"');
++				}
++
++				component_options.css = value;
++				break;
++			}
+ 			default:
+ 				e.svelte_options_unknown_attribute(attribute, name);
+ 		}
+diff --git a/packages/svelte/src/compiler/types/template.d.ts b/packages/svelte/src/compiler/types/template.d.ts
+index ee6315a..037c9b4 100644
+--- a/packages/svelte/src/compiler/types/template.d.ts
++++ b/packages/svelte/src/compiler/types/template.d.ts
+@@ -94,6 +94,7 @@ export interface SvelteOptions {
+ 		 */
+ 		extend?: ArrowFunctionExpression | Identifier;
+ 	};
++	css?: 'injected' | 'external';
+ 	attributes: Attribute[];
+ }
+ 

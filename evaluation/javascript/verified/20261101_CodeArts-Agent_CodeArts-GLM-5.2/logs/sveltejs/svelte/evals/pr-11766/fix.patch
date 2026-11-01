@@ -1,0 +1,55 @@
+diff --git a/packages/svelte/src/internal/client/dev/equality.js b/packages/svelte/src/internal/client/dev/equality.js
+index bac96b7..f65083b 100644
+--- a/packages/svelte/src/internal/client/dev/equality.js
++++ b/packages/svelte/src/internal/client/dev/equality.js
+@@ -14,10 +14,14 @@ export function init_array_prototype_warnings() {
+ 	const { indexOf, lastIndexOf, includes } = array_prototype;
+ 
+ 	array_prototype.indexOf = function (item, from_index) {
+-		const index = indexOf.call(this, item, from_index);
++		const index = indexOf.call(this, item, ...arguments.length > 1 ? [from_index] : []);
+ 
+ 		if (index === -1) {
+-			const test = indexOf.call(get_proxied_value(this), get_proxied_value(item), from_index);
++			const test = indexOf.call(
++				get_proxied_value(this),
++				get_proxied_value(item),
++				...arguments.length > 1 ? [from_index] : []
++			);
+ 
+ 			if (test !== -1) {
+ 				w.state_proxy_equality_mismatch('array.indexOf(...)');
+@@ -28,10 +32,14 @@ export function init_array_prototype_warnings() {
+ 	};
+ 
+ 	array_prototype.lastIndexOf = function (item, from_index) {
+-		const index = lastIndexOf.call(this, item, from_index);
++		const index = lastIndexOf.call(this, item, ...arguments.length > 1 ? [from_index] : []);
+ 
+ 		if (index === -1) {
+-			const test = lastIndexOf.call(get_proxied_value(this), get_proxied_value(item), from_index);
++			const test = lastIndexOf.call(
++				get_proxied_value(this),
++				get_proxied_value(item),
++				...arguments.length > 1 ? [from_index] : []
++			);
+ 
+ 			if (test !== -1) {
+ 				w.state_proxy_equality_mismatch('array.lastIndexOf(...)');
+@@ -42,10 +50,14 @@ export function init_array_prototype_warnings() {
+ 	};
+ 
+ 	array_prototype.includes = function (item, from_index) {
+-		const has = includes.call(this, item, from_index);
++		const has = includes.call(this, item, ...arguments.length > 1 ? [from_index] : []);
+ 
+ 		if (!has) {
+-			const test = includes.call(get_proxied_value(this), get_proxied_value(item), from_index);
++			const test = includes.call(
++				get_proxied_value(this),
++				get_proxied_value(item),
++				...arguments.length > 1 ? [from_index] : []
++			);
+ 
+ 			if (test) {
+ 				w.state_proxy_equality_mismatch('array.includes(...)');

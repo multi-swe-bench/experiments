@@ -1,0 +1,74 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+index f5f7440..b9f2eb2 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+@@ -414,6 +414,16 @@ function relative_selector_might_apply_to_node(relative_selector, rule, element,
+ 				descendant_elements.push(node);
+ 				if (!is_recursing) child_elements.push(node);
+ 				node.fragment.nodes.forEach((node) => collect_child_elements(node, true));
++			} else if (node.type === 'IfBlock') {
++				node.consequent.nodes.forEach((node) => collect_child_elements(node, is_recursing));
++				node.alternate?.nodes.forEach((node) => collect_child_elements(node, is_recursing));
++			} else if (node.type === 'EachBlock') {
++				node.body.nodes.forEach((node) => collect_child_elements(node, is_recursing));
++				node.fallback?.nodes.forEach((node) => collect_child_elements(node, is_recursing));
++			} else if (node.type === 'AwaitBlock') {
++				node.pending?.nodes.forEach((node) => collect_child_elements(node, is_recursing));
++				node.then?.nodes.forEach((node) => collect_child_elements(node, is_recursing));
++				node.catch?.nodes.forEach((node) => collect_child_elements(node, is_recursing));
+ 			}
+ 		}
+ 
+diff --git a/packages/svelte/tests/css/samples/has-nested-block/_config.js b/packages/svelte/tests/css/samples/has-nested-block/_config.js
+new file mode 100644
+index 0000000..8e9b233
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/has-nested-block/_config.js
+@@ -0,0 +1,5 @@
++import { test } from '../../test';
++
++export default test({
++	warnings: []
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/has-nested-block/expected.css b/packages/svelte/tests/css/samples/has-nested-block/expected.css
+new file mode 100644
+index 0000000..1439e17
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/has-nested-block/expected.css
+@@ -0,0 +1,4 @@
++p.svelte-xyz:hover + span:where(.svelte-xyz),
++	p.svelte-xyz:has(.copied:where(.svelte-xyz)) + span:where(.svelte-xyz) {
++		opacity: 1;
++	}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/has-nested-block/input.svelte b/packages/svelte/tests/css/samples/has-nested-block/input.svelte
+new file mode 100644
+index 0000000..469cd62
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/has-nested-block/input.svelte
+@@ -0,0 +1,23 @@
++<div class="container">
++	<p>
++		text
++		{#if browser}
++			<button class:copied type="button" aria-label="Copy"></button>
++		{/if}
++	</p>
++	{#if browser}
++		<span>Copied!</span>
++	{/if}
++</div>
++
++<script>
++	const browser = true;
++	let copied = $state(false);
++</script>
++
++<style>
++	p:hover + span,
++	p:has(.copied) + span {
++		opacity: 1;
++	}
++</style>
+\ No newline at end of file

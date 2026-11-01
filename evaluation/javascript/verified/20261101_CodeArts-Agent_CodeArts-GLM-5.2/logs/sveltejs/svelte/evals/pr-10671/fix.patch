@@ -1,0 +1,75 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/read/context.js b/packages/svelte/src/compiler/phases/1-parse/read/context.js
+index 3759dd2..2f8983f 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/read/context.js
++++ b/packages/svelte/src/compiler/phases/1-parse/read/context.js
+@@ -22,9 +22,23 @@ export default function read_pattern(parser) {
+ 	const code = full_char_code_at(parser.template, i);
+ 	if (isIdentifierStart(code, true)) {
+ 		const name = /** @type {string} */ (parser.read_identifier());
++
++		// allow `?` for optional parameters, e.g. `{#snippet foo(bar?: string)}`
++		let optional = false;
++		if (parser.ts) {
++			const ws_start = parser.index;
++			parser.allow_whitespace();
++			if (parser.eat('?')) {
++				optional = true;
++			} else {
++				parser.index = ws_start;
++			}
++		}
++
+ 		const annotation = read_type_annotation(parser);
+ 
+-		return {
++		/** @type {import('estree').Identifier & { optional?: boolean }} */
++		const node = {
+ 			type: 'Identifier',
+ 			name,
+ 			start,
+@@ -32,6 +46,12 @@ export default function read_pattern(parser) {
+ 			end: parser.index,
+ 			typeAnnotation: annotation
+ 		};
++
++		if (optional) {
++			node.optional = true;
++		}
++
++		return node;
+ 	}
+ 
+ 	if (!is_bracket_open(code)) {
+@@ -114,7 +134,31 @@ function read_type_annotation(parser) {
+ 		parser.template.slice(0, a).replace(/[^\n]/g, ' ') +
+ 		insert +
+ 		parser.template.slice(parser.index);
+-	let expression = parse_expression_at(template, parser.ts, a);
++	let expression;
++	try {
++		expression = parse_expression_at(template, parser.ts, a);
++	} catch (error) {
++		// a following optional parameter (e.g. `bar?: string`) confuses Acorn —
++		// it fails on the `?` instead of stopping at the parameter-separating comma.
++		// backtrack to the last top-level comma and try again
++		const pos = /** @type {{ pos: number }} */ (error).pos;
++		let depth = 0;
++		let comma = -1;
++		for (let i = a; i < pos; i++) {
++			const ch = template[i];
++			if (ch === '(' || ch === '[' || ch === '{') {
++				depth++;
++			} else if (ch === ')' || ch === ']' || ch === '}') {
++				depth--;
++			} else if (ch === ',' && depth === 0) {
++				comma = i;
++			}
++		}
++		if (comma === -1) {
++			parser.acorn_error(error);
++		}
++		expression = parse_expression_at(template.slice(0, comma), parser.ts, a);
++	}
+ 
+ 	// `foo: bar = baz` gets mangled — fix it
+ 	if (expression.type === 'AssignmentExpression') {

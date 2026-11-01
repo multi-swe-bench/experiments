@@ -1,0 +1,478 @@
+diff --git a/packages/svelte/scripts/process-messages/templates/client-errors.js b/packages/svelte/scripts/process-messages/templates/client-errors.js
+index c63a22d..bf1c33a 100644
+--- a/packages/svelte/scripts/process-messages/templates/client-errors.js
++++ b/packages/svelte/scripts/process-messages/templates/client-errors.js
+@@ -11,7 +11,6 @@ export function CODE(PARAMETER) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error('CODE');
++		throw new Error(`${'CODE'}. See https://svelte.dev/e/${'CODE'} for more information.`);
+ 	}
+ }
+diff --git a/packages/svelte/scripts/process-messages/templates/client-warnings.js b/packages/svelte/scripts/process-messages/templates/client-warnings.js
+index d40a59e..f16c026 100644
+--- a/packages/svelte/scripts/process-messages/templates/client-warnings.js
++++ b/packages/svelte/scripts/process-messages/templates/client-warnings.js
+@@ -11,7 +11,6 @@ export function CODE(PARAMETER) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] ${'CODE'}\n%c${MESSAGE}`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn('CODE');
++		console.warn(`${'CODE'}. See https://svelte.dev/e/${'CODE'} for more information.`);
+ 	}
+ }
+diff --git a/packages/svelte/scripts/process-messages/templates/shared-errors.js b/packages/svelte/scripts/process-messages/templates/shared-errors.js
+index c63a22d..bf1c33a 100644
+--- a/packages/svelte/scripts/process-messages/templates/shared-errors.js
++++ b/packages/svelte/scripts/process-messages/templates/shared-errors.js
+@@ -11,7 +11,6 @@ export function CODE(PARAMETER) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error('CODE');
++		throw new Error(`${'CODE'}. See https://svelte.dev/e/${'CODE'} for more information.`);
+ 	}
+ }
+diff --git a/packages/svelte/scripts/process-messages/templates/shared-warnings.js b/packages/svelte/scripts/process-messages/templates/shared-warnings.js
+index d40a59e..f16c026 100644
+--- a/packages/svelte/scripts/process-messages/templates/shared-warnings.js
++++ b/packages/svelte/scripts/process-messages/templates/shared-warnings.js
+@@ -11,7 +11,6 @@ export function CODE(PARAMETER) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] ${'CODE'}\n%c${MESSAGE}`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn('CODE');
++		console.warn(`${'CODE'}. See https://svelte.dev/e/${'CODE'} for more information.`);
+ 	}
+ }
+diff --git a/packages/svelte/src/internal/client/errors.js b/packages/svelte/src/internal/client/errors.js
+index 2d95c42..caa36e3 100644
+--- a/packages/svelte/src/internal/client/errors.js
++++ b/packages/svelte/src/internal/client/errors.js
+@@ -13,8 +13,7 @@ export function bind_invalid_checkbox_value() {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("bind_invalid_checkbox_value");
++		throw new Error(`bind_invalid_checkbox_value. See https://svelte.dev/e/bind_invalid_checkbox_value for more information.`);
+ 	}
+ }
+ 
+@@ -32,8 +31,7 @@ export function bind_invalid_export(component, key, name) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("bind_invalid_export");
++		throw new Error(`bind_invalid_export. See https://svelte.dev/e/bind_invalid_export for more information.`);
+ 	}
+ }
+ 
+@@ -51,8 +49,7 @@ export function bind_not_bindable(key, component, name) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("bind_not_bindable");
++		throw new Error(`bind_not_bindable. See https://svelte.dev/e/bind_not_bindable for more information.`);
+ 	}
+ }
+ 
+@@ -70,8 +67,7 @@ export function component_api_changed(parent, method, component) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("component_api_changed");
++		throw new Error(`component_api_changed. See https://svelte.dev/e/component_api_changed for more information.`);
+ 	}
+ }
+ 
+@@ -88,8 +84,7 @@ export function component_api_invalid_new(component, name) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("component_api_invalid_new");
++		throw new Error(`component_api_invalid_new. See https://svelte.dev/e/component_api_invalid_new for more information.`);
+ 	}
+ }
+ 
+@@ -104,8 +99,7 @@ export function derived_references_self() {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("derived_references_self");
++		throw new Error(`derived_references_self. See https://svelte.dev/e/derived_references_self for more information.`);
+ 	}
+ }
+ 
+@@ -123,8 +117,7 @@ export function each_key_duplicate(a, b, value) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("each_key_duplicate");
++		throw new Error(`each_key_duplicate. See https://svelte.dev/e/each_key_duplicate for more information.`);
+ 	}
+ }
+ 
+@@ -140,8 +133,7 @@ export function effect_in_teardown(rune) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("effect_in_teardown");
++		throw new Error(`effect_in_teardown. See https://svelte.dev/e/effect_in_teardown for more information.`);
+ 	}
+ }
+ 
+@@ -156,8 +148,7 @@ export function effect_in_unowned_derived() {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("effect_in_unowned_derived");
++		throw new Error(`effect_in_unowned_derived. See https://svelte.dev/e/effect_in_unowned_derived for more information.`);
+ 	}
+ }
+ 
+@@ -173,8 +164,7 @@ export function effect_orphan(rune) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("effect_orphan");
++		throw new Error(`effect_orphan. See https://svelte.dev/e/effect_orphan for more information.`);
+ 	}
+ }
+ 
+@@ -189,8 +179,7 @@ export function effect_update_depth_exceeded() {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("effect_update_depth_exceeded");
++		throw new Error(`effect_update_depth_exceeded. See https://svelte.dev/e/effect_update_depth_exceeded for more information.`);
+ 	}
+ }
+ 
+@@ -205,8 +194,7 @@ export function hydration_failed() {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("hydration_failed");
++		throw new Error(`hydration_failed. See https://svelte.dev/e/hydration_failed for more information.`);
+ 	}
+ }
+ 
+@@ -221,8 +209,7 @@ export function invalid_snippet() {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("invalid_snippet");
++		throw new Error(`invalid_snippet. See https://svelte.dev/e/invalid_snippet for more information.`);
+ 	}
+ }
+ 
+@@ -238,8 +225,7 @@ export function lifecycle_legacy_only(name) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("lifecycle_legacy_only");
++		throw new Error(`lifecycle_legacy_only. See https://svelte.dev/e/lifecycle_legacy_only for more information.`);
+ 	}
+ }
+ 
+@@ -255,8 +241,7 @@ export function props_invalid_value(key) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("props_invalid_value");
++		throw new Error(`props_invalid_value. See https://svelte.dev/e/props_invalid_value for more information.`);
+ 	}
+ }
+ 
+@@ -272,8 +257,7 @@ export function props_rest_readonly(property) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("props_rest_readonly");
++		throw new Error(`props_rest_readonly. See https://svelte.dev/e/props_rest_readonly for more information.`);
+ 	}
+ }
+ 
+@@ -289,8 +273,7 @@ export function rune_outside_svelte(rune) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("rune_outside_svelte");
++		throw new Error(`rune_outside_svelte. See https://svelte.dev/e/rune_outside_svelte for more information.`);
+ 	}
+ }
+ 
+@@ -305,8 +288,7 @@ export function state_descriptors_fixed() {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("state_descriptors_fixed");
++		throw new Error(`state_descriptors_fixed. See https://svelte.dev/e/state_descriptors_fixed for more information.`);
+ 	}
+ }
+ 
+@@ -321,8 +303,7 @@ export function state_prototype_fixed() {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("state_prototype_fixed");
++		throw new Error(`state_prototype_fixed. See https://svelte.dev/e/state_prototype_fixed for more information.`);
+ 	}
+ }
+ 
+@@ -337,8 +318,7 @@ export function state_unsafe_local_read() {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("state_unsafe_local_read");
++		throw new Error(`state_unsafe_local_read. See https://svelte.dev/e/state_unsafe_local_read for more information.`);
+ 	}
+ }
+ 
+@@ -353,7 +333,6 @@ export function state_unsafe_mutation() {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("state_unsafe_mutation");
++		throw new Error(`state_unsafe_mutation. See https://svelte.dev/e/state_unsafe_mutation for more information.`);
+ 	}
+ }
+\ No newline at end of file
+diff --git a/packages/svelte/src/internal/client/warnings.js b/packages/svelte/src/internal/client/warnings.js
+index 2f28d3e..510fa09 100644
+--- a/packages/svelte/src/internal/client/warnings.js
++++ b/packages/svelte/src/internal/client/warnings.js
+@@ -14,8 +14,7 @@ export function assignment_value_stale(property, location) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] assignment_value_stale\n%cAssignment to \`${property}\` property (${location}) will evaluate to the right-hand side, not the value of \`${property}\` following the assignment. This may result in unexpected behaviour.`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("assignment_value_stale");
++		console.warn(`assignment_value_stale. See https://svelte.dev/e/assignment_value_stale for more information.`);
+ 	}
+ }
+ 
+@@ -28,8 +27,7 @@ export function binding_property_non_reactive(binding, location) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] binding_property_non_reactive\n%c${location ? `\`${binding}\` (${location}) is binding to a non-reactive property` : `\`${binding}\` is binding to a non-reactive property`}`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("binding_property_non_reactive");
++		console.warn(`binding_property_non_reactive. See https://svelte.dev/e/binding_property_non_reactive for more information.`);
+ 	}
+ }
+ 
+@@ -41,8 +39,7 @@ export function console_log_state(method) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] console_log_state\n%cYour \`console.${method}\` contained \`$state\` proxies. Consider using \`$inspect(...)\` or \`$state.snapshot(...)\` instead`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("console_log_state");
++		console.warn(`console_log_state. See https://svelte.dev/e/console_log_state for more information.`);
+ 	}
+ }
+ 
+@@ -55,8 +52,7 @@ export function event_handler_invalid(handler, suggestion) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] event_handler_invalid\n%c${handler} should be a function. Did you mean to ${suggestion}?`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("event_handler_invalid");
++		console.warn(`event_handler_invalid. See https://svelte.dev/e/event_handler_invalid for more information.`);
+ 	}
+ }
+ 
+@@ -70,8 +66,7 @@ export function hydration_attribute_changed(attribute, html, value) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] hydration_attribute_changed\n%cThe \`${attribute}\` attribute on \`${html}\` changed its value between server and client renders. The client value, \`${value}\`, will be ignored in favour of the server value`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("hydration_attribute_changed");
++		console.warn(`hydration_attribute_changed. See https://svelte.dev/e/hydration_attribute_changed for more information.`);
+ 	}
+ }
+ 
+@@ -83,8 +78,7 @@ export function hydration_html_changed(location) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] hydration_html_changed\n%c${location ? `The value of an \`{@html ...}\` block ${location} changed between server and client renders. The client value will be ignored in favour of the server value` : "The value of an `{@html ...}` block changed between server and client renders. The client value will be ignored in favour of the server value"}`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("hydration_html_changed");
++		console.warn(`hydration_html_changed. See https://svelte.dev/e/hydration_html_changed for more information.`);
+ 	}
+ }
+ 
+@@ -96,8 +90,7 @@ export function hydration_mismatch(location) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] hydration_mismatch\n%c${location ? `Hydration failed because the initial UI does not match what was rendered on the server. The error occurred near ${location}` : "Hydration failed because the initial UI does not match what was rendered on the server"}`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("hydration_mismatch");
++		console.warn(`hydration_mismatch. See https://svelte.dev/e/hydration_mismatch for more information.`);
+ 	}
+ }
+ 
+@@ -108,8 +101,7 @@ export function invalid_raw_snippet_render() {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] invalid_raw_snippet_render\n%cThe \`render\` function passed to \`createRawSnippet\` should return HTML for a single element`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("invalid_raw_snippet_render");
++		console.warn(`invalid_raw_snippet_render. See https://svelte.dev/e/invalid_raw_snippet_render for more information.`);
+ 	}
+ }
+ 
+@@ -121,8 +113,7 @@ export function legacy_recursive_reactive_block(filename) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] legacy_recursive_reactive_block\n%cDetected a migrated \`$:\` reactive block in \`${filename}\` that both accesses and updates the same reactive value. This may cause recursive updates when converted to an \`$effect\`.`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("legacy_recursive_reactive_block");
++		console.warn(`legacy_recursive_reactive_block. See https://svelte.dev/e/legacy_recursive_reactive_block for more information.`);
+ 	}
+ }
+ 
+@@ -133,8 +124,7 @@ export function lifecycle_double_unmount() {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] lifecycle_double_unmount\n%cTried to unmount a component that was not mounted`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("lifecycle_double_unmount");
++		console.warn(`lifecycle_double_unmount. See https://svelte.dev/e/lifecycle_double_unmount for more information.`);
+ 	}
+ }
+ 
+@@ -148,8 +138,7 @@ export function ownership_invalid_binding(parent, child, owner) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] ownership_invalid_binding\n%c${parent} passed a value to ${child} with \`bind:\`, but the value is owned by ${owner}. Consider creating a binding between ${owner} and ${parent}`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("ownership_invalid_binding");
++		console.warn(`ownership_invalid_binding. See https://svelte.dev/e/ownership_invalid_binding for more information.`);
+ 	}
+ }
+ 
+@@ -162,8 +151,7 @@ export function ownership_invalid_mutation(component, owner) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] ownership_invalid_mutation\n%c${component ? `${component} mutated a value owned by ${owner}. This is strongly discouraged. Consider passing values to child components with \`bind:\`, or use a callback instead` : "Mutating a value outside the component that created it is strongly discouraged. Consider passing values to child components with `bind:`, or use a callback instead"}`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("ownership_invalid_mutation");
++		console.warn(`ownership_invalid_mutation. See https://svelte.dev/e/ownership_invalid_mutation for more information.`);
+ 	}
+ }
+ 
+@@ -175,8 +163,7 @@ export function reactive_declaration_non_reactive_property(location) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] reactive_declaration_non_reactive_property\n%cA \`$:\` statement (${location}) read reactive state that was not visible to the compiler. Updates to this state will not cause the statement to re-run. The behaviour of this code will change if you migrate it to runes mode`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("reactive_declaration_non_reactive_property");
++		console.warn(`reactive_declaration_non_reactive_property. See https://svelte.dev/e/reactive_declaration_non_reactive_property for more information.`);
+ 	}
+ }
+ 
+@@ -188,7 +175,6 @@ export function state_proxy_equality_mismatch(operator) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] state_proxy_equality_mismatch\n%cReactive \`$state(...)\` proxies and the values they proxy have different identities. Because of this, comparisons with \`${operator}\` will produce unexpected results`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("state_proxy_equality_mismatch");
++		console.warn(`state_proxy_equality_mismatch. See https://svelte.dev/e/state_proxy_equality_mismatch for more information.`);
+ 	}
+ }
+\ No newline at end of file
+diff --git a/packages/svelte/src/internal/shared/errors.js b/packages/svelte/src/internal/shared/errors.js
+index 0d72800..10514aa 100644
+--- a/packages/svelte/src/internal/shared/errors.js
++++ b/packages/svelte/src/internal/shared/errors.js
+@@ -13,8 +13,7 @@ export function invalid_default_snippet() {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("invalid_default_snippet");
++		throw new Error(`invalid_default_snippet. See https://svelte.dev/e/invalid_default_snippet for more information.`);
+ 	}
+ }
+ 
+@@ -30,8 +29,7 @@ export function lifecycle_outside_component(name) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("lifecycle_outside_component");
++		throw new Error(`lifecycle_outside_component. See https://svelte.dev/e/lifecycle_outside_component for more information.`);
+ 	}
+ }
+ 
+@@ -47,8 +45,7 @@ export function store_invalid_shape(name) {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("store_invalid_shape");
++		throw new Error(`store_invalid_shape. See https://svelte.dev/e/store_invalid_shape for more information.`);
+ 	}
+ }
+ 
+@@ -63,7 +60,6 @@ export function svelte_element_invalid_this_value() {
+ 		error.name = 'Svelte error';
+ 		throw error;
+ 	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("svelte_element_invalid_this_value");
++		throw new Error(`svelte_element_invalid_this_value. See https://svelte.dev/e/svelte_element_invalid_this_value for more information.`);
+ 	}
+ }
+\ No newline at end of file
+diff --git a/packages/svelte/src/internal/shared/warnings.js b/packages/svelte/src/internal/shared/warnings.js
+index 37269a6..8748dbf 100644
+--- a/packages/svelte/src/internal/shared/warnings.js
++++ b/packages/svelte/src/internal/shared/warnings.js
+@@ -13,8 +13,7 @@ export function dynamic_void_element_content(tag) {
+ 	if (DEV) {
+ 		console.warn(`%c[svelte] dynamic_void_element_content\n%c\`<svelte:element this="${tag}">\` is a void element — it cannot have content`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("dynamic_void_element_content");
++		console.warn(`dynamic_void_element_content. See https://svelte.dev/e/dynamic_void_element_content for more information.`);
+ 	}
+ }
+ 
+@@ -32,7 +31,6 @@ export function state_snapshot_uncloneable(properties) {
+ ${properties}`
+ 			: "Value cannot be cloned with `$state.snapshot` — the original value was returned"}`, bold, normal);
+ 	} else {
+-		// TODO print a link to the documentation
+-		console.warn("state_snapshot_uncloneable");
++		console.warn(`state_snapshot_uncloneable. See https://svelte.dev/e/state_snapshot_uncloneable for more information.`);
+ 	}
+ }
+\ No newline at end of file

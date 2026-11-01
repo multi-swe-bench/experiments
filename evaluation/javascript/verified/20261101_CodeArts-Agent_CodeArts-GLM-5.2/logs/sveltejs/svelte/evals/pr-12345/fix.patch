@@ -1,0 +1,83 @@
+diff --git a/.changeset/quick-foxes-leap.md b/.changeset/quick-foxes-leap.md
+new file mode 100644
+index 0000000..4450dac
+--- /dev/null
++++ b/.changeset/quick-foxes-leap.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++Add setters to accessors of `let`-declared state variables exported from a component, so they can be updated from the outside (e.g. via `bind:this`) for parity with v4
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+index d0dd231..707e45c 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+@@ -10,7 +10,7 @@ import { global_visitors } from './visitors/global.js';
+ import { javascript_visitors } from './visitors/javascript.js';
+ import { javascript_visitors_runes } from './visitors/javascript-runes.js';
+ import { javascript_visitors_legacy } from './visitors/javascript-legacy.js';
+-import { serialize_get_binding } from './utils.js';
++import { serialize_get_binding, serialize_proxy_reassignment } from './utils.js';
+ import { render_stylesheet } from '../css/index.js';
+ import { filename } from '../../../state.js';
+ 
+@@ -198,15 +198,34 @@ export function client_component(source, analysis, options) {
+ 	}
+ 
+ 	/** @type {Array<ESTree.Property | ESTree.SpreadElement>} */
+-	const component_returned_object = analysis.exports.map(({ name, alias }) => {
++	const component_returned_object = [];
++
++	for (const { name, alias } of analysis.exports) {
+ 		const expression = serialize_get_binding(b.id(name), instance_state);
++		const key = alias ?? name;
+ 
+ 		if (expression.type === 'Identifier' && !options.dev) {
+-			return b.init(alias ?? name, expression);
++			component_returned_object.push(b.init(key, expression));
++		} else {
++			component_returned_object.push(b.get(key, [b.return(expression)]));
+ 		}
+ 
+-		return b.get(alias ?? name, [b.return(expression)]);
+-	});
++		// Exports of `let`-declared state variables are read-only accessors in v5,
++		// but for parity with v4 (where `export let` accessors had setters) we also
++		// expose a setter so that the value can be updated from the outside.
++		const binding = analysis.instance.scope.declarations.get(name);
++		if (binding?.kind === 'state' || binding?.kind === 'frozen_state') {
++			const value = b.id('$$value');
++			const assignment =
++				binding.kind === 'frozen_state'
++					? b.call('$.set', b.id(name), b.call('$.freeze', value))
++					: b.call('$.set', b.id(name), serialize_proxy_reassignment(value, name, instance_state));
++
++			component_returned_object.push(
++				b.set(key, [b.stmt(assignment), b.stmt(b.call('$.flush_sync'))])
++			);
++		}
++	}
+ 
+ 	const properties = [...analysis.instance.scope.declarations].filter(
+ 		([name, binding]) =>
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+index 6137cfa..2571631 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+@@ -58,7 +58,13 @@ export function get_assignment_value(node, { state, visit }) {
+ export function is_state_source(binding, state) {
+ 	return (
+ 		(binding.kind === 'state' || binding.kind === 'frozen_state') &&
+-		(!state.analysis.immutable || binding.reassigned || state.analysis.accessors)
++		(!state.analysis.immutable ||
++			binding.reassigned ||
++			state.analysis.accessors ||
++			// exported state needs to be a source so that it can be read and written via accessors
++			/** @type {import('../../types.js').ComponentAnalysis} */ (state.analysis).exports?.some(
++				(e) => e.name === binding.node.name
++			))
+ 	);
+ }
+ 

@@ -1,0 +1,83 @@
+diff --git a/.changeset/global-nested-pseudo-fix.md b/.changeset/global-nested-pseudo-fix.md
+new file mode 100644
+index 0000000..a578d29
+--- /dev/null
++++ b/.changeset/global-nested-pseudo-fix.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: nesting selectors inside `:global(...)` selectors are no longer disregarded
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+index 1896c83..b12171a 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+@@ -400,7 +400,11 @@ function relative_selector_might_apply_to_node(relative_selector, rule, element,
+ 				const parent = /** @type {Compiler.Css.Rule} */ (rule.metadata.parent_rule);
+ 
+ 				for (const complex_selector of parent.prelude.children) {
+-					if (apply_selector(truncate(complex_selector), parent, element, stylesheet)) {
++					const truncated = truncate(complex_selector);
++
++					// the parent selector is entirely global (e.g. `:global(.bar)`),
++					// so `&` matches and the selector is considered used
++					if (truncated.length === 0 || apply_selector(truncated, parent, element, stylesheet)) {
+ 						complex_selector.metadata.used = true;
+ 						matched = true;
+ 					}
+diff --git a/packages/svelte/tests/css/samples/global-with-nested-pseudo/expected.css b/packages/svelte/tests/css/samples/global-with-nested-pseudo/expected.css
+new file mode 100644
+index 0000000..0403945
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-with-nested-pseudo/expected.css
+@@ -0,0 +1,11 @@
++.foo.svelte-xyz {
++		&:hover {
++			color: blue;
++		}
++	}
++
++	.bar {
++		&:hover {
++			color: red;
++		}
++	}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/global-with-nested-pseudo/expected.html b/packages/svelte/tests/css/samples/global-with-nested-pseudo/expected.html
+new file mode 100644
+index 0000000..d1ef90e
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-with-nested-pseudo/expected.html
+@@ -0,0 +1 @@
++<div class="foo svelte-xyz">hover over me</div><div class="bar svelte-xyz">hover over me</div>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/global-with-nested-pseudo/input.svelte b/packages/svelte/tests/css/samples/global-with-nested-pseudo/input.svelte
+new file mode 100644
+index 0000000..417e4f9
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-with-nested-pseudo/input.svelte
+@@ -0,0 +1,21 @@
++<div class="foo">
++	hover over me
++</div>
++
++<div class="bar">
++	hover over me
++</div>
++
++<style>
++	.foo {
++		&:hover {
++			color: blue;
++		}
++	}
++
++	:global(.bar) {
++		&:hover {
++			color: red;
++		}
++	}
++</style>
+\ No newline at end of file

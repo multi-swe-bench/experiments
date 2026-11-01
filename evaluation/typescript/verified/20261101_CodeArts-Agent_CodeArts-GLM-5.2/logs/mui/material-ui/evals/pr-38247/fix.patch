@@ -1,0 +1,46 @@
+diff --git a/docs/data/material/components/icons/TwoToneIcons.js b/docs/data/material/components/icons/TwoToneIcons.js
+index 125785fd..6fe5b209 100644
+--- a/docs/data/material/components/icons/TwoToneIcons.js
++++ b/docs/data/material/components/icons/TwoToneIcons.js
+@@ -1,6 +1,18 @@
+ import * as React from 'react';
++import { loadCSS } from 'fg-loadcss';
+ import Icon from '@mui/material/Icon';
+ 
+ export default function TwoToneIcons() {
++  React.useEffect(() => {
++    const node = loadCSS(
++      'https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone',
++      document.querySelector('#material-icons-two-tone') || document.head.firstChild,
++    );
++
++    return () => {
++      node.parentNode.removeChild(node);
++    };
++  }, []);
++
+   return <Icon baseClassName="material-icons-two-tone">add_circle</Icon>;
+ }
+diff --git a/docs/data/material/components/icons/TwoToneIcons.tsx b/docs/data/material/components/icons/TwoToneIcons.tsx
+index 125785fd..6fdbe8fa 100644
+--- a/docs/data/material/components/icons/TwoToneIcons.tsx
++++ b/docs/data/material/components/icons/TwoToneIcons.tsx
+@@ -1,6 +1,18 @@
+ import * as React from 'react';
++import { loadCSS } from 'fg-loadcss';
+ import Icon from '@mui/material/Icon';
+ 
+ export default function TwoToneIcons() {
++  React.useEffect(() => {
++    const node = loadCSS(
++      'https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone',
++      document.querySelector('#material-icons-two-tone') || document.head.firstChild,
++    );
++
++    return () => {
++      node.parentNode!.removeChild(node);
++    };
++  }, []);
++
+   return <Icon baseClassName="material-icons-two-tone">add_circle</Icon>;
+ }

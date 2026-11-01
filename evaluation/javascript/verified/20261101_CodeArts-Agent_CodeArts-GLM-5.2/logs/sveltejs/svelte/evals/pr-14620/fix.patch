@@ -1,0 +1,13 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 8f1efd7..6adfe45 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -698,7 +698,7 @@ export function analyze_component(root, source, options) {
+ 	}
+ 
+ 	for (const node of analysis.module.ast.body) {
+-		if (node.type === 'ExportNamedDeclaration' && node.specifiers !== null) {
++		if (node.type === 'ExportNamedDeclaration' && node.specifiers !== null && !node.source) {
+ 			for (const specifier of node.specifiers) {
+ 				if (specifier.local.type !== 'Identifier') continue;
+ 

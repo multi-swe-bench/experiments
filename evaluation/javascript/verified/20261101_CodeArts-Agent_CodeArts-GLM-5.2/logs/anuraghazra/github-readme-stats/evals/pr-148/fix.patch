@@ -1,0 +1,52 @@
+diff --git a/api/index.js b/api/index.js
+index f1ad48b..02c33eb 100644
+--- a/api/index.js
++++ b/api/index.js
+@@ -24,13 +24,14 @@ module.exports = async (req, res) => {
+     bg_color,
+     theme,
+     cache_seconds,
++    count_private,
+   } = req.query;
+   let stats;
+ 
+   res.setHeader("Content-Type", "image/svg+xml");
+ 
+   try {
+-    stats = await fetchStats(username);
++    stats = await fetchStats(username, parseBoolean(count_private));
+   } catch (err) {
+     return res.send(renderError(err.message));
+   }
+diff --git a/src/fetchStats.js b/src/fetchStats.js
+index ea6010f..ed57a51 100644
+--- a/src/fetchStats.js
++++ b/src/fetchStats.js
+@@ -13,6 +13,7 @@ const fetcher = (variables, token) => {
+           login
+           contributionsCollection {
+             totalCommitContributions
++            restrictedContributionsCount
+           }
+           repositoriesContributedTo(first: 1, contributionTypes: [COMMIT, ISSUE, PULL_REQUEST, REPOSITORY]) {
+             totalCount
+@@ -45,7 +46,7 @@ const fetcher = (variables, token) => {
+   );
+ };
+ 
+-async function fetchStats(username) {
++async function fetchStats(username, count_private) {
+   if (!username) throw Error("Invalid username");
+ 
+   const stats = {
+@@ -70,6 +71,10 @@ async function fetchStats(username) {
+   stats.name = user.name || user.login;
+   stats.totalIssues = user.issues.totalCount;
+   stats.totalCommits = user.contributionsCollection.totalCommitContributions;
++  if (count_private) {
++    stats.totalCommits +=
++      user.contributionsCollection.restrictedContributionsCount;
++  }
+   stats.totalPRs = user.pullRequests.totalCount;
+   stats.contributedTo = user.repositoriesContributedTo.totalCount;
+ 

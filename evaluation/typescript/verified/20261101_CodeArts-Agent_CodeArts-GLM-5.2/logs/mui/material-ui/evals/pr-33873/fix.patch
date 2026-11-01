@@ -1,0 +1,12 @@
+diff --git a/packages/mui-base/src/InputUnstyled/InputUnstyled.tsx b/packages/mui-base/src/InputUnstyled/InputUnstyled.tsx
+index 9e129b51..7df716c4 100644
+--- a/packages/mui-base/src/InputUnstyled/InputUnstyled.tsx
++++ b/packages/mui-base/src/InputUnstyled/InputUnstyled.tsx
+@@ -161,6 +161,7 @@ const InputUnstyled = React.forwardRef(function InputUnstyled(
+ 
+     inputProps = {
+       ...(!hasHostTextarea && { minRows: rows || minRows, maxRows: rows || maxRows }),
++      ...(hasHostTextarea && { rows }),
+       ...(hasHostTextarea ? inputPropsWithoutOwnerState : inputProps),
+       type: undefined,
+     };

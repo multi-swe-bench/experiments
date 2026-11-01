@@ -1,0 +1,42 @@
+diff --git a/.changeset/bind-this-each-item.md b/.changeset/bind-this-each-item.md
+new file mode 100644
+index 0000000..dc38529
+--- /dev/null
++++ b/.changeset/bind-this-each-item.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: disallow `bind:this` on each block arguments in runes mode, consistent with other bindings
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index eda5ed4..e85b9d8 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -407,15 +407,21 @@ const validation = {
+ 				e.constant_binding(node.expression, 'derived state');
+ 			}
+ 
+-			if (context.state.analysis.runes && binding.kind === 'each') {
+-				e.each_item_invalid_assignment(node);
+-			}
+-
+ 			if (binding.kind === 'snippet') {
+ 				e.snippet_parameter_assignment(node);
+ 			}
+ 		}
+ 
++		// bind:this also works for regular variables, but each block arguments
++		// cannot be reassigned in runes mode, so binding to them is invalid.
++		if (
++			assignee.type === 'Identifier' &&
++			binding?.kind === 'each' &&
++			context.state.analysis.runes
++		) {
++			e.each_item_invalid_assignment(node);
++		}
++
+ 		if (node.name === 'group') {
+ 			if (!binding) {
+ 				throw new Error('Cannot find declaration for bind:group');

@@ -1,0 +1,17 @@
+diff --git a/packages/material-ui/src/SpeedDialAction/SpeedDialAction.js b/packages/material-ui/src/SpeedDialAction/SpeedDialAction.js
+index 8557d63..9ea2e2a 100644
+--- a/packages/material-ui/src/SpeedDialAction/SpeedDialAction.js
++++ b/packages/material-ui/src/SpeedDialAction/SpeedDialAction.js
+@@ -161,6 +161,12 @@ const SpeedDialAction = React.forwardRef(function SpeedDialAction(inProps, ref)
+ 
+   const transitionStyle = { transitionDelay: `${delay}ms` };
+ 
++  React.useEffect(() => {
++    if (!open) {
++      setTooltipOpen(false);
++    }
++  }, [open]);
++
+   const fab = (
+     <SpeedDialActionFab
+       size="small"

@@ -1,0 +1,271 @@
+diff --git a/packages/mui-material/src/Dialog/Dialog.js b/packages/mui-material/src/Dialog/Dialog.js
+index eb31fd06..47b8eb35 100644
+--- a/packages/mui-material/src/Dialog/Dialog.js
++++ b/packages/mui-material/src/Dialog/Dialog.js
+@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
+ import clsx from 'clsx';
+ import { unstable_composeClasses as composeClasses } from '@mui/base';
+ import { unstable_useId as useId } from '@mui/utils';
++import { NestedGridContext, GridOverflowContext } from '@mui/system/Unstable_Grid';
+ import capitalize from '../utils/capitalize';
+ import Modal from '../Modal';
+ import Fade from '../Fade';
+@@ -275,7 +276,17 @@ const Dialog = React.forwardRef(function Dialog(inProps, ref) {
+             className={clsx(classes.paper, PaperProps.className)}
+             ownerState={ownerState}
+           >
+-            <DialogContext.Provider value={dialogContextValue}>{children}</DialogContext.Provider>
++            <DialogContext.Provider value={dialogContextValue}>
++            {/* The dialog content is rendered in a portal, so the parent grid's
++                CSS variables do not cascade into it. Reset the grid nesting
++                contexts so that a `Grid` rendered inside the dialog behaves as a
++                root grid instead of a nested one with undefined variables. */}
++            <NestedGridContext.Provider value={0}>
++              <GridOverflowContext.Provider value={undefined}>
++                {children}
++              </GridOverflowContext.Provider>
++            </NestedGridContext.Provider>
++          </DialogContext.Provider>
+           </DialogPaper>
+         </DialogContainer>
+       </TransitionComponent>
+diff --git a/packages/mui-system/src/Unstable_Grid/GridInherit.test.js b/packages/mui-system/src/Unstable_Grid/GridInherit.test.js
+new file mode 100644
+index 00000000..894dbb7b
+--- /dev/null
++++ b/packages/mui-system/src/Unstable_Grid/GridInherit.test.js
+@@ -0,0 +1,29 @@
++import * as React from 'react';
++import { expect } from 'chai';
++import { createRenderer, screen } from 'test/utils';
++import { ThemeProvider, createTheme } from '@mui/material/styles';
++import Grid2 from '@mui/material/Unstable_Grid2';
++
++describe('jsdom custom property inheritance', () => {
++  const { render } = createRenderer();
++
++  it('nested grid inherits --Grid-columns', () => {
++    render(
++      <ThemeProvider theme={createTheme()}>
++        <Grid2 container columns={16} data-testid="root">
++          <Grid2 xs={8} data-testid="mid">
++            <Grid2 container data-testid="nested">
++              <Grid2 xs={6} data-testid="leaf" />
++            </Grid2>
++          </Grid2>
++        </Grid2>
++      </ThemeProvider>,
++    );
++    const nested = screen.getByTestId('nested');
++    const cs = window.getComputedStyle(nested);
++    console.log('nested --Grid-columns (inherited):', JSON.stringify(cs.getPropertyValue('--Grid-columns')));
++    console.log('nested --Grid-columnsLevel1:', JSON.stringify(cs.getPropertyValue('--Grid-columnsLevel1')));
++    const root = screen.getByTestId('root');
++    console.log('root --Grid-columns:', JSON.stringify(window.getComputedStyle(root).getPropertyValue('--Grid-columns')));
++  });
++});
+\ No newline at end of file
+diff --git a/packages/mui-system/src/Unstable_Grid/GridRepro.test.js b/packages/mui-system/src/Unstable_Grid/GridRepro.test.js
+new file mode 100644
+index 00000000..7b6253ae
+--- /dev/null
++++ b/packages/mui-system/src/Unstable_Grid/GridRepro.test.js
+@@ -0,0 +1,39 @@
++import * as React from 'react';
++import { expect } from 'chai';
++import { createRenderer, screen } from 'test/utils';
++import { ThemeProvider, createTheme } from '@mui/material/styles';
++import Grid2 from '@mui/material/Unstable_Grid2';
++import Dialog from '@mui/material/Dialog';
++
++describe('Grid2 with Dialog repro', () => {
++  const { render } = createRenderer();
++
++  it('grid inside dialog wrapped in grid is treated as root', () => {
++    render(
++      <ThemeProvider theme={createTheme()}>
++        <Grid2 container columns={16}>
++          <Grid2 xs={8}>
++            <Dialog open>
++              <Grid2 container data-testid="inner-container">
++                <Grid2 xs={6} data-testid="inner-item">
++                  content
++                </Grid2>
++              </Grid2>
++            </Dialog>
++          </Grid2>
++        </Grid2>
++      </ThemeProvider>,
++    );
++    const innerContainer = screen.getByTestId('inner-container');
++    const csC = window.getComputedStyle(innerContainer);
++    // The inner container is rendered in a portal, so it should be a root grid
++    // (level 0) and define `--Grid-columns` directly (not the nested variant).
++    expect(csC.getPropertyValue('--Grid-columns')).to.equal('12');
++    expect(csC.getPropertyValue('--Grid-columnsLevel1')).to.equal('');
++
++    // The inner item should reference the root columns variable (not undefined).
++    const innerItem = screen.getByTestId('inner-item');
++    const csI = window.getComputedStyle(innerItem);
++    expect(csI.width).to.equal('calc(100% * 6 / var(--Grid-columns))');
++  });
++});
+\ No newline at end of file
+diff --git a/packages/mui-system/src/Unstable_Grid/GridV1Repro.test.js b/packages/mui-system/src/Unstable_Grid/GridV1Repro.test.js
+new file mode 100644
+index 00000000..0df655c3
+--- /dev/null
++++ b/packages/mui-system/src/Unstable_Grid/GridV1Repro.test.js
+@@ -0,0 +1,51 @@
++import * as React from 'react';
++import { expect } from 'chai';
++import { createRenderer, screen } from 'test/utils';
++import { ThemeProvider, createTheme } from '@mui/material/styles';
++import Grid from '@mui/material/Grid';
++import Dialog from '@mui/material/Dialog';
++
++describe('Grid v1 with Dialog repro', () => {
++  const { render } = createRenderer();
++
++  it('v1: items directly in dialog wrapped in grid', () => {
++    render(
++      <ThemeProvider theme={createTheme()}>
++        <Grid container columns={16}>
++          <Grid item xs={8}>
++            <Dialog open>
++              <div data-testid="dialog-content">
++                <Grid item xs={6} data-testid="inner-item">
++                  content
++                </Grid>
++              </div>
++            </Dialog>
++          </Grid>
++        </Grid>
++      </ThemeProvider>,
++    );
++    const innerItem = screen.getByTestId('inner-item');
++    console.log('V1 inner-item maxWidth:', JSON.stringify(window.getComputedStyle(innerItem).maxWidth));
++    console.log('V1 inner-item class:', innerItem.className);
++  });
++
++  it('v1: container+items in dialog wrapped in grid', () => {
++    render(
++      <ThemeProvider theme={createTheme()}>
++        <Grid container columns={16}>
++          <Grid item xs={8}>
++            <Dialog open>
++              <Grid container data-testid="inner-container">
++                <Grid item xs={6} data-testid="inner-item2">
++                  content
++                </Grid>
++              </Grid>
++            </Dialog>
++          </Grid>
++        </Grid>
++      </ThemeProvider>,
++    );
++    const innerItem = screen.getByTestId('inner-item2');
++    console.log('V1 inner-item2 maxWidth:', JSON.stringify(window.getComputedStyle(innerItem).maxWidth));
++  });
++});
+\ No newline at end of file
+diff --git a/packages/mui-system/src/Unstable_Grid/createGrid.tsx b/packages/mui-system/src/Unstable_Grid/createGrid.tsx
+index 920caf50..56d83e92 100644
+--- a/packages/mui-system/src/Unstable_Grid/createGrid.tsx
++++ b/packages/mui-system/src/Unstable_Grid/createGrid.tsx
+@@ -44,6 +44,25 @@ function useThemePropsDefault<T extends {}>(props: T) {
+   });
+ }
+ 
++/**
++ * The context that tracks the nesting level of a grid.
++ * It is shared by all the grids created by `createGrid` so that the level is
++ * consistent across the different grid implementations.
++ *
++ * A grid rendered at the root of a portal (e.g. inside a `Dialog`) should be
++ * treated as a root grid (level 0) since the parent grid's CSS variables do not
++ * cascade into the portal. To support this, the portal boundary can reset this
++ * context to `0` (see `Dialog` for an example).
++ */
++export const NestedGridContext = React.createContext<number>(0);
++
++/**
++ * The context that tracks whether the parent grid has `disableEqualOverflow`.
++ * Shared by all the grids created by `createGrid`. Like `NestedGridContext`, it
++ * should be reset at a portal boundary (e.g. `Dialog`).
++ */
++export const GridOverflowContext = React.createContext<boolean | undefined>(undefined);
++
+ export default function createGrid(
+   options: {
+     createStyledComponent?: typeof defaultCreateStyledComponent;
+@@ -58,8 +77,8 @@ export default function createGrid(
+     componentName = 'MuiGrid',
+   } = options;
+ 
+-  const NestedContext = React.createContext<number>(0);
+-  const OverflowContext = React.createContext<boolean | undefined>(undefined);
++  const NestedContext = NestedGridContext;
++  const OverflowContext = GridOverflowContext;
+ 
+   const useUtilityClasses = (ownerState: GridOwnerState, theme: typeof defaultTheme) => {
+     const { container, direction, spacing, wrap, gridSize } = ownerState;
+diff --git a/packages/mui-system/src/Unstable_Grid/index.ts b/packages/mui-system/src/Unstable_Grid/index.ts
+index 301c2a90..5d38fab6 100644
+--- a/packages/mui-system/src/Unstable_Grid/index.ts
++++ b/packages/mui-system/src/Unstable_Grid/index.ts
+@@ -1,5 +1,6 @@
+ export { default } from './Grid';
+ export { default as createGrid } from './createGrid';
++export { NestedGridContext, GridOverflowContext } from './createGrid';
+ export * from './GridProps';
+ export { default as gridClasses } from './gridClasses';
+ export * from './gridClasses';
+diff --git a/test/karma.repro.conf.js b/test/karma.repro.conf.js
+new file mode 100644
+index 00000000..15914d96
+--- /dev/null
++++ b/test/karma.repro.conf.js
+@@ -0,0 +1,29 @@
++const playwright = require('playwright');
++
++process.env.CHROME_BIN = playwright.chromium.executablePath();
++
++// Reuse the webpack config from the main karma conf
++const mainConf = require('./karma.conf.js');
++
++module.exports = function setKarmaConfig(config) {
++  let captured;
++  mainConf({
++    set: (cfg) => {
++      captured = cfg;
++    },
++  });
++  config.set({
++    ...captured,
++    browsers: ['chromeHeadless'],
++    files: [{ pattern: 'test/karma.repro.tests.js', watched: false }],
++    preprocessors: { 'test/karma.repro.tests.js': ['webpack', 'sourcemap'] },
++    singleRun: true,
++    reporters: ['dots'],
++    plugins: [
++      'karma-mocha',
++      'karma-chrome-launcher',
++      'karma-sourcemap-loader',
++      'karma-webpack',
++    ],
++  });
++};
+\ No newline at end of file
+diff --git a/test/karma.repro.tests.js b/test/karma.repro.tests.js
+new file mode 100644
+index 00000000..86f39a98
+--- /dev/null
++++ b/test/karma.repro.tests.js
+@@ -0,0 +1,5 @@
++import './utils/init';
++import './utils/setupKarma';
++
++const systemContext = require.context('../packages/mui-system/src/', true, /GridRepro\.test\.(js|ts|tsx)$/);
++systemContext.keys().forEach(systemContext);
+\ No newline at end of file

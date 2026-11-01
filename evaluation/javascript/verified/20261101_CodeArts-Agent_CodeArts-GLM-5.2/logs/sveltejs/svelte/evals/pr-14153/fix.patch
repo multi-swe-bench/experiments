@@ -1,0 +1,13 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/remove_typescript_nodes.js b/packages/svelte/src/compiler/phases/1-parse/remove_typescript_nodes.js
+index edbb673..f52797b 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/remove_typescript_nodes.js
++++ b/packages/svelte/src/compiler/phases/1-parse/remove_typescript_nodes.js
+@@ -94,7 +94,7 @@ const visitors = {
+ 		e.typescript_invalid_feature(node, 'enums');
+ 	},
+ 	TSParameterProperty(node, context) {
+-		if (node.accessibility && context.path.at(-2)?.kind === 'constructor') {
++		if ((node.accessibility || node.readonly) && context.path.at(-2)?.kind === 'constructor') {
+ 			e.typescript_invalid_feature(node, 'accessibility modifiers on constructor parameters');
+ 		}
+ 		return node.parameter;

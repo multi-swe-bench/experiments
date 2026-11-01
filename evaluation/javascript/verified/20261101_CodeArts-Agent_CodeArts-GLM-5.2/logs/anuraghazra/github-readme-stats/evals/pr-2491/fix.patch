@@ -1,0 +1,130 @@
+diff --git a/api/top-langs.js b/api/top-langs.js
+index 19cccb8..9da986a 100644
+--- a/api/top-langs.js
++++ b/api/top-langs.js
+@@ -30,6 +30,7 @@ export default async (req, res) => {
+     border_radius,
+     border_color,
+     disable_animations,
++    show_other,
+   } = req.query;
+   res.setHeader("Content-Type", "image/svg+xml");
+ 
+@@ -77,6 +78,7 @@ export default async (req, res) => {
+         border_color,
+         locale: locale ? locale.toLowerCase() : null,
+         disable_animations: parseBoolean(disable_animations),
++        show_other: parseBoolean(show_other),
+       }),
+     );
+   } catch (err) {
+diff --git a/readme.md b/readme.md
+index 678c5c0..d598c7d 100644
+--- a/readme.md
++++ b/readme.md
+@@ -305,6 +305,7 @@ You can provide multiple comma-separated values in the bg_color option to render
+ -   `exclude_repo` - Exclude specified repositories _(Comma-separated values)_. Default: `[] (blank array)`.
+ -   `custom_title` - Sets a custom title for the card _(string)_. Default `Most Used Languages`.
+ -   `disable_animations` - Disables all animations in the card _(boolean)_. Default: `false`.
++-   `show_other` - When limiting the languages shown via `langs_count`, aggregates the remaining languages into a single "Other" entry _(boolean)_. Default: `false`.
+ 
+ > **Warning**
+ > Language names should be URI-escaped, as specified in [Percent Encoding](https://en.wikipedia.org/wiki/Percent-encoding)
+@@ -390,6 +391,14 @@ You can use the `&langs_count=` option to increase or decrease the number of lan
+ [![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra&langs_count=8)](https://github.com/anuraghazra/github-readme-stats)
+ ```
+ 
++### Show "Other" language
++
++When you limit the number of languages shown via `&langs_count=`, the remaining languages are hidden by default. Use the `&show_other=true` option to aggregate those leftover languages into a single "Other" entry so the card still reflects your full language usage.
++
++```md
++[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra&langs_count=8&show_other=true)](https://github.com/anuraghazra/github-readme-stats)
++```
++
+ ### Compact Language Card Layout
+ 
+ You can use the `&layout=compact` option to change the card design.
+diff --git a/src/cards/top-languages-card.js b/src/cards/top-languages-card.js
+index 9396ff8..ff05254 100644
+--- a/src/cards/top-languages-card.js
++++ b/src/cards/top-languages-card.js
+@@ -230,11 +230,17 @@ const calculateNormalLayoutHeight = (totalLangs) => {
+ /**
+  *  Hides languages and trims the list to show only the top N languages.
+  *
++ * When `show_other` is enabled and the number of (non-hidden) languages
++ * exceeds `langs_count`, the remaining languages are aggregated into a single
++ * "Other" entry so that the card still reflects the full picture of the user's
++ * language usage.
++ *
+  * @param {Record<string, Lang>} topLangs Top languages.
+  * @param {string[]} hide Languages to hide.
+  * @param {string} langs_count Number of languages to show.
++ * @param {boolean} show_other Whether to aggregate leftover languages into "Other".
+  */
+-const useLanguages = (topLangs, hide, langs_count) => {
++const useLanguages = (topLangs, hide, langs_count, show_other) => {
+   let langs = Object.values(topLangs);
+   let langsToHide = {};
+   let langsCount = clampValue(parseInt(langs_count), 1, 10);
+@@ -252,12 +258,28 @@ const useLanguages = (topLangs, hide, langs_count) => {
+     .sort((a, b) => b.size - a.size)
+     .filter((lang) => {
+       return !langsToHide[lowercaseTrim(lang.name)];
+-    })
+-    .slice(0, langsCount);
++    });
+ 
++  // total size of every (non-hidden) language, used to compute the
++  // percentages so that they add up to 100% (including the "Other" entry).
+   const totalLanguageSize = langs.reduce((acc, curr) => acc + curr.size, 0);
+ 
+-  return { langs, totalLanguageSize };
++  // keep only the top N languages and, when requested, aggregate the
++  // remaining ones into a single "Other" language.
++  let topLangsList = langs.slice(0, langsCount);
++  const remainingLangs = langs.slice(langsCount);
++
++  if (show_other && remainingLangs.length > 0) {
++    const otherSize = remainingLangs.reduce((acc, curr) => acc + curr.size, 0);
++
++    topLangsList.push({
++      name: "Other",
++      color: DEFAULT_LANG_COLOR,
++      size: otherSize,
++    });
++  }
++
++  return { langs: topLangsList, totalLanguageSize };
+ };
+ 
+ /**
+@@ -284,6 +306,7 @@ const renderTopLanguages = (topLangs, options = {}) => {
+     border_radius,
+     border_color,
+     disable_animations,
++    show_other = false,
+   } = options;
+ 
+   const i18n = new I18n({
+@@ -295,6 +318,7 @@ const renderTopLanguages = (topLangs, options = {}) => {
+     topLangs,
+     hide,
+     String(langs_count),
++    show_other,
+   );
+ 
+   let width = isNaN(card_width)
+diff --git a/src/cards/types.d.ts b/src/cards/types.d.ts
+index c5945d4..2de8622 100644
+--- a/src/cards/types.d.ts
++++ b/src/cards/types.d.ts
+@@ -38,6 +38,7 @@ export type TopLangOptions = CommonOptions & {
+   custom_title: string;
+   langs_count: number;
+   disable_animations: boolean;
++  show_other: boolean;
+ };
+ 
+ type WakaTimeOptions = CommonOptions & {

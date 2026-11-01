@@ -1,0 +1,36 @@
+diff --git a/src/plugin/timezone/index.js b/src/plugin/timezone/index.js
+index 3fe1bad..b966707 100644
+--- a/src/plugin/timezone/index.js
++++ b/src/plugin/timezone/index.js
+@@ -94,10 +94,16 @@ export default (o, c, d) => {
+ 
+   const proto = c.prototype
+ 
+-  proto.tz = function (timezone = defaultTimezone) {
++  proto.tz = function (timezone = defaultTimezone, keepLocalTime) {
+     const target = this.toDate().toLocaleString('en-US', { timeZone: timezone })
+     const diff = Math.round((this.toDate() - new Date(target)) / 1000 / 60)
+-    const ins = d(target).$set(ms, this.$ms).utcOffset(localUtcOffset - diff, true)
++    const targetOffset = localUtcOffset - diff
++    let ins
++    if (keepLocalTime) {
++      ins = d(this.$d).$set(ms, this.$ms).utcOffset(targetOffset, true)
++    } else {
++      ins = d(target).$set(ms, this.$ms).utcOffset(targetOffset, true)
++    }
+     ins.$x.$timezone = timezone
+     return ins
+   }
+diff --git a/types/plugin/timezone.d.ts b/types/plugin/timezone.d.ts
+index 5585585..491f874 100644
+--- a/types/plugin/timezone.d.ts
++++ b/types/plugin/timezone.d.ts
+@@ -5,7 +5,7 @@ export = plugin
+ 
+ declare module 'dayjs' {
+   interface Dayjs {
+-    tz(timezone?: string): Dayjs
++    tz(timezone?: string, keepLocalTime?: boolean): Dayjs
+   }
+ 
+   interface DayjsTimezone {

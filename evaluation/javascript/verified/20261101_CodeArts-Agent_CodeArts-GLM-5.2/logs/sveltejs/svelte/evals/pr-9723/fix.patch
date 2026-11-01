@@ -1,0 +1,26 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 5b4003f..080697b 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -2764,6 +2764,8 @@ export const template_visitors = {
+ 		if (
+ 			parent === undefined ||
+ 			(parent.type !== 'Component' &&
++				parent.type !== 'SvelteSelf' &&
++				parent.type !== 'SvelteComponent' &&
+ 				parent.type !== 'RegularElement' &&
+ 				parent.type !== 'SvelteFragment')
+ 		) {
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 79153ba..40c641e 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -1500,6 +1500,8 @@ const template_visitors = {
+ 		if (
+ 			parent === undefined ||
+ 			(parent.type !== 'Component' &&
++				parent.type !== 'SvelteSelf' &&
++				parent.type !== 'SvelteComponent' &&
+ 				parent.type !== 'RegularElement' &&
+ 				parent.type !== 'SvelteFragment')
+ 		) {

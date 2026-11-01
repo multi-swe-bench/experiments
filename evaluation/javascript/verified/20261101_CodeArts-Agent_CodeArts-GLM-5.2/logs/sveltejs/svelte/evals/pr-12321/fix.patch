@@ -1,0 +1,88 @@
+diff --git a/.changeset/transition-outro-cancel.md b/.changeset/transition-outro-cancel.md
+new file mode 100644
+index 0000000..9755883
+--- /dev/null
++++ b/.changeset/transition-outro-cancel.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: cancel outro transition when intro starts to prevent overlap
+\ No newline at end of file
+diff --git a/packages/svelte/src/internal/client/dom/elements/transitions.js b/packages/svelte/src/internal/client/dom/elements/transitions.js
+index c2fbefa..c6c64f0 100644
+--- a/packages/svelte/src/internal/client/dom/elements/transitions.js
++++ b/packages/svelte/src/internal/client/dom/elements/transitions.js
+@@ -290,6 +290,14 @@ function animate(element, options, counterpart, t2, callback) {
+ 
+ 	counterpart?.deactivate();
+ 
++	// An intro transition takes over from a (possibly still running) outro transition.
++	// The outro would otherwise keep holding its final state (`fill: forwards`) and
++	// overlap with the intro, so we abort it. We don't do the same for outros, because
++	// an outro may have a delay during which the intro is expected to keep running.
++	if (t2 === 1) {
++		counterpart?.abort();
++	}
++
+ 	if (!options?.duration) {
+ 		callback?.();
+ 		return {
+diff --git a/packages/svelte/tests/runtime-runes/samples/if-transition-outro-cancelled/_config.js b/packages/svelte/tests/runtime-runes/samples/if-transition-outro-cancelled/_config.js
+new file mode 100644
+index 0000000..c3b7cb1
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/if-transition-outro-cancelled/_config.js
+@@ -0,0 +1,32 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++
++export default test({
++	html: `<button>toggle</button>`,
++
++	async test({ assert, target, raf }) {
++		const btn = target.querySelector('button');
++
++		// show -> intro starts
++		flushSync(() => btn.click());
++		// let intro finish completely
++		raf.tick(1000);
++		assert.equal(raf.animations.size, 0);
++
++		// hide -> outro starts
++		flushSync(() => btn.click());
++		raf.tick(1500);
++		assert.equal(raf.animations.size, 1);
++
++		// show again quickly while outro is still running.
++		// The intro should start and the outro should be cancelled (not overlap).
++		flushSync(() => btn.click());
++		assert.equal(raf.animations.size, 1);
++
++		// advance to the end of the intro; the element should remain visible
++		raf.tick(2500);
++		const div = target.querySelector('div');
++		assert.ok(div, 'div should still be visible');
++		assert.equal(raf.animations.size, 0);
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/if-transition-outro-cancelled/main.svelte b/packages/svelte/tests/runtime-runes/samples/if-transition-outro-cancelled/main.svelte
+new file mode 100644
+index 0000000..b4af605
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/if-transition-outro-cancelled/main.svelte
+@@ -0,0 +1,11 @@
++<script>
++  import { fade } from "svelte/transition";
++
++  let show = $state(false);
++</script>
++
++<button onclick={() => show = !show}>toggle</button>
++
++{#if show}
++  <div transition:fade={{ duration: 1000 }}>hello</div>
++{/if}
+\ No newline at end of file

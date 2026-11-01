@@ -1,0 +1,20 @@
+diff --git a/packages/runtime-core/src/helpers/renderSlot.ts b/packages/runtime-core/src/helpers/renderSlot.ts
+index 8a76082..6536be9 100644
+--- a/packages/runtime-core/src/helpers/renderSlot.ts
++++ b/packages/runtime-core/src/helpers/renderSlot.ts
+@@ -69,7 +69,14 @@ export function renderSlot(
+         // slot content array of a dynamic conditional slot may have a branch
+         // key attached in the `createSlots` helper, respect that
+         (validSlotContent && (validSlotContent as any).key) ||
+-        `_${name}`,
++        // when the slot falls back to its fallback content, use a distinct
++        // key so that the slot fragment is remounted (instead of being patched
++        // in block-optimized mode) when the slot content validity changes.
++        // Otherwise, switching between the slot content and the fallback
++        // content (e.g. when either of them is guarded by v-if) would fail to
++        // update the DOM because the two come from different templates and may
++        // share the same vnode type/key.
++        `_${name}${validSlotContent ? '' : '-fb'}`,
+     },
+     validSlotContent || (fallback ? fallback() : []),
+     validSlotContent && (slots as RawSlots)._ === SlotFlags.STABLE

@@ -1,0 +1,38 @@
+$ bash /home/test-run.sh
+
+yarn run v1.22.19
+$ cross-env NODE_ENV=test mocha 'packages/**/*.test.{js,ts,tsx}' 'docs/**/*.test.{js,ts,tsx}' 'test/utils/**/*.test.{js,ts,tsx}' --timeout 1200000 --reporter json
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+including inaccessible elements by default
+
+Error: Cannot find module './ClassNameConfigurator'
+Require stack:
+- /home/material-ui/packages/mui-base/src/utils/ClassNameConfigurator.test.tsx
+- /home/material-ui/node_modules/mocha/lib/nodejs/esm-utils.js
+- /home/material-ui/node_modules/mocha/lib/mocha.js
+- /home/material-ui/node_modules/mocha/lib/cli/one-and-dones.js
+- /home/material-ui/node_modules/mocha/lib/cli/options.js
+- /home/material-ui/node_modules/mocha/bin/mocha.js
+    at Function.Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+    at Function.Module._load (node:internal/modules/cjs/loader:981:27)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/home/material-ui/packages/mui-base/src/utils/ClassNameConfigurator.test.tsx:3:1)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module._compile (/home/material-ui/node_modules/pirates/lib/index.js:136:24)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Object.newLoader [as .tsx] (/home/material-ui/node_modules/pirates/lib/index.js:141:7)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+    at Function.Module._load (node:internal/modules/cjs/loader:1019:12)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.exports.requireOrImport (/home/material-ui/node_modules/mocha/lib/nodejs/esm-utils.js:53:16)
+    at Object.exports.loadFilesAsync (/home/material-ui/node_modules/mocha/lib/nodejs/esm-utils.js:100:20)
+    at singleRun (/home/material-ui/node_modules/mocha/lib/cli/run-helpers.js:125:3)
+    at Object.exports.handler (/home/material-ui/node_modules/mocha/lib/cli/run.js:370:5)
+error Command failed with exit code 1.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+
+[exit code: 1]

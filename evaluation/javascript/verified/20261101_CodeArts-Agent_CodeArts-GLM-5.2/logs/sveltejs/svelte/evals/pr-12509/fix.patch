@@ -1,0 +1,49 @@
+diff --git a/.changeset/css-where-external.md b/.changeset/css-where-external.md
+new file mode 100644
+index 0000000..e756c5b
+--- /dev/null
++++ b/.changeset/css-where-external.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: keep CSS rules that use `:is(...)`/`:where(...)` to reference state outside the component (e.g. Tailwind's `@apply dark:...`)
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+index f238e3e..0b517cd 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+@@ -312,7 +312,31 @@ function relative_selector_might_apply_to_node(relative_selector, rule, element,
+ 					}
+ 
+ 					if (!matched) {
+-						return false;
++						// None of the selectors inside `:is(...)`/`:where(...)` matched
++						// an element in this component. If the `:is(...)`/`:where(...)`
++						// is a condition on an element that is already matched by another
++						// part of the compound selector (e.g. `&` or a class), the missing
++						// match could be due to the selector referring to state outside of
++						// this component (e.g. `.dark` applied to `<html>` as is the case
++						// with Tailwind's `@apply dark:...`). In that case keep the rule
++						// and treat the selectors as used so they aren't pruned, but don't
++						// scope them. Otherwise the `:is(...)`/`:where(...)` is what
++						// selects the element, so prune as before.
++						const is_condition = relative_selector.selectors.some(
++							(s) =>
++								s.type === 'NestingSelector' ||
++								s.type === 'ClassSelector' ||
++								s.type === 'IdSelector' ||
++								s.type === 'AttributeSelector'
++						);
++
++						if (is_condition) {
++							for (const complex_selector of selector.args.children) {
++								complex_selector.metadata.used = true;
++							}
++						} else {
++							return false;
++						}
+ 					}
+ 				}
+ 

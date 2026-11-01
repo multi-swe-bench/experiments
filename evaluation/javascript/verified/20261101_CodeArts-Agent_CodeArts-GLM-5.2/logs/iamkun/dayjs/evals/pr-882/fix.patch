@@ -1,0 +1,46 @@
+diff --git a/src/plugin/customParseFormat/index.js b/src/plugin/customParseFormat/index.js
+index 6d754f1..b299855 100644
+--- a/src/plugin/customParseFormat/index.js
++++ b/src/plugin/customParseFormat/index.js
+@@ -152,11 +152,36 @@ const parseFormattedInput = (input, format, utc) => {
+       year, month, day, hours, minutes, seconds, milliseconds, zone
+     } = parser(input)
+     const now = new Date()
+-    const d = day || ((!year && !month) ? now.getDate() : 1)
+-    const y = year || now.getFullYear()
+-    let M = 0
+-    if (!(year && !month)) {
+-      M = month > 0 ? month - 1 : now.getMonth()
++    // distinguish "field not provided" (undefined) from "field provided as 0"
++    const yearProvided = year !== undefined
++    const monthProvided = month !== undefined
++    const dayProvided = day !== undefined
++    let d
++    if (dayProvided) {
++      d = day
++    } else if (!yearProvided && !monthProvided) {
++      d = now.getDate()
++    } else {
++      d = 1
++    }
++    const y = yearProvided ? year : now.getFullYear()
++    let M
++    if (yearProvided && !monthProvided) {
++      M = 0
++    } else if (monthProvided) {
++      M = month - 1
++    } else {
++      M = now.getMonth()
++    }
++    // reject out-of-range month / day (e.g. 0) that Date would silently roll over
++    if (monthProvided && (month < 1 || month > 12)) {
++      return new Date('') // Invalid Date
++    }
++    if (dayProvided) {
++      const daysInThisMonth = new Date(y, M + 1, 0).getDate()
++      if (day < 1 || day > daysInThisMonth) {
++        return new Date('') // Invalid Date
++      }
+     }
+     const h = hours || 0
+     const m = minutes || 0

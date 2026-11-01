@@ -1,0 +1,53 @@
+diff --git a/.changeset/tagged-template-reactivity.md b/.changeset/tagged-template-reactivity.md
+new file mode 100644
+index 0000000..7d889ce
+--- /dev/null
++++ b/.changeset/tagged-template-reactivity.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: ensure tagged template expressions are treated as reactive in templates
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 2a4241a..60f0264 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -58,6 +58,7 @@ import { SvelteElement } from './visitors/SvelteElement.js';
+ import { SvelteFragment } from './visitors/SvelteFragment.js';
+ import { SvelteHead } from './visitors/SvelteHead.js';
+ import { SvelteSelf } from './visitors/SvelteSelf.js';
++import { TaggedTemplateExpression } from './visitors/TaggedTemplateExpression.js';
+ import { Text } from './visitors/Text.js';
+ import { TitleElement } from './visitors/TitleElement.js';
+ import { UpdateExpression } from './visitors/UpdateExpression.js';
+@@ -161,6 +162,7 @@ const visitors = {
+ 	SvelteFragment,
+ 	SvelteComponent,
+ 	SvelteSelf,
++	TaggedTemplateExpression,
+ 	Text,
+ 	TitleElement,
+ 	UpdateExpression,
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/TaggedTemplateExpression.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/TaggedTemplateExpression.js
+new file mode 100644
+index 0000000..aa2ae0d
+--- /dev/null
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/TaggedTemplateExpression.js
+@@ -0,0 +1,15 @@
++/** @import { TaggedTemplateExpression } from 'estree' */
++/** @import { Context } from '../types' */
++
++/**
++ * @param {TaggedTemplateExpression} node
++ * @param {Context} context
++ */
++export function TaggedTemplateExpression(node, context) {
++	if (context.state.expression) {
++		context.state.expression.has_call = true;
++		context.state.expression.has_state = true;
++	}
++
++	context.next();
++}

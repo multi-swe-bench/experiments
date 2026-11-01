@@ -1,0 +1,125 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 057020d..3521e1b 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -2,7 +2,7 @@
+ /** @import { Visitors } from 'zimmerframe' */
+ /** @import { ComponentAnalysis } from '../phases/types.js' */
+ /** @import { Scope, ScopeRoot } from '../phases/scope.js' */
+-/** @import { AST, Binding, SvelteNode, ValidatedCompileOptions } from '#compiler' */
++/** @import { AST, Binding, Css, SvelteNode, ValidatedCompileOptions } from '#compiler' */
+ import MagicString from 'magic-string';
+ import { walk } from 'zimmerframe';
+ import { parse } from '../phases/1-parse/index.js';
+@@ -77,7 +77,14 @@ export function migrate(source, { filename } = {}) {
+ 		str.replaceAll(/(<svelte:options\s.*?\s?)accessors\s?/g, (_, $1) => $1);
+ 
+ 		for (const content of style_contents) {
+-			str.overwrite(content[0], content[0] + style_placeholder.length, content[1]);
++			const globalized = globalize_css(content[1]);
++			str.overwrite(content[0], content[0] + style_placeholder.length, globalized);
++		}
++
++		// `<style>` tags without attributes are not blanked above, so the CSS is still
++		// part of `source` and was parsed into `parsed.css`. Globalize it in-place.
++		if (parsed.css && style_contents.length === 0) {
++			globalize_css_ast(parsed.css, str, 0);
+ 		}
+ 
+ 		/** @type {State} */
+@@ -1643,3 +1650,95 @@ function guess_indent(content) {
+ 
+ 	return ' '.repeat(min);
+ }
++
++/**
++ * Wraps the arguments of `:has(...)`, `:not(...)`, `:where(...)` and `:is(...)`
++ * pseudo-class selectors in `:global(...)` if necessary. These were not scoped in
++ * Svelte 4 but are scoped in Svelte 5, so migrating them to `:global(...)` preserves
++ * the previous behavior.
++ *
++ * If the CSS cannot be parsed (e.g. it uses a preprocessor language like SCSS),
++ * the original content is returned unchanged.
++ *
++ * @param {string} content
++ * @returns {string}
++ */
++function globalize_css(content) {
++	try {
++		const parsed = parse(`<style>${content}</style>`);
++		const css = /** @type {Css.StyleSheet} */ (parsed.css);
++		const str = new MagicString(content);
++		globalize_css_ast(css, str, css.content.start);
++		return str.toString();
++	} catch {
++		return content;
++	}
++}
++
++/**
++ * Walks the given CSS AST and wraps the arguments of `:has(...)`, `:not(...)`,
++ * `:where(...)` and `:is(...)` pseudo-class selectors in `:global(...)` if they
++ * are not already global.
++ *
++ * @param {Css.Node} ast
++ * @param {MagicString} str
++ * @param {number} offset The position in `str`'s original that corresponds to
++ *   position `0` in the AST's source.
++ */
++function globalize_css_ast(ast, str, offset) {
++	walk(ast, { str, offset }, css_migration_visitors);
++}
++
++/** @type {Visitors<Css.Node, { str: MagicString; offset: number }>} */
++const css_migration_visitors = {
++	PseudoClassSelector(node, context) {
++		if (node.name === 'global') {
++			// don't recurse into `:global(...)` - its contents are already global
++			return;
++		}
++
++		if (
++			(node.name === 'has' || node.name === 'not' || node.name === 'where' || node.name === 'is') &&
++			node.args !== null &&
++			!is_selector_list_global(node.args)
++		) {
++			const { str, offset } = context.state;
++			str.prependLeft(node.args.start - offset, ':global(');
++			str.appendRight(node.args.end - offset, ')');
++			// wrapping the arguments in `:global(...)` makes their contents global,
++			// so there's no need to recurse further
++			return;
++		}
++
++		context.next();
++	}
++};
++
++/**
++ * True if every selector in the given selector list is already global, meaning it's
++ * a `:global(...)` (or `:global`) selector, in which case wrapping is unnecessary.
++ * @param {Css.SelectorList} selector_list
++ * @returns {boolean}
++ */
++function is_selector_list_global(selector_list) {
++	return selector_list.children.every((complex_selector) =>
++		complex_selector.children.every(is_relative_selector_global)
++	);
++}
++
++/**
++ * @param {Css.RelativeSelector} relative_selector
++ * @returns {boolean}
++ */
++function is_relative_selector_global(relative_selector) {
++	const first = relative_selector.selectors[0];
++	return (
++		first?.type === 'PseudoClassSelector' &&
++		first.name === 'global' &&
++		(first.args === null ||
++			relative_selector.selectors.every(
++				(selector) =>
++					selector.type === 'PseudoClassSelector' || selector.type === 'PseudoElementSelector'
++			))
++	);
++}

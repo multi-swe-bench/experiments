@@ -1,0 +1,22 @@
+diff --git a/packages/svelte/src/internal/client/dom/elements/attributes.js b/packages/svelte/src/internal/client/dom/elements/attributes.js
+index 05ccba1..484430f 100644
+--- a/packages/svelte/src/internal/client/dom/elements/attributes.js
++++ b/packages/svelte/src/internal/client/dom/elements/attributes.js
+@@ -1,7 +1,7 @@
+ import { DEV } from 'esm-env';
+ import { hydrating } from '../hydration.js';
+ import { get_descriptors, map_get, map_set, object_assign } from '../../utils.js';
+-import { AttributeAliases, DelegatedEvents, namespace_svg } from '../../../../constants.js';
++import { AttributeAliases, DelegatedEvents, DOMBooleanAttributes, namespace_svg } from '../../../../constants.js';
+ import { delegate } from './events.js';
+ import { autofocus } from './misc.js';
+ import { effect } from '../../reactivity/effects.js';
+@@ -168,7 +168,7 @@ export function set_attributes(element, prev, next, lowercase_attributes, css_ha
+ 				name = AttributeAliases[name] || name;
+ 			}
+ 
+-			if (setters.includes(name)) {
++			if (setters.includes(name) || (DOMBooleanAttributes.includes(name) && name in element)) {
+ 				if (hydrating && (name === 'src' || name === 'href' || name === 'srcset')) {
+ 					check_src_in_dev_hydration(element, name, value);
+ 				} else {

@@ -1,0 +1,122 @@
+diff --git a/packages/mui-system/src/Unstable_Grid/Grid.tsx b/packages/mui-system/src/Unstable_Grid/Grid.tsx
+index ffe3f614..050c5099 100644
+--- a/packages/mui-system/src/Unstable_Grid/Grid.tsx
++++ b/packages/mui-system/src/Unstable_Grid/Grid.tsx
+@@ -60,6 +60,11 @@ Grid.propTypes /* remove-proptypes */ = {
+    * If `true`, the negative margin and padding are apply only to the top and left sides of the grid.
+    */
+   disableEqualOverflow: PropTypes.bool,
++  /**
++   * If `true`, the nested grid does not inherit the spacing from its parent.
++   * @default false
++   */
++  disableSpacingInheritance: PropTypes.bool,
+   /**
+    * If a number, it sets the number of columns the grid item uses.
+    * It can't be greater than the total number of columns of the container (12 by default).
+diff --git a/packages/mui-system/src/Unstable_Grid/GridProps.ts b/packages/mui-system/src/Unstable_Grid/GridProps.ts
+index f4456f15..23466faa 100644
+--- a/packages/mui-system/src/Unstable_Grid/GridProps.ts
++++ b/packages/mui-system/src/Unstable_Grid/GridProps.ts
+@@ -141,6 +141,15 @@ export interface GridBaseProps extends Breakpoints {
+    * If `true`, the negative margin and padding are apply only to the top and left sides of the grid.
+    */
+   disableEqualOverflow?: boolean;
++  /**
++   * If `true`, the nested grid does not inherit the spacing from its parent. The spacing can then be
++   * set on the nested grid independently. This is useful when you want to restore the spacing behavior
++   * of the original MUI 4/5 `<Grid />` component where nested grids do not inherit the parent's spacing.
++   * It can be set on the top-level grid to disable spacing inheritance for all of its nested grids,
++   * or it can be set in the theme's `defaultProps` to disable it for the whole project.
++   * @default false
++   */
++  disableSpacingInheritance?: boolean;
+   /**
+    * Defines the vertical space between the type `item` components.
+    * It overrides the value of the `spacing` prop.
+diff --git a/packages/mui-system/src/Unstable_Grid/createGrid.tsx b/packages/mui-system/src/Unstable_Grid/createGrid.tsx
+index 6dc66f30..590a5e38 100644
+--- a/packages/mui-system/src/Unstable_Grid/createGrid.tsx
++++ b/packages/mui-system/src/Unstable_Grid/createGrid.tsx
+@@ -60,6 +60,9 @@ export default function createGrid(
+ 
+   const NestedContext = React.createContext(false);
+   const OverflowContext = React.createContext<boolean | undefined>(undefined);
++  // The spacing inheritance is enabled by default. The top-level grid can opt out by setting
++  // `disableSpacingInheritance` to true, which is then propagated to all of its nested grids.
++  const DisableSpacingInheritanceContext = React.createContext(false);
+ 
+   const useUtilityClasses = (ownerState: GridOwnerState, theme: typeof defaultTheme) => {
+     const { container, direction, spacing, wrap, gridSize } = ownerState;
+@@ -95,6 +98,7 @@ export default function createGrid(
+     const props = extendSxProp(themeProps) as Omit<typeof themeProps, 'color'>; // `color` type conflicts with html color attribute.
+     const nested = React.useContext(NestedContext);
+     const overflow = React.useContext(OverflowContext);
++    const parentDisableSpacingInheritance = React.useContext(DisableSpacingInheritanceContext);
+     const {
+       className,
+       columns: columnsProp = 12,
+@@ -106,6 +110,7 @@ export default function createGrid(
+       rowSpacing: rowSpacingProp = spacingProp,
+       columnSpacing: columnSpacingProp = spacingProp,
+       disableEqualOverflow: themeDisableEqualOverflow,
++      disableSpacingInheritance: disableSpacingInheritanceProp = false,
+       ...rest
+     } = props;
+     // Because `disableEqualOverflow` can be set from the theme's defaultProps, the **nested** grid should look at the instance props instead.
+@@ -113,6 +118,9 @@ export default function createGrid(
+     if (nested && themeDisableEqualOverflow !== undefined) {
+       disableEqualOverflow = inProps.disableEqualOverflow;
+     }
++    // `disableSpacingInheritance` can be set on the top-level grid (or from the theme's defaultProps)
++    // and is propagated to all of its nested grids via context.
++    const disableSpacingInheritance = parentDisableSpacingInheritance || disableSpacingInheritanceProp;
+     // collect breakpoints related props because they can be customized from the theme.
+     const gridSize = {} as GridOwnerState['gridSize'];
+     const gridOffset = {} as GridOwnerState['gridOffset'];
+@@ -129,11 +137,15 @@ export default function createGrid(
+     });
+ 
+     const columns = inProps.columns ?? (nested ? undefined : columnsProp);
+-    const spacing = inProps.spacing ?? (nested ? undefined : spacingProp);
++    const spacing = inProps.spacing ?? (nested && !disableSpacingInheritance ? undefined : spacingProp);
+     const rowSpacing =
+-      inProps.rowSpacing ?? inProps.spacing ?? (nested ? undefined : rowSpacingProp);
++      inProps.rowSpacing ??
++      inProps.spacing ??
++      (nested && !disableSpacingInheritance ? undefined : rowSpacingProp);
+     const columnSpacing =
+-      inProps.columnSpacing ?? inProps.spacing ?? (nested ? undefined : columnSpacingProp);
++      inProps.columnSpacing ??
++      inProps.spacing ??
++      (nested && !disableSpacingInheritance ? undefined : columnSpacingProp);
+     const ownerState = {
+       ...props,
+       nested,
+@@ -175,6 +187,14 @@ export default function createGrid(
+       );
+     }
+ 
++    if (disableSpacingInheritance) {
++      result = (
++        <DisableSpacingInheritanceContext.Provider value>
++          {result}
++        </DisableSpacingInheritanceContext.Provider>
++      );
++    }
++
+     return result;
+   }) as OverridableComponent<GridTypeMap>;
+ 
+@@ -200,6 +220,11 @@ export default function createGrid(
+       PropTypes.object,
+     ]),
+     disableEqualOverflow: PropTypes.bool,
++    /**
++     * If `true`, the nested grid does not inherit the spacing from its parent.
++     * @default false
++     */
++    disableSpacingInheritance: PropTypes.bool,
+     lg: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number, PropTypes.bool]),
+     lgOffset: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number]),
+     md: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number, PropTypes.bool]),

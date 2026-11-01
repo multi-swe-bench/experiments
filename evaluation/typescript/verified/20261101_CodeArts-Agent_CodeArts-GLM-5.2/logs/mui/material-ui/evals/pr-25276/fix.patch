@@ -1,0 +1,127 @@
+diff --git a/packages/material-ui/src/Autocomplete/Autocomplete.js b/packages/material-ui/src/Autocomplete/Autocomplete.js
+index 6cec5f0..6d0c5c7 100644
+--- a/packages/material-ui/src/Autocomplete/Autocomplete.js
++++ b/packages/material-ui/src/Autocomplete/Autocomplete.js
+@@ -19,15 +19,7 @@ import capitalize from '../utils/capitalize';
+ 
+ const overridesResolver = (props, styles) => {
+   const { styleProps } = props;
+-  const {
+-    disablePortal,
+-    fullWidth,
+-    hasClearIcon,
+-    hasPopupIcon,
+-    inputFocused,
+-    popupOpen,
+-    size,
+-  } = styleProps;
++  const { fullWidth, hasClearIcon, hasPopupIcon, inputFocused, size } = styleProps;
+ 
+   return deepmerge(
+     {
+@@ -47,19 +39,8 @@ const overridesResolver = (props, styles) => {
+       [`& .${autocompleteClasses.clearIndicator}`]: styles.clearIndicator,
+       [`& .${autocompleteClasses.popupIndicator}`]: {
+         ...styles.popupIndicator,
+-        ...(popupOpen && styles.popupIndicatorOpen),
+-      },
+-      [`& .${autocompleteClasses.popper}`]: {
+-        ...styles.popper,
+-        ...(disablePortal && styles.popperDisablePortal),
++        ...(styleProps.popupOpen && styles.popupIndicatorOpen),
+       },
+-      [`& .${autocompleteClasses.paper}`]: styles.paper,
+-      [`& .${autocompleteClasses.listbox}`]: styles.listbox,
+-      [`& .${autocompleteClasses.loading}`]: styles.loading,
+-      [`& .${autocompleteClasses.noOptions}`]: styles.noOptions,
+-      [`& .${autocompleteClasses.option}`]: styles.option,
+-      [`& .${autocompleteClasses.groupLabel}`]: styles.groupLabel,
+-      [`& .${autocompleteClasses.groupUl}`]: styles.groupUl,
+     },
+     styles.root || {},
+   );
+@@ -270,6 +251,13 @@ const AutocompletePopper = experimentalStyled(
+   {
+     name: 'MuiAutocomplete',
+     slot: 'Popper',
++    overridesResolver: (props, styles) => {
++      const { styleProps } = props;
++      return {
++        ...styles.popper,
++        ...(styleProps.disablePortal && styles.popperDisablePortal),
++      };
++    },
+   },
+ )(({ theme, styleProps }) => ({
+   /* Styles applied to the popper element. */
+@@ -283,7 +271,11 @@ const AutocompletePopper = experimentalStyled(
+ const AutocompletePaper = experimentalStyled(
+   Paper,
+   {},
+-  { name: 'MuiAutocomplete', slot: 'Paper' },
++  {
++    name: 'MuiAutocomplete',
++    slot: 'Paper',
++    overridesResolver: (props, styles) => styles.paper,
++  },
+ )(({ theme }) => ({
+   /* Styles applied to the Paper component. */
+   ...theme.typography.body1,
+@@ -294,7 +286,11 @@ const AutocompletePaper = experimentalStyled(
+ const AutocompleteLoading = experimentalStyled(
+   'div',
+   {},
+-  { name: 'MuiAutocomplete', slot: 'Loading' },
++  {
++    name: 'MuiAutocomplete',
++    slot: 'Loading',
++    overridesResolver: (props, styles) => styles.loading,
++  },
+ )(({ theme }) => ({
+   /* Styles applied to the loading wrapper. */
+   color: theme.palette.text.secondary,
+@@ -304,7 +300,11 @@ const AutocompleteLoading = experimentalStyled(
+ const AutocompleteNoOptions = experimentalStyled(
+   'div',
+   {},
+-  { name: 'MuiAutocomplete', slot: 'NoOptions' },
++  {
++    name: 'MuiAutocomplete',
++    slot: 'NoOptions',
++    overridesResolver: (props, styles) => styles.noOptions,
++  },
+ )(({ theme }) => ({
+   /* Styles applied to the no option wrapper. */
+   color: theme.palette.text.secondary,
+@@ -314,7 +314,14 @@ const AutocompleteNoOptions = experimentalStyled(
+ const AutocompleteListbox = experimentalStyled(
+   'div',
+   {},
+-  { name: 'MuiAutocomplete', slot: 'Listbox' },
++  {
++    name: 'MuiAutocomplete',
++    slot: 'Listbox',
++    overridesResolver: (props, styles) => ({
++      ...styles.listbox,
++      [`& .${autocompleteClasses.option}`]: styles.option,
++    }),
++  },
+ )(({ theme }) => ({
+   /* Styles applied to the listbox component. */
+   listStyle: 'none',
+@@ -382,6 +389,7 @@ const AutocompleteGroupLabel = experimentalStyled(
+   {
+     name: 'MuiAutocomplete',
+     slot: 'GroupLabel',
++    overridesResolver: (props, styles) => styles.groupLabel,
+   },
+ )(({ theme }) => ({
+   /* Styles applied to the group's label elements. */
+@@ -395,6 +403,7 @@ const AutocompleteGroupUl = experimentalStyled(
+   {
+     name: 'MuiAutocomplete',
+     slot: 'GroupUl',
++    overridesResolver: (props, styles) => styles.groupUl,
+   },
+ )({
+   /* Styles applied to the group's ul elements. */

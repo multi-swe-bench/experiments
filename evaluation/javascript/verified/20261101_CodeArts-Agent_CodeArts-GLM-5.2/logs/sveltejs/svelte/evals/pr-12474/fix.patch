@@ -1,0 +1,164 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/css/index.js b/packages/svelte/src/compiler/phases/3-transform/css/index.js
+index bc3952e..34f40ff 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/css/index.js
++++ b/packages/svelte/src/compiler/phases/3-transform/css/index.js
+@@ -15,7 +15,8 @@ import { merge_with_preprocessor_map } from '../../../utils/mapped_code.js';
+  *   keyframes: string[];
+  *   specificity: {
+  *     bumped: boolean
+- *   }
++ *   };
++ *   in_global_block: boolean;
+  * }} State
+  */
+ 
+@@ -37,7 +38,8 @@ export function render_stylesheet(source, analysis, options) {
+ 		keyframes: analysis.css.keyframes,
+ 		specificity: {
+ 			bumped: false
+-		}
++		},
++		in_global_block: false
+ 	};
+ 
+ 	const ast = /** @type {Css.StyleSheet} */ (analysis.css.ast);
+@@ -122,14 +124,14 @@ const visitors = {
+ 	Rule(node, { state, next, visit }) {
+ 		// keep empty rules in dev, because it's convenient to
+ 		// see them in devtools
+-		if (!state.dev && is_empty(node)) {
++		if (!state.in_global_block && !state.dev && is_empty(node)) {
+ 			state.code.prependRight(node.start, '/* (empty) ');
+ 			state.code.appendLeft(node.end, '*/');
+ 			escape_comment_close(node, state.code);
+ 			return;
+ 		}
+ 
+-		if (!is_used(node)) {
++		if (!state.in_global_block && !is_used(node)) {
+ 			state.code.prependRight(node.start, '/* (unused) ');
+ 			state.code.appendLeft(node.end, '*/');
+ 			escape_comment_close(node, state.code);
+@@ -147,47 +149,50 @@ const visitors = {
+ 
+ 				state.code.prependRight(node.block.end - 1, '/*');
+ 				state.code.appendLeft(node.block.end, '*/');
+-
+-				// don't recurse into selector or body
+-				return;
++			} else {
++				// don't recurse into selector body
++				visit(node.prelude);
+ 			}
+ 
+-			// don't recurse into body
+-			visit(node.prelude);
++			// recurse into body so that e.g. animation declarations are
++			// transformed, but don't apply scoping/pruning to nested rules
++			visit(node.block, { ...state, in_global_block: true });
+ 			return;
+ 		}
+ 
+ 		next();
+ 	},
+ 	SelectorList(node, { state, next, path }) {
+-		let pruning = false;
+-		let last = node.children[0].start;
++		if (!state.in_global_block) {
++			let pruning = false;
++			let last = node.children[0].start;
+ 
+-		for (let i = 0; i < node.children.length; i += 1) {
+-			const selector = node.children[i];
++			for (let i = 0; i < node.children.length; i += 1) {
++				const selector = node.children[i];
+ 
+-			if (selector.metadata.used === pruning) {
+-				if (pruning) {
+-					let i = selector.start;
+-					while (state.code.original[i] !== ',') i--;
++				if (selector.metadata.used === pruning) {
++					if (pruning) {
++						let i = selector.start;
++						while (state.code.original[i] !== ',') i--;
+ 
+-					state.code.overwrite(i, i + 1, '*/');
+-				} else {
+-					if (i === 0) {
+-						state.code.prependRight(selector.start, '/* (unused) ');
++						state.code.overwrite(i, i + 1, '*/');
+ 					} else {
+-						state.code.overwrite(last, selector.start, ' /* (unused) ');
++						if (i === 0) {
++							state.code.prependRight(selector.start, '/* (unused) ');
++						} else {
++							state.code.overwrite(last, selector.start, ' /* (unused) ');
++						}
+ 					}
++
++					pruning = !pruning;
+ 				}
+ 
+-				pruning = !pruning;
++				last = selector.end;
+ 			}
+ 
+-			last = selector.end;
+-		}
+-
+-		if (pruning) {
+-			state.code.appendLeft(last, '*/');
++			if (pruning) {
++				state.code.appendLeft(last, '*/');
++			}
+ 		}
+ 
+ 		// if we're in a `:is(...)` or whatever, keep existing specificity bump state
+diff --git a/packages/svelte/tests/css/samples/animation-in-global-block/expected.css b/packages/svelte/tests/css/samples/animation-in-global-block/expected.css
+new file mode 100644
+index 0000000..4bf2cef
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/animation-in-global-block/expected.css
+@@ -0,0 +1,16 @@
++
++	@keyframes svelte-xyz-scale-ani {
++		from {
++			scale: 0.8;
++		}
++	}
++
++	[data-green] h1.svelte-xyz {
++		animation: svelte-xyz-scale-ani 2s infinite;
++	}
++
++	/* :global {*/
++		[data-blue] h1 {
++			animation: svelte-xyz-scale-ani 2s infinite;
++		}
++	/*}*/
+diff --git a/packages/svelte/tests/css/samples/animation-in-global-block/input.svelte b/packages/svelte/tests/css/samples/animation-in-global-block/input.svelte
+new file mode 100644
+index 0000000..e137172
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/animation-in-global-block/input.svelte
+@@ -0,0 +1,19 @@
++<h1>test</h1>
++
++<style>
++	@keyframes scale-ani {
++		from {
++			scale: 0.8;
++		}
++	}
++
++	:global([data-green]) h1 {
++		animation: scale-ani 2s infinite;
++	}
++
++	:global {
++		[data-blue] h1 {
++			animation: scale-ani 2s infinite;
++		}
++	}
++</style>
+\ No newline at end of file

@@ -1,0 +1,498 @@
+diff --git a/src/plugin/duration/index.js b/src/plugin/duration/index.js
+new file mode 100644
+index 0000000..381a8d9
+--- /dev/null
++++ b/src/plugin/duration/index.js
+@@ -0,0 +1,421 @@
++import * as C from '../../constant'
++import U from '../../utils'
++
++const MILLISECONDS_A_YEAR = C.MILLISECONDS_A_DAY * 365
++const MILLISECONDS_A_MONTH = C.MILLISECONDS_A_DAY * 30
++const MILLISECONDS_A_QUARTER = MILLISECONDS_A_MONTH * 3
++
++// ISO 8601 duration regex
++const durationRegex = /^(-|\+)?P(?:([-+]?[0-9,.]*)Y)?(?:([-+]?[0-9,.]*)M)?(?:([-+]?[0-9,.]*)W)?(?:([-+]?[0-9,.]*)D)?(?:T(?:([-+]?[0-9,.]*)H)?(?:([-+]?[0-9,.]*)M)?(?:([-+]?[0-9,.]*)S)?)?$/
++// ASP.NET json time format regex
++const aspNetRegex = /^(-|\+)?(?:(\d*)[. ])?(\d+):(\d+)(?::(\d+)(\.\d*)?)?$/
++
++const unitToMS = {
++  Year: MILLISECONDS_A_YEAR,
++  Month: MILLISECONDS_A_MONTH,
++  Quarter: MILLISECONDS_A_QUARTER,
++  Week: C.MILLISECONDS_A_WEEK,
++  Day: C.MILLISECONDS_A_DAY,
++  Hour: C.MILLISECONDS_A_HOUR,
++  Minute: C.MILLISECONDS_A_MINUTE,
++  Second: C.MILLISECONDS_A_SECOND,
++  Millisecond: 1
++}
++
++const unitAlias = {
++  y: 'Year',
++  Y: 'Year',
++  year: 'Year',
++  years: 'Year',
++  M: 'Month',
++  month: 'Month',
++  months: 'Month',
++  Q: 'Quarter',
++  quarter: 'Quarter',
++  quarters: 'Quarter',
++  w: 'Week',
++  W: 'Week',
++  week: 'Week',
++  weeks: 'Week',
++  d: 'Day',
++  D: 'Day',
++  day: 'Day',
++  days: 'Day',
++  date: 'Day',
++  dates: 'Day',
++  h: 'Hour',
++  H: 'Hour',
++  hour: 'Hour',
++  hours: 'Hour',
++  hr: 'Hour',
++  hrs: 'Hour',
++  m: 'Minute',
++  minute: 'Minute',
++  minutes: 'Minute',
++  min: 'Minute',
++  mins: 'Minute',
++  s: 'Second',
++  S: 'Second',
++  second: 'Second',
++  seconds: 'Second',
++  sec: 'Second',
++  secs: 'Second',
++  ms: 'Millisecond',
++  MS: 'Millisecond',
++  millisecond: 'Millisecond',
++  milliseconds: 'Millisecond'
++}
++
++const prettyUnit = (unit) => {
++  const u = String(unit || '')
++  if (unitAlias[u]) return unitAlias[u]
++  const lower = u.toLowerCase().replace(/s$/, '')
++  if (unitAlias[lower]) return unitAlias[lower]
++  return `${lower.charAt(0).toUpperCase()}${lower.slice(1)}`
++}
++
++const sign = (n) => {
++  if (n < 0) return -1
++  if (n > 0) return 1
++  return 0
++}
++
++const absFloor = n => (n < 0 ? Math.ceil(n) || 0 : Math.floor(n))
++const absCeil = n => (n < 0 ? Math.floor(n) : Math.ceil(n))
++
++const defaultRelativeTime = {
++  future: 'in %s',
++  past: '%s ago',
++  s: 'a few seconds',
++  m: 'a minute',
++  mm: '%d minutes',
++  h: 'an hour',
++  hh: '%d hours',
++  d: 'a day',
++  dd: '%d days',
++  M: 'a month',
++  MM: '%d months',
++  y: 'a year',
++  yy: '%d years'
++}
++
++export default (option, Dayjs, dayjs) => {
++  const isDuration = d => d instanceof Duration // eslint-disable-line no-use-before-define
++
++  dayjs.duration = function (input, unit, locale) {
++    if (isDuration(input)) {
++      return input.clone()
++    }
++    return new Duration(input, unit, locale) // eslint-disable-line no-use-before-define
++  }
++  dayjs.isDuration = isDuration
++
++  class Duration {
++    constructor(input, unit, locale) {
++      this.$d = {}
++      this.$l = locale || 'en'
++      this.parse(input, unit)
++      this.calcMilliseconds()
++    }
++
++    parse(input, unit) {
++      if (isDuration(input)) {
++        this.$d = Object.assign({}, input.$d)
++        this.$l = input.$l
++      } else if (typeof input === 'number') {
++        this.$d[prettyUnit(unit || 'millisecond')] = input
++      } else if (typeof input === 'string') {
++        this.parseString(input)
++      } else if (input && typeof input === 'object') {
++        if ('from' in input || 'to' in input) {
++          this.parseDiff(input)
++        } else {
++          Object.keys(input).forEach((k) => {
++            this.$d[prettyUnit(k)] = input[k]
++          })
++        }
++      }
++    }
++
++    parseString(input) {
++      let matched = input.match(durationRegex)
++      if (matched) {
++        const s = matched[1] === '-' ? -1 : 1
++        const set = (val, key) => {
++          if (val) {
++            this.$d[key] = s * parseFloat(val.replace(',', '.'))
++          }
++        }
++        set(matched[2], 'Year')
++        set(matched[3], 'Month')
++        set(matched[4], 'Week')
++        set(matched[5], 'Day')
++        set(matched[6], 'Hour')
++        set(matched[7], 'Minute')
++        set(matched[8], 'Second')
++        return
++      }
++      matched = input.match(aspNetRegex)
++      if (matched) {
++        const s = matched[1] === '-' ? -1 : 1
++        const set = (val, key) => {
++          if (val) {
++            this.$d[key] = s * val
++          }
++        }
++        set(matched[2] ? parseInt(matched[2], 10) : 0, 'Day')
++        this.$d.Hour = s * parseInt(matched[3], 10)
++        this.$d.Minute = s * parseInt(matched[4], 10)
++        set(matched[5] ? parseInt(matched[5], 10) : 0, 'Second')
++        set(matched[6] ? Math.round(parseFloat(matched[6]) * 1000) : 0, 'Millisecond')
++      }
++    }
++
++    parseDiff(input) {
++      let from = dayjs(input.from)
++      let to = dayjs(input.to)
++      if (!from.isValid() || !to.isValid()) return
++      let negate = false
++      if (from > to) {
++        [from, to] = [to, from]
++        negate = true
++      }
++      const yearMonths = (to.year() - from.year()) * 12
++      let months = yearMonths + (to.month() - from.month())
++      let anchor = from.clone().add(months, C.M)
++      if (to < anchor) {
++        months -= 1
++        anchor = from.clone().add(months, C.M)
++      }
++      let ms = to.valueOf() - anchor.valueOf()
++      if (negate) {
++        months = -months
++        ms = -ms
++      }
++      this.$d.Month = months
++      this.$d.Millisecond = ms
++    }
++
++    calcMilliseconds() {
++      this.$ms = 0
++      Object.keys(this.$d).forEach((unit) => {
++        this.$ms += (unitToMS[unit] || 0) * this.$d[unit]
++      })
++    }
++
++    // returns the raw time-part ms, days and months (moment like)
++    rawValues() {
++      const { $d } = this
++      const hourMs = ($d.Hour || 0) * C.MILLISECONDS_A_HOUR
++      const minuteMs = ($d.Minute || 0) * C.MILLISECONDS_A_MINUTE
++      const secondMs = ($d.Second || 0) * C.MILLISECONDS_A_SECOND
++      const milliseconds = hourMs + minuteMs + secondMs + ($d.Millisecond || 0)
++      const weekDays = ($d.Week || 0) * 7
++      const days = ($d.Day || 0) + weekDays
++      const yearMonths = ($d.Year || 0) * 12
++      const months = ($d.Month || 0) + yearMonths
++      return { milliseconds, days, months }
++    }
++
++    bubble() {
++      const { milliseconds, days: inDays, months: inMonths } = this.rawValues()
++      let ms = milliseconds
++      let days = inDays
++      let months = inMonths
++      const data = {}
++
++      if (
++        !((ms >= 0 && days >= 0 && months >= 0)
++          || (ms <= 0 && days <= 0 && months <= 0))
++      ) {
++        ms += absCeil((days * C.MILLISECONDS_A_DAY) + (months * MILLISECONDS_A_MONTH))
++        days = 0
++        months = 0
++      }
++
++      data.milliseconds = ms % 1000
++
++      const seconds = absFloor(ms / 1000)
++      data.seconds = seconds % 60
++
++      const minutes = absFloor(seconds / 60)
++      data.minutes = minutes % 60
++
++      const hours = absFloor(minutes / 60)
++      data.hours = hours % 24
++
++      days += absFloor(hours / 24)
++
++      const monthsFromDays = absFloor(days / 30)
++      months += monthsFromDays
++      days -= absCeil(monthsFromDays * 30)
++
++      const years = absFloor(months / 12)
++      months %= 12
++
++      data.days = days
++      data.months = months
++      data.years = years
++      return data
++    }
++
++    as(units) {
++      const u = prettyUnit(units)
++      return this.$ms / (unitToMS[u] || 1)
++    }
++
++    asMilliseconds() { return this.as('millisecond') }
++    asSeconds() { return this.as('second') }
++    asMinutes() { return this.as('minute') }
++    asHours() { return this.as('hour') }
++    asDays() { return this.as('day') }
++    asWeeks() { return this.as('week') }
++    asMonths() { return this.as('month') }
++    asQuarters() { return this.as('quarter') }
++    asYears() { return this.as('year') }
++
++    valueOf() { return this.$ms }
++
++    get(units) {
++      const u = U.p(units)
++      if (u === C.DATE) return this.days()
++      return this[`${u}s`]()
++    }
++
++    years() { return this.bubble().years }
++    months() { return this.bubble().months }
++    weeks() { return absFloor(this.days() / 7) }
++    days() { return this.bubble().days }
++    hours() { return this.bubble().hours }
++    minutes() { return this.bubble().minutes }
++    seconds() { return this.bubble().seconds }
++    milliseconds() { return this.bubble().milliseconds }
++
++    add(input, unit) {
++      const other = dayjs.duration(input, unit)
++      const d = Object.assign({}, this.$d)
++      Object.keys(other.$d).forEach((k) => {
++        d[k] = (d[k] || 0) + other.$d[k]
++      })
++      return new Duration(d, null, this.$l) // eslint-disable-line no-use-before-define
++    }
++
++    subtract(input, unit) {
++      const other = dayjs.duration(input, unit)
++      const d = Object.assign({}, this.$d)
++      Object.keys(other.$d).forEach((k) => {
++        d[k] = (d[k] || 0) - other.$d[k]
++      })
++      return new Duration(d, null, this.$l) // eslint-disable-line no-use-before-define
++    }
++
++    abs() {
++      const d = {}
++      Object.keys(this.$d).forEach((k) => {
++        d[k] = Math.abs(this.$d[k])
++      })
++      return new Duration(d, null, this.$l) // eslint-disable-line no-use-before-define
++    }
++
++    clone() {
++      return new Duration(this, null, this.$l) // eslint-disable-line no-use-before-define
++    }
++
++    isValid() {
++      return !Number.isNaN(this.$ms) && Number.isFinite(this.$ms)
++    }
++
++    humanize(withSuffix) {
++      const loc = (dayjs.Ls && dayjs.Ls[this.$l]) || dayjs.en
++      const rt = (loc && loc.relativeTime) || defaultRelativeTime
++      const seconds = Math.round(Math.abs(this.asSeconds()))
++      const minutes = Math.round(Math.abs(this.asMinutes()))
++      const hours = Math.round(Math.abs(this.asHours()))
++      const days = Math.round(Math.abs(this.asDays()))
++      const months = Math.round(Math.abs(this.asMonths()))
++      const years = Math.round(Math.abs(this.asYears()))
++      const ss = 44
++      const s = 45
++      const m = 45
++      const h = 22
++      const d = 26
++      const M = 11
++      const a =
++        (seconds <= ss && ['s', seconds]) ||
++        (seconds < s && ['ss', seconds]) ||
++        (minutes <= 1 && ['m']) ||
++        (minutes < m && ['mm', minutes]) ||
++        (hours <= 1 && ['h']) ||
++        (hours < h && ['hh', hours]) ||
++        (days <= 1 && ['d']) ||
++        (days < d && ['dd', days]) ||
++        (months <= 1 && ['M']) ||
++        (months < M && ['MM', months]) ||
++        (years <= 1 && ['y']) || ['yy', years]
++
++      const [key, num] = a
++      let out
++      const fmt = rt[key]
++      if (typeof fmt === 'string') {
++        out = fmt.replace('%d', num)
++      } else if (typeof fmt === 'function') {
++        out = fmt(num, !withSuffix, key, this.$ms > 0)
++      }
++      if (withSuffix) {
++        out = (this.$ms > 0 ? rt.future : rt.past).replace('%s', out)
++      }
++      return out
++    }
++
++    toISOString() {
++      if (!this.isValid()) return 'P0D'
++      const total = this.asSeconds()
++      if (!total) return 'P0D'
++
++      const { milliseconds, days, months } = this.rawValues()
++
++      const totalSign = total < 0 ? '-' : ''
++      const ymSign = sign(months) !== sign(total) ? '-' : ''
++      const daysSign = sign(days) !== sign(total) ? '-' : ''
++      const hmsSign = sign(milliseconds) !== sign(total) ? '-' : ''
++
++      const absMonths = Math.abs(months)
++      const years = absFloor(absMonths / 12)
++      const monthsRem = absMonths % 12
++      const absDays = Math.abs(days)
++
++      let seconds = Math.abs(milliseconds) / 1000
++      let minutes = absFloor(seconds / 60)
++      const hours = absFloor(minutes / 60)
++      seconds %= 60
++      minutes %= 60
++
++      const s = seconds ? seconds.toFixed(3).replace(/\.?0+$/, '') : ''
++
++      return (
++        `${totalSign}P` +
++        `${years ? `${ymSign}${years}Y` : ''}` +
++        `${monthsRem ? `${ymSign}${monthsRem}M` : ''}` +
++        `${absDays ? `${daysSign}${absDays}D` : ''}` +
++        `${hours || minutes || seconds ? 'T' : ''}` +
++        `${hours ? `${hmsSign}${hours}H` : ''}` +
++        `${minutes ? `${hmsSign}${minutes}M` : ''}` +
++        `${seconds ? `${hmsSign}${s}S` : ''}`
++      )
++    }
++
++    toJSON() {
++      return this.toISOString()
++    }
++
++    toString() {
++      return this.toISOString()
++    }
++
++    locale(locale) {
++      const d = this.clone()
++      d.$l = locale
++      return d
++    }
++  }
++}
+diff --git a/types/plugin/duration.d.ts b/types/plugin/duration.d.ts
+new file mode 100644
+index 0000000..b587f92
+--- /dev/null
++++ b/types/plugin/duration.d.ts
+@@ -0,0 +1,64 @@
++import { PluginFunc } from 'dayjs'
++
++declare const plugin: PluginFunc
++export = plugin
++
++declare module 'dayjs' {
++  type DurationUnitType = 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year' |
++    'ms' | 's' | 'm' | 'h' | 'd' | 'w' | 'M' | 'Q' | 'y'
++
++  type DurationInputType = string | number | object
++
++  interface Duration {
++    new (input: DurationInputType, unit?: DurationUnitType, locale?: string): Duration
++
++    years(): number
++    months(): number
++    weeks(): number
++    days(): number
++    hours(): number
++    minutes(): number
++    seconds(): number
++    milliseconds(): number
++
++    as(units?: DurationUnitType): number
++    asMilliseconds(): number
++    asSeconds(): number
++    asMinutes(): number
++    asHours(): number
++    asDays(): number
++    asWeeks(): number
++    asMonths(): number
++    asQuarters(): number
++    asYears(): number
++
++    get(unit: DurationUnitType): number
++
++    add(input: DurationInputType, unit?: DurationUnitType): Duration
++    subtract(input: DurationInputType, unit?: DurationUnitType): Duration
++
++    abs(): Duration
++
++    clone(): Duration
++
++    isValid(): boolean
++
++    humanize(withSuffix?: boolean): string
++
++    toISOString(): string
++    toJSON(): string
++    toString(): string
++
++    locale(locale?: string): Duration
++
++    valueOf(): number
++
++    $ms: number
++    $d: object
++    $l: string
++  }
++
++  export function duration(input?: DurationInputType, unit?: DurationUnitType, locale?: string): Duration
++
++  export function isDuration(d: any): d is Duration
++}
+\ No newline at end of file

@@ -1,0 +1,21 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 85fcf7a..9b05a38 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -740,7 +740,15 @@ function serialize_inline_component(node, component_name, context) {
+ 
+ 				if (should_wrap_in_derived) {
+ 					const id = b.id(context.state.scope.generate(attribute.name));
+-					context.state.init.push(b.var(id, b.call('$.derived', b.thunk(value))));
++					context.state.init.push(
++						b.var(
++							id,
++							b.call(
++								context.state.analysis.runes ? '$.derived' : '$.derived_safe_equal',
++								b.thunk(value)
++							)
++						)
++					);
+ 					arg = b.call('$.get', id);
+ 				}
+ 

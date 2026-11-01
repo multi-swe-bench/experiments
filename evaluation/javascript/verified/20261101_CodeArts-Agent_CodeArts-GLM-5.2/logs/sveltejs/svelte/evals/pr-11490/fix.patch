@@ -1,0 +1,36 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index b6fe964..d1ce08c 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -746,7 +746,14 @@ function serialize_inline_component(node, component_name, context) {
+ 
+ 				if (context.state.options.dev) {
+ 					binding_initializers.push(
+-						b.stmt(b.call(b.id('$.add_owner_effect'), b.thunk(expression), b.id(component_name)))
++						b.stmt(
++							b.call(
++								b.id('$.add_owner_effect'),
++								b.thunk(expression),
++								b.id(component_name),
++								b.id(context.state.analysis.name)
++							)
++						)
+ 					);
+ 				}
+ 
+diff --git a/packages/svelte/src/internal/client/dev/ownership.js b/packages/svelte/src/internal/client/dev/ownership.js
+index 4367a5b..f8b7e62 100644
+--- a/packages/svelte/src/internal/client/dev/ownership.js
++++ b/packages/svelte/src/internal/client/dev/ownership.js
+@@ -126,9 +126,9 @@ export function add_owner(object, owner, global = false) {
+ /**
+  * @param {() => unknown} get_object
+  * @param {any} Component
++ * @param {Function} component
+  */
+-export function add_owner_effect(get_object, Component) {
+-	var component = dev_current_component_function;
++export function add_owner_effect(get_object, Component, component) {
+ 	user_pre_effect(() => {
+ 		var prev = dev_current_component_function;
+ 		set_dev_current_component_function(component);

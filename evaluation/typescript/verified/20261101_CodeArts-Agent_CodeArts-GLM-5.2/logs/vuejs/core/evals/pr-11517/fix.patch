@@ -1,0 +1,90 @@
+diff --git a/packages/runtime-core/src/component.ts b/packages/runtime-core/src/component.ts
+index 713c814..d338c17 100644
+--- a/packages/runtime-core/src/component.ts
++++ b/packages/runtime-core/src/component.ts
+@@ -694,6 +694,11 @@ export function createComponentInstance(
+   // apply custom element special handling
+   if (vnode.ce) {
+     vnode.ce(instance)
++  } else if (parent) {
++    // inherit the custom element instance from the parent so that child
++    // components used inside a custom element can inject their styles into
++    // the custom element's shadow root. #9885
++    instance.ce = parent.ce
+   }
+ 
+   return instance
+@@ -845,6 +850,17 @@ function setupStatefulComponent(
+   if (__DEV__) {
+     exposePropsOnRenderContext(instance)
+   }
++
++  // #9885 inject child component styles into the nearest custom element's
++  // shadow root. Skip the root custom element component itself (its styles
++  // are applied by `VueElement`), identified by having a `ce` vnode hook.
++  if (instance.ce && !instance.vnode.ce) {
++    ;(instance.ce as any)._applyStyles(
++      (Component as any).styles,
++      Component as ConcreteComponent,
++    )
++  }
++
+   // 2. call setup()
+   const { setup } = Component
+   if (setup) {
+diff --git a/packages/runtime-dom/src/apiCustomElement.ts b/packages/runtime-dom/src/apiCustomElement.ts
+index 846774f..791da0b 100644
+--- a/packages/runtime-dom/src/apiCustomElement.ts
++++ b/packages/runtime-dom/src/apiCustomElement.ts
+@@ -199,6 +199,7 @@ export class VueElement extends BaseClass {
+   private _resolved = false
+   private _numberProps: Record<string, true> | null = null
+   private _styles?: HTMLStyleElement[]
++  private _childStyles?: Map<ConcreteComponent, HTMLStyleElement[]>
+   private _ob?: MutationObserver | null = null
+   /**
+    * @internal
+@@ -486,19 +487,40 @@ export class VueElement extends BaseClass {
+     return vnode
+   }
+ 
+-  private _applyStyles(styles: string[] | undefined) {
++  private _applyStyles(
++    styles: string[] | undefined,
++    child?: ConcreteComponent,
++  ) {
+     const root = this.shadowRoot
+     if (!root) return
+     if (styles) {
++      // for child components, dedupe by replacing previously applied styles
++      // of the same component (e.g. on re-mount or HMR)
++      let previous: HTMLStyleElement[] | undefined
++      if (child && this._childStyles) {
++        previous = this._childStyles.get(child)
++        if (previous) {
++          previous.forEach(s => s.remove())
++        }
++      }
++      const created: HTMLStyleElement[] = child ? [] : undefined!
+       styles.forEach(css => {
+         const s = document.createElement('style')
+         s.textContent = css
+         root.appendChild(s)
+-        // record for HMR
+-        if (__DEV__) {
++        if (child) {
++          created.push(s)
++        } else if (__DEV__) {
++          // record root styles for HMR
+           ;(this._styles || (this._styles = [])).push(s)
+         }
+       })
++      if (child) {
++        ;(this._childStyles || (this._childStyles = new Map())).set(
++          child,
++          created,
++        )
++      }
+     }
+   }
+ 

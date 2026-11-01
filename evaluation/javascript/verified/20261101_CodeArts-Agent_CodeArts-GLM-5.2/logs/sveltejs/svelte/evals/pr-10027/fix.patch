@@ -1,0 +1,102 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/utils.js b/packages/svelte/src/compiler/phases/3-transform/utils.js
+index b7592f6..6eeff78 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/utils.js
+@@ -213,20 +213,12 @@ export function infer_namespace(namespace, parent, nodes, path) {
+ 	) {
+ 		// Heuristic: Keep current namespace, unless we find a regular element,
+ 		// in which case we always want html, or we only find svg nodes,
+-		// in which case we assume svg.
+-		let only_svg = true;
+-		for (const node of nodes) {
+-			if (node.type === 'RegularElement') {
+-				if (!node.metadata.svg) {
+-					namespace = 'html';
+-					only_svg = false;
+-					break;
+-				}
+-			} else if (node.type !== 'Text' || node.data.trim() !== '') {
+-				only_svg = false;
+-			}
+-		}
+-		if (only_svg) {
++		// in which case we assume svg. Logic blocks are looked into to determine
++		// the namespace of their content.
++		const info = get_namespace_info(nodes);
++		if (info === 'html') {
++			namespace = 'html';
++		} else if (info === 'svg') {
+ 			namespace = 'svg';
+ 		}
+ 	}
+@@ -234,6 +226,70 @@ export function infer_namespace(namespace, parent, nodes, path) {
+ 	return namespace;
+ }
+ 
++/**
++ * Determines the namespace of a list of nodes by looking at the regular elements
++ * they contain, recursing into logic blocks.
++ * - `'html'` if a non-svg regular element is found (forces html namespace).
++ * - `'svg'` if only svg regular elements (and whitespace text) are found.
++ * - `'other'` if no regular elements are found, or the content is ambiguous
++ *   (e.g. contains components or expression tags), in which case the namespace
++ *   is left unchanged.
++ * @param {import('#compiler').SvelteNode[]} nodes
++ * @returns {'html' | 'svg' | 'other'}
++ */
++function get_namespace_info(nodes) {
++	/** @type {'svg' | 'other'} */
++	let result = 'other';
++	for (const node of nodes) {
++		if (node.type === 'RegularElement') {
++			if (node.metadata.svg) {
++				result = 'svg';
++			} else {
++				return 'html';
++			}
++		} else if (node.type === 'IfBlock' || node.type === 'EachBlock' || node.type === 'KeyBlock' || node.type === 'AwaitBlock') {
++			const child_nodes = get_child_nodes_from_block(node);
++			const child_info = get_namespace_info(child_nodes);
++			if (child_info === 'html') {
++				return 'html';
++			} else if (child_info === 'svg') {
++				result = 'svg';
++			}
++		} else if (node.type !== 'Text' || node.data.trim() !== '') {
++			result = 'other';
++		}
++	}
++	return result;
++}
++
++/**
++ * Returns the child nodes of a logic block's fragment(s).
++ * @param {import('#compiler').SvelteNode} node
++ * @returns {import('#compiler').SvelteNode[]}
++ */
++function get_child_nodes_from_block(node) {
++	/** @type {import('#compiler').SvelteNode[]} */
++	const child_nodes = [];
++	if (node.type === 'IfBlock') {
++		child_nodes.push(...node.consequent.nodes);
++		if (node.alternate) {
++			child_nodes.push(...node.alternate.nodes);
++		}
++	} else if (node.type === 'EachBlock') {
++		child_nodes.push(...node.body.nodes);
++		if (node.fallback) {
++			child_nodes.push(...node.fallback.nodes);
++		}
++	} else if (node.type === 'KeyBlock') {
++		child_nodes.push(...node.fragment.nodes);
++	} else if (node.type === 'AwaitBlock') {
++		if (node.pending) child_nodes.push(...node.pending.nodes);
++		if (node.then) child_nodes.push(...node.then.nodes);
++		if (node.catch) child_nodes.push(...node.catch.nodes);
++	}
++	return child_nodes;
++}
++
+ /**
+  * @param {import('#compiler').RegularElement} node
+  * @param {import('#compiler').Namespace} namespace

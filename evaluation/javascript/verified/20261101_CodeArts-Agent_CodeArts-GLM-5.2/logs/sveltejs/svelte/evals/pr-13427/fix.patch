@@ -1,0 +1,176 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/RenderTag.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/RenderTag.js
+index 7da987f..5d89ca9 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/RenderTag.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/RenderTag.js
+@@ -29,6 +29,24 @@ export function RenderTag(node, context) {
+ 
+ 	let snippet_function = /** @type {Expression} */ (context.visit(callee));
+ 
++	// If the snippet is a prop, also fall back to `$$slots` so that consumers still
++	// passing slots (`<div slot="foo">`) work with `{@render foo()}`
++	if (callee.type === 'Identifier') {
++		const binding = context.state.scope.get(callee.name);
++		if (binding !== null && (binding.kind === 'prop' || binding.kind === 'bindable_prop')) {
++			snippet_function = b.logical(
++				'??',
++				snippet_function,
++				b.member(
++					b.member(b.id('$$props'), '$$slots'),
++					b.id(binding.prop_alias ?? callee.name),
++					false,
++					true
++				)
++			);
++		}
++	}
++
+ 	if (node.metadata.dynamic) {
+ 		// If we have a chain expression then ensure a nullish snippet function gets turned into an empty one
+ 		if (node.expression.type === 'ChainExpression') {
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/SlotElement.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/SlotElement.js
+index 9a2240a..8a5fd30 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/SlotElement.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/SlotElement.js
+@@ -60,7 +60,7 @@ export function SlotElement(node, context) {
+ 
+ 	const expression = is_default
+ 		? b.call('$.default_slot', b.id('$$props'))
+-		: b.member(b.member(b.id('$$props'), '$$slots'), name, true, true);
++		: b.call('$.default_slot', b.id('$$props'), name);
+ 
+ 	const slot = b.call('$.slot', context.state.node, expression, props_expression, fallback);
+ 	context.state.init.push(b.stmt(slot));
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/component.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/component.js
+index 03d873b..18d7a7c 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/component.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/component.js
+@@ -216,6 +216,9 @@ export function build_component(node, component_name, context, anchor = context.
+ 	/** @type {Statement[]} */
+ 	const snippet_declarations = [];
+ 
++	/** @type {Property[]} */
++	const serialized_slots = [];
++
+ 	// Group children by slot
+ 	for (const child of node.fragment.nodes) {
+ 		if (child.type === 'SnippetBlock') {
+@@ -229,6 +232,9 @@ export function build_component(node, component_name, context, anchor = context.
+ 
+ 			push_prop(b.prop('init', child.expression, child.expression));
+ 
++			// ensure `<slot name="foo">` works when a snippet is passed
++			serialized_slots.push(b.init(child.expression.name, b.true));
++
+ 			continue;
+ 		}
+ 
+@@ -238,8 +244,6 @@ export function build_component(node, component_name, context, anchor = context.
+ 	}
+ 
+ 	// Serialize each slot
+-	/** @type {Property[]} */
+-	const serialized_slots = [];
+ 	for (const slot_name of Object.keys(children)) {
+ 		const block = /** @type {BlockStatement} */ (
+ 			context.visit(
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/visitors/RenderTag.js b/packages/svelte/src/compiler/phases/3-transform/server/visitors/RenderTag.js
+index ebf8c3b..132c72f 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/visitors/RenderTag.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/visitors/RenderTag.js
+@@ -13,7 +13,25 @@ export function RenderTag(node, context) {
+ 	const callee = unwrap_optional(node.expression).callee;
+ 	const raw_args = unwrap_optional(node.expression).arguments;
+ 
+-	const snippet_function = /** @type {Expression} */ (context.visit(callee));
++	let snippet_function = /** @type {Expression} */ (context.visit(callee));
++
++	// If the snippet is a prop, also fall back to `$$slots` so that consumers still
++	// passing slots (`<div slot="foo">`) work with `{@render foo()}`
++	if (callee.type === 'Identifier') {
++		const binding = context.state.scope.get(callee.name);
++		if (binding !== null && (binding.kind === 'prop' || binding.kind === 'bindable_prop')) {
++			snippet_function = b.logical(
++				'??',
++				snippet_function,
++				b.member(
++					b.member(b.id('$$props'), '$$slots'),
++					b.id(binding.prop_alias ?? callee.name),
++					false,
++					true
++				)
++			);
++		}
++	}
+ 
+ 	const snippet_args = raw_args.map((arg) => {
+ 		return /** @type {Expression} */ (context.visit(arg));
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/visitors/SlotElement.js b/packages/svelte/src/compiler/phases/3-transform/server/visitors/SlotElement.js
+index 6627b7b..d5860e3 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/visitors/SlotElement.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/visitors/SlotElement.js
+@@ -25,7 +25,7 @@ export function SlotElement(node, context) {
+ 			const value = build_attribute_value(attribute.value, context, false, true);
+ 
+ 			if (attribute.name === 'name') {
+-				expression = b.member(b.member_id('$$props.$$slots'), value, true, true);
++				expression = b.call('$.default_slot', b.id('$$props'), value);
+ 			} else if (attribute.name !== 'slot') {
+ 				props.push(b.init(attribute.name, value));
+ 			}
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/component.js b/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/component.js
+index 247f51a..3ad397e 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/component.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/component.js
+@@ -102,6 +102,9 @@ export function build_inline_component(node, expression, context) {
+ 	/** @type {Statement[]} */
+ 	const snippet_declarations = [];
+ 
++	/** @type {Property[]} */
++	const serialized_slots = [];
++
+ 	// Group children by slot
+ 	for (const child of node.fragment.nodes) {
+ 		if (child.type === 'SnippetBlock') {
+@@ -115,6 +118,9 @@ export function build_inline_component(node, expression, context) {
+ 
+ 			push_prop(b.prop('init', child.expression, child.expression));
+ 
++			// ensure `<slot name="foo">` works when a snippet is passed
++			serialized_slots.push(b.init(child.expression.name, b.true));
++
+ 			continue;
+ 		}
+ 
+@@ -142,9 +148,6 @@ export function build_inline_component(node, expression, context) {
+ 	}
+ 
+ 	// Serialize each slot
+-	/** @type {Property[]} */
+-	const serialized_slots = [];
+-
+ 	for (const slot_name of Object.keys(children)) {
+ 		const block = /** @type {BlockStatement} */ (
+ 			context.visit(
+diff --git a/packages/svelte/src/internal/client/dom/legacy/misc.js b/packages/svelte/src/internal/client/dom/legacy/misc.js
+index 82362e1..f137497 100644
+--- a/packages/svelte/src/internal/client/dom/legacy/misc.js
++++ b/packages/svelte/src/internal/client/dom/legacy/misc.js
+@@ -69,12 +69,13 @@ export function update_legacy_props($$new_props) {
+ 
+ /**
+  * @param {Record<string, any>} $$props
++ * @param {string} [name]
+  */
+-export function default_slot($$props) {
+-	var children = $$props.$$slots?.default;
+-	if (children === true) {
+-		return $$props.children;
++export function default_slot($$props, name = 'default') {
++	var slot = $$props.$$slots?.[name];
++	if (slot === true) {
++		return name === 'default' ? $$props.children : $$props[name];
+ 	} else {
+-		return children;
++		return slot;
+ 	}
+ }

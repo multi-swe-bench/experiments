@@ -1,0 +1,13 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index fa6c560..b99f23e 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -873,7 +873,7 @@ function serialize_inline_component(node, component_name, context) {
+ 			Object.keys(events).map((name) =>
+ 				b.prop(
+ 					'init',
+-					b.id(name),
++					b.key(name),
+ 					events[name].length > 1 ? b.array(events[name]) : events[name][0]
+ 				)
+ 			)

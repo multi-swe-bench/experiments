@@ -1,0 +1,161 @@
+diff --git a/packages/svelte/src/internal/client/runtime.js b/packages/svelte/src/internal/client/runtime.js
+index a3c392c..3680ad6 100644
+--- a/packages/svelte/src/internal/client/runtime.js
++++ b/packages/svelte/src/internal/client/runtime.js
+@@ -191,9 +191,35 @@ function create_source_signal(flags, value) {
+  * @param {import('./types.js').SignalFlags} flags
+  * @param {V} value
+  * @param {import('./types.js').Block | null} block
+- * @returns {import('./types.js').ComputationSignal<V>}
++ * @returns {import('./types.js').ComputationSignal<V> | import('./types.js').ComputationSignal<V> & import('./types.js').ComputationSignalDebug}
+  */
+ function create_computation_signal(flags, value, block) {
++	if (DEV) {
++		return {
++			// block
++			b: block,
++			// consumers
++			c: null,
++			// destroy
++			d: null,
++			// equals
++			e: null,
++			// flags
++			f: flags,
++			// init
++			i: null,
++			// references
++			r: null,
++			// value
++			v: value,
++			// context: We can remove this if we get rid of beforeUpdate/afterUpdate
++			x: null,
++			// destroy
++			y: null,
++			// this is for DEV only
++			inspect: new Set()
++		};
++	}
+ 	return {
+ 		// block
+ 		b: block,
+@@ -661,7 +687,10 @@ export async function tick() {
+  * @returns {void}
+  */
+ function update_derived(signal, force_schedule) {
++	const previous_inspect_fn = inspect_fn;
++	inspect_fn = null;
+ 	const value = execute_signal_fn(signal);
++	inspect_fn = previous_inspect_fn;
+ 	const status =
+ 		current_skip_consumer || (current_effect === null && (signal.f & UNOWNED) !== 0)
+ 			? DIRTY
+@@ -669,8 +698,14 @@ function update_derived(signal, force_schedule) {
+ 	set_signal_status(signal, status);
+ 	const equals = /** @type {import('./types.js').EqualsFunctions} */ (signal.e);
+ 	if (!equals(value, signal.v)) {
++		const previous_value = signal.v;
+ 		signal.v = value;
+ 		mark_signal_consumers(signal, DIRTY, force_schedule);
++		// @ts-expect-error
++		if (DEV && signal.inspect && previous_value !== UNINITIALIZED) {
++			// @ts-expect-error
++			for (const fn of signal.inspect) fn();
++		}
+ 	}
+ }
+ 
+diff --git a/packages/svelte/src/internal/client/types.d.ts b/packages/svelte/src/internal/client/types.d.ts
+index ee7bc6e..5a6159b 100644
+--- a/packages/svelte/src/internal/client/types.d.ts
++++ b/packages/svelte/src/internal/client/types.d.ts
+@@ -85,6 +85,11 @@ export type SourceSignalDebug = {
+ 	inspect: Set<Function>;
+ };
+ 
++export type ComputationSignalDebug = {
++	/** This is DEV only */
++	inspect: Set<Function>;
++};
++
+ export type ComputationSignal<V = unknown> = {
+ 	/** block: The block associated with this effect/computed */
+ 	b: null | Block;
+diff --git a/packages/svelte/tests/runtime-runes/samples/inspect-derived/_config.js b/packages/svelte/tests/runtime-runes/samples/inspect-derived/_config.js
+new file mode 100644
+index 0000000..6041fdb
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/inspect-derived/_config.js
+@@ -0,0 +1,54 @@
++import { test } from '../../test';
++
++/**
++ * @type {any[]}
++ */
++let log;
++/**
++ * @type {typeof console.log}}
++ */
++let original_log;
++
++export default test({
++	compileOptions: {
++		dev: true
++	},
++	before_test() {
++		log = [];
++		original_log = console.log;
++		console.log = (...v) => {
++			log.push(...v);
++		};
++	},
++	after_test() {
++		console.log = original_log;
++	},
++	async test({ assert, target, component }) {
++		const [b1] = target.querySelectorAll('button');
++		b1.click();
++		await Promise.resolve();
++		b1.click();
++		await Promise.resolve();
++		b1.click();
++		await Promise.resolve();
++
++		assert.deepEqual(log, [
++			0,
++			'init',
++			0,
++			'init',
++			2,
++			'update',
++			4,
++			'update',
++			4,
++			'update',
++			8,
++			'update',
++			6,
++			'update',
++			12,
++			'update'
++		]);
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/inspect-derived/main.svelte b/packages/svelte/tests/runtime-runes/samples/inspect-derived/main.svelte
+new file mode 100644
+index 0000000..a0d9499
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/inspect-derived/main.svelte
+@@ -0,0 +1,10 @@
++<script>
++	let x = $state(0);
++	let double = $derived(x * 2);
++	let quadruple = $derived(double * 2);
++
++	$inspect(double);
++	$inspect(quadruple);
++</script>
++
++<button on:click={() => x++}>{x}</button>
+\ No newline at end of file

@@ -1,0 +1,23 @@
+diff --git a/packages/svelte/src/html-tree-validation.js b/packages/svelte/src/html-tree-validation.js
+index 9a191ba..fd7f772 100644
+--- a/packages/svelte/src/html-tree-validation.js
++++ b/packages/svelte/src/html-tree-validation.js
+@@ -143,6 +143,8 @@ const disallowed_children = {
+  */
+ export function is_tag_valid_with_ancestor(tag, ancestors) {
+ 	const target = ancestors[ancestors.length - 1];
++	// Custom elements have an unknown content model, so we can't validate against them
++	if (target.includes('-')) return true;
+ 	const disallowed = disallowed_children[target];
+ 	if (!disallowed) return true;
+ 
+@@ -167,6 +169,9 @@ export function is_tag_valid_with_ancestor(tag, ancestors) {
+  */
+ export function is_tag_valid_with_parent(tag, parent_tag) {
+ 	if (parent_tag !== null) {
++		// Custom elements have an unknown content model, so we can't validate against them
++		if (parent_tag.includes('-')) return true;
++
+ 		const disallowed = disallowed_children[parent_tag];
+ 
+ 		if (disallowed) {

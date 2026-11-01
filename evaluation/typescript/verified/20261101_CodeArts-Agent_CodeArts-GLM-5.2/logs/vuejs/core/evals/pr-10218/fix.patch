@@ -1,0 +1,39 @@
+diff --git a/packages/compiler-core/src/transforms/transformSlotOutlet.ts b/packages/compiler-core/src/transforms/transformSlotOutlet.ts
+index 310b6a9..00f73cf 100644
+--- a/packages/compiler-core/src/transforms/transformSlotOutlet.ts
++++ b/packages/compiler-core/src/transforms/transformSlotOutlet.ts
+@@ -6,9 +6,11 @@ import {
+   type SlotOutletNode,
+   createCallExpression,
+   createFunctionExpression,
++  createSimpleExpression,
+ } from '../ast'
+ import { isSlotOutlet, isStaticArgOf, isStaticExp } from '../utils'
+ import { type PropsExpression, buildProps } from './transformElement'
++import { processExpression } from './transformExpression'
+ import { ErrorCodes, createCompilerError } from '../errors'
+ import { RENDER_SLOT } from '../runtimeHelpers'
+ import { camelize } from '@vue/shared'
+@@ -76,7 +78,21 @@ export function processSlotOutlet(
+       }
+     } else {
+       if (p.name === 'bind' && isStaticArgOf(p.arg, 'name')) {
+-        if (p.exp) slotName = p.exp
++        if (p.exp) {
++          slotName = p.exp
++        } else if (p.arg && isStaticExp(p.arg)) {
++          // v-bind same-name shorthand, e.g. <slot :name />
++          const exp = createSimpleExpression(
++            camelize(p.arg.content),
++            false,
++            p.arg.loc,
++          )
++          p.exp = exp
++          if (!__BROWSER__) {
++            p.exp = processExpression(exp, context)
++          }
++          slotName = p.exp
++        }
+       } else {
+         if (p.name === 'bind' && p.arg && isStaticExp(p.arg)) {
+           p.arg.content = camelize(p.arg.content)

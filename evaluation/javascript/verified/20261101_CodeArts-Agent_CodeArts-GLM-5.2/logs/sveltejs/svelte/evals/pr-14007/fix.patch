@@ -1,0 +1,24 @@
+diff --git a/.changeset/dollar-type-import-migrate.md b/.changeset/dollar-type-import-migrate.md
+new file mode 100644
+index 0000000..5eefb53
+--- /dev/null
++++ b/.changeset/dollar-type-import-migrate.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: allow migration of components that import types with a `$` prefix
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/scope.js b/packages/svelte/src/compiler/phases/scope.js
+index 7a8afa5..4ed3c31 100644
+--- a/packages/svelte/src/compiler/phases/scope.js
++++ b/packages/svelte/src/compiler/phases/scope.js
+@@ -428,6 +428,7 @@ export function create_scopes(ast, root, allow_reactive_declarations, parent) {
+ 
+ 		ImportDeclaration(node, { state }) {
+ 			for (const specifier of node.specifiers) {
++				if (node.importKind === 'type' || specifier.importKind === 'type') continue;
+ 				state.scope.declare(specifier.local, 'normal', 'import', node);
+ 			}
+ 		},

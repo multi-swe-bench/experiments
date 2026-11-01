@@ -1,0 +1,84 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+index a99745f..5b31461 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+@@ -29,6 +29,32 @@ const descendant_combinator = {
+ 	end: -1
+ };
+ 
++/**
++ * Returns `true` if the given simple selector contains a nesting selector (`&`),
++ * including inside functional pseudo-class selectors such as `:has(...)`, `:is(...)`, etc.
++ * @param {Compiler.Css.SimpleSelector} selector
++ * @returns {boolean}
++ */
++function contains_nesting_selector(selector) {
++	if (selector.type === 'NestingSelector') {
++		return true;
++	}
++
++	if (selector.type === 'PseudoClassSelector' && selector.args !== null) {
++		for (const complex_selector of selector.args.children) {
++			for (const relative_selector of complex_selector.children) {
++				for (const simple_selector of relative_selector.selectors) {
++					if (contains_nesting_selector(simple_selector)) {
++						return true;
++					}
++				}
++			}
++		}
++	}
++
++	return false;
++}
++
+ /** @type {Compiler.Css.RelativeSelector} */
+ const nesting_selector = {
+ 	type: 'RelativeSelector',
+@@ -74,7 +100,7 @@ const visitors = {
+ 
+ 		if (node.metadata.rule?.metadata.parent_rule && selectors.length > 0) {
+ 			const has_explicit_nesting_selector = selectors.some((selector) =>
+-				selector.selectors.some((s) => s.type === 'NestingSelector')
++				selector.selectors.some((s) => contains_nesting_selector(s))
+ 			);
+ 
+ 			if (!has_explicit_nesting_selector) {
+diff --git a/packages/svelte/tests/css/samples/has-nesting-selector/expected.css b/packages/svelte/tests/css/samples/has-nesting-selector/expected.css
+new file mode 100644
+index 0000000..a89e949
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/has-nesting-selector/expected.css
+@@ -0,0 +1,9 @@
++
++
++	nav.svelte-xyz {
++		color: red;
++
++		header:where(.svelte-xyz):has(> &) {
++			position: sticky;
++		}
++	}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/has-nesting-selector/input.svelte b/packages/svelte/tests/css/samples/has-nesting-selector/input.svelte
+new file mode 100644
+index 0000000..36b7867
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/has-nesting-selector/input.svelte
+@@ -0,0 +1,15 @@
++<header>
++	<nav>
++		<div>mock element</div>
++	</nav>
++</header>
++
++<style>
++	nav {
++		color: red;
++
++		header:has(> &) {
++			position: sticky;
++		}
++	}
++</style>
+\ No newline at end of file

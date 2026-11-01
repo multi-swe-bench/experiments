@@ -1,0 +1,20 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/RegularElement.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/RegularElement.js
+index 3207919..35fda39 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/visitors/RegularElement.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/RegularElement.js
+@@ -145,6 +145,15 @@ export function RegularElement(node, context) {
+ 			) {
+ 				break;
+ 			}
++
++			if (
++				past_parent &&
++				ancestor.type === 'RegularElement' &&
++				ancestor.name === 'dl' &&
++				(node.name === 'dt' || node.name === 'dd')
++			) {
++				break;
++			}
+ 		}
+ 	}
+ 

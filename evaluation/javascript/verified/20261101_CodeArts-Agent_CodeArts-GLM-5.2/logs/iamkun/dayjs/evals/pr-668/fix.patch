@@ -1,0 +1,76 @@
+diff --git a/src/plugin/utc/index.js b/src/plugin/utc/index.js
+index d367c97..ec90263 100644
+--- a/src/plugin/utc/index.js
++++ b/src/plugin/utc/index.js
+@@ -33,16 +33,50 @@ export default (option, Dayjs, dayjs) => {
+       this.$m = $d.getUTCMinutes()
+       this.$s = $d.getUTCSeconds()
+       this.$ms = $d.getUTCMilliseconds()
++    } else if (this.$offset !== undefined) {
++      const { $d, $offset } = this
++      const d = new Date($d.getTime() + ($offset * 60000))
++      this.$y = d.getUTCFullYear()
++      this.$M = d.getUTCMonth()
++      this.$D = d.getUTCDate()
++      this.$W = d.getUTCDay()
++      this.$H = d.getUTCHours()
++      this.$m = d.getUTCMinutes()
++      this.$s = d.getUTCSeconds()
++      this.$ms = d.getUTCMilliseconds()
+     } else {
+       oldInit.call(this)
+     }
+   }
+ 
+   const oldUtcOffset = proto.utcOffset
+-  proto.utcOffset = function () {
++  proto.utcOffset = function (input, keepLocalTime) {
++    if (input !== undefined) {
++      // offset 0 (without keeping local time) is the same as UTC mode
++      if (input === 0 && !keepLocalTime) {
++        return this.utc()
++      }
++      // By default (`keepLocalTime` is falsy) the underlying instant
++      // (valueOf) is kept unchanged and only the displayed offset changes,
++      // which matches `moment#utcOffset` default behaviour.
++      // When `keepLocalTime` is true, the local time is kept unchanged
++      // and the underlying instant is adjusted.
++      let date = this.toDate()
++      if (keepLocalTime) {
++        const oldOffset = -this.$d.getTimezoneOffset()
++        date = new Date(this.$d.getTime() + ((oldOffset - input) * 60000))
++      }
++      const ins = dayjs(date, { locale: this.$L })
++      ins.$offset = input
++      ins.init()
++      return ins
++    }
+     if (this.$u) {
+       return 0
+     }
++    if (this.$offset !== undefined) {
++      return this.$offset
++    }
+     return oldUtcOffset.call(this)
+   }
+ 
+diff --git a/types/plugin/utc.d.ts b/types/plugin/utc.d.ts
+index 2f14efb..6ac341c 100644
+--- a/types/plugin/utc.d.ts
++++ b/types/plugin/utc.d.ts
+@@ -5,11 +5,13 @@ export = plugin
+ 
+ declare module 'dayjs' {
+   interface Dayjs {
+-    
++
+     utc(): Dayjs
+-    
++
+     local(): Dayjs
+ 
++    utcOffset(offset: number, keepLocalTime?: boolean): Dayjs
++
+     isUTC(): boolean
+   }
+ 

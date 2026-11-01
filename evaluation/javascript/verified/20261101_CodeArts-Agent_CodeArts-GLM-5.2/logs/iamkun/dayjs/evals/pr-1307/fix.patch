@@ -1,0 +1,107 @@
+diff --git a/src/plugin/timezone/index.js b/src/plugin/timezone/index.js
+index 97f2406..7267d97 100644
+--- a/src/plugin/timezone/index.js
++++ b/src/plugin/timezone/index.js
+@@ -1,4 +1,4 @@
+-import { MIN, MS } from '../../constant'
++import { MS, MILLISECONDS_A_MINUTE } from '../../constant'
+ 
+ const typeToPos = {
+   year: 0,
+@@ -36,8 +36,6 @@ const getDateTimeFormat = (timezone, options = {}) => {
+ export default (o, c, d) => {
+   let defaultTimezone
+ 
+-  const localUtcOffset = d().utcOffset()
+-
+   const makeFormatParts = (timestamp, timezone, options = {}) => {
+     const date = new Date(timestamp)
+     const dtf = getDateTimeFormat(timezone, options)
+@@ -60,7 +58,7 @@ export default (o, c, d) => {
+     // https://github.com/nodejs/node/issues/33027
+     /* istanbul ignore next */
+     const fixedHour = hour === 24 ? 0 : hour
+-    const utcString = `${filled[0]}-${filled[1]}-${filled[2]} ${fixedHour}:${filled[4]}:${filled[5]}:000`
++    const utcString = `${filled[0]}-${filled[1]}-${filled[2]} ${fixedHour}:${filled[4]}:${filled[5]}`
+     const utcTs = d.utc(utcString).valueOf()
+     let asTS = +timestamp
+     const over = asTS % 1000
+@@ -94,19 +92,38 @@ export default (o, c, d) => {
+ 
+   const proto = c.prototype
+ 
+-  proto.tz = function (timezone = defaultTimezone, keepLocalTime) {
+-    const oldOffset = this.utcOffset()
+-    const target = this.toDate().toLocaleString('en-US', { timeZone: timezone })
+-    const diff = Math.round((this.toDate() - new Date(target)) / 1000 / 60)
+-    let ins = d(target).$set(MS, this.$ms).utcOffset(localUtcOffset - diff, true)
+-    if (keepLocalTime) {
+-      const newOffset = ins.utcOffset()
+-      ins = ins.add(oldOffset - newOffset, MIN)
++  // Build a zoned dayjs instance from a wall-clock time.
++  // wallTs: the wall-clock time expressed as a UTC timestamp (the digits read as UTC)
++  // offset: the zone's UTC offset in minutes
++  // timezone: the zone name
++  // ms: milliseconds (0-999) to set
++  const makeZonedInstance = (wallTs, offset, timezone, ms) => {
++    let ins
++    if (offset === 0) {
++      ins = d.utc(wallTs)
++    } else {
++      const wallDate = new Date(wallTs)
++      const pad = n => (n < 10 ? `0${n}` : `${n}`)
++      const wallString = `${wallDate.getUTCFullYear()}-${pad(wallDate.getUTCMonth() + 1)}-${pad(wallDate.getUTCDate())} ${pad(wallDate.getUTCHours())}:${pad(wallDate.getUTCMinutes())}:${pad(wallDate.getUTCSeconds())}`
++      ins = d(wallString)
++      ins.$offset = offset
++      ins.$x.$localOffset = ins.$d.getTimezoneOffset()
+     }
++    ins = ins.$set(MS, ms)
+     ins.$x.$timezone = timezone
+     return ins
+   }
+ 
++  proto.tz = function (timezone = defaultTimezone, keepLocalTime) {
++    const oldOffset = this.utcOffset()
++    const targetTs = this.valueOf()
++    const targetOffset = tzOffset(targetTs, timezone)
++    const wallTs = keepLocalTime
++      ? targetTs + (oldOffset * MILLISECONDS_A_MINUTE)
++      : targetTs + (targetOffset * MILLISECONDS_A_MINUTE)
++    return makeZonedInstance(wallTs, targetOffset, timezone, this.$ms)
++  }
++
+   proto.offsetName = function (type) {
+     // type: short(default) / long
+     const zone = this.$x.$timezone || d.tz.guess()
+@@ -135,9 +152,8 @@ export default (o, c, d) => {
+     }
+     const localTs = d.utc(input, parseFormat).valueOf()
+     const [targetTs, targetOffset] = fixOffset(localTs, previousOffset, timezone)
+-    const ins = d(targetTs).utcOffset(targetOffset)
+-    ins.$x.$timezone = timezone
+-    return ins
++    const wallTs = targetTs + (targetOffset * MILLISECONDS_A_MINUTE)
++    return makeZonedInstance(wallTs, targetOffset, timezone, localTs % 1000)
+   }
+ 
+   d.tz.guess = function () {
+diff --git a/src/plugin/utc/index.js b/src/plugin/utc/index.js
+index b5b5f4e..0d95b21 100644
+--- a/src/plugin/utc/index.js
++++ b/src/plugin/utc/index.js
+@@ -86,8 +86,13 @@ export default (option, Dayjs, dayjs) => {
+   }
+ 
+   proto.valueOf = function () {
+-    const addedOffset = !this.$utils().u(this.$offset)
+-      ? this.$offset + (this.$x.$localOffset || (new Date()).getTimezoneOffset()) : 0
++    const { u } = this.$utils()
++    let addedOffset = 0
++    if (!u(this.$offset)) {
++      const localOffset = (this.$x && !u(this.$x.$localOffset))
++        ? this.$x.$localOffset : (new Date()).getTimezoneOffset()
++      addedOffset = this.$offset + localOffset
++    }
+     return this.$d.valueOf() - (addedOffset * MILLISECONDS_A_MINUTE)
+   }
+ 

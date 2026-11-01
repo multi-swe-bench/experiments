@@ -1,0 +1,398 @@
+diff --git a/packages/mui-joy/src/Table/Table.tsx b/packages/mui-joy/src/Table/Table.tsx
+new file mode 100644
+index 00000000..52be1ab4
+--- /dev/null
++++ b/packages/mui-joy/src/Table/Table.tsx
+@@ -0,0 +1,207 @@
++import * as React from 'react';
++import PropTypes from 'prop-types';
++import clsx from 'clsx';
++import { unstable_capitalize as capitalize } from '@mui/utils';
++import { OverridableComponent } from '@mui/types';
++import { unstable_composeClasses as composeClasses } from '@mui/base';
++import { styled, useThemeProps } from '../styles';
++import { TableOwnerState, TableProps, TableTypeMap } from './TableProps';
++import { getTableUtilityClass } from './tableClasses';
++
++const useUtilityClasses = (ownerState: TableOwnerState) => {
++  const { size, variant, stripe, borderAxis } = ownerState;
++
++  const slots = {
++    root: [
++      'root',
++      size && `size${capitalize(size)}`,
++      variant && `variant${capitalize(variant)}`,
++      stripe && stripe !== 'none' && `stripe${capitalize(stripe)}`,
++      borderAxis && `borderAxis${capitalize(borderAxis)}`,
++      ownerState.stickyHeader && 'stickyHeader',
++    ],
++  };
++
++  return composeClasses(slots, getTableUtilityClass, {});
++};
++
++const TableRoot = styled('table', {
++  name: 'JoyTable',
++  slot: 'Root',
++  overridesResolver: (props, styles) => styles.root,
++})<{ ownerState: TableOwnerState }>(({ theme, ownerState }) => ({
++  '--TableCell-padding': '8px 14px',
++  '--TableCell-headPadding': 'var(--TableCell-padding)',
++  ...(ownerState.size === 'sm' && {
++    '--TableCell-padding': '6px 12px',
++  }),
++  ...(ownerState.size === 'lg' && {
++    '--TableCell-padding': '12px 16px',
++  }),
++  tableLayout: 'fixed',
++  width: '100%',
++  borderCollapse: 'collapse',
++  borderSpacing: 0,
++  '& caption': {
++    color: theme.vars.palette.text.tertiary,
++    padding: '3px 16px',
++    textAlign: 'start',
++  },
++  '& thead th': {
++    textAlign: 'start',
++    padding: 'var(--TableCell-headPadding)',
++    fontWeight: theme.vars.fontWeight.md,
++    color: theme.vars.palette.text.secondary,
++  },
++  '& tbody td': {
++    padding: 'var(--TableCell-padding)',
++  },
++  ...(ownerState.variant === 'outlined' && {
++    border: '1px solid',
++    borderColor: theme.vars.palette.divider,
++  }),
++  ...(ownerState.variant === 'soft' && {
++    ...theme.variants.soft?.neutral,
++  }),
++  ...(ownerState.stripe === 'odd' && {
++    '& tbody tr:nth-of-type(odd)': {
++      backgroundColor: theme.vars.palette.background.level1,
++    },
++  }),
++  ...(ownerState.stripe === 'even' && {
++    '& tbody tr:nth-of-type(even)': {
++      backgroundColor: theme.vars.palette.background.level1,
++    },
++  }),
++  ...(ownerState.borderAxis === 'x' && {
++    '& td, & th': {
++      borderBottom: '1px solid',
++      borderColor: theme.vars.palette.divider,
++    },
++  }),
++  ...(ownerState.borderAxis === 'xBetween' && {
++    '& tbody tr:not(:last-of-type) > td, & tbody tr:not(:last-of-type) > th': {
++      borderBottom: '1px solid',
++      borderColor: theme.vars.palette.divider,
++    },
++  }),
++  ...(ownerState.stickyHeader && {
++    '& thead th': {
++      position: 'sticky',
++      top: 0,
++      zIndex: 1,
++      backgroundColor: theme.vars.palette.background.surface,
++    },
++  }),
++}));
++
++const Table = React.forwardRef(function Table(inProps, ref) {
++  const props = useThemeProps<typeof inProps & TableProps>({
++    props: inProps,
++    name: 'JoyTable',
++  });
++
++  const {
++    className,
++    component = 'table',
++    size = 'md',
++    stripe = 'none',
++    borderAxis = 'xBetween',
++    stickyHeader = false,
++    variant = 'plain',
++    ...other
++  } = props;
++
++  const ownerState = {
++    ...props,
++    component,
++    size,
++    stripe,
++    borderAxis,
++    stickyHeader,
++    variant,
++  };
++
++  const classes = useUtilityClasses(ownerState);
++
++  return (
++    <TableRoot
++      ref={ref}
++      as={component}
++      className={clsx(classes.root, className)}
++      ownerState={ownerState}
++      {...other}
++    />
++  );
++}) as OverridableComponent<TableTypeMap>;
++
++Table.propTypes /* remove-proptypes */ = {
++  // ----------------------------- Warning --------------------------------
++  // | These PropTypes are generated from the TypeScript type definitions |
++  // |     To update them edit TypeScript types and run "yarn proptypes"  |
++  // ----------------------------------------------------------------------
++  /**
++   * The content of the component.
++   */
++  children: PropTypes.node,
++  /**
++   * The border axis of the table.
++   * @default 'xBetween'
++   */
++  borderAxis: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['none', 'x', 'xBetween']),
++    PropTypes.string,
++  ]),
++  /**
++   * Override or extend the styles applied to the component.
++   */
++  classes: PropTypes.object,
++  /**
++   * @ignore
++   */
++  className: PropTypes.string,
++  /**
++   * The component used for the root node.
++   * Either a string to use a HTML element or a component.
++   */
++  component: PropTypes.elementType,
++  /**
++   * If `true`, the table will have a sticky header.
++   * @default false
++   */
++  stickyHeader: PropTypes.bool,
++  /**
++   * The size of the table.
++   * @default 'md'
++   */
++  size: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['sm', 'md', 'lg']),
++    PropTypes.string,
++  ]),
++  /**
++   * The stripe mode of the table.
++   * @default 'none'
++   */
++  stripe: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['even', 'none', 'odd']),
++    PropTypes.string,
++  ]),
++  /**
++   * The system prop that allows defining system overrides as well as additional CSS styles.
++   */
++  sx: PropTypes.oneOfType([
++    PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.func, PropTypes.object, PropTypes.bool])),
++    PropTypes.func,
++    PropTypes.object,
++  ]),
++  /**
++   * The variant of the table.
++   * @default 'plain'
++   */
++  variant: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['outlined', 'plain', 'soft']),
++    PropTypes.string,
++  ]),
++} as any;
++
++export default Table;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Table/TableProps.ts b/packages/mui-joy/src/Table/TableProps.ts
+new file mode 100644
+index 00000000..4e9ee68a
+--- /dev/null
++++ b/packages/mui-joy/src/Table/TableProps.ts
+@@ -0,0 +1,68 @@
++import * as React from 'react';
++import { OverridableStringUnion, OverrideProps } from '@mui/types';
++import { SxProps } from '../styles/types';
++import { TableClasses } from './tableClasses';
++
++export type TableSlot = 'root';
++
++export interface TableVariantOverrides {}
++export interface TableSizeOverrides {}
++export interface TableStripeOverrides {}
++export interface TableBorderAxisOverrides {}
++
++export interface TableTypeMap<P = {}, D extends React.ElementType = 'table'> {
++  props: P & {
++    /**
++     * The content of the component.
++     */
++    children?: React.ReactNode;
++    /**
++     * Override or extend the styles applied to the component.
++     */
++    classes?: Partial<TableClasses>;
++    /**
++     * The border axis of the table.
++     * @default 'xBetween'
++     */
++    borderAxis?: OverridableStringUnion<'x' | 'xBetween' | 'none', TableBorderAxisOverrides>;
++    /**
++     * The component used for the root node.
++     * Either a string to use a HTML element or a component.
++     */
++    component?: React.ElementType;
++    /**
++     * If `true`, the table will have a sticky header.
++     * @default false
++     */
++    stickyHeader?: boolean;
++    /**
++     * The size of the table.
++     * @default 'md'
++     */
++    size?: OverridableStringUnion<'sm' | 'md' | 'lg', TableSizeOverrides>;
++    /**
++     * The stripe mode of the table.
++     * @default 'none'
++     */
++    stripe?: OverridableStringUnion<'odd' | 'even' | 'none', TableStripeOverrides>;
++    /**
++     * The system prop that allows defining system overrides as well as additional CSS styles.
++     */
++    sx?: SxProps;
++    /**
++     * The variant of the table.
++     * @default 'plain'
++     */
++    variant?: OverridableStringUnion<'plain' | 'outlined' | 'soft', TableVariantOverrides>;
++  };
++  defaultComponent: D;
++}
++
++export type TableProps<
++  D extends React.ElementType = TableTypeMap['defaultComponent'],
++  P = {
++    component?: React.ElementType;
++  },
++> = OverrideProps<TableTypeMap<P, D>, D>;
++
++export interface TableOwnerState extends TableProps {}
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Table/index.ts b/packages/mui-joy/src/Table/index.ts
+new file mode 100644
+index 00000000..9e488010
+--- /dev/null
++++ b/packages/mui-joy/src/Table/index.ts
+@@ -0,0 +1,4 @@
++export { default } from './Table';
++export * from './tableClasses';
++export { default as tableClasses } from './tableClasses';
++export * from './TableProps';
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Table/tableClasses.ts b/packages/mui-joy/src/Table/tableClasses.ts
+new file mode 100644
+index 00000000..3235c51e
+--- /dev/null
++++ b/packages/mui-joy/src/Table/tableClasses.ts
+@@ -0,0 +1,54 @@
++import { generateUtilityClass, generateUtilityClasses } from '../className';
++
++export interface TableClasses {
++  /** Styles applied to the root element. */
++  root: string;
++  /** Styles applied to the root element if `size="sm"`. */
++  sizeSm: string;
++  /** Styles applied to the root element if `size="md"`. */
++  sizeMd: string;
++  /** Styles applied to the root element if `size="lg"`. */
++  sizeLg: string;
++  /** Styles applied to the root element if `variant="plain"`. */
++  variantPlain: string;
++  /** Styles applied to the root element if `variant="outlined"`. */
++  variantOutlined: string;
++  /** Styles applied to the root element if `variant="soft"`. */
++  variantSoft: string;
++  /** Styles applied to the root element if `stripe="odd"`. */
++  stripeOdd: string;
++  /** Styles applied to the root element if `stripe="even"`. */
++  stripeEven: string;
++  /** Styles applied to the root element if `borderAxis="x"`. */
++  borderAxisX: string;
++  /** Styles applied to the root element if `borderAxis="xBetween"`. */
++  borderAxisXBetween: string;
++  /** Styles applied to the root element if `borderAxis="none"`. */
++  borderAxisNone: string;
++  /** Styles applied to the root element if `stickyHeader={true}`. */
++  stickyHeader: string;
++}
++
++export type TableClassKey = keyof TableClasses;
++
++export function getTableUtilityClass(slot: string): string {
++  return generateUtilityClass('JoyTable', slot);
++}
++
++const tableClasses: TableClasses = generateUtilityClasses('JoyTable', [
++  'root',
++  'sizeSm',
++  'sizeMd',
++  'sizeLg',
++  'variantPlain',
++  'variantOutlined',
++  'variantSoft',
++  'stripeOdd',
++  'stripeEven',
++  'borderAxisX',
++  'borderAxisXBetween',
++  'borderAxisNone',
++  'stickyHeader',
++]);
++
++export default tableClasses;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/index.ts b/packages/mui-joy/src/index.ts
+index ff278a29..1d176f91 100644
+--- a/packages/mui-joy/src/index.ts
++++ b/packages/mui-joy/src/index.ts
+@@ -156,6 +156,9 @@ export * from './SvgIcon';
+ export { default as Switch } from './Switch';
+ export * from './Switch';
+ 
++export { default as Table } from './Table';
++export * from './Table';
++
+ export { default as Tab } from './Tab';
+ export * from './Tab';
+ 
+diff --git a/packages/mui-joy/src/styles/components.d.ts b/packages/mui-joy/src/styles/components.d.ts
+index 3d121b14..ee4b6bb2 100644
+--- a/packages/mui-joy/src/styles/components.d.ts
++++ b/packages/mui-joy/src/styles/components.d.ts
+@@ -144,6 +144,7 @@ import { SliderProps, SliderOwnerState, SliderSlot } from '../Slider/SliderProps
+ import { StackProps, StackSlot } from '../Stack/StackProps';
+ import { SvgIconProps, SvgIconOwnerState, SvgIconSlot } from '../SvgIcon/SvgIconProps';
+ import { SwitchProps, SwitchOwnerState, SwitchSlot } from '../Switch/SwitchProps';
++import { TableProps, TableOwnerState, TableSlot } from '../Table/TableProps';
+ import { TabProps, TabOwnerState, TabSlot } from '../Tab/TabProps';
+ import { TabListProps, TabListOwnerState, TabListSlot } from '../TabList/TabListProps';
+ import { TabPanelProps, TabPanelOwnerState, TabPanelSlot } from '../TabPanel/TabPanelProps';
+@@ -364,6 +365,10 @@ export interface Components<Theme = unknown> {
+     defaultProps?: Partial<SwitchProps>;
+     styleOverrides?: OverridesStyleRules<SwitchSlot, SwitchOwnerState, Theme>;
+   };
++  JoyTable?: {
++    defaultProps?: Partial<TableProps>;
++    styleOverrides?: OverridesStyleRules<TableSlot, TableOwnerState, Theme>;
++  };
+   // Temporary for Material UI icons usage
+   MuiSvgIcon?: {
+     defaultProps?: Partial<SvgIconProps>;

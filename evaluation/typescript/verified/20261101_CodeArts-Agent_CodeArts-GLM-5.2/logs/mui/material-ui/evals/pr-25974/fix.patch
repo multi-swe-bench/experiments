@@ -1,0 +1,52 @@
+diff --git a/packages/material-ui-lab/src/TimelineItem/TimelineItem.d.ts b/packages/material-ui-lab/src/TimelineItem/TimelineItem.d.ts
+index 1764715..c32cbbb 100644
+--- a/packages/material-ui-lab/src/TimelineItem/TimelineItem.d.ts
++++ b/packages/material-ui-lab/src/TimelineItem/TimelineItem.d.ts
+@@ -8,6 +8,11 @@ export interface TimelineItemProps extends StandardProps<React.HTMLAttributes<HT
+    * The content of the component.
+    */
+   children?: React.ReactNode;
++  /**
++   * The position where the timeline's item should appear.
++   * @default 'left'
++   */
++  align?: 'left' | 'right';
+   /**
+    * Override or extend the styles applied to the component.
+    */
+diff --git a/packages/material-ui-lab/src/TimelineItem/TimelineItem.js b/packages/material-ui-lab/src/TimelineItem/TimelineItem.js
+index 432c845..ed0412f 100644
+--- a/packages/material-ui-lab/src/TimelineItem/TimelineItem.js
++++ b/packages/material-ui-lab/src/TimelineItem/TimelineItem.js
+@@ -67,8 +67,8 @@ const TimelineItemRoot = experimentalStyled(
+ 
+ const TimelineItem = React.forwardRef(function TimelineItem(inProps, ref) {
+   const props = useThemeProps({ props: inProps, name: 'MuiTimelineItem' });
+-  const { className, ...other } = props;
+-  const { align = 'left' } = React.useContext(TimelineContext);
++  const { align: alignProp, className, ...other } = props;
++  const { align: alignContext = 'left' } = React.useContext(TimelineContext);
+ 
+   let hasOppositeContent = false;
+ 
+@@ -78,6 +78,8 @@ const TimelineItem = React.forwardRef(function TimelineItem(inProps, ref) {
+     }
+   });
+ 
++  const align = alignProp || alignContext;
++
+   const styleProps = {
+     ...props,
+     align,
+@@ -105,6 +107,11 @@ TimelineItem.propTypes /* remove-proptypes */ = {
+    * The content of the component.
+    */
+   children: PropTypes.node,
++  /**
++   * The position where the timeline's item should appear.
++   * @default 'left'
++   */
++  align: PropTypes.oneOf(['left', 'right']),
+   /**
+    * Override or extend the styles applied to the component.
+    */

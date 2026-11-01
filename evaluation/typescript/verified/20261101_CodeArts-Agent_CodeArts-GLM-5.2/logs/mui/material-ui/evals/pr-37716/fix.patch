@@ -1,0 +1,1555 @@
+diff --git a/packages/mui-joy/src/ToggleButton/ToggleButton.spec.tsx b/packages/mui-joy/src/ToggleButton/ToggleButton.spec.tsx
+new file mode 100644
+index 00000000..855fe06c
+--- /dev/null
++++ b/packages/mui-joy/src/ToggleButton/ToggleButton.spec.tsx
+@@ -0,0 +1,97 @@
++import * as React from 'react';
++import ToggleButton, { ToggleButtonOwnerState } from '@mui/joy/ToggleButton';
++import { expectType } from '@mui/types';
++
++<ToggleButton>ToggleButton</ToggleButton>;
++
++function handleClick(event: React.MouseEvent) {}
++<ToggleButton onClick={handleClick}>ToggleButton</ToggleButton>;
++
++function handleChange(event: React.MouseEvent<HTMLElement>, value: unknown) {}
++<ToggleButton onChange={handleChange}>ToggleButton</ToggleButton>;
++
++<ToggleButton variant="plain">ToggleButton</ToggleButton>;
++<ToggleButton variant="outlined">ToggleButton</ToggleButton>;
++<ToggleButton variant="soft">ToggleButton</ToggleButton>;
++<ToggleButton variant="solid">ToggleButton</ToggleButton>;
++// @ts-expect-error no `custom` variant
++<ToggleButton variant="custom">ToggleButton</ToggleButton>;
++
++<ToggleButton color="primary">ToggleButton</ToggleButton>;
++<ToggleButton color="neutral">ToggleButton</ToggleButton>;
++<ToggleButton color="danger">ToggleButton</ToggleButton>;
++<ToggleButton color="info">ToggleButton</ToggleButton>;
++<ToggleButton color="success">ToggleButton</ToggleButton>;
++<ToggleButton color="warning">ToggleButton</ToggleButton>;
++// @ts-expect-error no `black` color
++<ToggleButton color="black">ToggleButton</ToggleButton>;
++
++<ToggleButton size="sm">ToggleButton</ToggleButton>;
++<ToggleButton size="lg">ToggleButton</ToggleButton>;
++// @ts-expect-error no `super` size
++<ToggleButton size="super">ToggleButton</ToggleButton>;
++
++<ToggleButton selected value="a">ToggleButton</ToggleButton>;
++<ToggleButton disabled>ToggleButton</ToggleButton>;
++
++<ToggleButton component="a" href="/" />;
++<ToggleButton sx={{ borderRadius: 0 }}>ToggleButton</ToggleButton>;
++
++function Icon() {
++  return null;
++}
++
++<ToggleButton variant="solid" color="success" endDecorator={<Icon />}>
++  Checkout
++</ToggleButton>;
++<ToggleButton variant="outlined" startDecorator={<Icon />} selected>
++  Selected
++</ToggleButton>;
++
++<ToggleButton loading variant="outlined" disabled>
++  disabled
++</ToggleButton>;
++<ToggleButton loading loadingIndicator="Loading…" variant="outlined">
++  Fetch data
++</ToggleButton>;
++<ToggleButton endDecorator={<Icon />} loading loadingPosition="end">
++  Send
++</ToggleButton>;
++
++<ToggleButton
++  slots={{
++    root: 'div',
++    startDecorator: 'div',
++    endDecorator: 'div',
++    loadingIndicatorCenter: 'div',
++  }}
++/>;
++
++<ToggleButton
++  slotProps={{
++    root: (ownerState) => {
++      expectType<ToggleButtonOwnerState, typeof ownerState>(ownerState);
++      return {
++        'data-testid': 'test',
++      };
++    },
++    startDecorator: (ownerState) => {
++      expectType<ToggleButtonOwnerState, typeof ownerState>(ownerState);
++      return {
++        'data-testid': 'test',
++      };
++    },
++    endDecorator: (ownerState) => {
++      expectType<ToggleButtonOwnerState, typeof ownerState>(ownerState);
++      return {
++        'data-testid': 'test',
++      };
++    },
++    loadingIndicatorCenter: (ownerState) => {
++      expectType<ToggleButtonOwnerState, typeof ownerState>(ownerState);
++      return {
++        'data-testid': 'test',
++      };
++    },
++  }}
++/>;
+diff --git a/packages/mui-joy/src/ToggleButton/ToggleButton.tsx b/packages/mui-joy/src/ToggleButton/ToggleButton.tsx
+new file mode 100644
+index 00000000..d2610b3b
+--- /dev/null
++++ b/packages/mui-joy/src/ToggleButton/ToggleButton.tsx
+@@ -0,0 +1,476 @@
++'use client';
++import * as React from 'react';
++import PropTypes from 'prop-types';
++import useButton from '@mui/base/useButton';
++import composeClasses from '@mui/base/composeClasses';
++import { unstable_capitalize as capitalize, unstable_useForkRef as useForkRef } from '@mui/utils';
++import { styled, useThemeProps } from '../styles';
++import { useColorInversion } from '../styles/ColorInversion';
++import useSlot from '../utils/useSlot';
++import CircularProgress from '../CircularProgress';
++import toggleButtonClasses, { getToggleButtonUtilityClass } from './toggleButtonClasses';
++import {
++  ToggleButtonOwnerState,
++  ToggleButtonTypeMap,
++  ExtendToggleButton,
++} from './ToggleButtonProps';
++import ToggleButtonGroupContext from '../ToggleButtonGroup/ToggleButtonGroupContext';
++
++const useUtilityClasses = (ownerState: ToggleButtonOwnerState) => {
++  const {
++    color,
++    disabled,
++    focusVisible,
++    focusVisibleClassName,
++    fullWidth,
++    size,
++    variant,
++    loading,
++    selected,
++  } = ownerState;
++
++  const slots = {
++    root: [
++      'root',
++      disabled && 'disabled',
++      focusVisible && 'focusVisible',
++      selected && 'selected',
++      fullWidth && 'fullWidth',
++      variant && `variant${capitalize(variant)}`,
++      color && `color${capitalize(color)}`,
++      size && `size${capitalize(size)}`,
++      loading && 'loading',
++    ],
++    startDecorator: ['startDecorator'],
++    endDecorator: ['endDecorator'],
++    loadingIndicatorCenter: ['loadingIndicatorCenter'],
++  };
++
++  const composedClasses = composeClasses(slots, getToggleButtonUtilityClass, {});
++
++  if (focusVisible && focusVisibleClassName) {
++    composedClasses.root += ` ${focusVisibleClassName}`;
++  }
++
++  return composedClasses;
++};
++
++const ToggleButtonStartDecorator = styled('span', {
++  name: 'JoyToggleButton',
++  slot: 'StartDecorator',
++  overridesResolver: (props, styles) => styles.startDecorator,
++})<{ ownerState: ToggleButtonOwnerState }>({
++  '--Icon-margin': '0 0 0 calc(var(--Button-gap) / -2)',
++  '--CircularProgress-margin': '0 0 0 calc(var(--Button-gap) / -2)',
++  display: 'inherit',
++  marginRight: 'var(--Button-gap)',
++});
++
++const ToggleButtonEndDecorator = styled('span', {
++  name: 'JoyToggleButton',
++  slot: 'EndDecorator',
++  overridesResolver: (props, styles) => styles.endDecorator,
++})<{ ownerState: ToggleButtonOwnerState }>({
++  '--Icon-margin': '0 calc(var(--Button-gap) / -2) 0 0',
++  '--CircularProgress-margin': '0 calc(var(--Button-gap) / -2) 0 0',
++  display: 'inherit',
++  marginLeft: 'var(--Button-gap)',
++});
++
++const ToggleButtonLoadingCenter = styled('span', {
++  name: 'JoyToggleButton',
++  slot: 'LoadingCenter',
++  overridesResolver: (props, styles) => styles.loadingIndicatorCenter,
++})<{ ownerState: ToggleButtonOwnerState }>(({ theme, ownerState }) => ({
++  display: 'inherit',
++  position: 'absolute',
++  left: '50%',
++  transform: 'translateX(-50%)',
++  color: theme.variants[ownerState.variant!]?.[ownerState.color!]?.color,
++  ...(ownerState.disabled && {
++    color: theme.variants[`${ownerState.variant!}Disabled`]?.[ownerState.color!]?.color,
++  }),
++}));
++
++export const ToggleButtonRoot = styled('button', {
++  name: 'JoyToggleButton',
++  slot: 'Root',
++  overridesResolver: (props, styles) => styles.root,
++})<{ ownerState: ToggleButtonOwnerState }>(({ theme, ownerState }) => {
++  return [
++    {
++      '--Icon-margin': 'initial', // reset the icon's margin.
++      ...(ownerState.size === 'sm' && {
++        '--Icon-fontSize': '1.25rem',
++        '--CircularProgress-size': '20px', // must be `px` unit, otherwise the CircularProgress is broken in Safari
++        '--Button-gap': '0.375rem',
++        minHeight: 'var(--Button-minHeight, 2rem)',
++        fontSize: theme.vars.fontSize.sm,
++        paddingBlock: '2px',
++        paddingInline: '0.75rem',
++      }),
++      ...(ownerState.size === 'md' && {
++        '--Icon-fontSize': '1.5rem', // control the SvgIcon font-size
++        '--CircularProgress-size': '24px', // must be `px` unit, otherwise the CircularProgress is broken in Safari
++        '--Button-gap': '0.5rem',
++        minHeight: 'var(--Button-minHeight, 2.5rem)', // use min-height instead of height to make the button resilient to its content
++        fontSize: theme.vars.fontSize.sm,
++        paddingBlock: '0.25rem', // the padding-block act as a minimum spacing between content and root element
++        paddingInline: '1rem',
++      }),
++      ...(ownerState.size === 'lg' && {
++        '--Icon-fontSize': '1.75rem',
++        '--CircularProgress-size': '28px', // must be `px` unit, otherwise the CircularProgress is broken in Safari
++        '--Button-gap': '0.75rem',
++        minHeight: 'var(--Button-minHeight, 3rem)',
++        fontSize: theme.vars.fontSize.md,
++        paddingBlock: '0.375rem',
++        paddingInline: '1.5rem',
++      }),
++      WebkitTapHighlightColor: 'transparent',
++      borderRadius: `var(--Button-radius, ${theme.vars.radius.sm})`, // to be controlled by other components, eg. Input
++      margin: `var(--Button-margin)`, // to be controlled by other components, eg. Input
++      border: 'none',
++      backgroundColor: 'transparent',
++      cursor: 'pointer',
++      display: 'inline-flex',
++      alignItems: 'center',
++      justifyContent: 'center',
++      position: 'relative',
++      textDecoration: 'none', // prevent user agent underline when used as anchor
++      fontFamily: theme.vars.fontFamily.body,
++      fontWeight: theme.vars.fontWeight.lg,
++      lineHeight: 1,
++      ...(ownerState.fullWidth && {
++        width: '100%',
++      }),
++      [theme.focus.selector]: theme.focus.default,
++    },
++    theme.variants[ownerState.variant!]?.[ownerState.color!],
++    {
++      '&:hover': {
++        '@media (hover: hover)': theme.variants[`${ownerState.variant!}Hover`]?.[ownerState.color!],
++      },
++    },
++    { '&:active': theme.variants[`${ownerState.variant!}Active`]?.[ownerState.color!] },
++    {
++      [`&.${toggleButtonClasses.disabled}`]:
++        theme.variants[`${ownerState.variant!}Disabled`]?.[ownerState.color!],
++      ...(ownerState.loadingPosition === 'center' && {
++        [`&.${toggleButtonClasses.loading}`]: {
++          color: 'transparent',
++        },
++      }),
++    },
++    {
++      [`&.${toggleButtonClasses.selected}`]:
++        theme.variants[`${ownerState.variant!}Active`]?.[ownerState.color!],
++    },
++  ];
++});
++/**
++ *
++ * Demos:
++ *
++ * - [Toggle Button](https://mui.com/joy-ui/react-toggle-button/)
++ *
++ * API:
++ *
++ * - [ToggleButton API](https://mui.com/joy-ui/api/toggle-button/)
++ */
++const ToggleButton = React.forwardRef(function ToggleButton(inProps, ref) {
++  const props = useThemeProps<typeof inProps & { component?: React.ElementType }>({
++    props: inProps,
++    name: 'JoyToggleButton',
++  });
++
++  const {
++    children,
++    action,
++    color: colorProp = 'neutral',
++    variant: variantProp = 'soft',
++    size: sizeProp = 'md',
++    fullWidth = false,
++    startDecorator,
++    endDecorator,
++    loading = false,
++    loadingPosition = 'center',
++    loadingIndicator: loadingIndicatorProp,
++    disabled: disabledProp,
++    selected: selectedProp,
++    value,
++    onClick,
++    onChange,
++    component,
++    slots = {},
++    slotProps = {},
++    ...other
++  } = props;
++  const toggleButtonGroup = React.useContext(ToggleButtonGroupContext);
++
++  const variant = inProps.variant || toggleButtonGroup.variant || variantProp;
++  const size = inProps.size || toggleButtonGroup.size || sizeProp;
++  const { getColor } = useColorInversion(variant);
++  const color = getColor(inProps.color, toggleButtonGroup.color || colorProp);
++  const disabled = inProps.disabled ?? (toggleButtonGroup.disabled || disabledProp || loading);
++  const selected = selectedProp ?? false;
++
++  const buttonRef = React.useRef<HTMLElement | null>(null);
++  const handleRef = useForkRef(buttonRef, ref);
++
++  const { focusVisible, setFocusVisible, getRootProps } = useButton({
++    ...props,
++    disabled,
++    rootRef: handleRef,
++  });
++
++  const loadingIndicator = loadingIndicatorProp ?? (
++    <CircularProgress
++      {...(color !== 'context' && { color })}
++      thickness={{ sm: 2, md: 3, lg: 4 }[size] || 3}
++    />
++  );
++
++  React.useImperativeHandle(
++    action,
++    () => ({
++      focusVisible: () => {
++        setFocusVisible(true);
++        buttonRef.current?.focus();
++      },
++    }),
++    [setFocusVisible],
++  );
++
++  const ownerState = {
++    ...props,
++    color,
++    fullWidth,
++    variant,
++    size,
++    focusVisible,
++    loading,
++    loadingPosition,
++    disabled,
++    selected,
++  };
++
++  const classes = useUtilityClasses(ownerState);
++  const externalForwardedProps = { ...other, component, slots, slotProps };
++
++  const [SlotRoot, rootProps] = useSlot('root', {
++    ref,
++    className: classes.root,
++    elementType: ToggleButtonRoot,
++    externalForwardedProps,
++    getSlotProps: getRootProps,
++    additionalProps: {
++      onClick: (event: React.MouseEvent<HTMLElement>) => {
++        if (onClick) {
++          onClick(event, value);
++        }
++        if (onChange) {
++          onChange(event, value);
++        }
++        if (toggleButtonGroup.onChange) {
++          toggleButtonGroup.onChange(event, value);
++        }
++      },
++      'aria-pressed': selected,
++    },
++    ownerState,
++  });
++
++  const [SlotStartDecorator, startDecoratorProps] = useSlot('startDecorator', {
++    className: classes.startDecorator,
++    elementType: ToggleButtonStartDecorator,
++    externalForwardedProps,
++    ownerState,
++  });
++
++  const [SlotEndDecorator, endDecoratorProps] = useSlot('endDecorator', {
++    className: classes.endDecorator,
++    elementType: ToggleButtonEndDecorator,
++    externalForwardedProps,
++    ownerState,
++  });
++
++  const [SlotLoadingIndicatorCenter, loadingIndicatorCenterProps] = useSlot(
++    'loadingIndicatorCenter',
++    {
++      className: classes.loadingIndicatorCenter,
++      elementType: ToggleButtonLoadingCenter,
++      externalForwardedProps,
++      ownerState,
++    },
++  );
++
++  return (
++    <SlotRoot {...rootProps}>
++      {(startDecorator || (loading && loadingPosition === 'start')) && (
++        <SlotStartDecorator {...startDecoratorProps}>
++          {loading && loadingPosition === 'start' ? loadingIndicator : startDecorator}
++        </SlotStartDecorator>
++      )}
++
++      {children}
++      {loading && loadingPosition === 'center' && (
++        <SlotLoadingIndicatorCenter {...loadingIndicatorCenterProps}>
++          {loadingIndicator}
++        </SlotLoadingIndicatorCenter>
++      )}
++
++      {(endDecorator || (loading && loadingPosition === 'end')) && (
++        <SlotEndDecorator {...endDecoratorProps}>
++          {loading && loadingPosition === 'end' ? loadingIndicator : endDecorator}
++        </SlotEndDecorator>
++      )}
++    </SlotRoot>
++  );
++}) as ExtendToggleButton<ToggleButtonTypeMap>;
++
++ToggleButton.propTypes /* remove-proptypes */ = {
++  // ----------------------------- Warning --------------------------------
++  // | These PropTypes are generated from the TypeScript type definitions |
++  // |     To update them edit TypeScript types and run "yarn proptypes"  |
++  // ----------------------------------------------------------------------
++  /**
++   * A ref for imperative actions. It currently only supports `focusVisible()` action.
++   */
++  action: PropTypes.oneOfType([
++    PropTypes.func,
++    PropTypes.shape({
++      current: PropTypes.shape({
++        focusVisible: PropTypes.func.isRequired,
++      }),
++    }),
++  ]),
++  /**
++   * @ignore
++   */
++  children: PropTypes.node,
++  /**
++   * The color of the component. It supports those theme colors that make sense for this component.
++   * @default 'neutral'
++   */
++  color: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['danger', 'info', 'neutral', 'primary', 'success', 'warning']),
++    PropTypes.string,
++  ]),
++  /**
++   * The component used for the root node.
++   * Either a string to use a HTML element or a component.
++   */
++  component: PropTypes.elementType,
++  /**
++   * If `true`, the component is disabled.
++   * @default false
++   */
++  disabled: PropTypes.bool,
++  /**
++   * Element placed after the children.
++   */
++  endDecorator: PropTypes.node,
++  /**
++   * @ignore
++   */
++  focusVisibleClassName: PropTypes.string,
++  /**
++   * If `true`, the button will take up the full width of its container.
++   * @default false
++   */
++  fullWidth: PropTypes.bool,
++  /**
++   * If `true`, the loading indicator is shown.
++   * @default false
++   */
++  loading: PropTypes.bool,
++  /**
++   * The node should contain an element with `role="progressbar"` with an accessible name.
++   * By default we render a `CircularProgress` that is labelled by the button itself.
++   * @default <CircularProgress />
++   */
++  loadingIndicator: PropTypes.node,
++  /**
++   * The loading indicator can be positioned on the start, end, or the center of the button.
++   * @default 'center'
++   */
++  loadingPosition: PropTypes.oneOf(['center', 'end', 'start']),
++  /**
++   * Callback fired when the state changes.
++   *
++   * @param {React.MouseEvent<HTMLElement>} event The event source of the callback.
++   * @param {any} value of the selected button.
++   */
++  onChange: PropTypes.func,
++  /**
++   * Callback fired when the button is clicked.
++   *
++   * @param {React.MouseEvent<HTMLElement>} event The event source of the callback.
++   * @param {any} value of the selected button.
++   */
++  onClick: PropTypes.func,
++  /**
++   * If `true`, the button is rendered in an active state.
++   */
++  selected: PropTypes.bool,
++  /**
++   * The size of the component.
++   * @default 'md'
++   */
++  size: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['sm', 'md', 'lg']),
++    PropTypes.string,
++  ]),
++  /**
++   * The props used for each slot inside.
++   * @default {}
++   */
++  slotProps: PropTypes.shape({
++    endDecorator: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++    loadingIndicatorCenter: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++    root: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++    startDecorator: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++  }),
++  /**
++   * The components used for each slot inside.
++   * @default {}
++   */
++  slots: PropTypes.shape({
++    endDecorator: PropTypes.elementType,
++    loadingIndicatorCenter: PropTypes.elementType,
++    root: PropTypes.elementType,
++    startDecorator: PropTypes.elementType,
++  }),
++  /**
++   * Element placed before the children.
++   */
++  startDecorator: PropTypes.node,
++  /**
++   * The system prop that allows defining system overrides as well as additional CSS styles.
++   */
++  sx: PropTypes.oneOfType([
++    PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.func, PropTypes.object, PropTypes.bool])),
++    PropTypes.func,
++    PropTypes.object,
++  ]),
++  /**
++   * @default 0
++   */
++  tabIndex: PropTypes.number,
++  /**
++   * The [global variant](https://mui.com/joy-ui/main-features/global-variants/) to use.
++   * @default 'soft'
++   */
++  variant: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['outlined', 'plain', 'soft', 'solid']),
++    PropTypes.string,
++  ]),
++  /**
++   * The value to associate with the button when selected in a
++   * ToggleButtonGroup.
++   */
++  value: PropTypes /* @typescript-to-proptypes-ignore */.any,
++} as any;
++
++export default ToggleButton;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/ToggleButton/ToggleButtonProps.ts b/packages/mui-joy/src/ToggleButton/ToggleButtonProps.ts
+new file mode 100644
+index 00000000..c22a997c
+--- /dev/null
++++ b/packages/mui-joy/src/ToggleButton/ToggleButtonProps.ts
+@@ -0,0 +1,178 @@
++import * as React from 'react';
++import {
++  OverridableComponent,
++  OverridableStringUnion,
++  OverridableTypeMap,
++  OverrideProps,
++} from '@mui/types';
++import { ColorPaletteProp, SxProps, VariantProp, ApplyColorInversion } from '../styles/types';
++import { SlotProps, CreateSlotsAndSlotProps } from '../utils/types';
++
++export type ToggleButtonSlot =
++  | 'root'
++  | 'startDecorator'
++  | 'endDecorator'
++  | 'loadingIndicatorCenter';
++
++export interface ToggleButtonSlots {
++  /**
++   * The component that renders the root.
++   * @default 'button'
++   */
++  root?: React.ElementType;
++  /**
++   * The component that renders the start decorator.
++   * @default 'span'
++   */
++  startDecorator?: React.ElementType;
++  /**
++   * The component that renders the end decorator.
++   * @default 'span'
++   */
++  endDecorator?: React.ElementType;
++  /**
++   * The component that renders the loading indicator center.
++   * @default 'span'
++   */
++  loadingIndicatorCenter?: React.ElementType;
++}
++
++export interface ToggleButtonPropsVariantOverrides {}
++export interface ToggleButtonPropsColorOverrides {}
++export interface ToggleButtonPropsSizeOverrides {}
++
++export type ToggleButtonSlotsAndSlotProps = CreateSlotsAndSlotProps<
++  ToggleButtonSlots,
++  {
++    root: SlotProps<'button', {}, ToggleButtonOwnerState>;
++    startDecorator: SlotProps<'span', {}, ToggleButtonOwnerState>;
++    endDecorator: SlotProps<'span', {}, ToggleButtonOwnerState>;
++    loadingIndicatorCenter: SlotProps<'span', {}, ToggleButtonOwnerState>;
++  }
++>;
++
++export interface ToggleButtonTypeMap<P = {}, D extends React.ElementType = 'button'> {
++  props: P &
++    ToggleButtonSlotsAndSlotProps & {
++      /**
++       * A ref for imperative actions. It currently only supports `focusVisible()` action.
++       */
++      action?: React.Ref<{
++        focusVisible(): void;
++      }>;
++      /**
++       * The color of the component. It supports those theme colors that make sense for this component.
++       * @default 'neutral'
++       */
++      color?: OverridableStringUnion<ColorPaletteProp, ToggleButtonPropsColorOverrides>;
++      /**
++       * If `true`, the component is disabled.
++       * @default false
++       */
++      disabled?: boolean;
++      /**
++       * Element placed after the children.
++       */
++      endDecorator?: React.ReactNode;
++      /**
++       * This prop can help identify which element has keyboard focus.
++       * The class name will be applied when the element gains the focus through keyboard interaction.
++       * It's a polyfill for the [CSS :focus-visible selector](https://drafts.csswg.org/selectors-4/#the-focus-visible-pseudo).
++       * The rationale for using this feature [is explained here](https://github.com/WICG/focus-visible/blob/HEAD/explainer.md).
++       * A [polyfill can be used](https://github.com/WICG/focus-visible) to apply a `focus-visible` class to other components
++       * if needed.
++       */
++      focusVisibleClassName?: string;
++      /**
++       * If `true`, the button will take up the full width of its container.
++       * @default false
++       */
++      fullWidth?: boolean;
++      /**
++       * The size of the component.
++       * @default 'md'
++       */
++      size?: OverridableStringUnion<'sm' | 'md' | 'lg', ToggleButtonPropsSizeOverrides>;
++      /**
++       * Element placed before the children.
++       */
++      startDecorator?: React.ReactNode;
++      /**
++       * The system prop that allows defining system overrides as well as additional CSS styles.
++       */
++      sx?: SxProps;
++      /**
++       * @default 0
++       */
++      tabIndex?: NonNullable<React.HTMLAttributes<any>['tabIndex']>;
++      /**
++       * The [global variant](https://mui.com/joy-ui/main-features/global-variants/) to use.
++       * @default 'soft'
++       */
++      variant?: OverridableStringUnion<VariantProp, ToggleButtonPropsVariantOverrides>;
++      /**
++       * If `true`, the loading indicator is shown.
++       * @default false
++       */
++      loading?: boolean;
++      /**
++       * The node should contain an element with `role="progressbar"` with an accessible name.
++       * By default we render a `CircularProgress` that is labelled by the button itself.
++       * @default <CircularProgress />
++       */
++      loadingIndicator?: React.ReactNode;
++      /**
++       * The loading indicator can be positioned on the start, end, or the center of the button.
++       * @default 'center'
++       */
++      loadingPosition?: 'start' | 'end' | 'center';
++      /**
++       * If `true`, the button is rendered in an active state.
++       */
++      selected?: boolean;
++      /**
++       * The value to associate with the button when selected in a
++       * ToggleButtonGroup.
++       */
++      value?: unknown;
++      /**
++       * Callback fired when the state changes.
++       *
++       * @param {React.MouseEvent<HTMLElement>} event The event source of the callback.
++       * @param {any} value of the selected button.
++       */
++      onChange?: (event: React.MouseEvent<HTMLElement>, value: unknown) => void;
++      /**
++       * Callback fired when the button is clicked.
++       *
++       * @param {React.MouseEvent<HTMLElement>} event The event source of the callback.
++       * @param {any} value of the selected button.
++       */
++      onClick?: (event: React.MouseEvent<HTMLElement>, value: unknown) => void;
++    };
++  defaultComponent: D;
++}
++
++export interface ExtendToggleButtonTypeMap<M extends OverridableTypeMap> {
++  props: M['props'] & ToggleButtonTypeMap['props'];
++  defaultComponent: M['defaultComponent'];
++}
++
++export type ToggleButtonProps<
++  D extends React.ElementType = ToggleButtonTypeMap['defaultComponent'],
++  P = {
++    component?: React.ElementType;
++  },
++> = OverrideProps<ToggleButtonTypeMap<P, D>, D>;
++
++export interface ToggleButtonOwnerState extends ApplyColorInversion<ToggleButtonProps> {
++  /**
++   * If `true`, the button's focus is visible.
++   */
++  focusVisible?: boolean;
++}
++
++export type ExtendToggleButton<M extends OverridableTypeMap> = ((
++  props: OverrideProps<ExtendToggleButtonTypeMap<M>, 'a'>,
++) => JSX.Element) &
++  OverridableComponent<ExtendToggleButtonTypeMap<M>>;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/ToggleButton/index.ts b/packages/mui-joy/src/ToggleButton/index.ts
+new file mode 100644
+index 00000000..d3b3d1b9
+--- /dev/null
++++ b/packages/mui-joy/src/ToggleButton/index.ts
+@@ -0,0 +1,5 @@
++'use client';
++export { default } from './ToggleButton';
++export * from './ToggleButtonProps';
++export { default as toggleButtonClasses } from './toggleButtonClasses';
++export * from './toggleButtonClasses';
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/ToggleButton/toggleButtonClasses.ts b/packages/mui-joy/src/ToggleButton/toggleButtonClasses.ts
+new file mode 100644
+index 00000000..08d20e2d
+--- /dev/null
++++ b/packages/mui-joy/src/ToggleButton/toggleButtonClasses.ts
+@@ -0,0 +1,84 @@
++import { generateUtilityClass, generateUtilityClasses } from '../className';
++
++export interface ToggleButtonClasses {
++  /** Class name applied to the root element. */
++  root: string;
++  /** Class name applied to the root element if `color="primary"`. */
++  colorPrimary: string;
++  /** Class name applied to the root element if `color="neutral"`. */
++  colorNeutral: string;
++  /** Class name applied to the root element if `color="danger"`. */
++  colorDanger: string;
++  /** Class name applied to the root element if `color="info"`. */
++  colorInfo: string;
++  /** Class name applied to the root element if `color="success"`. */
++  colorSuccess: string;
++  /** Class name applied to the root element if `color="warning"`. */
++  colorWarning: string;
++  /** Class name applied to the root element when color inversion is triggered. */
++  colorContext: string;
++  /** Class name applied to the root element if `variant="plain"`. */
++  variantPlain: string;
++  /** Class name applied to the root element if `variant="outlined"`. */
++  variantOutlined: string;
++  /** Class name applied to the root element if `variant="soft"`. */
++  variantSoft: string;
++  /** Class name applied to the root element if `variant="solid"`. */
++  variantSolid: string;
++  /** State class applied to the root element if the button is keyboard focused. */
++  focusVisible: string;
++  /** State class applied to the root element if `disabled={true}`. */
++  disabled: string;
++  /** Class name applied to the root element if `size="sm"`. */
++  sizeSm: string;
++  /** Class name applied to the root element if `size="md"`. */
++  sizeMd: string;
++  /** Class name applied to the root element if `size="lg"`. */
++  sizeLg: string;
++  /** Class name applied to the root element if `fullWidth={true}`. */
++  fullWidth: string;
++  /** Class name applied to the startDecorator element if supplied. */
++  startDecorator: string;
++  /** Class name applied to the endDecorator element if supplied. */
++  endDecorator: string;
++  /** Class name applied to the root element if `loading={true}`. */
++  loading: string;
++  /** Class name applied to the loadingIndicatorCenter element. */
++  loadingIndicatorCenter: string;
++  /** Class name applied to the root element if `selected={true}`. */
++  selected: string;
++}
++
++export type ToggleButtonClassKey = keyof ToggleButtonClasses;
++
++export function getToggleButtonUtilityClass(slot: string): string {
++  return generateUtilityClass('MuiToggleButton', slot);
++}
++
++const toggleButtonClasses: ToggleButtonClasses = generateUtilityClasses('MuiToggleButton', [
++  'root',
++  'colorPrimary',
++  'colorNeutral',
++  'colorDanger',
++  'colorInfo',
++  'colorSuccess',
++  'colorWarning',
++  'colorContext',
++  'variantPlain',
++  'variantOutlined',
++  'variantSoft',
++  'variantSolid',
++  'focusVisible',
++  'disabled',
++  'sizeSm',
++  'sizeMd',
++  'sizeLg',
++  'fullWidth',
++  'startDecorator',
++  'endDecorator',
++  'loading',
++  'loadingIndicatorCenter',
++  'selected',
++]);
++
++export default toggleButtonClasses;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/ToggleButtonGroup/ToggleButtonGroup.spec.tsx b/packages/mui-joy/src/ToggleButtonGroup/ToggleButtonGroup.spec.tsx
+new file mode 100644
+index 00000000..b9ccc526
+--- /dev/null
++++ b/packages/mui-joy/src/ToggleButtonGroup/ToggleButtonGroup.spec.tsx
+@@ -0,0 +1,43 @@
++import * as React from 'react';
++import ToggleButtonGroup from '@mui/joy/ToggleButtonGroup';
++import ToggleButton from '@mui/joy/ToggleButton';
++
++<ToggleButtonGroup>
++  <ToggleButton value="a">A</ToggleButton>
++</ToggleButtonGroup>;
++
++<ToggleButtonGroup color="primary" variant="solid" size="lg" disabled fullWidth exclusive>
++  <ToggleButton value="a">A</ToggleButton>
++</ToggleButtonGroup>;
++
++// @ts-expect-error no `custom` variant
++<ToggleButtonGroup variant="custom" />;
++
++// @ts-expect-error no `black` color
++<ToggleButtonGroup color="black" />;
++
++// @ts-expect-error no `super` size
++<ToggleButtonGroup size="super" />;
++
++<ToggleButtonGroup orientation="vertical" />;
++
++function handleChange(event: React.MouseEvent<HTMLElement>, value: any) {}
++<ToggleButtonGroup onChange={handleChange} value="a">
++  <ToggleButton value="a">A</ToggleButton>
++</ToggleButtonGroup>;
++
++<ToggleButtonGroup
++  slots={{
++    root: 'div',
++  }}
++/>;
++
++<ToggleButtonGroup
++  slotProps={{
++    root: {
++      'data-testid': 'test',
++    },
++  }}
++/>;
++
++<ToggleButtonGroup sx={{ borderRadius: 0 }} />;
+diff --git a/packages/mui-joy/src/ToggleButtonGroup/ToggleButtonGroup.tsx b/packages/mui-joy/src/ToggleButtonGroup/ToggleButtonGroup.tsx
+new file mode 100644
+index 00000000..dee5659d
+--- /dev/null
++++ b/packages/mui-joy/src/ToggleButtonGroup/ToggleButtonGroup.tsx
+@@ -0,0 +1,333 @@
++'use client';
++import * as React from 'react';
++import { isFragment } from 'react-is';
++import PropTypes from 'prop-types';
++import clsx from 'clsx';
++import { unstable_composeClasses as composeClasses } from '@mui/base';
++import { OverridableComponent } from '@mui/types';
++import { unstable_capitalize as capitalize } from '@mui/utils';
++import { useThemeProps } from '../styles';
++import styled from '../styles/styled';
++import { getToggleButtonGroupUtilityClass } from './toggleButtonGroupClasses';
++import {
++  ToggleButtonGroupProps,
++  ToggleButtonGroupOwnerState,
++  ToggleButtonGroupTypeMap,
++} from './ToggleButtonGroupProps';
++import ToggleButtonGroupContext from './ToggleButtonGroupContext';
++import useSlot from '../utils/useSlot';
++import isValueSelected from './isValueSelected';
++
++const useUtilityClasses = (ownerState: ToggleButtonGroupOwnerState) => {
++  const { color, variant, size, orientation, fullWidth, disabled } = ownerState;
++
++  const slots = {
++    root: [
++      'root',
++      orientation,
++      fullWidth && 'fullWidth',
++      disabled && 'disabled',
++      variant && `variant${capitalize(variant)}`,
++      color && `color${capitalize(color)}`,
++      size && `size${capitalize(size)}`,
++    ],
++  };
++
++  return composeClasses(slots, getToggleButtonGroupUtilityClass, {});
++};
++
++const ToggleButtonGroupRoot = styled('div', {
++  name: 'JoyToggleButtonGroup',
++  slot: 'Root',
++  overridesResolver: (props, styles) => styles.root,
++})<{ ownerState: ToggleButtonGroupOwnerState }>(({ theme, ownerState }) => {
++  const firstChildRadius =
++    ownerState.orientation === 'vertical'
++      ? 'var(--ToggleButtonGroup-radius) var(--ToggleButtonGroup-radius) var(--unstable_childRadius) var(--unstable_childRadius)'
++      : 'var(--ToggleButtonGroup-radius) var(--unstable_childRadius) var(--unstable_childRadius) var(--ToggleButtonGroup-radius)';
++  const lastChildRadius =
++    ownerState.orientation === 'vertical'
++      ? 'var(--unstable_childRadius) var(--unstable_childRadius) var(--ToggleButtonGroup-radius) var(--ToggleButtonGroup-radius)'
++      : 'var(--unstable_childRadius) var(--ToggleButtonGroup-radius) var(--ToggleButtonGroup-radius) var(--unstable_childRadius)';
++  const singleChildRadius = 'var(--ToggleButtonGroup-radius)';
++  return [
++    {
++      '--ToggleButtonGroup-radius': theme.vars.radius.sm,
++      '--unstable_childRadius':
++        'calc(var(--ToggleButtonGroup-radius) - var(--variant-borderWidth, 0px))', // for internal usage
++      display: 'inline-flex',
++      flexDirection: ownerState.orientation === 'vertical' ? 'column' : 'row',
++      borderRadius: 'var(--ToggleButtonGroup-radius)',
++      ...(ownerState.fullWidth && {
++        width: '100%',
++      }),
++      [`& > [data-first-child]`]: {
++        '--Button-radius': firstChildRadius,
++      },
++      [`& > :not([data-first-child]):not([data-last-child]):not(:only-child)`]: {
++        '--Button-radius': 'var(--unstable_childRadius)',
++        borderRadius: 'var(--unstable_childRadius)',
++      },
++      [`& > [data-last-child]`]: {
++        '--Button-radius': lastChildRadius,
++      },
++      [`& > :only-child`]: {
++        '--Button-radius': singleChildRadius,
++      },
++    },
++  ];
++});
++
++/**
++ *
++ * Demos:
++ *
++ * - [Toggle Button](https://mui.com/joy-ui/react-toggle-button/)
++ *
++ * API:
++ *
++ * - [ToggleButtonGroup API](https://mui.com/joy-ui/api/toggle-button-group/)
++ */
++const ToggleButtonGroup = React.forwardRef(function ToggleButtonGroup(inProps, ref) {
++  const props = useThemeProps<typeof inProps & ToggleButtonGroupProps>({
++    props: inProps,
++    name: 'JoyToggleButtonGroup',
++  });
++
++  const {
++    className,
++    component = 'div',
++    disabled = false,
++    size = 'md',
++    color = 'neutral',
++    variant = 'outlined',
++    children,
++    orientation = 'horizontal',
++    slots = {},
++    slotProps = {},
++    exclusive = false,
++    fullWidth = false,
++    value,
++    onChange,
++    ...other
++  } = props;
++
++  const ownerState = {
++    ...props,
++    color,
++    component,
++    orientation,
++    fullWidth,
++    size,
++    variant,
++    disabled,
++  };
++
++  const classes = useUtilityClasses(ownerState);
++  const externalForwardedProps = { ...other, component, slots, slotProps };
++
++  const [SlotRoot, rootProps] = useSlot('root', {
++    ref,
++    className: clsx(classes.root, className),
++    elementType: ToggleButtonGroupRoot,
++    externalForwardedProps,
++    additionalProps: {
++      role: 'group',
++    },
++    ownerState,
++  });
++
++  const handleExclusiveChange = React.useCallback(
++    (event: React.MouseEvent<HTMLElement>, buttonValue: any) => {
++      if (!onChange) {
++        return;
++      }
++      onChange(event, value === buttonValue ? null : buttonValue);
++    },
++    [onChange, value],
++  );
++
++  const handleNonExclusiveChange = React.useCallback(
++    (event: React.MouseEvent<HTMLElement>, buttonValue: any) => {
++      if (!onChange) {
++        return;
++      }
++      const index = value && value.indexOf(buttonValue);
++      let newValue;
++      if (value && index >= 0) {
++        newValue = value.slice();
++        newValue.splice(index, 1);
++      } else {
++        newValue = value ? value.concat(buttonValue) : [buttonValue];
++      }
++      onChange(event, newValue);
++    },
++    [onChange, value],
++  );
++
++  const context = React.useMemo(
++    () => ({
++      color,
++      variant,
++      size,
++      disabled,
++      fullWidth,
++      value,
++      exclusive,
++      onChange: exclusive ? handleExclusiveChange : handleNonExclusiveChange,
++    }),
++    [
++      color,
++      variant,
++      size,
++      disabled,
++      fullWidth,
++      value,
++      exclusive,
++      handleExclusiveChange,
++      handleNonExclusiveChange,
++    ],
++  );
++
++  return (
++    <SlotRoot {...rootProps}>
++      <ToggleButtonGroupContext.Provider value={context}>
++        {React.Children.map(children, (child, index) => {
++          if (!React.isValidElement(child)) {
++            return child;
++          }
++          if (process.env.NODE_ENV !== 'production') {
++            if (isFragment(child)) {
++              console.error(
++                [
++                  "MUI: The ToggleButtonGroup component doesn't accept a Fragment as a child.",
++                  'Consider providing an array instead.',
++                ].join('\n'),
++              );
++            }
++          }
++          const extraProps: Record<string, any> = {
++            selected:
++              child.props.selected === undefined
++                ? isValueSelected(child.props.value, value)
++                : child.props.selected,
++          };
++          if (React.Children.count(children) > 1) {
++            if (index === 0) {
++              extraProps['data-first-child'] = '';
++            }
++            if (index === React.Children.count(children) - 1) {
++              extraProps['data-last-child'] = '';
++            }
++          }
++          return React.cloneElement(child, extraProps);
++        })}
++      </ToggleButtonGroupContext.Provider>
++    </SlotRoot>
++  );
++}) as OverridableComponent<ToggleButtonGroupTypeMap>;
++
++ToggleButtonGroup.propTypes /* remove-proptypes */ = {
++  // ----------------------------- Warning --------------------------------
++  // | These PropTypes are generated from the TypeScript type definitions |
++  // |     To update them edit TypeScript types and run "yarn proptypes"  |
++  // ----------------------------------------------------------------------
++  /**
++   * Used to render icon or text elements inside the ToggleButtonGroup if `src` is not set.
++   * This can be an element, or just a string.
++   */
++  children: PropTypes.node,
++  /**
++   * @ignore
++   */
++  className: PropTypes.string,
++  /**
++   * The color of the component. It supports those theme colors that make sense for this component.
++   * @default 'neutral'
++   */
++  color: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['danger', 'info', 'neutral', 'primary', 'success', 'warning']),
++    PropTypes.string,
++  ]),
++  /**
++   * The component used for the root node.
++   * Either a string to use a HTML element or a component.
++   */
++  component: PropTypes.elementType,
++  /**
++   * If `true`, all the buttons will be disabled.
++   * @default false
++   */
++  disabled: PropTypes.bool,
++  /**
++   * If `true`, only allow one of the child ToggleButton values to be selected.
++   * @default false
++   */
++  exclusive: PropTypes.bool,
++  /**
++   * If `true`, the button group will take up the full width of its container.
++   * @default false
++   */
++  fullWidth: PropTypes.bool,
++  /**
++   * Callback fired when the value changes.
++   *
++   * @param {React.MouseEvent<HTMLElement>} event The event source of the callback.
++   * @param {any} value of the selected buttons. When `exclusive` is true
++   * this is a single value; when false an array of selected values. If no value
++   * is selected and `exclusive` is true the value is null; when false an empty array.
++   */
++  onChange: PropTypes.func,
++  /**
++   * The component orientation (layout flow direction).
++   * @default 'horizontal'
++   */
++  orientation: PropTypes.oneOf(['horizontal', 'vertical']),
++  /**
++   * The size of the component.
++   * @default 'md'
++   */
++  size: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['sm', 'md', 'lg']),
++    PropTypes.string,
++  ]),
++  /**
++   * The props used for each slot inside.
++   * @default {}
++   */
++  slotProps: PropTypes.shape({
++    root: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++  }),
++  /**
++   * The components used for each slot inside.
++   * @default {}
++   */
++  slots: PropTypes.shape({
++    root: PropTypes.elementType,
++  }),
++  /**
++   * The system prop that allows defining system overrides as well as additional CSS styles.
++   */
++  sx: PropTypes.oneOfType([
++    PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.func, PropTypes.object, PropTypes.bool])),
++    PropTypes.func,
++    PropTypes.object,
++  ]),
++  /**
++   * The [global variant](https://mui.com/joy-ui/main-features/global-variants/) to use.
++   * @default 'outlined'
++   */
++  variant: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['outlined', 'plain', 'soft', 'solid']),
++    PropTypes.string,
++  ]),
++  /**
++   * The currently selected value within the group or an array of selected
++   * values when `exclusive` is false.
++   *
++   * The value must have reference equality with the option in order to be selected.
++   */
++  value: PropTypes.any,
++} as any;
++
++export default ToggleButtonGroup;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/ToggleButtonGroup/ToggleButtonGroupContext.ts b/packages/mui-joy/src/ToggleButtonGroup/ToggleButtonGroupContext.ts
+new file mode 100644
+index 00000000..7d73cdee
+--- /dev/null
++++ b/packages/mui-joy/src/ToggleButtonGroup/ToggleButtonGroupContext.ts
+@@ -0,0 +1,49 @@
++import * as React from 'react';
++import type { ToggleButtonGroupProps } from './ToggleButtonGroupProps';
++
++interface ToggleButtonGroupContextType {
++  /**
++   * The color of the component. It supports those theme colors that make sense for this component.
++   */
++  color?: ToggleButtonGroupProps['color'];
++  /**
++   * The [global variant](https://mui.com/joy-ui/main-features/global-variants/) to use.
++   */
++  variant?: ToggleButtonGroupProps['variant'];
++  /**
++   * The size of the component.
++   */
++  size?: ToggleButtonGroupProps['size'];
++  /**
++   * If `true`, all the buttons will be disabled.
++   */
++  disabled?: boolean;
++  /**
++   * If `true`, the button group will take up the full width of its container.
++   */
++  fullWidth?: ToggleButtonGroupProps['fullWidth'];
++  /**
++   * The currently selected value within the group or an array of selected
++   * values when `exclusive` is false.
++   */
++  value?: ToggleButtonGroupProps['value'];
++  /**
++   * If `true`, only allow one of the child ToggleButton values to be selected.
++   */
++  exclusive?: boolean;
++  /**
++   * The function to call when a ToggleButton is clicked.
++   */
++  onChange?: (event: React.MouseEvent<HTMLElement>, value: any) => void;
++}
++
++/**
++ * @ignore - internal component.
++ */
++const ToggleButtonGroupContext = React.createContext<ToggleButtonGroupContextType>({});
++
++if (process.env.NODE_ENV !== 'production') {
++  ToggleButtonGroupContext.displayName = 'ToggleButtonGroupContext';
++}
++
++export default ToggleButtonGroupContext;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/ToggleButtonGroup/ToggleButtonGroupProps.ts b/packages/mui-joy/src/ToggleButtonGroup/ToggleButtonGroupProps.ts
+new file mode 100644
+index 00000000..2d3f44fd
+--- /dev/null
++++ b/packages/mui-joy/src/ToggleButtonGroup/ToggleButtonGroupProps.ts
+@@ -0,0 +1,98 @@
++import * as React from 'react';
++import { OverridableStringUnion, OverrideProps } from '@mui/types';
++import { ColorPaletteProp, VariantProp, SxProps, ApplyColorInversion } from '../styles/types';
++import { SlotProps, CreateSlotsAndSlotProps } from '../utils/types';
++
++export type ToggleButtonGroupSlot = 'root';
++
++export interface ToggleButtonGroupSlots {
++  /**
++   * The component that renders the root.
++   * @default 'div'
++   */
++  root?: React.ElementType;
++}
++
++export type ToggleButtonGroupSlotsAndSlotProps = CreateSlotsAndSlotProps<
++  ToggleButtonGroupSlots,
++  {
++    root: SlotProps<'div', {}, ToggleButtonGroupOwnerState>;
++  }
++>;
++
++export interface ToggleButtonGroupPropsColorOverrides {}
++export interface ToggleButtonGroupPropsVariantOverrides {}
++export interface ToggleButtonGroupPropsSizeOverrides {}
++
++export interface ToggleButtonGroupTypeMap<P = {}, D extends React.ElementType = 'div'> {
++  props: P & {
++    /**
++     * Used to render icon or text elements inside the ToggleButtonGroup if `src` is not set.
++     * This can be an element, or just a string.
++     */
++    children?: React.ReactNode;
++    /**
++     * The color of the component. It supports those theme colors that make sense for this component.
++     * @default 'neutral'
++     */
++    color?: OverridableStringUnion<ColorPaletteProp, ToggleButtonGroupPropsColorOverrides>;
++    /**
++     * If `true`, all the buttons will be disabled.
++     * @default false
++     */
++    disabled?: boolean;
++    /**
++     * If `true`, the button group will take up the full width of its container.
++     * @default false
++     */
++    fullWidth?: boolean;
++    /**
++     * Callback fired when the value changes.
++     *
++     * @param {React.MouseEvent<HTMLElement>} event The event source of the callback.
++     * @param {any} value of the selected buttons. When `exclusive` is true
++     * this is a single value; when false an array of selected values. If no value
++     * is selected and `exclusive` is true the value is null; when false an empty array.
++     */
++    onChange?: (event: React.MouseEvent<HTMLElement>, value: any) => void;
++    /**
++     * The component orientation (layout flow direction).
++     * @default 'horizontal'
++     */
++    orientation?: 'horizontal' | 'vertical';
++    /**
++     * The size of the component.
++     * @default 'md'
++     */
++    size?: OverridableStringUnion<'sm' | 'md' | 'lg', ToggleButtonGroupPropsSizeOverrides>;
++    /**
++     * The system prop that allows defining system overrides as well as additional CSS styles.
++     */
++    sx?: SxProps;
++    /**
++     * The [global variant](https://mui.com/joy-ui/main-features/global-variants/) to use.
++     * @default 'outlined'
++     */
++    variant?: OverridableStringUnion<VariantProp, ToggleButtonGroupPropsVariantOverrides>;
++    /**
++     * The currently selected value within the group or an array of selected
++     * values when `exclusive` is false.
++     *
++     * The value must have reference equality with the option in order to be selected.
++     */
++    value?: any;
++    /**
++     * If `true`, only allow one of the child ToggleButton values to be selected.
++     * @default false
++     */
++    exclusive?: boolean;
++  } & ToggleButtonGroupSlotsAndSlotProps;
++  defaultComponent: D;
++}
++
++export type ToggleButtonGroupProps<
++  D extends React.ElementType = ToggleButtonGroupTypeMap['defaultComponent'],
++  P = { component?: React.ElementType },
++> = OverrideProps<ToggleButtonGroupTypeMap<P, D>, D>;
++
++export interface ToggleButtonGroupOwnerState extends ApplyColorInversion<ToggleButtonGroupProps> {}
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/ToggleButtonGroup/index.ts b/packages/mui-joy/src/ToggleButtonGroup/index.ts
+new file mode 100644
+index 00000000..dff8f034
+--- /dev/null
++++ b/packages/mui-joy/src/ToggleButtonGroup/index.ts
+@@ -0,0 +1,5 @@
++'use client';
++export { default } from './ToggleButtonGroup';
++export * from './ToggleButtonGroupProps';
++export { default as toggleButtonGroupClasses } from './toggleButtonGroupClasses';
++export * from './toggleButtonGroupClasses';
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/ToggleButtonGroup/isValueSelected.ts b/packages/mui-joy/src/ToggleButtonGroup/isValueSelected.ts
+new file mode 100644
+index 00000000..d2c1412c
+--- /dev/null
++++ b/packages/mui-joy/src/ToggleButtonGroup/isValueSelected.ts
+@@ -0,0 +1,13 @@
++// Determine if the toggle button value matches, or is contained in, the
++// candidate group value.
++export default function isValueSelected(value: unknown, candidate: unknown): boolean {
++  if (candidate === undefined || value === undefined) {
++    return false;
++  }
++
++  if (Array.isArray(candidate)) {
++    return candidate.indexOf(value) >= 0;
++  }
++
++  return value === candidate;
++}
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/ToggleButtonGroup/toggleButtonGroupClasses.ts b/packages/mui-joy/src/ToggleButtonGroup/toggleButtonGroupClasses.ts
+new file mode 100644
+index 00000000..dca77932
+--- /dev/null
++++ b/packages/mui-joy/src/ToggleButtonGroup/toggleButtonGroupClasses.ts
+@@ -0,0 +1,75 @@
++import { generateUtilityClass, generateUtilityClasses } from '../className';
++
++export interface ToggleButtonGroupClasses {
++  /** Class name applied to the root element. */
++  root: string;
++  /** Class name applied to the root element if `color="primary"`. */
++  colorPrimary: string;
++  /** Class name applied to the root element if `color="neutral"`. */
++  colorNeutral: string;
++  /** Class name applied to the root element if `color="danger"`. */
++  colorDanger: string;
++  /** Class name applied to the root element if `color="info"`. */
++  colorInfo: string;
++  /** Class name applied to the root element if `color="success"`. */
++  colorSuccess: string;
++  /** Class name applied to the root element if `color="warning"`. */
++  colorWarning: string;
++  /** Class name applied to the root element when color inversion is triggered. */
++  colorContext: string;
++  /** Class name applied to the root element if `variant="plain"`. */
++  variantPlain: string;
++  /** Class name applied to the root element if `variant="outlined"`. */
++  variantOutlined: string;
++  /** Class name applied to the root element if `variant="soft"`. */
++  variantSoft: string;
++  /** Class name applied to the root element if `variant="solid"`. */
++  variantSolid: string;
++  /** Class name applied to the root element if `size="sm"`. */
++  sizeSm: string;
++  /** Class name applied to the root element if `size="md"`. */
++  sizeMd: string;
++  /** Class name applied to the root element if `size="lg"`. */
++  sizeLg: string;
++  /** Class name applied to the root element if `orientation="horizontal"`. */
++  horizontal: string;
++  /** Class name applied to the root element if `orientation="vertical"`. */
++  vertical: string;
++  /** Class name applied to the root element if `fullWidth={true}`. */
++  fullWidth: string;
++  /** Class name applied to the root element if `disabled={true}`. */
++  disabled: string;
++}
++
++export type ToggleButtonGroupClassKey = keyof ToggleButtonGroupClasses;
++
++export function getToggleButtonGroupUtilityClass(slot: string): string {
++  return generateUtilityClass('MuiToggleButtonGroup', slot);
++}
++
++const toggleButtonGroupClasses: ToggleButtonGroupClasses = generateUtilityClasses(
++  'MuiToggleButtonGroup',
++  [
++    'root',
++    'colorPrimary',
++    'colorNeutral',
++    'colorDanger',
++    'colorInfo',
++    'colorSuccess',
++    'colorWarning',
++    'colorContext',
++    'variantPlain',
++    'variantOutlined',
++    'variantSoft',
++    'variantSolid',
++    'sizeSm',
++    'sizeMd',
++    'sizeLg',
++    'horizontal',
++    'vertical',
++    'fullWidth',
++    'disabled',
++  ],
++);
++
++export default toggleButtonGroupClasses;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/index.ts b/packages/mui-joy/src/index.ts
+index 660ae522..63518bf2 100644
+--- a/packages/mui-joy/src/index.ts
++++ b/packages/mui-joy/src/index.ts
+@@ -192,6 +192,12 @@ export * from './Textarea';
+ 
+ export { default as TextField } from './TextField';
+ 
++export { default as ToggleButton } from './ToggleButton';
++export * from './ToggleButton';
++
++export { default as ToggleButtonGroup } from './ToggleButtonGroup';
++export * from './ToggleButtonGroup';
++
+ export { default as Tooltip } from './Tooltip';
+ export * from './Tooltip';
+ 

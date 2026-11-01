@@ -1,0 +1,63 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 6a95c53..168dd91 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -2481,7 +2481,48 @@ export const template_visitors = {
+ 			let arg_alias = `$$arg${i}`;
+ 			args.push(b.id(arg_alias));
+ 
+-			const paths = extract_paths(argument);
++			let paths;
++			/** @type {import('estree').Expression} */
++			let base;
++
++			if (argument.type === 'AssignmentPattern') {
++				// Memoize the default value using a derived, so that it is only
++				// computed when necessary and multiple reads of the parameter within
++				// a single render are consistent (e.g. a default value that invokes a
++				// function with side effects), while still remaining reactive.
++				const fallback = context.state.scope.generate('fallback');
++				const value = context.state.scope.generate('value');
++
++				declarations.push(
++					b.let(
++						b.id(fallback),
++						b.call(
++							'$.derived',
++							b.arrow(
++								[],
++								b.block([
++									b.let(b.id(value), b.maybe_call(b.id(arg_alias))),
++									b.return(
++										b.conditional(
++											b.binary('===', b.id(value), b.id('undefined')),
++											/** @type {import('estree').Expression} */ (
++												context.visit(argument.right)
++											),
++											b.id(value)
++										)
++									)
++								])
++							)
++						)
++					)
++				);
++
++				paths = extract_paths(argument.left);
++				base = b.call('$.get', b.id(fallback));
++			} else {
++				paths = extract_paths(argument);
++				base = b.maybe_call(b.id(arg_alias));
++			}
+ 
+ 			for (const path of paths) {
+ 				const name = /** @type {import('estree').Identifier} */ (path.node).name;
+@@ -2491,7 +2532,7 @@ export const template_visitors = {
+ 						path.node,
+ 						b.thunk(
+ 							/** @type {import('estree').Expression} */ (
+-								context.visit(path.expression?.(b.maybe_call(b.id(arg_alias))))
++								context.visit(path.expression?.(base))
+ 							)
+ 						)
+ 					)

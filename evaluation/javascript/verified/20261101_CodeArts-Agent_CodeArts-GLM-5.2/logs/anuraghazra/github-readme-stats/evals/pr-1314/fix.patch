@@ -1,0 +1,32 @@
+diff --git a/src/cards/repo-card.js b/src/cards/repo-card.js
+index 9a21fcb..7f88227 100644
+--- a/src/cards/repo-card.js
++++ b/src/cards/repo-card.js
+@@ -5,6 +5,7 @@ const {
+   getCardColors,
+   flexLayout,
+   wrapTextMultiline,
++  measureText,
+ } = require("../common/utils");
+ const I18n = require("../common/I18n");
+ const Card = require("../common/Card");
+@@ -41,6 +42,10 @@ const renderRepoCard = (repo, options = {}) => {
+ 
+   const shiftText = langName.length > 15 ? 0 : 30;
+ 
++  const starForkX = primaryLanguage
++    ? Math.round(Math.max(155 - shiftText, measureText(langName, 12) + 55))
++    : 25;
++
+   let desc = description || "No description provided";
+ 
+   // parse emojis to unicode
+@@ -168,7 +173,7 @@ const renderRepoCard = (repo, options = {}) => {
+ 
+       <g
+         data-testid="star-fork-group"
+-        transform="translate(${primaryLanguage ? 155 - shiftText : 25}, 0)"
++        transform="translate(${starForkX}, 0)"
+       >
+         ${starAndForkCount}
+       </g>

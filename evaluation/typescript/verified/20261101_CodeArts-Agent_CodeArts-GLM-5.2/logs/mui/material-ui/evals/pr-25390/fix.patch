@@ -1,0 +1,269 @@
+diff --git a/packages/material-ui/src/ToggleButton/ToggleButton.d.ts b/packages/material-ui/src/ToggleButton/ToggleButton.d.ts
+index d28e5d3..9a6af4b 100644
+--- a/packages/material-ui/src/ToggleButton/ToggleButton.d.ts
++++ b/packages/material-ui/src/ToggleButton/ToggleButton.d.ts
+@@ -1,8 +1,12 @@
++import * as React from 'react';
++import { OverridableStringUnion } from '@material-ui/types';
+ import { SxProps } from '@material-ui/system';
+ import { Theme } from '..';
+ import { ExtendButtonBase, ExtendButtonBaseTypeMap } from '../ButtonBase';
+ import { OverrideProps } from '../OverridableComponent';
+ 
++export interface ToggleButtonPropsColorOverrides {}
++
+ export type ToggleButtonTypeMap<
+   P = {},
+   D extends React.ElementType = 'button'
+@@ -30,7 +34,29 @@ export type ToggleButtonTypeMap<
+       sizeMedium?: string;
+       /** Styles applied to the root element if `size="large"`. */
+       sizeLarge?: string;
++      /** Styles applied to the root element if `color="standard"`. */
++      colorStandard?: string;
++      /** Styles applied to the root element if `color="primary"`. */
++      colorPrimary?: string;
++      /** Styles applied to the root element if `color="secondary"`. */
++      colorSecondary?: string;
++      /** Styles applied to the root element if `color="error"`. */
++      colorError?: string;
++      /** Styles applied to the root element if `color="info"`. */
++      colorInfo?: string;
++      /** Styles applied to the root element if `color="success"`. */
++      colorSuccess?: string;
++      /** Styles applied to the root element if `color="warning"`. */
++      colorWarning?: string;
+     };
++    /**
++     * The color of the button when it is selected.
++     * @default 'standard'
++     */
++    color?: OverridableStringUnion<
++      'standard' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning',
++      ToggleButtonPropsColorOverrides
++    >;
+     /**
+      * If `true`, the component is disabled.
+      * @default false
+diff --git a/packages/material-ui/src/ToggleButton/ToggleButton.js b/packages/material-ui/src/ToggleButton/ToggleButton.js
+index 10bc098..1a3e66d 100644
+--- a/packages/material-ui/src/ToggleButton/ToggleButton.js
++++ b/packages/material-ui/src/ToggleButton/ToggleButton.js
+@@ -17,6 +17,7 @@ const overridesResolver = (props, styles) => {
+   return deepmerge(
+     {
+       ...styles[`size${capitalize(styleProps.size)}`],
++      ...styles[`color${capitalize(styleProps.color)}`],
+       [`& .${toggleButtonClasses.label}`]: styles.label,
+     },
+     styles.root || {},
+@@ -24,10 +25,16 @@ const overridesResolver = (props, styles) => {
+ };
+ 
+ const useUtilityClasses = (styleProps) => {
+-  const { classes, selected, disabled, size } = styleProps;
++  const { classes, selected, disabled, size, color } = styleProps;
+ 
+   const slots = {
+-    root: ['root', selected && 'selected', disabled && 'disabled', `size${capitalize(size)}`],
++    root: [
++      'root',
++      selected && 'selected',
++      disabled && 'disabled',
++      `size${capitalize(size)}`,
++      `color${capitalize(color)}`,
++    ],
+     label: ['label'],
+   };
+ 
+@@ -77,6 +84,66 @@ const ToggleButtonRoot = experimentalStyled(
+     padding: 15,
+     fontSize: theme.typography.pxToRem(15),
+   }),
++  /* Styles applied to the root element if `color="primary"`. */
++  ...(styleProps.color === 'primary' && {
++    '&.Mui-selected': {
++      color: theme.palette.primary.main,
++      backgroundColor: alpha(theme.palette.primary.main, 0.12),
++      '&:hover': {
++        backgroundColor: alpha(theme.palette.primary.main, 0.15),
++      },
++    },
++  }),
++  /* Styles applied to the root element if `color="secondary"`. */
++  ...(styleProps.color === 'secondary' && {
++    '&.Mui-selected': {
++      color: theme.palette.secondary.main,
++      backgroundColor: alpha(theme.palette.secondary.main, 0.12),
++      '&:hover': {
++        backgroundColor: alpha(theme.palette.secondary.main, 0.15),
++      },
++    },
++  }),
++  /* Styles applied to the root element if `color="error"`. */
++  ...(styleProps.color === 'error' && {
++    '&.Mui-selected': {
++      color: theme.palette.error.main,
++      backgroundColor: alpha(theme.palette.error.main, 0.12),
++      '&:hover': {
++        backgroundColor: alpha(theme.palette.error.main, 0.15),
++      },
++    },
++  }),
++  /* Styles applied to the root element if `color="info"`. */
++  ...(styleProps.color === 'info' && {
++    '&.Mui-selected': {
++      color: theme.palette.info.main,
++      backgroundColor: alpha(theme.palette.info.main, 0.12),
++      '&:hover': {
++        backgroundColor: alpha(theme.palette.info.main, 0.15),
++      },
++    },
++  }),
++  /* Styles applied to the root element if `color="success"`. */
++  ...(styleProps.color === 'success' && {
++    '&.Mui-selected': {
++      color: theme.palette.success.main,
++      backgroundColor: alpha(theme.palette.success.main, 0.12),
++      '&:hover': {
++        backgroundColor: alpha(theme.palette.success.main, 0.15),
++      },
++    },
++  }),
++  /* Styles applied to the root element if `color="warning"`. */
++  ...(styleProps.color === 'warning' && {
++    '&.Mui-selected': {
++      color: theme.palette.warning.main,
++      backgroundColor: alpha(theme.palette.warning.main, 0.12),
++      '&:hover': {
++        backgroundColor: alpha(theme.palette.warning.main, 0.15),
++      },
++    },
++  }),
+ }));
+ 
+ const ToggleButtonLabel = experimentalStyled(
+@@ -99,6 +166,7 @@ const ToggleButton = React.forwardRef(function ToggleButton(inProps, ref) {
+   const {
+     children,
+     className,
++    color = 'standard',
+     disabled = false,
+     disableFocusRipple = false,
+     onChange,
+@@ -111,6 +179,7 @@ const ToggleButton = React.forwardRef(function ToggleButton(inProps, ref) {
+ 
+   const styleProps = {
+     ...props,
++    color,
+     disabled,
+     disableFocusRipple,
+     size,
+@@ -164,6 +233,14 @@ ToggleButton.propTypes /* remove-proptypes */ = {
+    * Override or extend the styles applied to the component.
+    */
+   classes: PropTypes.object,
++  /**
++   * The color of the button when it is selected.
++   * @default 'standard'
++   */
++  color: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['standard', 'primary', 'secondary', 'error', 'info', 'success', 'warning']),
++    PropTypes.string,
++  ]),
+   /**
+    * @ignore
+    */
+diff --git a/packages/material-ui/src/ToggleButton/toggleButtonClasses.js b/packages/material-ui/src/ToggleButton/toggleButtonClasses.js
+index f4bd34c..1772331 100644
+--- a/packages/material-ui/src/ToggleButton/toggleButtonClasses.js
++++ b/packages/material-ui/src/ToggleButton/toggleButtonClasses.js
+@@ -12,6 +12,13 @@ const toggleButtonClasses = generateUtilityClasses('MuiToggleButton', [
+   'sizeSmall',
+   'sizeMedium',
+   'sizeLarge',
++  'colorStandard',
++  'colorPrimary',
++  'colorSecondary',
++  'colorError',
++  'colorInfo',
++  'colorSuccess',
++  'colorWarning',
+ ]);
+ 
+ export default toggleButtonClasses;
+diff --git a/packages/material-ui/src/ToggleButtonGroup/ToggleButtonGroup.d.ts b/packages/material-ui/src/ToggleButtonGroup/ToggleButtonGroup.d.ts
+index 2d998d9..e7cf17e 100644
+--- a/packages/material-ui/src/ToggleButtonGroup/ToggleButtonGroup.d.ts
++++ b/packages/material-ui/src/ToggleButtonGroup/ToggleButtonGroup.d.ts
+@@ -1,8 +1,11 @@
+ import * as React from 'react';
++import { OverridableStringUnion } from '@material-ui/types';
+ import { SxProps } from '@material-ui/system';
+ import { InternalStandardProps as StandardProps } from '..';
+ import { Theme } from '../styles';
+ 
++export interface ToggleButtonGroupPropsColorOverrides {}
++
+ export interface ToggleButtonGroupProps
+   extends StandardProps<React.HTMLAttributes<HTMLDivElement>, 'onChange' | 'children'> {
+   /**
+@@ -24,6 +27,14 @@ export interface ToggleButtonGroupProps
+     /** Styles applied to the children if `orientation="vertical"`. */
+     groupedVertical?: string;
+   };
++  /**
++   * The color of the button when it is selected.
++   * @default 'standard'
++   */
++  color?: OverridableStringUnion<
++    'standard' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning',
++    ToggleButtonGroupPropsColorOverrides
++  >;
+   /**
+    * If `true`, only allow one of the child ToggleButton values to be selected.
+    * @default false
+diff --git a/packages/material-ui/src/ToggleButtonGroup/ToggleButtonGroup.js b/packages/material-ui/src/ToggleButtonGroup/ToggleButtonGroup.js
+index 16468de..50bafcc 100644
+--- a/packages/material-ui/src/ToggleButtonGroup/ToggleButtonGroup.js
++++ b/packages/material-ui/src/ToggleButtonGroup/ToggleButtonGroup.js
+@@ -99,6 +99,7 @@ const ToggleButtonGroup = React.forwardRef(function ToggleButtonGroup(inProps, r
+   const {
+     children,
+     className,
++    color = 'standard',
+     exclusive = false,
+     onChange,
+     orientation = 'horizontal',
+@@ -106,7 +107,7 @@ const ToggleButtonGroup = React.forwardRef(function ToggleButtonGroup(inProps, r
+     value,
+     ...other
+   } = props;
+-  const styleProps = { ...props, orientation, size };
++  const styleProps = { ...props, color, orientation, size };
+   const classes = useUtilityClasses(styleProps);
+ 
+   const handleChange = (event, buttonValue) => {
+@@ -167,6 +168,7 @@ const ToggleButtonGroup = React.forwardRef(function ToggleButtonGroup(inProps, r
+               ? isValueSelected(child.props.value, value)
+               : child.props.selected,
+           size: child.props.size || size,
++          color: child.props.color || color,
+         });
+       })}
+     </ToggleButtonGroupRoot>
+@@ -190,6 +192,14 @@ ToggleButtonGroup.propTypes /* remove-proptypes */ = {
+    * @ignore
+    */
+   className: PropTypes.string,
++  /**
++   * The color of the button when it is selected.
++   * @default 'standard'
++   */
++  color: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['standard', 'primary', 'secondary', 'error', 'info', 'success', 'warning']),
++    PropTypes.string,
++  ]),
+   /**
+    * If `true`, only allow one of the child ToggleButton values to be selected.
+    * @default false

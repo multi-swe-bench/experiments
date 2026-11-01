@@ -1,0 +1,15 @@
+diff --git a/packages/mui-base/src/AutocompleteUnstyled/useAutocomplete.js b/packages/mui-base/src/AutocompleteUnstyled/useAutocomplete.js
+index 235c201b..8564fccd 100644
+--- a/packages/mui-base/src/AutocompleteUnstyled/useAutocomplete.js
++++ b/packages/mui-base/src/AutocompleteUnstyled/useAutocomplete.js
+@@ -470,7 +470,9 @@ export default function useAutocomplete(props) {
+       previousProps.filteredOptions &&
+       previousProps.filteredOptions.length !== filteredOptions.length &&
+       (multiple
+-        ? previousProps.value.every((val, i) => getOptionLabel(value[i]) === getOptionLabel(val))
++        ? previousProps.value.every(
++              (val, i) => value[i] && getOptionLabel(value[i]) === getOptionLabel(val),
++            )
+         : getOptionLabel(previousProps.value ?? '') === getOptionLabel(value ?? ''))
+     ) {
+       const previousHighlightedOption = previousProps.filteredOptions[highlightedIndexRef.current];

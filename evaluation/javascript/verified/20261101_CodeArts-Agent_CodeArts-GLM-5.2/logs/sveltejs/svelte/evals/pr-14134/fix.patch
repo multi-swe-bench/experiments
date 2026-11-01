@@ -1,0 +1,76 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/utils.js b/packages/svelte/src/compiler/phases/3-transform/utils.js
+index 809c627..62259b7 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/utils.js
+@@ -15,6 +15,7 @@ import check_graph_for_cycles from '../2-analyze/utils/check_graph_for_cycles.js
+ import is_reference from 'is-reference';
+ import { set_scope } from '../scope.js';
+ import { dev } from '../../state.js';
++import { is_ambiguous_namespace_element } from '../../../utils.js';
+ 
+ /**
+  * @param {Node} node
+@@ -328,7 +329,16 @@ export function infer_namespace(namespace, parent, nodes) {
+ 		if (parent.metadata.svg) {
+ 			return 'svg';
+ 		}
+-		return parent.metadata.mathml ? 'mathml' : 'html';
++
++		if (parent.metadata.mathml) {
++			return 'mathml';
++		}
++
++		if (is_ambiguous_namespace_element(parent.name)) {
++			return namespace;
++		}
++
++		return 'html';
+ 	}
+ 
+ 	// Re-evaluate the namespace inside slot nodes that reset the namespace
+@@ -364,6 +374,10 @@ function check_nodes_for_namespace(nodes, namespace) {
+ 	 */
+ 	const RegularElement = (node, { stop }) => {
+ 		if (!node.metadata.svg && !node.metadata.mathml) {
++			if (is_ambiguous_namespace_element(node.name)) {
++				return;
++			}
++
+ 			namespace = 'html';
+ 			stop();
+ 		} else if (namespace === 'keep') {
+@@ -421,7 +435,15 @@ export function determine_namespace_for_children(node, namespace) {
+ 		return 'svg';
+ 	}
+ 
+-	return node.metadata.mathml ? 'mathml' : 'html';
++	if (node.metadata.mathml) {
++		return 'mathml';
++	}
++
++	if (is_ambiguous_namespace_element(node.name)) {
++		return namespace;
++	}
++
++	return 'html';
+ }
+ 
+ /**
+diff --git a/packages/svelte/src/utils.js b/packages/svelte/src/utils.js
+index 60ec364..47cd202 100644
+--- a/packages/svelte/src/utils.js
++++ b/packages/svelte/src/utils.js
+@@ -362,6 +362,13 @@ export function is_svg(name) {
+ 	return SVG_ELEMENTS.includes(name);
+ }
+ 
++const AMBIGUOUS_NAMESPACE_ELEMENTS = ['a', 'script', 'style', 'title'];
++
++/** @param {string} name */
++export function is_ambiguous_namespace_element(name) {
++	return AMBIGUOUS_NAMESPACE_ELEMENTS.includes(name);
++}
++
+ const MATHML_ELEMENTS = [
+ 	'annotation',
+ 	'annotation-xml',

@@ -1,0 +1,20 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/tag.js b/packages/svelte/src/compiler/phases/1-parse/state/tag.js
+index bf6adcc..3b5c85b 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/tag.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/tag.js
+@@ -551,9 +551,14 @@ function special(parser) {
+ 		parser.eat('=', true);
+ 		parser.allow_whitespace();
+ 
++		const init_start = parser.index;
+ 		const init = read_expression(parser);
+-		parser.allow_whitespace();
+ 
++		if (init.type === 'SequenceExpression' && init.start === init_start) {
++			e.const_tag_invalid_expression(init);
++		}
++
++		parser.allow_whitespace();
+ 		parser.eat('}', true);
+ 
+ 		/** @type {ReturnType<typeof parser.append<import('#compiler').ConstTag>>} */

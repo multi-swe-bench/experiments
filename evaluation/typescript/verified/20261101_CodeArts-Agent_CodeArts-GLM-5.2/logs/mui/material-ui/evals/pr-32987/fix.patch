@@ -1,0 +1,31 @@
+diff --git a/packages/mui-material/src/Dialog/Dialog.js b/packages/mui-material/src/Dialog/Dialog.js
+index 7dd58e6f..f388b217 100644
+--- a/packages/mui-material/src/Dialog/Dialog.js
++++ b/packages/mui-material/src/Dialog/Dialog.js
+@@ -32,7 +32,7 @@ const useUtilityClasses = (ownerState) => {
+     paper: [
+       'paper',
+       `paperScroll${capitalize(scroll)}`,
+-      `paperWidth${capitalize(String(maxWidth))}`,
++      maxWidth !== false && `paperWidth${capitalize(String(maxWidth))}`,
+       fullWidth && 'paperFullWidth',
+       fullScreen && 'paperFullScreen',
+     ],
+@@ -95,7 +95,7 @@ const DialogPaper = styled(Paper, {
+     return [
+       styles.paper,
+       styles[`scrollPaper${capitalize(ownerState.scroll)}`],
+-      styles[`paperWidth${capitalize(String(ownerState.maxWidth))}`],
++      ownerState.maxWidth !== false && styles[`paperWidth${capitalize(String(ownerState.maxWidth))}`],
+       ownerState.fullWidth && styles.paperFullWidth,
+       ownerState.fullScreen && styles.paperFullScreen,
+     ];
+@@ -132,7 +132,7 @@ const DialogPaper = styled(Paper, {
+       },
+     },
+   }),
+-  ...(ownerState.maxWidth !== 'xs' && {
++  ...(ownerState.maxWidth && ownerState.maxWidth !== 'xs' && {
+     maxWidth: `${theme.breakpoints.values[ownerState.maxWidth]}${theme.breakpoints.unit}`,
+     [`&.${dialogClasses.paperScrollBody}`]: {
+       [theme.breakpoints.down(theme.breakpoints.values[ownerState.maxWidth] + 32 * 2)]: {

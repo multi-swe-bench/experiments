@@ -1,0 +1,57 @@
+diff --git a/packages/mui-material/src/MenuList/MenuList.js b/packages/mui-material/src/MenuList/MenuList.js
+index a9f2337a..629ea59c 100644
+--- a/packages/mui-material/src/MenuList/MenuList.js
++++ b/packages/mui-material/src/MenuList/MenuList.js
+@@ -206,6 +206,7 @@ const MenuList = React.forwardRef(function MenuList(props, ref) {
+    * otherwise it's the very first item.
+    */
+   let activeItemIndex = -1;
++  let firstValidItemIndex = -1;
+   // since we inject focus related props into children we have to do a lookahead
+   // to check if there is a `selected` item. We're looking for the last `selected`
+   // item and use the first valid item as a fallback
+@@ -225,15 +226,25 @@ const MenuList = React.forwardRef(function MenuList(props, ref) {
+       }
+     }
+ 
+-    if (!child.props.disabled) {
+-      if (variant === 'selectedMenu' && child.props.selected) {
+-        activeItemIndex = index;
+-      } else if (activeItemIndex === -1) {
+-        activeItemIndex = index;
+-      }
++    if (child.props.disabled) {
++      return;
++    }
++
++    if (firstValidItemIndex === -1) {
++      firstValidItemIndex = index;
++    }
++
++    if (variant === 'selectedMenu' && child.props.selected) {
++      activeItemIndex = index;
++    } else if (activeItemIndex === -1 && child.props['aria-readonly'] !== true) {
++      activeItemIndex = index;
+     }
+   });
+ 
++  if (activeItemIndex === -1) {
++    activeItemIndex = firstValidItemIndex;
++  }
++
+   const items = React.Children.map(children, (child, index) => {
+     if (index === activeItemIndex) {
+       const newChildProps = {};
+diff --git a/packages/mui-material/src/Select/SelectInput.js b/packages/mui-material/src/Select/SelectInput.js
+index 0b9c246c..a84dbbd5 100644
+--- a/packages/mui-material/src/Select/SelectInput.js
++++ b/packages/mui-material/src/Select/SelectInput.js
+@@ -399,7 +399,7 @@ const SelectInput = React.forwardRef(function SelectInput(props, ref) {
+     }
+ 
+     const isFirstSelectableElement = () => {
+-      if (value) {
++      if (value != null) {
+         return selected;
+       }
+       const firstSelectableElement = arr.find(

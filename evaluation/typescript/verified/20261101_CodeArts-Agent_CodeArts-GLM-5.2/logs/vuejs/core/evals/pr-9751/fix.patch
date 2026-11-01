@@ -1,0 +1,17 @@
+diff --git a/packages/reactivity/src/baseHandlers.ts b/packages/reactivity/src/baseHandlers.ts
+index fa7ebbb..5de8c1a 100644
+--- a/packages/reactivity/src/baseHandlers.ts
++++ b/packages/reactivity/src/baseHandlers.ts
+@@ -118,7 +118,11 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
+     const targetIsArray = isArray(target)
+ 
+     if (!isReadonly) {
+-      if (targetIsArray && hasOwn(arrayInstrumentations, key)) {
++      if (
++        targetIsArray &&
++        hasOwn(arrayInstrumentations, key) &&
++        receiver === (shallow ? shallowReactiveMap : reactiveMap).get(target)
++      ) {
+         return Reflect.get(arrayInstrumentations, key, receiver)
+       }
+       if (key === 'hasOwnProperty') {

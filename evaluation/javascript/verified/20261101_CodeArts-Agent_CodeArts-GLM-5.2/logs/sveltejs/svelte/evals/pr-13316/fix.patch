@@ -1,0 +1,70 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+index 04815db..f12d0fd 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+@@ -4,7 +4,7 @@
+ /** @import { Visitors, ComponentClientTransformState, ClientTransformState } from './types' */
+ import { walk } from 'zimmerframe';
+ import * as b from '../../../utils/builders.js';
+-import { build_getter } from './utils.js';
++import { build_getter, is_state_source } from './utils.js';
+ import { render_stylesheet } from '../css/index.js';
+ import { dev, filename } from '../../../state.js';
+ import { AnimateDirective } from './visitors/AnimateDirective.js';
+@@ -66,7 +66,11 @@ const visitors = {
+ 			const transform = { ...state.transform };
+ 
+ 			for (const [name, binding] of scope.declarations) {
+-				if (binding.kind === 'normal') {
++				if (
++					binding.kind === 'normal' ||
++					((binding.kind === 'state' || binding.kind === 'raw_state') &&
++						!is_state_source(binding, state.analysis))
++				) {
+ 					delete transform[name];
+ 				}
+ 			}
+diff --git a/packages/svelte/tests/runtime-runes/samples/shadowed-state-in-derived/_config.js b/packages/svelte/tests/runtime-runes/samples/shadowed-state-in-derived/_config.js
+new file mode 100644
+index 0000000..8c524bb
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/shadowed-state-in-derived/_config.js
+@@ -0,0 +1,20 @@
++import { test } from '../../test';
++import { flushSync } from 'svelte';
++
++export default test({
++	props: {
++		count: 42
++	},
++
++	html: `<div>Local: 42</div>`,
++
++	async test({ assert, component, target }) {
++		assert.htmlEqual(target.innerHTML, `<div>Local: 42</div>`);
++
++		flushSync(() => {
++			component.count = 7;
++		});
++
++		assert.htmlEqual(target.innerHTML, `<div>Local: 7</div>`);
++	}
++});
+diff --git a/packages/svelte/tests/runtime-runes/samples/shadowed-state-in-derived/main.svelte b/packages/svelte/tests/runtime-runes/samples/shadowed-state-in-derived/main.svelte
+new file mode 100644
+index 0000000..220357a
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/shadowed-state-in-derived/main.svelte
+@@ -0,0 +1,11 @@
++<script>
++	const { count } = $props();
++
++	let local = $derived.by(() => {
++		const local = $state({ count });
++
++		return local;
++	});
++</script>
++
++<div>Local: {local.count}</div>
+\ No newline at end of file

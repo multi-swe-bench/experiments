@@ -1,0 +1,64 @@
+diff --git a/.changeset/state-link-callback-fixes.md b/.changeset/state-link-callback-fixes.md
+new file mode 100644
+index 0000000..3f272c4
+--- /dev/null
++++ b/.changeset/state-link-callback-fixes.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++Fix `$state.link` callback bugs: updates to the linked value are now reflected in the UI after a local change, and the callback is no longer invoked twice (once with the old value and once with the new value) when updating the local value
+\ No newline at end of file
+diff --git a/packages/svelte/src/internal/client/reactivity/sources.js b/packages/svelte/src/internal/client/reactivity/sources.js
+index d0c6441..3f96c26 100644
+--- a/packages/svelte/src/internal/client/reactivity/sources.js
++++ b/packages/svelte/src/internal/client/reactivity/sources.js
+@@ -27,6 +27,7 @@ import {
+ } from '../constants.js';
+ import * as e from '../errors.js';
+ import { derived } from './deriveds.js';
++import { effect } from './effects.js';
+ 
+ let inspect_effects = new Set();
+ 
+@@ -69,11 +70,28 @@ export function source_link(get_value, callback) {
+ 		return linked_value;
+ 	});
+ 
++	if (callback !== undefined) {
++		var initialized = false;
++
++		// Invoke the callback whenever the linked value changes. The callback's
++		// own dependencies are tracked as well, so that (for example) a callback
++		// that reads other state is re-evaluated when that state changes.
++		effect(() => {
++			var linked_value = get_value();
++
++			if (initialized) {
++				callback(linked_value);
++			} else {
++				initialized = true;
++			}
++		});
++	}
++
+ 	return function (/** @type {any} */ value) {
+ 		if (arguments.length > 0) {
+ 			was_local = true;
+ 			set(local_source, value);
+-			get(linked_derived);
++			untrack(() => get(linked_derived));
+ 			return value;
+ 		}
+ 
+@@ -81,8 +99,7 @@ export function source_link(get_value, callback) {
+ 
+ 		if (init) {
+ 			if (callback !== undefined) {
+-				untrack(() => callback(linked_value));
+-				return local_source.v;
++				return get(local_source);
+ 			}
+ 		} else {
+ 			init = true;

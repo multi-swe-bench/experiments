@@ -1,0 +1,146 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 05d4c5d..8c189ca 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -598,6 +598,50 @@ const template = {
+ 		handle_events(node, state);
+ 		next();
+ 	},
++	SvelteComponent(node, { state, next }) {
++		handle_events(node, state);
++		next();
++
++		const expr_start = /** @type {number} */ (node.expression.start);
++		const expr_end = /** @type {number} */ (node.expression.end);
++		const expr = state.str.slice(expr_start, expr_end);
++
++		// replace the tag name `svelte:component` with the component expression
++		state.str.overwrite(
++			/** @type {number} */ (node.start) + 1,
++			/** @type {number} */ (node.start) + 1 + 'svelte:component'.length,
++			expr
++		);
++
++		// remove the `this={...}` attribute. its value is a single expression
++		// tag `{...}` wrapping the component expression.
++		const value_end = find_closing_brace(state.str.original, expr_end);
++		const value_start = find_opening_brace(state.str.original, expr_start);
++		let attr_start = value_start;
++		while (state.str.original[--attr_start] !== '=') {}
++		while (/\s/.test(state.str.original[attr_start - 1])) attr_start--;
++		attr_start -= 'this'.length;
++
++		// remove the attribute along with its leading whitespace so we don't
++		// end up with double spaces
++		let whitespace_start = attr_start;
++		while (/[\s\n]/.test(state.str.original[whitespace_start - 1])) whitespace_start--;
++		state.str.remove(whitespace_start, value_end);
++
++		if (node.fragment.nodes.length > 0) {
++			const last = node.fragment.nodes[node.fragment.nodes.length - 1];
++			state.str.overwrite(/** @type {number} */ (last.end), /** @type {number} */ (node.end), `</${expr}>`);
++		} else {
++			// no children: the element could still have an explicit closing tag
++			// (e.g. `<svelte:component this={Foo}></svelte:component>`)
++			const closing_tag = '</svelte:component>';
++			const end = /** @type {number} */ (node.end);
++			const closing_start = state.str.original.lastIndexOf(closing_tag, end - 1);
++			if (closing_start >= /** @type {number} */ (node.start)) {
++				state.str.overwrite(closing_start, closing_start + closing_tag.length, `</${expr}>`);
++			}
++		}
++	},
+ 	SlotElement(node, { state, next }) {
+ 		if (state.analysis.custom_element) return;
+ 		let name = 'children';
+@@ -727,7 +771,7 @@ const modifier_order = [
+ ];
+ 
+ /**
+- * @param {AST.RegularElement | AST.SvelteElement | AST.SvelteWindow | AST.SvelteDocument | AST.SvelteBody} element
++ * @param {AST.RegularElement | AST.SvelteElement | AST.SvelteWindow | AST.SvelteDocument | AST.SvelteBody | AST.SvelteComponent} element
+  * @param {State} state
+  */
+ function handle_events(element, state) {
+@@ -843,6 +887,38 @@ function get_node_range(source, node) {
+ 	return { start, end };
+ }
+ 
++/**
++ * Finds the position of the opening `{` of the expression tag that wraps the
++ * expression starting at `expression_start`.
++ * @param {string} source
++ * @param {number} expression_start
++ */
++function find_opening_brace(source, expression_start) {
++	// start one before the expression to skip a potential leading `{` belonging
++	// to the expression itself (e.g. an object literal)
++	let i = expression_start - 1;
++	while (source[i] !== '{') i--;
++	return i;
++}
++
++/**
++ * Finds the position after the closing `}` of the expression tag that wraps the
++ * expression ending at `expression_end`.
++ * @param {string} source
++ * @param {number} expression_end
++ */
++function find_closing_brace(source, expression_end) {
++	let depth = 1;
++	let i = expression_end;
++	while (depth > 0) {
++		const char = source[i];
++		if (char === '{') depth++;
++		else if (char === '}') depth--;
++		i++;
++	}
++	return i;
++}
++
+ /**
+  * @param {Identifier} node
+  * @param {State} state
+diff --git a/packages/svelte/tests/migrate/samples/svelte-component/input.svelte b/packages/svelte/tests/migrate/samples/svelte-component/input.svelte
+new file mode 100644
+index 0000000..96c66d3
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/svelte-component/input.svelte
+@@ -0,0 +1,12 @@
++<svelte:component this={Foo} />
++
++<svelte:component this={Bar} prop={x} on:click={handle} />
++
++<svelte:component this={obj.Baz} {...props} bind:this={ref} />
++
++<svelte:component this={Qux}>
++	<slot name="item" {item} />
++	<slot />
++</svelte:component>
++
++<svelte:component this={Quux}></svelte:component>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/migrate/samples/svelte-component/output.svelte b/packages/svelte/tests/migrate/samples/svelte-component/output.svelte
+new file mode 100644
+index 0000000..d8f82d9
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/svelte-component/output.svelte
+@@ -0,0 +1,17 @@
++<script>
++	/** @type {{item_1?: import('svelte').Snippet<[any]>, children?: import('svelte').Snippet}} */
++	let { item_1, children } = $props();
++</script>
++
++<Foo />
++
++<Bar prop={x} onclick={handle} />
++
++<obj.Baz {...props} bind:this={ref} />
++
++<Qux>
++	{@render item_1?.({ item, })}
++	{@render children?.()}
++</Qux>
++
++<Quux></Quux>
+\ No newline at end of file

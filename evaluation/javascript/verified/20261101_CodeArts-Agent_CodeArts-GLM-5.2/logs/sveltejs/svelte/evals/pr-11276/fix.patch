@@ -1,0 +1,278 @@
+diff --git a/documentation/docs/02-template-syntax/01-svelte-components.md b/documentation/docs/02-template-syntax/01-svelte-components.md
+index e05a90a..1fdaa9f 100644
+--- a/documentation/docs/02-template-syntax/01-svelte-components.md
++++ b/documentation/docs/02-template-syntax/01-svelte-components.md
+@@ -319,6 +319,21 @@ To apply styles to a selector globally, use the `:global(...)` modifier.
+ </style>
+ ```
+ 
++If you have many global selectors that share a common scoped ancestor, you can use `:global` (without parens) together with [CSS nesting](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_nesting) to apply them all at once.
++
++```svelte
++<style>
++	.post :global {
++		/* this will apply to all `p`, `ul`, `li` and `code` elements
++			 that are inside `.post` elements belonging to this component */
++		p { color: burlywood; }
++		ul { color: goldenrod; }
++		li { color: goldenrod; }
++		code { color: goldenrod; }
++	}
++</style>
++```
++
+ If you want to make @keyframes that are accessible globally, you need to prepend your keyframe names with `-global-`.
+ 
+ The `-global-` part will be removed when compiled, and the keyframe will then be referenced using just `my-animation-name` elsewhere in your code.
+diff --git a/packages/svelte/src/compiler/phases/1-parse/read/style.js b/packages/svelte/src/compiler/phases/1-parse/read/style.js
+index ef64a97..64de2b8 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/read/style.js
++++ b/packages/svelte/src/compiler/phases/1-parse/read/style.js
+@@ -116,7 +116,8 @@ function read_rule(parser) {
+ 		end: parser.index,
+ 		metadata: {
+ 			parent_rule: null,
+-			has_local_selectors: false
++			has_local_selectors: false,
++			is_global: false
+ 		}
+ 	};
+ }
+@@ -253,7 +254,12 @@ function read_selector(parser, inside_pseudo_class = false) {
+ 				args = read_selector_list(parser, true);
+ 				parser.eat(')', true);
+ 			} else if (name === 'global') {
+-				error(parser.index, 'invalid-css-global-selector');
++				// `:global` without parens is a nesting context marker — it must be
++				// preceded by another (local) selector, otherwise the resulting
++				// selector would be empty once the marker is removed
++				if (relative_selector.selectors.length > 0 || children.length === 0) {
++					error(parser.index, 'invalid-css-global-selector');
++				}
+ 			}
+ 
+ 			relative_selector.selectors.push({
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-analyze.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-analyze.js
+index 7b6cbff..17675f0 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-analyze.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-analyze.js
+@@ -27,6 +27,24 @@ function is_global(relative_selector) {
+ 	);
+ }
+ 
++/**
++ * Returns true if the rule's prelude contains a `:global` nesting context marker
++ * (i.e. `:global` without parens), which means its nested rules are global.
++ * @param {import('#compiler').Css.Rule | null} rule
++ */
++function has_global_marker(rule) {
++	if (!rule) return false;
++
++	return rule.prelude.children.some((complex_selector) =>
++		complex_selector.children.some(
++			(relative_selector) =>
++				is_global(relative_selector) &&
++				relative_selector.selectors[0].type === 'PseudoClassSelector' &&
++				relative_selector.selectors[0].args === null
++		)
++	);
++}
++
+ /** @type {Visitors} */
+ const analysis_visitors = {
+ 	Atrule(node, context) {
+@@ -69,6 +87,10 @@ const analysis_visitors = {
+ 	Rule(node, context) {
+ 		node.metadata.parent_rule = context.state.rule;
+ 
++		const parent = context.state.rule;
++		node.metadata.is_global =
++			parent !== null && (parent.metadata.is_global || has_global_marker(parent));
++
+ 		context.next({
+ 			...context.state,
+ 			rule: node
+@@ -105,6 +127,12 @@ const validation_visitors = {
+ 				const selector = relative_selector.selectors[i];
+ 
+ 				if (selector.type === 'PseudoClassSelector' && selector.name === 'global') {
++					// `:global` without parens is a nesting context marker — it must
++					// be the only selector in its compound selector
++					if (selector.args === null && relative_selector.selectors.length > 1) {
++						error(selector, 'invalid-css-global-selector');
++					}
++
+ 					const child = selector.args?.children[0].children[0];
+ 					// ensure `:global(element)` to be at the first position in a compound selector
+ 					if (child?.selectors[0].type === 'TypeSelector' && i !== 0) {
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+index a5010c5..d2255ab 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+@@ -58,9 +58,34 @@ export function prune(stylesheet, element) {
+ 	walk(stylesheet, { stylesheet, element }, visitors);
+ }
+ 
++/**
++ * A rule is considered used if one of its own selectors is used, or — for
++ * rules inside a `:global { ... }` nesting context — if its parent rule is
++ * used.
++ * @param {import('#compiler').Css.Rule} rule
++ * @returns {boolean}
++ */
++function is_rule_used(rule) {
++	if (rule.metadata.is_global) {
++		return rule.metadata.parent_rule ? is_rule_used(rule.metadata.parent_rule) : false;
++	}
++
++	return rule.prelude.children.some((selector) => selector.metadata.used);
++}
++
+ /** @type {import('zimmerframe').Visitors<import('#compiler').Css.Node, State>} */
+ const visitors = {
+ 	ComplexSelector(node, context) {
++		// rules inside a `:global { ... }` nesting context (or nested within them)
++		// are entirely global — they match (and are never scoped) as long as the
++		// surrounding nesting context is itself used
++		if (node.metadata.rule?.metadata.is_global) {
++			if (is_rule_used(/** @type {import('#compiler').Css.Rule} */ (node.metadata.rule))) {
++				node.metadata.used = true;
++			}
++			return;
++		}
++
+ 		const selectors = truncate(node);
+ 		const inner = selectors[selectors.length - 1];
+ 
+diff --git a/packages/svelte/src/compiler/phases/3-transform/css/index.js b/packages/svelte/src/compiler/phases/3-transform/css/index.js
+index a71d77b..7c8af3c 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/css/index.js
++++ b/packages/svelte/src/compiler/phases/3-transform/css/index.js
+@@ -193,16 +193,31 @@ const visitors = {
+ 	ComplexSelector(node, context) {
+ 		const before_bumped = context.state.specificity.bumped;
+ 
+-		/** @param {import('#compiler').Css.SimpleSelector} selector */
++		/** @param {import('#compiler').Css.PseudoClassSelector} selector */
+ 		function remove_global_pseudo_class(selector) {
+-			context.state.code
+-				.remove(selector.start, selector.start + ':global('.length)
+-				.remove(selector.end - 1, selector.end);
++			if (selector.args === null) {
++				// `:global` without parens — remove the marker itself
++				context.state.code.remove(selector.start, selector.end);
++			} else {
++				context.state.code
++					.remove(selector.start, selector.start + ':global('.length)
++					.remove(selector.end - 1, selector.end);
++			}
+ 		}
+ 
+ 		for (const relative_selector of node.children) {
+ 			if (relative_selector.metadata.is_global) {
+-				remove_global_pseudo_class(relative_selector.selectors[0]);
++				const selector = /** @type {import('#compiler').Css.PseudoClassSelector} */ (
++					relative_selector.selectors[0]
++				);
++				if (selector.args === null) {
++					// `:global` without parens is a nesting context marker — remove
++					// it along with its combinator, so that e.g. `.post :global { ... }`
++					// becomes `.post { ... }`
++					context.state.code.remove(relative_selector.start, relative_selector.end);
++				} else {
++					remove_global_pseudo_class(selector);
++				}
+ 				continue;
+ 			}
+ 
+diff --git a/packages/svelte/src/compiler/types/css.d.ts b/packages/svelte/src/compiler/types/css.d.ts
+index 4bce904..fe0758f 100644
+--- a/packages/svelte/src/compiler/types/css.d.ts
++++ b/packages/svelte/src/compiler/types/css.d.ts
+@@ -33,6 +33,7 @@ export namespace Css {
+ 		metadata: {
+ 			parent_rule: null | Rule;
+ 			has_local_selectors: boolean;
++			is_global: boolean;
+ 		};
+ 	}
+ 
+diff --git a/packages/svelte/tests/css/samples/global-nested/_config.js b/packages/svelte/tests/css/samples/global-nested/_config.js
+new file mode 100644
+index 0000000..0899f22
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-nested/_config.js
+@@ -0,0 +1,7 @@
++import { test } from '../../test';
++
++export default test({
++	props: {
++		content: '<p>hello</p><ul><li>world</li></ul>'
++	}
++});
+diff --git a/packages/svelte/tests/css/samples/global-nested/expected.css b/packages/svelte/tests/css/samples/global-nested/expected.css
+new file mode 100644
+index 0000000..0d986b9
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-nested/expected.css
+@@ -0,0 +1,17 @@
++.post.svelte-xyz {
++		p {
++			color: red;
++		}
++
++		ul {
++			color: green;
++		}
++
++		li {
++			color: blue;
++		}
++
++		code {
++			color: pink;
++		}
++	}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/global-nested/expected.html b/packages/svelte/tests/css/samples/global-nested/expected.html
+new file mode 100644
+index 0000000..edc462f
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-nested/expected.html
+@@ -0,0 +1 @@
++<div class="post svelte-xyz"><p>hello</p><ul><li>world</li></ul></div>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/global-nested/input.svelte b/packages/svelte/tests/css/samples/global-nested/input.svelte
+new file mode 100644
+index 0000000..7ec00eb
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-nested/input.svelte
+@@ -0,0 +1,27 @@
++<script>
++	let { content } = $props();
++</script>
++
++<div class="post">
++	{@html content}
++</div>
++
++<style>
++	.post :global {
++		p {
++			color: red;
++		}
++
++		ul {
++			color: green;
++		}
++
++		li {
++			color: blue;
++		}
++
++		code {
++			color: pink;
++		}
++	}
++</style>
+\ No newline at end of file

@@ -1,0 +1,202 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 0af7b54..b053c53 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -59,6 +59,36 @@ function get_component_name(filename) {
+ 	return name[0].toUpperCase() + name.slice(1);
+ }
+ 
++/**
++ * Determines whether a reference to `$<store_name>` should be treated as a
++ * store subscription rather than a rune, by looking up `store_name` in the
++ * given scope.
++ * @param {string} name
++ * @param {string} store_name
++ * @param {Scope} scope
++ * @param {import('#compiler').ValidatedCompileOptions} options
++ * @returns {boolean}
++ */
++function is_store_subscription(name, store_name, scope, options) {
++	const declaration = scope.get(store_name);
++
++	// If we're not in legacy mode through the compiler option, assume the user
++	// is referencing a rune and not a global store.
++	return (
++		options.runes === false ||
++		!Runes.includes(/** @type {any} */ (name)) ||
++		(declaration !== null &&
++			// const state = $state(0) is valid
++			get_rune(declaration.initial, scope) === null &&
++			// allow `import { derived } from 'svelte/store'` in the same file as `const x = $derived(..)` because one is not a subscription to the other
++			!(
++				name === '$derived' &&
++				declaration.initial?.type === 'ImportDeclaration' &&
++				declaration.initial.source.value === 'svelte/store'
++			))
++	);
++}
++
+ /**
+  * Checks if given event attribute can be delegated/hoisted and returns the corresponding info if so
+  * @param {string} event_name
+@@ -276,51 +306,75 @@ export function analyze_component(root, options) {
+ 		}
+ 
+ 		const store_name = name.slice(1);
+-		const declaration = instance.scope.get(store_name);
+ 
+-		// If we're not in legacy mode through the compiler option, assume the user
+-		// is referencing a rune and not a global store.
+-		if (
+-			options.runes === false ||
+-			!Runes.includes(/** @type {any} */ (name)) ||
+-			(declaration !== null &&
+-				// const state = $state(0) is valid
+-				get_rune(declaration.initial, instance.scope) === null &&
+-				// allow `import { derived } from 'svelte/store'` in the same file as `const x = $derived(..)` because one is not a subscription to the other
+-				!(
+-					name === '$derived' &&
+-					declaration.initial?.type === 'ImportDeclaration' &&
+-					declaration.initial.source.value === 'svelte/store'
+-				))
+-		) {
+-			if (options.runes !== false) {
+-				if (declaration === null && /[a-z]/.test(store_name[0])) {
+-					error(references[0].node, 'illegal-global', name);
+-				} else if (declaration !== null && Runes.includes(/** @type {any} */ (name))) {
+-					for (const { node, path } of references) {
+-						if (path.at(-1)?.type === 'CallExpression') {
+-							warn(warnings, node, [], 'store-with-rune-name', store_name);
+-						}
+-					}
++		// References inside `<script context="module">` can be runes, but they
++		// cannot be store subscriptions — the component instance is not available
++		// there. Separate them so they can be handled independently from the
++		// instance references.
++		/** @type {Array<{ node: import('estree').Identifier, path: import('#compiler').SvelteNode[] }>} */
++		const module_references = [];
++		/** @type {Array<{ node: import('estree').Identifier, path: import('#compiler').SvelteNode[] }>} */
++		const instance_references = [];
++
++		if (module.ast) {
++			for (const reference of references) {
++				if (
++					/** @type {number} */ (reference.node.start) > /** @type {number} */ (module.ast.start) &&
++					/** @type {number} */ (reference.node.end) < /** @type {number} */ (module.ast.end)
++				) {
++					module_references.push(reference);
++				} else {
++					instance_references.push(reference);
+ 				}
+ 			}
++		} else {
++			instance_references.push(...references);
++		}
+ 
+-			if (module.ast) {
+-				// if the reference is inside context="module", error. this is a bit hacky but it works
+-				for (const { node } of references) {
+-					if (
+-						/** @type {number} */ (node.start) > /** @type {number} */ (module.ast.start) &&
+-						/** @type {number} */ (node.end) < /** @type {number} */ (module.ast.end)
+-					) {
+-						error(node, 'illegal-subscription');
+-					}
++		// Handle references inside the module context. Store subscriptions are
++		// not allowed there, but runes are — so only error if the reference is a
++		// store subscription (i.e. the store is visible from the module scope).
++		if (module_references.length > 0) {
++			if (is_store_subscription(name, store_name, module.scope, options)) {
++				if (
++					options.runes !== false &&
++					module.scope.get(store_name) === null &&
++					/[a-z]/.test(store_name[0])
++				) {
++					error(module_references[0].node, 'illegal-global', name);
++				} else {
++					error(module_references[0].node, 'illegal-subscription');
+ 				}
+ 			}
++			// Otherwise it's a rune, which is allowed in module context.
++		}
+ 
+-			const binding = instance.scope.declare(b.id(name), 'store_sub', 'synthetic');
+-			binding.references = references;
+-			instance.scope.references.set(name, references);
+-			module.scope.references.delete(name);
++		// Handle references inside the instance context (and template).
++		if (instance_references.length > 0) {
++			const declaration = instance.scope.get(store_name);
++
++			if (is_store_subscription(name, store_name, instance.scope, options)) {
++				if (options.runes !== false) {
++					if (declaration === null && /[a-z]/.test(store_name[0])) {
++						error(instance_references[0].node, 'illegal-global', name);
++					} else if (declaration !== null && Runes.includes(/** @type {any} */ (name))) {
++						for (const { node, path } of instance_references) {
++							if (path.at(-1)?.type === 'CallExpression') {
++								warn(warnings, node, [], 'store-with-rune-name', store_name);
++							}
++						}
++					}
++				}
++
++				const binding = instance.scope.declare(b.id(name), 'store_sub', 'synthetic');
++				binding.references = instance_references;
++				instance.scope.references.set(name, instance_references);
++				if (module_references.length === 0) {
++					module.scope.references.delete(name);
++				} else {
++					module.scope.references.set(name, module_references);
++				}
++			}
+ 		}
+ 	}
+ 
+diff --git a/packages/svelte/tests/runtime-runes/samples/runes-in-module-context-with-collision/_config.js b/packages/svelte/tests/runtime-runes/samples/runes-in-module-context-with-collision/_config.js
+new file mode 100644
+index 0000000..c8d0530
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/runes-in-module-context-with-collision/_config.js
+@@ -0,0 +1,16 @@
++import { test } from '../../test';
++
++export default test({
++	html: `<button>open</button>`,
++
++	async test({ assert, target, window }) {
++		const btn = target.querySelector('button');
++		const clickEvent = new window.Event('click', { bubbles: true });
++		await btn?.dispatchEvent(clickEvent);
++
++		assert.htmlEqual(target.innerHTML, `<button>close</button>`);
++
++		await btn?.dispatchEvent(clickEvent);
++		assert.htmlEqual(target.innerHTML, `<button>open</button>`);
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/runes-in-module-context-with-collision/main.svelte b/packages/svelte/tests/runtime-runes/samples/runes-in-module-context-with-collision/main.svelte
+new file mode 100644
+index 0000000..64d7da4
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/runes-in-module-context-with-collision/main.svelte
+@@ -0,0 +1,17 @@
++<script lang="ts" context="module">
++	export const createState = () => {
++		const state = $state({
++			open: false
++		});
++
++		return state;
++	};
++</script>
++
++<script lang="ts">
++	let state = createState();
++</script>
++
++<button on:click={() => (state.open = !state.open)}>
++	{state.open ? 'close' : 'open'}
++</button>
+\ No newline at end of file

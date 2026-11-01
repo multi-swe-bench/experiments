@@ -1,0 +1,17 @@
+diff --git a/packages/runtime-dom/src/modules/props.ts b/packages/runtime-dom/src/modules/props.ts
+index e9b3bca..961e1af 100644
+--- a/packages/runtime-dom/src/modules/props.ts
++++ b/packages/runtime-dom/src/modules/props.ts
+@@ -39,8 +39,11 @@ export function patchDOMProp(
+     el._value = value
+     // #4956: <option> value will fallback to its text content so we need to
+     // compare against its attribute value instead.
++    // #10417: compare against the raw attribute value (without falling back
++    // to empty string) so that an empty string value is still rendered as
++    // `value=""` instead of being dropped.
+     const oldValue =
+-      tag === 'OPTION' ? el.getAttribute('value') || '' : el.value
++      tag === 'OPTION' ? el.getAttribute('value') : el.value
+     const newValue = value == null ? '' : value
+     if (oldValue !== newValue) {
+       el.value = newValue

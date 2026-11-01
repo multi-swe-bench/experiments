@@ -1,0 +1,234 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+index 583b2c9..ba18182 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+@@ -1,14 +1,17 @@
+ /** @import { Visitors } from 'zimmerframe' */
+ /** @import * as Compiler from '#compiler' */
++/** @import { ComponentAnalysis } from '../../types.js' */
++/** @import { Scope } from '../../scope.js' */
+ import { walk } from 'zimmerframe';
+ import { get_parent_rules, get_possible_values, is_outer_global } from './utils.js';
+ import { regex_ends_with_whitespace, regex_starts_with_whitespace } from '../../patterns.js';
+-import { get_attribute_chunks, is_text_attribute } from '../../../utils/ast.js';
++import { get_attribute_chunks, is_text_attribute, unwrap_optional } from '../../../utils/ast.js';
+ 
+ /**
+  * @typedef {{
+  *   element: Compiler.AST.RegularElement | Compiler.AST.SvelteElement;
+  *   from_render_tag: boolean;
++ *   analysis: ComponentAnalysis;
+  * }} State
+  */
+ /** @typedef {NODE_PROBABLY_EXISTS | NODE_DEFINITELY_EXISTS} NodeExistsValue */
+@@ -54,15 +57,16 @@ const nesting_selector = {
+  *
+  * @param {Compiler.Css.StyleSheet} stylesheet
+  * @param {Compiler.AST.RegularElement | Compiler.AST.SvelteElement | Compiler.AST.RenderTag} element
++ * @param {ComponentAnalysis} analysis
+  */
+-export function prune(stylesheet, element) {
++export function prune(stylesheet, element, analysis) {
+ 	if (element.type === 'RenderTag') {
+ 		const parent = get_element_parent(element);
+ 		if (!parent) return;
+ 
+-		walk(stylesheet, { element: parent, from_render_tag: true }, visitors);
++		walk(stylesheet, { element: parent, from_render_tag: true, analysis }, visitors);
+ 	} else {
+-		walk(stylesheet, { element, from_render_tag: false }, visitors);
++		walk(stylesheet, { element, from_render_tag: false, analysis }, visitors);
+ 	}
+ }
+ 
+@@ -294,7 +298,7 @@ function apply_combinator(combinator, relative_selector, parent_selectors, rule,
+ 
+ 		case '+':
+ 		case '~': {
+-			const siblings = get_possible_element_siblings(element, name === '+');
++			const siblings = get_possible_element_siblings(element, name === '+', state.analysis);
+ 
+ 			let sibling_matched = false;
+ 
+@@ -879,9 +883,10 @@ function get_element_parent(node) {
+ /**
+  * @param {Compiler.AST.RegularElement | Compiler.AST.SvelteElement} node
+  * @param {boolean} adjacent_only
++ * @param {ComponentAnalysis} analysis
+  * @returns {Map<Compiler.AST.RegularElement | Compiler.AST.SvelteElement | Compiler.AST.SlotElement | Compiler.AST.RenderTag, NodeExistsValue>}
+  */
+-function get_possible_element_siblings(node, adjacent_only) {
++function get_possible_element_siblings(node, adjacent_only, analysis) {
+ 	/** @type {Map<Compiler.AST.RegularElement | Compiler.AST.SvelteElement | Compiler.AST.SlotElement | Compiler.AST.RenderTag, NodeExistsValue>} */
+ 	const result = new Map();
+ 	const path = node.metadata.path;
+@@ -915,14 +920,33 @@ function get_possible_element_siblings(node, adjacent_only) {
+ 					result.set(node, NODE_PROBABLY_EXISTS);
+ 				}
+ 
+-				const possible_last_child = get_possible_last_child(node, adjacent_only);
++				const possible_last_child = get_possible_last_child(node, adjacent_only, analysis);
+ 				add_to_map(possible_last_child, result);
+ 				if (adjacent_only && has_definite_elements(possible_last_child)) {
+ 					return result;
+ 				}
+-			} else if (node.type === 'RenderTag' || node.type === 'SvelteElement') {
++			} else if (node.type === 'RenderTag') {
++				const possible_last_child = get_possible_last_child_of_render_tag(
++					/** @type {Compiler.AST.RenderTag} */ (node),
++					adjacent_only,
++					analysis
++				);
++
++				if (possible_last_child) {
++					add_to_map(possible_last_child, result);
++					if (adjacent_only && has_definite_elements(possible_last_child)) {
++						return result;
++					}
++					// The snippet could resolve to no siblings, so we want to continue
++					// until we find a definite sibling even with the adjacent-only combinator
++				} else {
++					result.set(node, NODE_PROBABLY_EXISTS);
++					// Special case: render tags could resolve to no siblings,
++					// so we want to continue until we find a definite sibling even with the adjacent-only combinator
++				}
++			} else if (node.type === 'SvelteElement') {
+ 				result.set(node, NODE_PROBABLY_EXISTS);
+-				// Special case: slots, render tags and svelte:element tags could resolve to no siblings,
++				// Special case: svelte:element tags could resolve to no siblings,
+ 				// so we want to continue until we find a definite sibling even with the adjacent-only combinator
+ 			}
+ 		}
+@@ -933,7 +957,7 @@ function get_possible_element_siblings(node, adjacent_only) {
+ 
+ 		if (current.type === 'EachBlock' && fragment === current.body) {
+ 			// `{#each ...}<a /><b />{/each}` — `<b>` can be previous sibling of `<a />`
+-			add_to_map(get_possible_last_child(current, adjacent_only), result);
++			add_to_map(get_possible_last_child(current, adjacent_only, analysis), result);
+ 		}
+ 	}
+ 
+@@ -943,9 +967,10 @@ function get_possible_element_siblings(node, adjacent_only) {
+ /**
+  * @param {Compiler.AST.EachBlock | Compiler.AST.IfBlock | Compiler.AST.AwaitBlock | Compiler.AST.KeyBlock | Compiler.AST.SlotElement} node
+  * @param {boolean} adjacent_only
++ * @param {ComponentAnalysis} analysis
+  * @returns {Map<Compiler.AST.RegularElement, NodeExistsValue>}
+  */
+-function get_possible_last_child(node, adjacent_only) {
++function get_possible_last_child(node, adjacent_only, analysis) {
+ 	/** @typedef {Map<Compiler.AST.RegularElement, NodeExistsValue>} NodeMap */
+ 
+ 	/** @type {Array<Compiler.AST.Fragment | undefined | null>} */
+@@ -981,7 +1006,7 @@ function get_possible_last_child(node, adjacent_only) {
+ 			continue;
+ 		}
+ 
+-		const map = loop_child(fragment.nodes, adjacent_only);
++		const map = loop_child(fragment.nodes, adjacent_only, analysis);
+ 		exhaustive &&= has_definite_elements(map);
+ 
+ 		add_to_map(map, result);
+@@ -1036,8 +1061,9 @@ function higher_existence(exist1, exist2) {
+ /**
+  * @param {Compiler.SvelteNode[]} children
+  * @param {boolean} adjacent_only
++ * @param {ComponentAnalysis} analysis
+  */
+-function loop_child(children, adjacent_only) {
++function loop_child(children, adjacent_only, analysis) {
+ 	/** @type {Map<Compiler.AST.RegularElement, NodeExistsValue>} */
+ 	const result = new Map();
+ 
+@@ -1052,17 +1078,77 @@ function loop_child(children, adjacent_only) {
+ 				break;
+ 			}
+ 		} else if (is_block(child)) {
+-			const child_result = get_possible_last_child(child, adjacent_only);
++			const child_result = get_possible_last_child(child, adjacent_only, analysis);
+ 			add_to_map(child_result, result);
+ 			if (adjacent_only && has_definite_elements(child_result)) {
+ 				break;
+ 			}
++		} else if (child.type === 'RenderTag') {
++			const child_result = get_possible_last_child_of_render_tag(
++				/** @type {Compiler.AST.RenderTag} */ (child),
++				adjacent_only,
++				analysis
++			);
++
++			if (child_result) {
++				add_to_map(child_result, result);
++				if (adjacent_only && has_definite_elements(child_result)) {
++					break;
++				}
++			}
+ 		}
+ 	}
+ 
+ 	return result;
+ }
+ 
++/**
++ * Resolves a render tag to the snippet it renders, if it can be determined statically.
++ * @param {Compiler.AST.RenderTag} node
++ * @param {ComponentAnalysis} analysis
++ * @returns {Compiler.AST.SnippetBlock | null}
++ */
++function get_snippet(node, analysis) {
++	if (node.metadata.dynamic) return null;
++
++	const callee = unwrap_optional(node.expression).callee;
++	if (callee.type !== 'Identifier') return null;
++
++	const scope = get_scope(node, analysis);
++	const binding = scope?.get(callee.name);
++
++	if (!binding || !binding.initial || binding.initial.type !== 'SnippetBlock') return null;
++
++	return binding.initial;
++}
++
++/**
++ * @param {Compiler.AST.RenderTag} node
++ * @param {boolean} adjacent_only
++ * @param {ComponentAnalysis} analysis
++ * @returns {Map<Compiler.AST.RegularElement, NodeExistsValue> | null}
++ */
++function get_possible_last_child_of_render_tag(node, adjacent_only, analysis) {
++	const snippet = get_snippet(node, analysis);
++	if (!snippet) return null;
++
++	return loop_child(snippet.body.nodes, adjacent_only, analysis);
++}
++
++/**
++ * @param {Compiler.AST.RenderTag} node
++ * @param {ComponentAnalysis} analysis
++ * @returns {Scope | null}
++ */
++function get_scope(node, analysis) {
++	for (const ancestor of node.metadata.path) {
++		const scope = analysis.template.scopes.get(ancestor) ?? analysis.instance.scopes.get(ancestor);
++		if (scope) return scope;
++	}
++
++	return analysis.instance.scope;
++}
++
+ /**
+  * @param {Compiler.SvelteNode} node
+  * @returns {node is Compiler.AST.IfBlock | Compiler.AST.EachBlock | Compiler.AST.AwaitBlock | Compiler.AST.KeyBlock | Compiler.AST.SlotElement}
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index ce34544..5111a4b 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -711,7 +711,7 @@ export function analyze_component(root, source, options) {
+ 
+ 		// mark nodes as scoped/unused/empty etc
+ 		for (const node of analysis.elements) {
+-			prune(analysis.css.ast, node);
++			prune(analysis.css.ast, node, analysis);
+ 		}
+ 
+ 		const { comment } = analysis.css.ast.content;

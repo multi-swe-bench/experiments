@@ -1,0 +1,22 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index c0eebce..a9ba771 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -629,7 +629,7 @@ function serialize_attribute_value(attribute_value, context, trim_whitespace = f
+ 			if (trim_whitespace) {
+ 				data = data.replace(regex_whitespaces_strict, ' ').trim();
+ 			}
+-			return b.literal(escape_html(data, true));
++			return b.literal(data);
+ 		} else {
+ 			return /** @type {import('estree').Expression} */ (context.visit(value.expression));
+ 		}
+@@ -1760,7 +1760,7 @@ function serialize_element_attributes(node, context) {
+ 							` ${attribute.name}${
+ 								DOMBooleanAttributes.includes(name) && literal_value === true
+ 									? ''
+-									: `="${literal_value === true ? '' : String(literal_value)}"`
++									: `="${literal_value === true ? '' : escape_html(String(literal_value), true)}"`
+ 							}`
+ 						)
+ 					);

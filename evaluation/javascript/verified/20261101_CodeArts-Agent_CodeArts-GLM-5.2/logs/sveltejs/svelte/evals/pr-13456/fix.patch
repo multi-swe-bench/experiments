@@ -1,0 +1,44 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index b877d27..8897d56 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -98,6 +98,39 @@ export function migrate(source) {
+ 			}
+ 		}
+ 
++		if (parsed.options) {
++			const attributes_to_remove = parsed.options.attributes.filter(
++				(attr) => attr.name === 'accessors'
++			);
++
++			if (attributes_to_remove.length > 0) {
++				const remaining = parsed.options.attributes.filter(
++					(attr) => !attributes_to_remove.includes(attr)
++				);
++
++				if (remaining.length === 0) {
++					// Remove the whole `<svelte:options ... />` tag. Consume the newline that
++					// terminates the tag's line, plus one preceding blank line (if any) so that
++					// no orphaned blank line is left behind.
++					let start = /** @type {number} */ (parsed.options.start);
++					let end = /** @type {number} */ (parsed.options.end);
++					while (source[end] === ' ' || source[end] === '\t') end += 1;
++					if (source[end] === '\n') end += 1;
++					if (start >= 2 && source[start - 1] === '\n' && source[start - 2] === '\n') {
++						start -= 1;
++					}
++					state.str.remove(start, end);
++				} else {
++					for (const attr of attributes_to_remove) {
++						let start = /** @type {number} */ (attr.start);
++						let end = /** @type {number} */ (attr.end);
++						while (source[start - 1] === ' ' || source[start - 1] === '\t') start -= 1;
++						state.str.remove(start, end);
++					}
++				}
++			}
++		}
++
+ 		if (parsed.instance) {
+ 			walk(parsed.instance.content, state, instance_script);
+ 		}

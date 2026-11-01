@@ -1,0 +1,92 @@
+diff --git a/.changeset/store-prop-rune-collision.md b/.changeset/store-prop-rune-collision.md
+new file mode 100644
+index 0000000..00adb59
+--- /dev/null
++++ b/.changeset/store-prop-rune-collision.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: allow `$`-prefixed store access on props whose name collides with a rune (e.g. `let { state } = $props()` then `$state`)
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 798fdd0..cdcbbe3 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -280,12 +280,23 @@ export function analyze_component(root, source, options) {
+ 
+ 		// If we're not in legacy mode through the compiler option, assume the user
+ 		// is referencing a rune and not a global store.
++		const declaration_rune =
++			declaration !== null ? get_rune(declaration.initial, instance.scope) : null;
++		// `const state = $state(0)` is valid — in that case `$state` refers to the
++		// rune, not a store subscription. The same is true for variants like
++		// `$state.frozen`. When `state` is a prop (e.g. `let { state } = $props()`)
++		// or a regular store on the other hand, `$state` is a store subscription.
++		const is_rune_declaration =
++			declaration_rune !== null &&
++			(declaration_rune === name ||
++				declaration_rune[name.length] === '.' ||
++				declaration_rune[name.length] === '(');
++
+ 		if (
+ 			options.runes === false ||
+ 			!Runes.includes(/** @type {any} */ (name)) ||
+ 			(declaration !== null &&
+-				// const state = $state(0) is valid
+-				get_rune(declaration.initial, instance.scope) === null &&
++				!is_rune_declaration &&
+ 				// allow `import { derived } from 'svelte/store'` in the same file as `const x = $derived(..)` because one is not a subscription to the other
+ 				!(
+ 					name === '$derived' &&
+diff --git a/packages/svelte/tests/runtime-runes/samples/store-bind-from-props/_config.js b/packages/svelte/tests/runtime-runes/samples/store-bind-from-props/_config.js
+new file mode 100644
+index 0000000..3e1e625
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/store-bind-from-props/_config.js
+@@ -0,0 +1,17 @@
++import { flushSync } from '../../../../src/index-client';
++import { test } from '../../test';
++
++export default test({
++	async test({ assert, target }) {
++		const input = target.querySelector('input');
++
++		assert.equal(input?.value, 'initial');
++
++		input.value = 'changed';
++		input.dispatchEvent(new Event('input'));
++
++		flushSync();
++
++		assert.equal(input?.value, 'changed');
++	}
++});
+diff --git a/packages/svelte/tests/runtime-runes/samples/store-bind-from-props/child.svelte b/packages/svelte/tests/runtime-runes/samples/store-bind-from-props/child.svelte
+new file mode 100644
+index 0000000..77a03ff
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/store-bind-from-props/child.svelte
+@@ -0,0 +1,5 @@
++<script>
++	let { store } = $props();
++</script>
++
++<input bind:value={$store} />
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/store-bind-from-props/main.svelte b/packages/svelte/tests/runtime-runes/samples/store-bind-from-props/main.svelte
+new file mode 100644
+index 0000000..7a0550e
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/store-bind-from-props/main.svelte
+@@ -0,0 +1,8 @@
++<script>
++	import { writable } from "svelte/store";
++	import Child from "./child.svelte";
++
++	const store = writable("initial");
++</script>
++
++<Child {store} />
+\ No newline at end of file

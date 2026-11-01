@@ -1,0 +1,62 @@
+diff --git a/packages/mui-base/src/generateUtilityClass/index.ts b/packages/mui-base/src/generateUtilityClass/index.ts
+index 19bb1127..14312ae7 100644
+--- a/packages/mui-base/src/generateUtilityClass/index.ts
++++ b/packages/mui-base/src/generateUtilityClass/index.ts
+@@ -1,2 +1,7 @@
+ export { unstable_generateUtilityClass as default } from '@mui/utils';
+ export type { GlobalStateSlot } from '@mui/utils';
++export {
++  unstable_setGlobalStatePrefix,
++  unstable_getGlobalStatePrefix,
++  unstable_resetGlobalStatePrefix,
++} from '@mui/utils';
+diff --git a/packages/mui-utils/src/generateUtilityClass/generateUtilityClass.ts b/packages/mui-utils/src/generateUtilityClass/generateUtilityClass.ts
+index 4d5def21..f781f0dd 100644
+--- a/packages/mui-utils/src/generateUtilityClass/generateUtilityClass.ts
++++ b/packages/mui-utils/src/generateUtilityClass/generateUtilityClass.ts
+@@ -25,13 +25,27 @@ const globalStateClassesMapping: Record<GlobalStateSlot, string> = {
+   selected: 'selected',
+ };
+ 
++let globalStatePrefix = 'Mui';
++
++export function unstable_setGlobalStatePrefix(prefix: string) {
++  globalStatePrefix = prefix;
++}
++
++export function unstable_getGlobalStatePrefix() {
++  return globalStatePrefix;
++}
++
++export function unstable_resetGlobalStatePrefix() {
++  globalStatePrefix = 'Mui';
++}
++
+ export default function generateUtilityClass(
+   componentName: string,
+   slot: string,
+-  globalStatePrefix = 'Mui',
++  prefix: string = globalStatePrefix,
+ ): string {
+   const globalStateClass = globalStateClassesMapping[slot as GlobalStateSlot];
+   return globalStateClass
+-    ? `${globalStatePrefix}-${globalStateClass}`
++    ? `${prefix}-${globalStateClass}`
+     : `${ClassNameGenerator.generate(componentName)}-${slot}`;
+ }
+diff --git a/packages/mui-utils/src/generateUtilityClasses/generateUtilityClasses.ts b/packages/mui-utils/src/generateUtilityClasses/generateUtilityClasses.ts
+index 235916d2..c86ea50d 100644
+--- a/packages/mui-utils/src/generateUtilityClasses/generateUtilityClasses.ts
++++ b/packages/mui-utils/src/generateUtilityClasses/generateUtilityClasses.ts
+@@ -1,9 +1,9 @@
+-import generateUtilityClass from '../generateUtilityClass';
++import generateUtilityClass, { unstable_getGlobalStatePrefix } from '../generateUtilityClass';
+ 
+ export default function generateUtilityClasses<T extends string>(
+   componentName: string,
+   slots: T[],
+-  globalStatePrefix = 'Mui',
++  globalStatePrefix: string = unstable_getGlobalStatePrefix(),
+ ): Record<T, string> {
+   const result: Record<string, string> = {};
+ 

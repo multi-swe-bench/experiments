@@ -1,0 +1,52 @@
+diff --git a/src/plugin/duration/index.js b/src/plugin/duration/index.js
+index 0000470..badef83 100644
+--- a/src/plugin/duration/index.js
++++ b/src/plugin/duration/index.js
+@@ -57,6 +57,33 @@ const getNumberUnitFormat = (number, unit) => {
+   }
+ }
+ 
++const getSecondsUnitFormat = (seconds, milliseconds) => {
++  let s = seconds || 0
++  let ms = milliseconds ? Math.round(milliseconds) : 0
++  if (ms >= 1000) {
++    s += 1
++    ms -= 1000
++  } else if (ms <= -1000) {
++    s -= 1
++    ms += 1000
++  }
++  if (!s && !ms) {
++    return {
++      negative: false,
++      format: ''
++    }
++  }
++  const negative = s < 0 || ms < 0
++  let format = `${Math.abs(s)}`
++  if (ms) {
++    format += `.${String(Math.abs(ms)).padStart(3, '0').replace(/0+$/, '')}`
++  }
++  return {
++    negative,
++    format: `${format}S`
++  }
++}
++
+ class Duration {
+   constructor(input, unit, locale) {
+     this.$d = {}
+@@ -137,12 +164,7 @@ class Duration {
+     const H = getNumberUnitFormat(this.$d.hours, 'H')
+     const m = getNumberUnitFormat(this.$d.minutes, 'M')
+ 
+-    let seconds = this.$d.seconds || 0
+-    if (this.$d.milliseconds) {
+-      seconds += Math.round(this.$d.milliseconds) / 1000
+-    }
+-
+-    const S = getNumberUnitFormat(seconds, 'S')
++    const S = getSecondsUnitFormat(this.$d.seconds, this.$d.milliseconds)
+ 
+     const negativeMode =
+       Y.negative ||

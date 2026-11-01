@@ -1,0 +1,127 @@
+diff --git a/packages/svelte/src/internal/client/runtime.js b/packages/svelte/src/internal/client/runtime.js
+index dbd7484..db95af1 100644
+--- a/packages/svelte/src/internal/client/runtime.js
++++ b/packages/svelte/src/internal/client/runtime.js
+@@ -1892,7 +1892,12 @@ export function value_or_fallback(value, fallback) {
+  * @returns {void}
+  */
+ export function onDestroy(fn) {
+-	if (!is_ssr) {
++	if (is_ssr) {
++		const context = current_component_context;
++		if (context !== null) {
++			(context.x ??= []).push(fn);
++		}
++	} else {
+ 		user_effect(() => () => untrack(fn));
+ 	}
+ }
+diff --git a/packages/svelte/src/internal/client/types.d.ts b/packages/svelte/src/internal/client/types.d.ts
+index a8b84ce..fcff3c0 100644
+--- a/packages/svelte/src/internal/client/types.d.ts
++++ b/packages/svelte/src/internal/client/types.d.ts
+@@ -59,6 +59,8 @@ export type ComponentContext = {
+ 		/** execute */
+ 		e: () => void;
+ 	};
++	/** destroy_callbacks (server only) */
++	x?: null | Array<() => void>;
+ };
+ 
+ // We keep two shapes rather than a single monomorphic shape to improve the memory usage.
+diff --git a/packages/svelte/src/internal/server/index.js b/packages/svelte/src/internal/server/index.js
+index 12d9a3c..689567f 100644
+--- a/packages/svelte/src/internal/server/index.js
++++ b/packages/svelte/src/internal/server/index.js
+@@ -56,6 +56,9 @@ function create_payload() {
+ 	return { out: '', head: { title: '', out: '', anchor: 0 }, anchor: 0 };
+ }
+ 
++/** @type {Array<() => void>} */
++const on_destroy_callbacks = [];
++
+ /**
+  * @param {Payload} to_copy
+  * @returns {Payload}
+@@ -104,6 +107,13 @@ export function render(component, options) {
+ 	payload.out += root_anchor;
+ 	set_is_ssr(false);
+ 
++	// `onDestroy` callbacks are collected as each component is popped, then run
++	// once SSR is complete (children before parents, mirroring the client).
++	for (const callback of on_destroy_callbacks) {
++		callback();
++	}
++	on_destroy_callbacks.length = 0;
++
+ 	return {
+ 		head:
+ 			payload.head.out || payload.head.title
+@@ -121,7 +131,13 @@ export function push(runes) {
+ }
+ 
+ export function pop() {
++	const context = $.current_component_context;
+ 	$.pop();
++	if (context !== null && context.x != null) {
++		for (const callback of context.x) {
++			on_destroy_callbacks.push(callback);
++		}
++	}
+ }
+ 
+ /**
+diff --git a/packages/svelte/src/main/main-server.js b/packages/svelte/src/main/main-server.js
+index 844aec5..95d9e6e 100644
+--- a/packages/svelte/src/main/main-server.js
++++ b/packages/svelte/src/main/main-server.js
+@@ -1,12 +1,12 @@
++import { current_component_context } from '../internal/client/runtime.js';
++
+ export {
+ 	createRoot,
+-	createEventDispatcher,
+ 	flushSync,
+ 	getAllContexts,
+ 	getContext,
+ 	hasContext,
+ 	mount,
+-	onDestroy,
+ 	setContext,
+ 	tick,
+ 	untrack
+@@ -21,6 +21,34 @@ export function beforeUpdate() {}
+ /** @returns {void} */
+ export function afterUpdate() {}
+ 
++/**
++ * Schedules a callback to run immediately before the component is unmounted.
++ *
++ * Out of `onMount`, `beforeUpdate`, `afterUpdate` and `onDestroy`, this is the
++ * only one that runs inside a server-side component.
++ *
++ * https://svelte.dev/docs/svelte#ondestroy
++ * @param {() => any} fn
++ * @returns {void}
++ */
++export function onDestroy(fn) {
++	const context = current_component_context;
++	if (context !== null) {
++		(context.x ??= []).push(fn);
++	}
++}
++
++/**
++ * Creates an event dispatcher that can be used to dispatch [component events](https://svelte.dev/docs#template-syntax-component-directives-on-eventname).
++ *
++ * This is a no-op on the server.
++ * @template {Record<string, any>} [EventMap = any]
++ * @returns {import('./public.js').EventDispatcher<EventMap>}
++ */
++export function createEventDispatcher() {
++	return () => true;
++}
++
+ /**
+  * @template T
+  * @param {T} value

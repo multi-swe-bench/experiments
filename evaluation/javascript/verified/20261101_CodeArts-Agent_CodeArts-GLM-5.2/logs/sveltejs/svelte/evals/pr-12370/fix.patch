@@ -1,0 +1,299 @@
+diff --git a/packages/svelte/messages/client-errors/errors.md b/packages/svelte/messages/client-errors/errors.md
+index 3e64b90..b2c4324 100644
+--- a/packages/svelte/messages/client-errors/errors.md
++++ b/packages/svelte/messages/client-errors/errors.md
+@@ -16,7 +16,7 @@
+ 
+ ## component_api_invalid_new
+ 
+-> Attempted to instantiate %component% with `new %name%`, which is no longer valid in Svelte 5. If this component is not under your control, set the `legacy.componentApi` compiler option to keep it working. See https://svelte-5-preview.vercel.app/docs/breaking-changes#components-are-no-longer-classes for more information
++> Attempted to instantiate %component% with `new %name%`, which is no longer valid in Svelte 5. If this component is not under your control, set the `compatibility.classComponent` compiler option to keep it working. See https://svelte-5-preview.vercel.app/docs/breaking-changes#components-are-no-longer-classes for more information
+ 
+ ## each_key_duplicate
+ 
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index aab3186..833d687 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -383,7 +383,7 @@ export function analyze_component(root, source, options) {
+ 			? true
+ 			: (runes ? false : !!options.accessors) ||
+ 				// because $set method needs accessors
+-				!!options.legacy?.componentApi,
++				!!options.compatibility?.classComponent,
+ 		reactive_statements: new Map(),
+ 		binding_groups: new Map(),
+ 		slot_names: new Map(),
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+index a8438c0..b0e1a3f 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+@@ -283,7 +283,7 @@ export function client_component(source, analysis, options) {
+ 		}
+ 	}
+ 
+-	if (options.legacy.componentApi) {
++	if (options.compatibility.classComponent) {
+ 		component_returned_object.push(
+ 			b.init('$set', b.id('$.update_legacy_props')),
+ 			b.init(
+@@ -474,7 +474,7 @@ export function client_component(source, analysis, options) {
+ 		body.unshift(b.imports([], 'svelte/internal/disclose-version'));
+ 	}
+ 
+-	if (options.legacy.componentApi) {
++	if (options.compatibility.classComponent) {
+ 		body.unshift(b.imports([['createClassComponent', '$$_createClassComponent']], 'svelte/legacy'));
+ 		component_block.body.unshift(
+ 			b.if(
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 9359f96..88f86aa 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -2172,7 +2172,7 @@ export function server_component(analysis, options) {
+ 		should_inject_props ? [b.id('$$payload'), b.id('$$props')] : [b.id('$$payload')],
+ 		component_block
+ 	);
+-	if (options.legacy.componentApi) {
++	if (options.compatibility.classComponent) {
+ 		body.unshift(b.imports([['render', '$$_render']], 'svelte/server'));
+ 		body.push(
+ 			component_function,
+diff --git a/packages/svelte/src/compiler/types/index.d.ts b/packages/svelte/src/compiler/types/index.d.ts
+index 9574491..fc9b130 100644
+--- a/packages/svelte/src/compiler/types/index.d.ts
++++ b/packages/svelte/src/compiler/types/index.d.ts
+@@ -145,11 +145,27 @@ export interface CompileOptions extends ModuleCompileOptions {
+ 		/**
+ 		 * Applies a transformation so that the default export of Svelte files can still be instantiated the same way as in Svelte 4 —
+ 		 * as a class when compiling for the browser (as though using `createClassComponent(MyComponent, {...})` from `svelte/legacy`)
+-		 * or as an object with a `.render(...)` method when compiling for the server
++		 * or as an object with a `.render(...)` method when compiling for the server.
++		 *
++		 * Deprecated in favour of `compatibility.classComponent`.
+ 		 * @default false
++		 * @deprecated Use `compatibility.classComponent` instead
+ 		 */
+ 		componentApi?: boolean;
+ 	};
++	/**
++	 * @deprecated Use these only as a temporary solution before migrating your code
++	 */
++	compatibility?: {
++		/**
++		 * Applies a transformation so that the default export of Svelte files can still be instantiated the same way as in Svelte 4 —
++		 * as a class when compiling for the browser (as though using `createClassComponent(MyComponent, {...})` from `svelte/legacy`)
++		 * or as an object with a `.render(...)` method when compiling for the server
++		 * @default false
++		 * @deprecated Use these only as a temporary solution before migrating your code
++		 */
++		classComponent?: boolean;
++	};
+ 	/**
+ 	 * An initial sourcemap that will be merged into the final output sourcemap.
+ 	 * This is usually the preprocessor sourcemap.
+@@ -227,6 +243,7 @@ export type ValidatedCompileOptions = ValidatedModuleCompileOptions &
+ 		| keyof ModuleCompileOptions
+ 		| 'name'
+ 		| 'legacy'
++		| 'compatibility'
+ 		| 'outputFilename'
+ 		| 'cssOutputFilename'
+ 		| 'sourcemap'
+@@ -237,6 +254,7 @@ export type ValidatedCompileOptions = ValidatedModuleCompileOptions &
+ 		cssOutputFilename: CompileOptions['cssOutputFilename'];
+ 		sourcemap: CompileOptions['sourcemap'];
+ 		legacy: Required<Required<CompileOptions>['legacy']>;
++		compatibility: Required<Required<CompileOptions>['compatibility']>;
+ 		runes: CompileOptions['runes'];
+ 		customElementOptions: SvelteOptions['customElement'];
+ 		hmr: CompileOptions['hmr'];
+diff --git a/packages/svelte/src/compiler/validate-options.js b/packages/svelte/src/compiler/validate-options.js
+index bd997a3..089b850 100644
+--- a/packages/svelte/src/compiler/validate-options.js
++++ b/packages/svelte/src/compiler/validate-options.js
+@@ -39,7 +39,7 @@ export const validate_module_options =
+ 		})
+ 	);
+ 
+-export const validate_component_options =
++const _validate_component_options =
+ 	/** @type {Validator<CompileOptions, ValidatedCompileOptions>} */ (
+ 		object({
+ 			...common,
+@@ -82,6 +82,10 @@ export const validate_component_options =
+ 				componentApi: boolean(false)
+ 			}),
+ 
++			compatibility: object({
++				classComponent: boolean(false)
++			}),
++
+ 			loopGuardTimeout: warn_removed(w.options_removed_loop_guard_timeout),
+ 
+ 			name: string(undefined),
+@@ -133,6 +137,23 @@ export const validate_component_options =
+ 		})
+ 	);
+ 
++/**
++ * `legacy.componentApi` was renamed to `compatibility.classComponent`. To preserve
++ * backwards-compatibility, the value of the deprecated `legacy.componentApi` option
++ * is forwarded to `compatibility.classComponent` so that the rest of the compiler
++ * only needs to consult the latter.
++ * @type {Validator<CompileOptions, ValidatedCompileOptions>}
++ */
++export function validate_component_options(input, keypath) {
++	const result = _validate_component_options(input, keypath);
++
++	if (result.legacy?.componentApi) {
++		result.compatibility.classComponent = true;
++	}
++
++	return result;
++}
++
+ /**
+  * @param {string} msg
+  * @returns {Validator}
+diff --git a/packages/svelte/src/internal/client/dom/legacy/misc.js b/packages/svelte/src/internal/client/dom/legacy/misc.js
+index b9ef9fc..424899c 100644
+--- a/packages/svelte/src/internal/client/dom/legacy/misc.js
++++ b/packages/svelte/src/internal/client/dom/legacy/misc.js
+@@ -41,7 +41,7 @@ export function bubble_event($$props, event) {
+ }
+ 
+ /**
+- * Used to simulate `$on` on a component instance when `legacy.componentApi` is `true`
++ * Used to simulate `$on` on a component instance when `compatibility.classComponent` is `true`
+  * @param {Record<string, any>} $$props
+  * @param {string} event_name
+  * @param {Function} event_callback
+@@ -53,7 +53,7 @@ export function add_legacy_event_listener($$props, event_name, event_callback) {
+ }
+ 
+ /**
+- * Used to simulate `$set` on a component instance when `legacy.componentApi` is `true`.
++ * Used to simulate `$set` on a component instance when `compatibility.classComponent` is `true`.
+  * Needs component accessors so that it can call the setter of the prop. Therefore doesn't
+  * work for updating props in `$$props` or `$$restProps`.
+  * @this {Record<string, any>}
+diff --git a/packages/svelte/src/internal/client/errors.js b/packages/svelte/src/internal/client/errors.js
+index ba41a56..7bb1860 100644
+--- a/packages/svelte/src/internal/client/errors.js
++++ b/packages/svelte/src/internal/client/errors.js
+@@ -76,14 +76,14 @@ export function component_api_changed(parent, method, component) {
+ }
+ 
+ /**
+- * Attempted to instantiate %component% with `new %name%`, which is no longer valid in Svelte 5. If this component is not under your control, set the `legacy.componentApi` compiler option to keep it working. See https://svelte-5-preview.vercel.app/docs/breaking-changes#components-are-no-longer-classes for more information
++ * Attempted to instantiate %component% with `new %name%`, which is no longer valid in Svelte 5. If this component is not under your control, set the `compatibility.classComponent` compiler option to keep it working. See https://svelte-5-preview.vercel.app/docs/breaking-changes#components-are-no-longer-classes for more information
+  * @param {string} component
+  * @param {string} name
+  * @returns {never}
+  */
+ export function component_api_invalid_new(component, name) {
+ 	if (DEV) {
+-		const error = new Error(`component_api_invalid_new\nAttempted to instantiate ${component} with \`new ${name}\`, which is no longer valid in Svelte 5. If this component is not under your control, set the \`legacy.componentApi\` compiler option to keep it working. See https://svelte-5-preview.vercel.app/docs/breaking-changes#components-are-no-longer-classes for more information`);
++		const error = new Error(`component_api_invalid_new\nAttempted to instantiate ${component} with \`new ${name}\`, which is no longer valid in Svelte 5. If this component is not under your control, set the \`compatibility.classComponent\` compiler option to keep it working. See https://svelte-5-preview.vercel.app/docs/breaking-changes#components-are-no-longer-classes for more information`);
+ 
+ 		error.name = 'Svelte error';
+ 		throw error;
+diff --git a/packages/svelte/types/index.d.ts b/packages/svelte/types/index.d.ts
+index 5055799..ff9230e 100644
+--- a/packages/svelte/types/index.d.ts
++++ b/packages/svelte/types/index.d.ts
+@@ -806,11 +806,27 @@ declare module 'svelte/compiler' {
+ 			/**
+ 			 * Applies a transformation so that the default export of Svelte files can still be instantiated the same way as in Svelte 4 —
+ 			 * as a class when compiling for the browser (as though using `createClassComponent(MyComponent, {...})` from `svelte/legacy`)
+-			 * or as an object with a `.render(...)` method when compiling for the server
++			 * or as an object with a `.render(...)` method when compiling for the server.
++			 *
++			 * Deprecated in favour of `compatibility.classComponent`.
+ 			 * @default false
++			 * @deprecated Use `compatibility.classComponent` instead
+ 			 */
+ 			componentApi?: boolean;
+ 		};
++		/**
++		 * @deprecated Use these only as a temporary solution before migrating your code
++		 */
++		compatibility?: {
++			/**
++			 * Applies a transformation so that the default export of Svelte files can still be instantiated the same way as in Svelte 4 —
++			 * as a class when compiling for the browser (as though using `createClassComponent(MyComponent, {...})` from `svelte/legacy`)
++			 * or as an object with a `.render(...)` method when compiling for the server
++			 * @default false
++			 * @deprecated Use these only as a temporary solution before migrating your code
++			 */
++			classComponent?: boolean;
++		};
+ 		/**
+ 		 * An initial sourcemap that will be merged into the final output sourcemap.
+ 		 * This is usually the preprocessor sourcemap.
+@@ -2614,11 +2630,27 @@ declare module 'svelte/types/compiler/interfaces' {
+ 			/**
+ 			 * Applies a transformation so that the default export of Svelte files can still be instantiated the same way as in Svelte 4 —
+ 			 * as a class when compiling for the browser (as though using `createClassComponent(MyComponent, {...})` from `svelte/legacy`)
+-			 * or as an object with a `.render(...)` method when compiling for the server
++			 * or as an object with a `.render(...)` method when compiling for the server.
++			 *
++			 * Deprecated in favour of `compatibility.classComponent`.
+ 			 * @default false
++			 * @deprecated Use `compatibility.classComponent` instead
+ 			 */
+ 			componentApi?: boolean;
+ 		};
++		/**
++		 * @deprecated Use these only as a temporary solution before migrating your code
++		 */
++		compatibility?: {
++			/**
++			 * Applies a transformation so that the default export of Svelte files can still be instantiated the same way as in Svelte 4 —
++			 * as a class when compiling for the browser (as though using `createClassComponent(MyComponent, {...})` from `svelte/legacy`)
++			 * or as an object with a `.render(...)` method when compiling for the server
++			 * @default false
++			 * @deprecated Use these only as a temporary solution before migrating your code
++			 */
++			classComponent?: boolean;
++		};
+ 		/**
+ 		 * An initial sourcemap that will be merged into the final output sourcemap.
+ 		 * This is usually the preprocessor sourcemap.
+diff --git a/sites/svelte-5-preview/src/routes/docs/content/03-appendix/02-breaking-changes.md b/sites/svelte-5-preview/src/routes/docs/content/03-appendix/02-breaking-changes.md
+index 8de2bfb..0e8a133 100644
+--- a/sites/svelte-5-preview/src/routes/docs/content/03-appendix/02-breaking-changes.md
++++ b/sites/svelte-5-preview/src/routes/docs/content/03-appendix/02-breaking-changes.md
+@@ -70,13 +70,13 @@ import App from './App.svelte'
+ export default app;
+ ```
+ 
+-If this component is not under your control, you can use the `legacy.componentApi` compiler option for auto-applied backwards compatibility, which means code using `new Component(...)` keeps working without adjustments (note that this adds a bit of overhead to each component). This will also add `$set` and `$on` methods for all component instances you get through `bind:this`.
++If this component is not under your control, you can use the `compatibility.classComponent` compiler option for auto-applied backwards compatibility, which means code using `new Component(...)` keeps working without adjustments (note that this adds a bit of overhead to each component). This will also add `$set` and `$on` methods for all component instances you get through `bind:this`.
+ 
+ ```js
+ /// svelte.config.js
+ export default {
+ 	compilerOptions: {
+-		legacy: { componentApi: true }
++		compatibility: { classComponent: true }
+ 	}
+ };
+ ```
+diff --git a/sites/svelte-5-preview/svelte.config.js b/sites/svelte-5-preview/svelte.config.js
+index de3e5cf..3541964 100644
+--- a/sites/svelte-5-preview/svelte.config.js
++++ b/sites/svelte-5-preview/svelte.config.js
+@@ -3,9 +3,9 @@ import adapter from '@sveltejs/adapter-vercel';
+ /** @type {import('@sveltejs/kit').Config} */
+ export default {
+ 	compilerOptions: {
+-		legacy: {
++		compatibility: {
+ 			// site-kit manually instantiates components inside an action
+-			componentApi: true
++			classComponent: true
+ 		}
+ 	},
+ 	kit: {

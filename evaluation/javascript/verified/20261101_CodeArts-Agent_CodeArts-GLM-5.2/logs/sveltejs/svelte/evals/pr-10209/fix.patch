@@ -1,0 +1,73 @@
+diff --git a/packages/svelte/src/internal/client/runtime.js b/packages/svelte/src/internal/client/runtime.js
+index dc117a2..e5949d3 100644
+--- a/packages/svelte/src/internal/client/runtime.js
++++ b/packages/svelte/src/internal/client/runtime.js
+@@ -370,23 +370,26 @@ function execute_signal_fn(signal) {
+ 		if (current_dependencies !== null) {
+ 			let i;
+ 			if (dependencies !== null) {
+-				// Include any dependencies up until the current_dependencies_index.
+-				const full_dependencies =
+-					current_dependencies_index === 0
+-						? dependencies
+-						: dependencies.slice(0, current_dependencies_index).concat(current_dependencies);
+-				const dep_length = full_dependencies.length;
++				// The new full set of dependencies: those kept (matched in order up to the current
++				// dependencies index) plus the ones that were read during this execution.
++				const full_dependencies = dependencies
++					.slice(0, current_dependencies_index)
++					.concat(current_dependencies);
++				const dep_length = dependencies.length;
+ 				// If we have more than 16 elements in the array then use a Set for faster performance
+ 				// TODO: evaluate if we should always just use a Set or not here?
+-				const current_dependencies_set = dep_length > 16 ? new Set(full_dependencies) : null;
++				const current_dependencies_set =
++					full_dependencies.length > 16 ? new Set(full_dependencies) : null;
+ 
++				// Remove any old dependencies that are no longer present, so that changes to them no
++				// longer mark this signal as dirty (and so unowned dependencies can be cleaned up).
+ 				for (i = current_dependencies_index; i < dep_length; i++) {
+-					const dependency = full_dependencies[i];
++					const dependency = dependencies[i];
+ 					if (
+ 						(current_dependencies_set !== null && !current_dependencies_set.has(dependency)) ||
+ 						!full_dependencies.includes(dependency)
+ 					) {
+-						remove_consumer(signal, dependency, false);
++						remove_consumer(signal, dependency, true);
+ 					}
+ 				}
+ 			}
+@@ -402,20 +405,22 @@ function execute_signal_fn(signal) {
+ 				);
+ 			}
+ 
+-			if (!current_skip_consumer) {
+-				for (i = current_dependencies_index; i < dependencies.length; i++) {
+-					const dependency = dependencies[i];
+-					const consumers = dependency.c;
++			// Register the signal as a consumer of its dependencies. Even unowned signals (which
++			// are not part of an effect) need to be registered so that changes propagate to any
++			// tracked consumers that read them — otherwise a derived that returns a new `$derived`
++			// would lose reactivity after the first update.
++			for (i = current_dependencies_index; i < dependencies.length; i++) {
++				const dependency = dependencies[i];
++				const consumers = dependency.c;
+ 
+-					if (consumers === null) {
+-						dependency.c = [signal];
+-					} else if (consumers[consumers.length - 1] !== signal) {
+-						consumers.push(signal);
+-					}
++				if (consumers === null) {
++					dependency.c = [signal];
++				} else if (consumers[consumers.length - 1] !== signal) {
++					consumers.push(signal);
+ 				}
+ 			}
+ 		} else if (dependencies !== null && current_dependencies_index < dependencies.length) {
+-			remove_consumers(signal, current_dependencies_index, false);
++			remove_consumers(signal, current_dependencies_index, true);
+ 			dependencies.length = current_dependencies_index;
+ 		}
+ 		return res;

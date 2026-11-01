@@ -1,0 +1,22 @@
+diff --git a/packages/mui-base/src/useSelect/useSelect.ts b/packages/mui-base/src/useSelect/useSelect.ts
+index 265b7009..42bcdbec 100644
+--- a/packages/mui-base/src/useSelect/useSelect.ts
++++ b/packages/mui-base/src/useSelect/useSelect.ts
+@@ -303,6 +303,17 @@ function useSelect<OptionValue, Multiple extends boolean = false>(
+     (externalEventHandlers?: EventHandlers) => (event: React.MouseEvent & MuiCancellableEvent) => {
+       externalEventHandlers?.onMouseDown?.(event);
+       if (!event.defaultMuiPrevented) {
++        // Safari does not move focus to a <button> on mouse down (it only does so when the user
++        // navigates to it with the keyboard). This means the trigger would not be focused after
++        // opening the listbox, so keyboard navigation (e.g. arrow keys) would not work and the
++        // page would scroll instead. We hijack the default focus behavior and focus the button
++        // manually to make it consistent across browsers (matching the behavior of the Material
++        // UI Select).
++        if (event.button === 0) {
++          event.preventDefault();
++          buttonRef.current?.focus();
++        }
++
+         const action: ButtonClickAction = {
+           type: SelectActionTypes.buttonClick,
+           event,

@@ -1,0 +1,195 @@
+diff --git a/packages/mui-material/src/TablePagination/TablePagination.d.ts b/packages/mui-material/src/TablePagination/TablePagination.d.ts
+index 609b420e..2dbf9a35 100644
+--- a/packages/mui-material/src/TablePagination/TablePagination.d.ts
++++ b/packages/mui-material/src/TablePagination/TablePagination.d.ts
+@@ -142,6 +142,15 @@ export interface TablePaginationOwnProps extends TablePaginationBaseProps {
+     actions?: TablePaginationActionsProps['slotProps'];
+     select?: Partial<SelectProps>;
+   };
++  /**
++   * The components used for each slot inside the TablePagination.
++   * Either a string to use a HTML element or a component.
++   * @default {}
++   */
++  slots?: {
++    actions?: TablePaginationActionsProps['slots'];
++    select?: React.ElementType;
++  };
+   /**
+    * The system prop that allows defining system overrides as well as additional CSS styles.
+    */
+diff --git a/packages/mui-material/src/TablePagination/TablePagination.js b/packages/mui-material/src/TablePagination/TablePagination.js
+index d3d515d4..d77e5884 100644
+--- a/packages/mui-material/src/TablePagination/TablePagination.js
++++ b/packages/mui-material/src/TablePagination/TablePagination.js
+@@ -159,6 +159,7 @@ const TablePagination = React.forwardRef(function TablePagination(inProps, ref)
+     showFirstButton = false,
+     showLastButton = false,
+     slotProps,
++    slots,
+     ...other
+   } = props;
+ 
+@@ -253,6 +254,7 @@ const TablePagination = React.forwardRef(function TablePagination(inProps, ref)
+           rowsPerPage={rowsPerPage}
+           showFirstButton={showFirstButton}
+           showLastButton={showLastButton}
++          slots={slots?.actions}
+           slotProps={slotProps?.actions}
+           getItemAriaLabel={getItemAriaLabel}
+           disabled={disabled}
+@@ -429,6 +431,23 @@ TablePagination.propTypes /* remove-proptypes */ = {
+     }),
+     select: PropTypes.object,
+   }),
++  /**
++   * The components used for each slot inside the TablePagination.
++   * Either a string to use a HTML element or a component.
++   * @default {}
++   */
++  slots: PropTypes.shape({
++    actions: PropTypes.shape({
++      firstButton: PropTypes.elementType,
++      lastButton: PropTypes.elementType,
++      nextButton: PropTypes.elementType,
++      previousButton: PropTypes.elementType,
++      firstButtonIcon: PropTypes.elementType,
++      lastButtonIcon: PropTypes.elementType,
++      nextButtonIcon: PropTypes.elementType,
++      previousButtonIcon: PropTypes.elementType,
++    }),
++  }),
+   /**
+    * The system prop that allows defining system overrides as well as additional CSS styles.
+    */
+diff --git a/packages/mui-material/src/TablePagination/TablePaginationActions.d.ts b/packages/mui-material/src/TablePagination/TablePaginationActions.d.ts
+index d0d55542..724e78e8 100644
+--- a/packages/mui-material/src/TablePagination/TablePaginationActions.d.ts
++++ b/packages/mui-material/src/TablePagination/TablePaginationActions.d.ts
+@@ -42,6 +42,21 @@ export interface TablePaginationActionsProps extends React.HTMLAttributes<HTMLDi
+     nextButton?: Partial<IconButtonProps>;
+     previousButton?: Partial<IconButtonProps>;
+   };
++  /**
++   * The components used for each slot inside the TablePaginationActions.
++   * Either a string to use a HTML element or a component.
++   * @default {}
++   */
++  slots?: {
++    firstButton?: React.ElementType;
++    lastButton?: React.ElementType;
++    nextButton?: React.ElementType;
++    previousButton?: React.ElementType;
++    firstButtonIcon?: React.ElementType;
++    lastButtonIcon?: React.ElementType;
++    nextButtonIcon?: React.ElementType;
++    previousButtonIcon?: React.ElementType;
++  };
+ }
+ 
+ declare const TablePaginationActions: React.JSXElementConstructor<TablePaginationActionsProps>;
+diff --git a/packages/mui-material/src/TablePagination/TablePaginationActions.js b/packages/mui-material/src/TablePagination/TablePaginationActions.js
+index 6d9ab6ce..c2baaee5 100644
+--- a/packages/mui-material/src/TablePagination/TablePaginationActions.js
++++ b/packages/mui-material/src/TablePagination/TablePaginationActions.js
+@@ -23,6 +23,7 @@ const TablePaginationActions = React.forwardRef(function TablePaginationActions(
+     rowsPerPage,
+     showFirstButton,
+     showLastButton,
++    slots = {},
+     slotProps,
+     ...other
+   } = props;
+@@ -45,20 +46,29 @@ const TablePaginationActions = React.forwardRef(function TablePaginationActions(
+     onPageChange(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
+   };
+ 
++  const FirstButton = slots.firstButton ?? IconButton;
++  const LastButton = slots.lastButton ?? IconButton;
++  const NextButton = slots.nextButton ?? IconButton;
++  const PreviousButton = slots.previousButton ?? IconButton;
++  const FirstButtonIcon = slots.firstButtonIcon ?? FirstPageIcon;
++  const LastButtonIcon = slots.lastButtonIcon ?? LastPageIcon;
++  const NextButtonIcon = slots.nextButtonIcon ?? KeyboardArrowRight;
++  const PreviousButtonIcon = slots.previousButtonIcon ?? KeyboardArrowLeft;
++
+   return (
+     <div ref={ref} {...other}>
+       {showFirstButton && (
+-        <IconButton
++        <FirstButton
+           onClick={handleFirstPageButtonClick}
+           disabled={disabled || page === 0}
+           aria-label={getItemAriaLabel('first', page)}
+           title={getItemAriaLabel('first', page)}
+           {...(slotProps?.firstButton ?? {})}
+         >
+-          {theme.direction === 'rtl' ? <LastPageIcon /> : <FirstPageIcon />}
+-        </IconButton>
++          {theme.direction === 'rtl' ? <LastButtonIcon /> : <FirstButtonIcon />}
++        </FirstButton>
+       )}
+-      <IconButton
++      <PreviousButton
+         onClick={handleBackButtonClick}
+         disabled={disabled || page === 0}
+         color="inherit"
+@@ -66,9 +76,9 @@ const TablePaginationActions = React.forwardRef(function TablePaginationActions(
+         title={getItemAriaLabel('previous', page)}
+         {...(slotProps?.previousButton ?? backIconButtonProps)}
+       >
+-        {theme.direction === 'rtl' ? <KeyboardArrowRight /> : <KeyboardArrowLeft />}
+-      </IconButton>
+-      <IconButton
++        {theme.direction === 'rtl' ? <NextButtonIcon /> : <PreviousButtonIcon />}
++      </PreviousButton>
++      <NextButton
+         onClick={handleNextButtonClick}
+         disabled={disabled || (count !== -1 ? page >= Math.ceil(count / rowsPerPage) - 1 : false)}
+         color="inherit"
+@@ -76,18 +86,18 @@ const TablePaginationActions = React.forwardRef(function TablePaginationActions(
+         title={getItemAriaLabel('next', page)}
+         {...(slotProps?.nextButton ?? nextIconButtonProps)}
+       >
+-        {theme.direction === 'rtl' ? <KeyboardArrowLeft /> : <KeyboardArrowRight />}
+-      </IconButton>
++        {theme.direction === 'rtl' ? <PreviousButtonIcon /> : <NextButtonIcon />}
++      </NextButton>
+       {showLastButton && (
+-        <IconButton
++        <LastButton
+           onClick={handleLastPageButtonClick}
+           disabled={disabled || page >= Math.ceil(count / rowsPerPage) - 1}
+           aria-label={getItemAriaLabel('last', page)}
+           title={getItemAriaLabel('last', page)}
+           {...(slotProps?.lastButton ?? {})}
+         >
+-          {theme.direction === 'rtl' ? <FirstPageIcon /> : <LastPageIcon />}
+-        </IconButton>
++          {theme.direction === 'rtl' ? <FirstButtonIcon /> : <LastButtonIcon />}
++        </LastButton>
+       )}
+     </div>
+   );
+@@ -154,6 +164,21 @@ TablePaginationActions.propTypes = {
+     nextButton: PropTypes.object,
+     previousButton: PropTypes.object,
+   }),
++  /**
++   * The components used for each slot inside the TablePaginationActions.
++   * Either a string to use a HTML element or a component.
++   * @default {}
++   */
++  slots: PropTypes.shape({
++    firstButton: PropTypes.elementType,
++    lastButton: PropTypes.elementType,
++    nextButton: PropTypes.elementType,
++    previousButton: PropTypes.elementType,
++    firstButtonIcon: PropTypes.elementType,
++    lastButtonIcon: PropTypes.elementType,
++    nextButtonIcon: PropTypes.elementType,
++    previousButtonIcon: PropTypes.elementType,
++  }),
+ };
+ 
+ export default TablePaginationActions;

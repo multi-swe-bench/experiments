@@ -1,0 +1,144 @@
+diff --git a/.changeset/bind-not-bindable-warning.md b/.changeset/bind-not-bindable-warning.md
+new file mode 100644
+index 0000000..20af956
+--- /dev/null
++++ b/.changeset/bind-not-bindable-warning.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: turn `bind_not_bindable` into a warning instead of an error, so binding to a component prop that isn't marked `$bindable()` no longer crashes the program (matching Svelte 4 behavior)
+\ No newline at end of file
+diff --git a/packages/svelte/messages/client-errors/errors.md b/packages/svelte/messages/client-errors/errors.md
+index 9bd7e8a..ee1caf1 100644
+--- a/packages/svelte/messages/client-errors/errors.md
++++ b/packages/svelte/messages/client-errors/errors.md
+@@ -6,10 +6,6 @@
+ 
+ > Component %component% has an export named `%key%` that a consumer component is trying to access using `bind:%key%`, which is disallowed. Instead, use `bind:this` (e.g. `<%name% bind:this={component} />`) and then access the property on the bound component instance (e.g. `component.%key%`)
+ 
+-## bind_not_bindable
+-
+-> A component is attempting to bind to a non-bindable property `%key%` belonging to %component% (i.e. `<%name% bind:%key%={...}>`). To mark a property as bindable: `let { %key% = $bindable() } = $props()`
+-
+ ## component_api_changed
+ 
+ > %parent% called `%method%` on an instance of %component%, which is no longer valid in Svelte 5. See https://svelte-5-preview.vercel.app/docs/breaking-changes#components-are-no-longer-classes for more information
+diff --git a/packages/svelte/messages/client-warnings/warnings.md b/packages/svelte/messages/client-warnings/warnings.md
+index 24355ca..d1ac803 100644
+--- a/packages/svelte/messages/client-warnings/warnings.md
++++ b/packages/svelte/messages/client-warnings/warnings.md
+@@ -1,3 +1,7 @@
++## bind_not_bindable
++
++> A component is attempting to bind to a non-bindable property `%key%` belonging to %component% (i.e. `<%name% bind:%key%={...}>`). To mark a property as bindable: `let { %key% = $bindable() } = $props()`
++
+ ## binding_property_non_reactive
+ 
+ > `%binding%` is binding to a non-reactive property
+diff --git a/packages/svelte/src/internal/client/errors.js b/packages/svelte/src/internal/client/errors.js
+index 26d38f0..309dfca 100644
+--- a/packages/svelte/src/internal/client/errors.js
++++ b/packages/svelte/src/internal/client/errors.js
+@@ -37,25 +37,6 @@ export function bind_invalid_export(component, key, name) {
+ 	}
+ }
+ 
+-/**
+- * A component is attempting to bind to a non-bindable property `%key%` belonging to %component% (i.e. `<%name% bind:%key%={...}>`). To mark a property as bindable: `let { %key% = $bindable() } = $props()`
+- * @param {string} key
+- * @param {string} component
+- * @param {string} name
+- * @returns {never}
+- */
+-export function bind_not_bindable(key, component, name) {
+-	if (DEV) {
+-		const error = new Error(`bind_not_bindable\nA component is attempting to bind to a non-bindable property \`${key}\` belonging to ${component} (i.e. \`<${name} bind:${key}={...}>\`). To mark a property as bindable: \`let { ${key} = $bindable() } = $props()\``);
+-
+-		error.name = 'Svelte error';
+-		throw error;
+-	} else {
+-		// TODO print a link to the documentation
+-		throw new Error("bind_not_bindable");
+-	}
+-}
+-
+ /**
+  * %parent% called `%method%` on an instance of %component%, which is no longer valid in Svelte 5. See https://svelte-5-preview.vercel.app/docs/breaking-changes#components-are-no-longer-classes for more information
+  * @param {string} parent
+diff --git a/packages/svelte/src/internal/client/validate.js b/packages/svelte/src/internal/client/validate.js
+index 0666e5f..88918a2 100644
+--- a/packages/svelte/src/internal/client/validate.js
++++ b/packages/svelte/src/internal/client/validate.js
+@@ -63,7 +63,7 @@ export function validate_prop_bindings($$props, bindable, exports, component) {
+ 			}
+ 
+ 			if (!bindable.includes(key)) {
+-				e.bind_not_bindable(key, component[FILENAME], name);
++				w.bind_not_bindable(key, component[FILENAME], name);
+ 			}
+ 		}
+ 	}
+diff --git a/packages/svelte/src/internal/client/warnings.js b/packages/svelte/src/internal/client/warnings.js
+index c45a92c..3defaf2 100644
+--- a/packages/svelte/src/internal/client/warnings.js
++++ b/packages/svelte/src/internal/client/warnings.js
+@@ -5,6 +5,21 @@ import { DEV } from 'esm-env';
+ var bold = 'font-weight: bold';
+ var normal = 'font-weight: normal';
+ 
++/**
++ * A component is attempting to bind to a non-bindable property `%key%` belonging to %component% (i.e. `<%name% bind:%key%={...}>`). To mark a property as bindable: `let { %key% = $bindable() } = $props()`
++ * @param {string} key
++ * @param {string} component
++ * @param {string} name
++ */
++export function bind_not_bindable(key, component, name) {
++	if (DEV) {
++		console.warn(`%c[svelte] bind_not_bindable\n%cA component is attempting to bind to a non-bindable property \`${key}\` belonging to ${component} (i.e. \`<${name} bind:${key}={...}>\`). To mark a property as bindable: \`let { ${key} = $bindable() } = $props()\``, bold, normal);
++	} else {
++		// TODO print a link to the documentation
++		console.warn("bind_not_bindable");
++	}
++}
++
+ /**
+  * `%binding%` (%location%) is binding to a non-reactive property
+  * @param {string} binding
+diff --git a/packages/svelte/tests/runtime-runes/samples/props-not-bindable-spread/_config.js b/packages/svelte/tests/runtime-runes/samples/props-not-bindable-spread/_config.js
+index fa0994c..ce242fc 100644
+--- a/packages/svelte/tests/runtime-runes/samples/props-not-bindable-spread/_config.js
++++ b/packages/svelte/tests/runtime-runes/samples/props-not-bindable-spread/_config.js
+@@ -5,9 +5,11 @@ export default test({
+ 		dev: true
+ 	},
+ 
++	mode: ['client', 'hydrate'],
++
+ 	html: '0',
+ 
+-	error:
+-		'bind_not_bindable\n' +
++	warnings: [
+ 		'A component is attempting to bind to a non-bindable property `count` belonging to Counter.svelte (i.e. `<Counter bind:count={...}>`). To mark a property as bindable: `let { count = $bindable() } = $props()`'
++	]
+ });
+diff --git a/packages/svelte/tests/runtime-runes/samples/props-not-bindable/_config.js b/packages/svelte/tests/runtime-runes/samples/props-not-bindable/_config.js
+index fa0994c..ce242fc 100644
+--- a/packages/svelte/tests/runtime-runes/samples/props-not-bindable/_config.js
++++ b/packages/svelte/tests/runtime-runes/samples/props-not-bindable/_config.js
+@@ -5,9 +5,11 @@ export default test({
+ 		dev: true
+ 	},
+ 
++	mode: ['client', 'hydrate'],
++
+ 	html: '0',
+ 
+-	error:
+-		'bind_not_bindable\n' +
++	warnings: [
+ 		'A component is attempting to bind to a non-bindable property `count` belonging to Counter.svelte (i.e. `<Counter bind:count={...}>`). To mark a property as bindable: `let { count = $bindable() } = $props()`'
++	]
+ });

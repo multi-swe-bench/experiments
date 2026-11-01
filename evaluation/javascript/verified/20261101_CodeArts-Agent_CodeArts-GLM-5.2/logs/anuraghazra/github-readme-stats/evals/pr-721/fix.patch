@@ -1,0 +1,25 @@
+diff --git a/src/cards/stats-card.js b/src/cards/stats-card.js
+index 189709e..9211597 100644
+--- a/src/cards/stats-card.js
++++ b/src/cards/stats-card.js
+@@ -145,6 +145,11 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
+     hide_rank ? 0 : 150,
+   );
+ 
++  // When the rank circle is hidden the card should shrink to fit its
++  // content instead of keeping the space originally occupied by the circle.
++  // Long locales have wider labels/titles so they need a bit more room.
++  const width = hide_rank ? (isLongLocale ? 400 : 340) : 495;
++
+   // Conditionally rendered elements
+   const rankCircle = hide_rank
+     ? ""
+@@ -179,7 +184,7 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
+   const card = new Card({
+     customTitle: custom_title,
+     defaultTitle: i18n.t("statcard.title"),
+-    width: 495,
++    width,
+     height,
+     colors: {
+       titleColor,

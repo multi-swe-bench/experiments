@@ -1,0 +1,447 @@
+diff --git a/packages/material-ui/src/Collapse/Collapse.d.ts b/packages/material-ui/src/Collapse/Collapse.d.ts
+index 8211553..154f1ba 100644
+--- a/packages/material-ui/src/Collapse/Collapse.d.ts
++++ b/packages/material-ui/src/Collapse/Collapse.d.ts
+@@ -53,6 +53,11 @@ export interface CollapseProps extends StandardProps<TransitionProps, 'timeout'>
+    * @default duration.standard
+    */
+   timeout?: TransitionProps['timeout'] | 'auto';
++  /**
++   * The transition timing function.
++   * You may specify a single easing for all transitions, or individually with an object.
++   */
++  easing?: TransitionProps['easing'];
+   /**
+    * The system prop that allows defining system overrides as well as additional CSS styles.
+    */
+diff --git a/packages/material-ui/src/Collapse/Collapse.js b/packages/material-ui/src/Collapse/Collapse.js
+index 17f4593..6e3ed0e 100644
+--- a/packages/material-ui/src/Collapse/Collapse.js
++++ b/packages/material-ui/src/Collapse/Collapse.js
+@@ -134,6 +134,7 @@ const Collapse = React.forwardRef(function Collapse(inProps, ref) {
+     orientation = 'vertical',
+     style,
+     timeout = duration.standard,
++    easing,
+     // eslint-disable-next-line react/prop-types
+     TransitionComponent = Transition,
+     ...other
+@@ -201,8 +202,8 @@ const Collapse = React.forwardRef(function Collapse(inProps, ref) {
+       wrapperRef.current.style.position = '';
+     }
+ 
+-    const { duration: transitionDuration } = getTransitionProps(
+-      { style, timeout },
++    const { duration: transitionDuration, easing: transitionEasing } = getTransitionProps(
++      { style, timeout, easing },
+       {
+         mode: 'enter',
+       },
+@@ -217,6 +218,10 @@ const Collapse = React.forwardRef(function Collapse(inProps, ref) {
+         typeof transitionDuration === 'string' ? transitionDuration : `${transitionDuration}ms`;
+     }
+ 
++    if (transitionEasing) {
++      node.style.transitionTimingFunction = transitionEasing;
++    }
++
+     node.style[size] = `${wrapperSize}px`;
+ 
+     if (onEntering) {
+@@ -244,8 +249,8 @@ const Collapse = React.forwardRef(function Collapse(inProps, ref) {
+ 
+   const handleExiting = normalizedTransitionCallback((node) => {
+     const wrapperSize = getWrapperSize();
+-    const { duration: transitionDuration } = getTransitionProps(
+-      { style, timeout },
++    const { duration: transitionDuration, easing: transitionEasing } = getTransitionProps(
++      { style, timeout, easing },
+       {
+         mode: 'exit',
+       },
+@@ -262,6 +267,10 @@ const Collapse = React.forwardRef(function Collapse(inProps, ref) {
+         typeof transitionDuration === 'string' ? transitionDuration : `${transitionDuration}ms`;
+     }
+ 
++    if (transitionEasing) {
++      node.style.transitionTimingFunction = transitionEasing;
++    }
++
+     node.style[size] = collapsedSize;
+ 
+     if (onExiting) {
+@@ -353,6 +362,18 @@ Collapse.propTypes = {
+    * Either a string to use a HTML element or a component.
+    */
+   component: elementTypeAcceptingRef,
++  /**
++   * The transition timing function.
++   * You may specify a single easing for all transitions, or individually with an object.
++   */
++  easing: PropTypes.oneOfType([
++    PropTypes.string,
++    PropTypes.shape({
++      appear: PropTypes.string,
++      enter: PropTypes.string,
++      exit: PropTypes.string,
++    }),
++  ]),
+   /**
+    * If `true`, the component will transition in.
+    */
+diff --git a/packages/material-ui/src/Fade/Fade.d.ts b/packages/material-ui/src/Fade/Fade.d.ts
+index 39deb76..dd857c2 100644
+--- a/packages/material-ui/src/Fade/Fade.d.ts
++++ b/packages/material-ui/src/Fade/Fade.d.ts
+@@ -26,6 +26,11 @@ export interface FadeProps extends Omit<TransitionProps, 'children'> {
+    * }
+    */
+   timeout?: TransitionProps['timeout'];
++  /**
++   * The transition timing function.
++   * You may specify a single easing for all transitions, or individually with an object.
++   */
++  easing?: TransitionProps['easing'];
+ }
+ 
+ /**
+diff --git a/packages/material-ui/src/Fade/Fade.js b/packages/material-ui/src/Fade/Fade.js
+index 52d9373..632ccee 100644
+--- a/packages/material-ui/src/Fade/Fade.js
++++ b/packages/material-ui/src/Fade/Fade.js
+@@ -40,6 +40,7 @@ const Fade = React.forwardRef(function Fade(props, ref) {
+     // eslint-disable-next-line react/prop-types
+     TransitionComponent = Transition,
+     timeout = defaultTimeout,
++    easing,
+     ...other
+   } = props;
+   const theme = useTheme();
+@@ -68,7 +69,7 @@ const Fade = React.forwardRef(function Fade(props, ref) {
+     reflow(node); // So the animation always start from the start.
+ 
+     const transitionProps = getTransitionProps(
+-      { style, timeout },
++      { style, timeout, easing },
+       {
+         mode: 'enter',
+       },
+@@ -88,7 +89,7 @@ const Fade = React.forwardRef(function Fade(props, ref) {
+ 
+   const handleExit = normalizedTransitionCallback((node) => {
+     const transitionProps = getTransitionProps(
+-      { style, timeout },
++      { style, timeout, easing },
+       {
+         mode: 'exit',
+       },
+@@ -150,6 +151,18 @@ Fade.propTypes = {
+    * A single child content element.
+    */
+   children: elementAcceptingRef,
++  /**
++   * The transition timing function.
++   * You may specify a single easing for all transitions, or individually with an object.
++   */
++  easing: PropTypes.oneOfType([
++    PropTypes.string,
++    PropTypes.shape({
++      appear: PropTypes.string,
++      enter: PropTypes.string,
++      exit: PropTypes.string,
++    }),
++  ]),
+   /**
+    * If `true`, the component will transition in.
+    */
+diff --git a/packages/material-ui/src/Grow/Grow.d.ts b/packages/material-ui/src/Grow/Grow.d.ts
+index 392fb60..51343fd 100644
+--- a/packages/material-ui/src/Grow/Grow.d.ts
++++ b/packages/material-ui/src/Grow/Grow.d.ts
+@@ -25,6 +25,11 @@ export interface GrowProps extends Omit<TransitionProps, 'timeout'> {
+    * @default 'auto'
+    */
+   timeout?: TransitionProps['timeout'] | 'auto';
++  /**
++   * The transition timing function.
++   * You may specify a single easing for all transitions, or individually with an object.
++   */
++  easing?: TransitionProps['easing'];
+ }
+ 
+ /**
+diff --git a/packages/material-ui/src/Grow/Grow.js b/packages/material-ui/src/Grow/Grow.js
+index 442f485..bff7927 100644
+--- a/packages/material-ui/src/Grow/Grow.js
++++ b/packages/material-ui/src/Grow/Grow.js
+@@ -39,6 +39,7 @@ const Grow = React.forwardRef(function Grow(props, ref) {
+     onExiting,
+     style,
+     timeout = 'auto',
++    easing,
+     // eslint-disable-next-line react/prop-types
+     TransitionComponent = Transition,
+     ...other
+@@ -69,8 +70,8 @@ const Grow = React.forwardRef(function Grow(props, ref) {
+   const handleEnter = normalizedTransitionCallback((node, isAppearing) => {
+     reflow(node); // So the animation always start from the start.
+ 
+-    const { duration: transitionDuration, delay } = getTransitionProps(
+-      { style, timeout },
++    const { duration: transitionDuration, delay, easing: transitionEasing } = getTransitionProps(
++      { style, timeout, easing },
+       {
+         mode: 'enter',
+       },
+@@ -88,10 +89,12 @@ const Grow = React.forwardRef(function Grow(props, ref) {
+       theme.transitions.create('opacity', {
+         duration,
+         delay,
++        easing: transitionEasing,
+       }),
+       theme.transitions.create('transform', {
+         duration: duration * 0.666,
+         delay,
++        easing: transitionEasing,
+       }),
+     ].join(',');
+ 
+@@ -105,8 +108,8 @@ const Grow = React.forwardRef(function Grow(props, ref) {
+   const handleExiting = normalizedTransitionCallback(onExiting);
+ 
+   const handleExit = normalizedTransitionCallback((node) => {
+-    const { duration: transitionDuration, delay } = getTransitionProps(
+-      { style, timeout },
++    const { duration: transitionDuration, delay, easing: transitionEasing } = getTransitionProps(
++      { style, timeout, easing },
+       {
+         mode: 'exit',
+       },
+@@ -124,10 +127,12 @@ const Grow = React.forwardRef(function Grow(props, ref) {
+       theme.transitions.create('opacity', {
+         duration,
+         delay,
++        easing: transitionEasing,
+       }),
+       theme.transitions.create('transform', {
+         duration: duration * 0.666,
+         delay: delay || duration * 0.333,
++        easing: transitionEasing,
+       }),
+     ].join(',');
+ 
+@@ -201,6 +206,18 @@ Grow.propTypes = {
+    * A single child content element.
+    */
+   children: elementAcceptingRef,
++  /**
++   * The transition timing function.
++   * You may specify a single easing for all transitions, or individually with an object.
++   */
++  easing: PropTypes.oneOfType([
++    PropTypes.string,
++    PropTypes.shape({
++      appear: PropTypes.string,
++      enter: PropTypes.string,
++      exit: PropTypes.string,
++    }),
++  ]),
+   /**
+    * If `true`, the component will transition in.
+    */
+diff --git a/packages/material-ui/src/Slide/Slide.d.ts b/packages/material-ui/src/Slide/Slide.d.ts
+index bf5d7d1..41b1b9b 100644
+--- a/packages/material-ui/src/Slide/Slide.d.ts
++++ b/packages/material-ui/src/Slide/Slide.d.ts
+@@ -31,6 +31,11 @@ export interface SlideProps extends TransitionProps {
+    * }
+    */
+   timeout?: TransitionProps['timeout'];
++  /**
++   * The transition timing function.
++   * You may specify a single easing for all transitions, or individually with an object.
++   */
++  easing?: TransitionProps['easing'];
+ }
+ 
+ /**
+diff --git a/packages/material-ui/src/Slide/Slide.js b/packages/material-ui/src/Slide/Slide.js
+index 5724fc6..f6b697c 100644
+--- a/packages/material-ui/src/Slide/Slide.js
++++ b/packages/material-ui/src/Slide/Slide.js
+@@ -82,6 +82,7 @@ const Slide = React.forwardRef(function Slide(props, ref) {
+     onExiting,
+     style,
+     timeout = defaultTimeout,
++    easing,
+     // eslint-disable-next-line react/prop-types
+     TransitionComponent = Transition,
+     ...other
+@@ -114,7 +115,7 @@ const Slide = React.forwardRef(function Slide(props, ref) {
+ 
+   const handleEntering = normalizedTransitionCallback((node, isAppearing) => {
+     const transitionProps = getTransitionProps(
+-      { timeout, style },
++      { timeout, style, easing },
+       {
+         mode: 'enter',
+       },
+@@ -122,12 +123,12 @@ const Slide = React.forwardRef(function Slide(props, ref) {
+ 
+     node.style.webkitTransition = theme.transitions.create('-webkit-transform', {
+       ...transitionProps,
+-      easing: theme.transitions.easing.easeOut,
++      easing: transitionProps.easing || theme.transitions.easing.easeOut,
+     });
+ 
+     node.style.transition = theme.transitions.create('transform', {
+       ...transitionProps,
+-      easing: theme.transitions.easing.easeOut,
++      easing: transitionProps.easing || theme.transitions.easing.easeOut,
+     });
+ 
+     node.style.webkitTransform = 'none';
+@@ -142,7 +143,7 @@ const Slide = React.forwardRef(function Slide(props, ref) {
+ 
+   const handleExit = normalizedTransitionCallback((node) => {
+     const transitionProps = getTransitionProps(
+-      { timeout, style },
++      { timeout, style, easing },
+       {
+         mode: 'exit',
+       },
+@@ -150,12 +151,12 @@ const Slide = React.forwardRef(function Slide(props, ref) {
+ 
+     node.style.webkitTransition = theme.transitions.create('-webkit-transform', {
+       ...transitionProps,
+-      easing: theme.transitions.easing.sharp,
++      easing: transitionProps.easing || theme.transitions.easing.sharp,
+     });
+ 
+     node.style.transition = theme.transitions.create('transform', {
+       ...transitionProps,
+-      easing: theme.transitions.easing.sharp,
++      easing: transitionProps.easing || theme.transitions.easing.sharp,
+     });
+ 
+     setTranslateValue(direction, node);
+@@ -258,6 +259,18 @@ Slide.propTypes = {
+    * @default 'down'
+    */
+   direction: PropTypes.oneOf(['down', 'left', 'right', 'up']),
++  /**
++   * The transition timing function.
++   * You may specify a single easing for all transitions, or individually with an object.
++   */
++  easing: PropTypes.oneOfType([
++    PropTypes.string,
++    PropTypes.shape({
++      appear: PropTypes.string,
++      enter: PropTypes.string,
++      exit: PropTypes.string,
++    }),
++  ]),
+   /**
+    * If `true`, the component will transition in.
+    */
+diff --git a/packages/material-ui/src/Zoom/Zoom.d.ts b/packages/material-ui/src/Zoom/Zoom.d.ts
+index 612200f..605a4b1 100644
+--- a/packages/material-ui/src/Zoom/Zoom.d.ts
++++ b/packages/material-ui/src/Zoom/Zoom.d.ts
+@@ -26,6 +26,11 @@ export interface ZoomProps extends TransitionProps {
+    * }
+    */
+   timeout?: TransitionProps['timeout'];
++  /**
++   * The transition timing function.
++   * You may specify a single easing for all transitions, or individually with an object.
++   */
++  easing?: TransitionProps['easing'];
+ }
+ 
+ /**
+diff --git a/packages/material-ui/src/Zoom/Zoom.js b/packages/material-ui/src/Zoom/Zoom.js
+index 144c9dc..3d43f42 100644
+--- a/packages/material-ui/src/Zoom/Zoom.js
++++ b/packages/material-ui/src/Zoom/Zoom.js
+@@ -39,6 +39,7 @@ const Zoom = React.forwardRef(function Zoom(props, ref) {
+     onExiting,
+     style,
+     timeout = defaultTimeout,
++    easing,
+     // eslint-disable-next-line react/prop-types
+     TransitionComponent = Transition,
+     ...other
+@@ -69,7 +70,7 @@ const Zoom = React.forwardRef(function Zoom(props, ref) {
+     reflow(node); // So the animation always start from the start.
+ 
+     const transitionProps = getTransitionProps(
+-      { style, timeout },
++      { style, timeout, easing },
+       {
+         mode: 'enter',
+       },
+@@ -89,7 +90,7 @@ const Zoom = React.forwardRef(function Zoom(props, ref) {
+ 
+   const handleExit = normalizedTransitionCallback((node) => {
+     const transitionProps = getTransitionProps(
+-      { style, timeout },
++      { style, timeout, easing },
+       {
+         mode: 'exit',
+       },
+@@ -151,6 +152,18 @@ Zoom.propTypes = {
+    * A single child content element.
+    */
+   children: elementAcceptingRef,
++  /**
++   * The transition timing function.
++   * You may specify a single easing for all transitions, or individually with an object.
++   */
++  easing: PropTypes.oneOfType([
++    PropTypes.string,
++    PropTypes.shape({
++      appear: PropTypes.string,
++      enter: PropTypes.string,
++      exit: PropTypes.string,
++    }),
++  ]),
+   /**
+    * If `true`, the component will transition in.
+    */
+diff --git a/packages/material-ui/src/transitions/transition.d.ts b/packages/material-ui/src/transitions/transition.d.ts
+index 5f46bc0..0a7e34d 100644
+--- a/packages/material-ui/src/transitions/transition.d.ts
++++ b/packages/material-ui/src/transitions/transition.d.ts
+@@ -24,4 +24,9 @@ export interface TransitionProps
+   extends TransitionActions,
+     Partial<Pick<_TransitionProps, TransitionKeys>> {
+   style?: React.CSSProperties;
++  /**
++   * The transition timing function.
++   * You may specify a single easing for all transitions, or individually with an object.
++   */
++  easing?: string | { appear?: string; enter?: string; exit?: string };
+ }
+diff --git a/packages/material-ui/src/transitions/utils.js b/packages/material-ui/src/transitions/utils.js
+index 169cbd6..860da0b 100644
+--- a/packages/material-ui/src/transitions/utils.js
++++ b/packages/material-ui/src/transitions/utils.js
+@@ -1,7 +1,7 @@
+ export const reflow = (node) => node.scrollTop;
+ 
+ export function getTransitionProps(props, options) {
+-  const { timeout, style = {} } = props;
++  const { timeout, style = {}, easing } = props;
+ 
+   return {
+     duration:
+@@ -9,5 +9,8 @@ export function getTransitionProps(props, options) {
+         ? timeout
+         : timeout[options.mode] || 0,
+     delay: style.transitionDelay,
++    easing:
++      style.transitionTimingFunction ||
++      (typeof easing === 'string' ? easing : easing?.[options.mode]),
+   };
+ }

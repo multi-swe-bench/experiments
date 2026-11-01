@@ -1,0 +1,237 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/index.js b/packages/svelte/src/compiler/phases/1-parse/index.js
+index 6b7642c..ec60b0e 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/index.js
++++ b/packages/svelte/src/compiler/phases/1-parse/index.js
+@@ -11,7 +11,7 @@ import read_options from './read/options.js';
+ const regex_position_indicator = / \(\d+:\d+\)$/;
+ 
+ const regex_lang_attribute =
+-	/<!--[^]*?-->|<script\s+(?:[^>]*|(?:[^=>'"/]+=(?:"[^"]*"|'[^']*'|[^>\s]+)\s+)*)lang=(["'])?([^"' >]+)\1[^>]*>/;
++	/<!--[^]*?-->|<script\s+(?:[^>]*|(?:[^=>'"/]+=(?:"[^"]*"|'[^']*'|[^>\s]+)\s+)*)lang=(["'])?([^"' >]+)\1[^>]*>/g;
+ 
+ export class Parser {
+ 	/**
+@@ -49,7 +49,14 @@ export class Parser {
+ 
+ 		this.template = template.trimRight();
+ 
+-		this.ts = regex_lang_attribute.exec(template)?.[2] === 'ts';
++		regex_lang_attribute.lastIndex = 0;
++		let match;
++		while ((match = regex_lang_attribute.exec(template))) {
++			if (match[2] !== undefined) {
++				this.ts = match[2] === 'ts';
++				break;
++			}
++		}
+ 
+ 		this.root = {
+ 			css: null,
+diff --git a/packages/svelte/tests/parser-modern/samples/comment-before-typescript-script/input.svelte b/packages/svelte/tests/parser-modern/samples/comment-before-typescript-script/input.svelte
+new file mode 100644
+index 0000000..1b420e0
+--- /dev/null
++++ b/packages/svelte/tests/parser-modern/samples/comment-before-typescript-script/input.svelte
+@@ -0,0 +1,6 @@
++<!-- a comment -->
++<script lang="ts">
++	let x: number = 1;
++</script>
++
++<h1>{x}</h1>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/parser-modern/samples/comment-before-typescript-script/output.json b/packages/svelte/tests/parser-modern/samples/comment-before-typescript-script/output.json
+new file mode 100644
+index 0000000..19c0b51
+--- /dev/null
++++ b/packages/svelte/tests/parser-modern/samples/comment-before-typescript-script/output.json
+@@ -0,0 +1,189 @@
++{
++	"css": null,
++	"js": [],
++	"start": 0,
++	"end": 81,
++	"type": "Root",
++	"fragment": {
++		"type": "Fragment",
++		"nodes": [
++			{
++				"type": "Comment",
++				"start": 0,
++				"end": 18,
++				"data": " a comment ",
++				"ignores": []
++			},
++			{
++				"type": "Text",
++				"start": 18,
++				"end": 19,
++				"raw": "\n",
++				"data": "\n"
++			},
++			{
++				"type": "Text",
++				"start": 67,
++				"end": 69,
++				"raw": "\n\n",
++				"data": "\n\n"
++			},
++			{
++				"type": "RegularElement",
++				"start": 69,
++				"end": 81,
++				"name": "h1",
++				"attributes": [],
++				"fragment": {
++					"type": "Fragment",
++					"nodes": [
++						{
++							"type": "ExpressionTag",
++							"start": 73,
++							"end": 76,
++							"expression": {
++								"type": "Identifier",
++								"start": 74,
++								"end": 75,
++								"loc": {
++									"start": {
++										"line": 6,
++										"column": 5
++									},
++									"end": {
++										"line": 6,
++										"column": 6
++									}
++								},
++								"name": "x"
++							}
++						}
++					],
++					"transparent": true
++				}
++			}
++		],
++		"transparent": false
++	},
++	"options": null,
++	"instance": {
++		"type": "Script",
++		"start": 19,
++		"end": 67,
++		"context": "default",
++		"content": {
++			"type": "Program",
++			"start": 37,
++			"end": 58,
++			"loc": {
++				"start": {
++					"line": 1,
++					"column": 0
++				},
++				"end": {
++					"line": 4,
++					"column": 0
++				}
++			},
++			"body": [
++				{
++					"type": "VariableDeclaration",
++					"start": 39,
++					"end": 57,
++					"loc": {
++						"start": {
++							"line": 3,
++							"column": 1
++						},
++						"end": {
++							"line": 3,
++							"column": 19
++						}
++					},
++					"declarations": [
++						{
++							"type": "VariableDeclarator",
++							"start": 43,
++							"end": 56,
++							"loc": {
++								"start": {
++									"line": 3,
++									"column": 5
++								},
++								"end": {
++									"line": 3,
++									"column": 18
++								}
++							},
++							"id": {
++								"type": "Identifier",
++								"start": 43,
++								"end": 14,
++								"loc": {
++									"start": {
++										"line": 3,
++										"column": 5
++									},
++									"end": {
++										"line": 3,
++										"column": 14
++									}
++								},
++								"name": "x",
++								"typeAnnotation": {
++									"type": "TSTypeAnnotation",
++									"start": 44,
++									"end": 52,
++									"loc": {
++										"start": {
++											"line": 3,
++											"column": 6
++										},
++										"end": {
++											"line": 3,
++											"column": 14
++										}
++									},
++									"typeAnnotation": {
++										"type": "TSNumberKeyword",
++										"start": 46,
++										"end": 52,
++										"loc": {
++											"start": {
++												"line": 3,
++												"column": 8
++											},
++											"end": {
++												"line": 3,
++												"column": 14
++											}
++										}
++									}
++								}
++							},
++							"init": {
++								"type": "Literal",
++								"start": 55,
++								"end": 56,
++								"loc": {
++									"start": {
++										"line": 3,
++										"column": 17
++									},
++									"end": {
++										"line": 3,
++										"column": 18
++									}
++								},
++								"value": 1,
++								"raw": "1"
++							}
++						}
++					],
++					"kind": "let"
++				}
++			],
++			"sourceType": "module"
++		}
++	}
++}

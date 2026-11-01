@@ -1,0 +1,11 @@
+diff --git a/packages/compiler-sfc/src/script/utils.ts b/packages/compiler-sfc/src/script/utils.ts
+index 42c4718..1012396 100644
+--- a/packages/compiler-sfc/src/script/utils.ts
++++ b/packages/compiler-sfc/src/script/utils.ts
+@@ -116,5 +116,6 @@ export const joinPaths = (path.posix || path).join
+ export const escapeSymbolsRE = /[ !"#$%&'()*+,./:;<=>?@[\\\]^`{|}~]/g
+ 
+ export function getEscapedKey(key: string) {
++  escapeSymbolsRE.lastIndex = 0
+   return escapeSymbolsRE.test(key) ? JSON.stringify(key) : key
+ }

@@ -1,0 +1,287 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+index 4207a16..c86ce10 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+@@ -456,17 +456,29 @@ function relative_selector_might_apply_to_node(relative_selector, rule, element,
+ 					};
+ 				}
+ 
+-				const descendants =
+-					left_most_combinator.name === '>' ? child_elements : descendant_elements;
++				/** @type {Array<Compiler.SvelteNode>} */
++				let candidates;
++				if (left_most_combinator.name === '>') {
++					candidates = child_elements;
++				} else if (left_most_combinator.name === '+' || left_most_combinator.name === '~') {
++					// :has(+ y) / :has(~ y) look at following siblings rather than descendants
++					candidates = [
++						...get_possible_next_element_siblings(element, left_most_combinator.name === '+').keys()
++					];
++				} else {
++					candidates = descendant_elements;
++				}
+ 
+ 				let selector_matched = false;
+ 
+-				// Iterate over all descendant elements and check if the selector inside :has matches
+-				for (const element of descendants) {
++				// Iterate over all candidate elements and check if the selector inside :has matches
++				for (const candidate of candidates) {
++					const is_element =
++						candidate.type === 'RegularElement' || candidate.type === 'SvelteElement';
+ 					if (
+ 						selectors.length === 0 /* is :global(...) */ ||
+-						(element.metadata.scoped && selector_matched) ||
+-						apply_selector(selectors, rule, element, state)
++						(is_element && candidate.metadata.scoped && selector_matched) ||
++						(is_element && apply_selector(selectors, rule, candidate, state))
+ 					) {
+ 						complex_selector.metadata.used = true;
+ 						selector_matched = matched = true;
+@@ -1088,3 +1100,246 @@ function loop_child(children, adjacent_only) {
+ 	}
+ 	return result;
+ }
++
++/**
++ * Finds the given node's next sibling in the DOM (the mirror of `find_previous_sibling`).
++ * @param {Compiler.SvelteNode} node
++ * @returns {Compiler.SvelteNode | null}
++ */
++function find_next_sibling(node) {
++	/** @type {Compiler.SvelteNode | null} */
++	let current_node = node;
++
++	while (
++		!get_raw_next_sibling(current_node) &&
++		// @ts-expect-error TODO
++		current_node.parent?.type === 'SlotElement'
++	) {
++		// @ts-expect-error TODO
++		current_node = current_node.parent;
++	}
++
++	current_node = get_raw_next_sibling(current_node);
++
++	while (current_node?.type === 'SlotElement') {
++		const slot_children = current_node.fragment.nodes;
++		if (slot_children.length > 0) {
++			current_node = slot_children[0];
++		} else {
++			break;
++		}
++	}
++
++	return current_node;
++}
++
++/**
++ * Returns the immediate next sibling of a node within its containing fragment, or `null` if it is the last child.
++ * @param {Compiler.SvelteNode} node
++ * @returns {Compiler.SvelteNode | null}
++ */
++function get_raw_next_sibling(node) {
++	// @ts-expect-error TODO
++	const parent = node.parent;
++	if (!parent) return null;
++
++	/** @type {Compiler.SvelteNode[][]} */
++	const arrays = [];
++
++	// @ts-expect-error TODO
++	if (parent.fragment) arrays.push(parent.fragment.nodes);
++
++	if (parent.type === 'IfBlock') {
++		if (parent.consequent) arrays.push(parent.consequent.nodes);
++		if (parent.alternate) arrays.push(parent.alternate.nodes);
++	} else if (parent.type === 'EachBlock') {
++		if (parent.body) arrays.push(parent.body.nodes);
++		if (parent.fallback) arrays.push(parent.fallback.nodes);
++	} else if (parent.type === 'AwaitBlock') {
++		if (parent.pending) arrays.push(parent.pending.nodes);
++		if (parent.then) arrays.push(parent.then.nodes);
++		if (parent.catch) arrays.push(parent.catch.nodes);
++	} else if (parent.type === 'SnippetBlock') {
++		if (parent.body) arrays.push(parent.body.nodes);
++	}
++
++	for (const arr of arrays) {
++		const idx = arr.indexOf(node);
++		if (idx !== -1) {
++			return arr[idx + 1] ?? null;
++		}
++	}
++
++	return null;
++}
++
++/**
++ * The forward-direction equivalent of `get_possible_element_siblings`. Used by `:has(+ ...)` and `:has(~ ...)`
++ * to find following siblings of an element.
++ * @param {Compiler.SvelteNode} node
++ * @param {boolean} adjacent_only
++ * @returns {Map<Compiler.AST.RegularElement | Compiler.AST.SvelteElement | Compiler.AST.SlotElement | Compiler.AST.RenderTag, NodeExistsValue>}
++ */
++function get_possible_next_element_siblings(node, adjacent_only) {
++	/** @type {Map<Compiler.AST.RegularElement | Compiler.AST.SvelteElement | Compiler.AST.SlotElement | Compiler.AST.RenderTag, NodeExistsValue>} */
++	const result = new Map();
++
++	/** @type {Compiler.SvelteNode | null} */
++	let next = node;
++	while ((next = find_next_sibling(next))) {
++		if (next.type === 'RegularElement') {
++			if (
++				!next.attributes.find(
++					(attr) => attr.type === 'Attribute' && attr.name.toLowerCase() === 'slot'
++				)
++			) {
++				result.set(next, NODE_DEFINITELY_EXISTS);
++			}
++			if (adjacent_only) {
++				break;
++			}
++		} else if (next.type === 'EachBlock' || next.type === 'IfBlock' || next.type === 'AwaitBlock') {
++			const possible_first_child = get_possible_first_child(next, adjacent_only);
++			add_to_map(possible_first_child, result);
++			if (adjacent_only && has_definite_elements(possible_first_child)) {
++				return result;
++			}
++		} else if (
++			next.type === 'SlotElement' ||
++			next.type === 'RenderTag' ||
++			next.type === 'SvelteElement'
++		) {
++			result.set(next, NODE_PROBABLY_EXISTS);
++			// Special case: slots, render tags and svelte:element tags could resolve to no siblings,
++			// so we want to continue until we find a definite sibling even with the adjacent-only combinator
++		}
++	}
++
++	if (!next || !adjacent_only) {
++		/** @type {Compiler.SvelteNode | null} */
++		let parent = node;
++
++		while (
++			// @ts-expect-error TODO
++			(parent = parent?.parent) &&
++			(parent.type === 'EachBlock' || parent.type === 'IfBlock' || parent.type === 'AwaitBlock')
++		) {
++			const possible_siblings = get_possible_next_element_siblings(parent, adjacent_only);
++			add_to_map(possible_siblings, result);
++
++			// @ts-expect-error
++			if (parent.type === 'EachBlock' && !parent.fallback?.nodes.includes(node)) {
++				// `{#each ...}<a /><b />{/each}` — `<a>` can be next sibling of `<b />` (across iterations)
++				add_to_map(get_possible_first_child(parent, adjacent_only), result);
++			}
++
++			if (adjacent_only && has_definite_elements(possible_siblings)) {
++				break;
++			}
++		}
++	}
++
++	return result;
++}
++
++/**
++ * The forward-direction equivalent of `get_possible_last_child`.
++ * @param {Compiler.AST.EachBlock | Compiler.AST.IfBlock | Compiler.AST.AwaitBlock} relative_selector
++ * @param {boolean} adjacent_only
++ * @returns {Map<Compiler.AST.RegularElement, NodeExistsValue>}
++ */
++function get_possible_first_child(relative_selector, adjacent_only) {
++	/** @typedef {Map<Compiler.AST.RegularElement, NodeExistsValue>} NodeMap */
++
++	/** @type {NodeMap} */
++	const result = new Map();
++	if (relative_selector.type === 'EachBlock') {
++		/** @type {NodeMap} */
++		const each_result = loop_child_forward(relative_selector.body.nodes, adjacent_only);
++
++		/** @type {NodeMap} */
++		const else_result = relative_selector.fallback
++			? loop_child_forward(relative_selector.fallback.nodes, adjacent_only)
++			: new Map();
++		const not_exhaustive = !has_definite_elements(else_result);
++		if (not_exhaustive) {
++			mark_as_probably(each_result);
++			mark_as_probably(else_result);
++		}
++		add_to_map(each_result, result);
++		add_to_map(else_result, result);
++	} else if (relative_selector.type === 'IfBlock') {
++		/** @type {NodeMap} */
++		const if_result = loop_child_forward(relative_selector.consequent.nodes, adjacent_only);
++
++		/** @type {NodeMap} */
++		const else_result = relative_selector.alternate
++			? loop_child_forward(relative_selector.alternate.nodes, adjacent_only)
++			: new Map();
++		const not_exhaustive = !has_definite_elements(if_result) || !has_definite_elements(else_result);
++		if (not_exhaustive) {
++			mark_as_probably(if_result);
++			mark_as_probably(else_result);
++		}
++		add_to_map(if_result, result);
++		add_to_map(else_result, result);
++	} else if (relative_selector.type === 'AwaitBlock') {
++		/** @type {NodeMap} */
++		const pending_result = relative_selector.pending
++			? loop_child_forward(relative_selector.pending.nodes, adjacent_only)
++			: new Map();
++
++		/** @type {NodeMap} */
++		const then_result = relative_selector.then
++			? loop_child_forward(relative_selector.then.nodes, adjacent_only)
++			: new Map();
++
++		/** @type {NodeMap} */
++		const catch_result = relative_selector.catch
++			? loop_child_forward(relative_selector.catch.nodes, adjacent_only)
++			: new Map();
++		const not_exhaustive =
++			!has_definite_elements(pending_result) ||
++			!has_definite_elements(then_result) ||
++			!has_definite_elements(catch_result);
++		if (not_exhaustive) {
++			mark_as_probably(pending_result);
++			mark_as_probably(then_result);
++			mark_as_probably(catch_result);
++		}
++		add_to_map(pending_result, result);
++		add_to_map(then_result, result);
++		add_to_map(catch_result, result);
++	}
++	return result;
++}
++
++/**
++ * The forward-direction equivalent of `loop_child`.
++ * @param {Compiler.SvelteNode[]} children
++ * @param {boolean} adjacent_only
++ */
++function loop_child_forward(children, adjacent_only) {
++	/** @type {Map<Compiler.AST.RegularElement, NodeExistsValue>} */
++	const result = new Map();
++	for (let i = 0; i < children.length; i++) {
++		const child = children[i];
++		if (child.type === 'RegularElement') {
++			result.set(child, NODE_DEFINITELY_EXISTS);
++			if (adjacent_only) {
++				break;
++			}
++		} else if (
++			child.type === 'EachBlock' ||
++			child.type === 'IfBlock' ||
++			child.type === 'AwaitBlock'
++		) {
++			const child_result = get_possible_first_child(child, adjacent_only);
++			add_to_map(child_result, result);
++			if (adjacent_only && has_definite_elements(child_result)) {
++				break;
++			}
++		}
++	}
++	return result;
++}

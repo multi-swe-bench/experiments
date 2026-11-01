@@ -1,0 +1,159 @@
+diff --git a/api/index.js b/api/index.js
+index f9041b7..0a25e37 100644
+--- a/api/index.js
++++ b/api/index.js
+@@ -16,6 +16,7 @@ module.exports = async (req, res) => {
+     icon_color,
+     text_color,
+     bg_color,
++    theme,
+   } = req.query;
+   let stats;
+ 
+@@ -40,6 +41,7 @@ module.exports = async (req, res) => {
+       icon_color,
+       text_color,
+       bg_color,
++      theme,
+     })
+   );
+ };
+diff --git a/api/pin.js b/api/pin.js
+index b79472f..3864839 100644
+--- a/api/pin.js
++++ b/api/pin.js
+@@ -12,6 +12,7 @@ module.exports = async (req, res) => {
+     text_color,
+     bg_color,
+     show_owner,
++    theme,
+   } = req.query;
+ 
+   let repoData;
+@@ -33,6 +34,7 @@ module.exports = async (req, res) => {
+       text_color,
+       bg_color,
+       show_owner: parseBoolean(show_owner),
++      theme,
+     })
+   );
+ };
+diff --git a/src/renderRepoCard.js b/src/renderRepoCard.js
+index db2dbf5..7f61f70 100644
+--- a/src/renderRepoCard.js
++++ b/src/renderRepoCard.js
+@@ -4,6 +4,7 @@ const {
+   fallbackColor,
+   FlexLayout,
+ } = require("../src/utils");
++const themes = require("./themes");
+ const icons = require("./icons");
+ 
+ const renderRepoCard = (repo, options = {}) => {
+@@ -16,7 +17,8 @@ const renderRepoCard = (repo, options = {}) => {
+     isArchived,
+     forkCount,
+   } = repo;
+-  const { title_color, icon_color, text_color, bg_color, show_owner } = options;
++  const { title_color, icon_color, text_color, bg_color, show_owner, theme } =
++    options;
+ 
+   const header = show_owner ? nameWithOwner : name;
+   const langName = primaryLanguage ? primaryLanguage.name : "Unspecified";
+@@ -30,10 +32,12 @@ const renderRepoCard = (repo, options = {}) => {
+     desc = `${description.slice(0, 55)}..`;
+   }
+ 
+-  const titleColor = fallbackColor(title_color, "#2f80ed");
+-  const iconColor = fallbackColor(icon_color, "#586069");
+-  const textColor = fallbackColor(text_color, "#333");
+-  const bgColor = fallbackColor(bg_color, "#FFFEFE");
++  const themeColors = themes[theme] || {};
++
++  const titleColor = fallbackColor(title_color, themeColors.title || "#2f80ed");
++  const iconColor = fallbackColor(icon_color, themeColors.icon || "#586069");
++  const textColor = fallbackColor(text_color, themeColors.text || "#333");
++  const bgColor = fallbackColor(bg_color, themeColors.bg || "#FFFEFE");
+ 
+   const totalStars = kFormatter(stargazers.totalCount);
+   const totalForks = kFormatter(forkCount);
+diff --git a/src/renderStatsCard.js b/src/renderStatsCard.js
+index 2ba2761..b08ca80 100644
+--- a/src/renderStatsCard.js
++++ b/src/renderStatsCard.js
+@@ -1,5 +1,6 @@
+ const { kFormatter, fallbackColor, FlexLayout } = require("../src/utils");
+ const getStyles = require("./getStyles");
++const themes = require("./themes");
+ const icons = require("./icons");
+ 
+ const createTextNode = ({ icon, label, value, id, index, showIcons }) => {
+@@ -44,14 +45,17 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
+     icon_color,
+     text_color,
+     bg_color,
++    theme,
+   } = options;
+ 
+   const lheight = parseInt(line_height);
+ 
+-  const titleColor = fallbackColor(title_color, "#2f80ed");
+-  const iconColor = fallbackColor(icon_color, "#4c71f2");
+-  const textColor = fallbackColor(text_color, "#333");
+-  const bgColor = fallbackColor(bg_color, "#FFFEFE");
++  const themeColors = themes[theme] || {};
++
++  const titleColor = fallbackColor(title_color, themeColors.title || "#2f80ed");
++  const iconColor = fallbackColor(icon_color, themeColors.icon || "#4c71f2");
++  const textColor = fallbackColor(text_color, themeColors.text || "#333");
++  const bgColor = fallbackColor(bg_color, themeColors.bg || "#FFFEFE");
+ 
+   // Meta data for creating text nodes with createTextNode function
+   const STATS = {
+diff --git a/src/themes.js b/src/themes.js
+new file mode 100644
+index 0000000..dfb6f86
+--- /dev/null
++++ b/src/themes.js
+@@ -0,0 +1,40 @@
++const themes = {
++  dark: {
++    title: "#fff",
++    icon: "#79ff97",
++    text: "#9f9f9f",
++    bg: "#151515",
++  },
++  highcontrast: {
++    title: "#e7f216",
++    icon: "#00ffff",
++    text: "#fff",
++    bg: "#000",
++  },
++  dracula: {
++    title: "#50fa7a",
++    icon: "#50fa7a",
++    text: "#fff",
++    bg: "#3c4556",
++  },
++  purple: {
++    title: "#570559",
++    icon: "#570559",
++    text: "#222",
++    bg: "#d0a9d1",
++  },
++  simpledark: {
++    title: "#fff",
++    icon: "#fff",
++    text: "#fff",
++    bg: "#151515",
++  },
++  simplelight: {
++    title: "#000",
++    icon: "#000",
++    text: "#000",
++    bg: "#fff",
++  },
++};
++
++module.exports = themes;
+\ No newline at end of file

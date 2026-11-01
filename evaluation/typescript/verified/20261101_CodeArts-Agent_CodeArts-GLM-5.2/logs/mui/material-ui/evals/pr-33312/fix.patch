@@ -1,0 +1,50 @@
+diff --git a/packages/mui-material/src/Autocomplete/Autocomplete.js b/packages/mui-material/src/Autocomplete/Autocomplete.js
+index 19e26159..a7991250 100644
+--- a/packages/mui-material/src/Autocomplete/Autocomplete.js
++++ b/packages/mui-material/src/Autocomplete/Autocomplete.js
+@@ -44,6 +44,7 @@ const useUtilityClasses = (ownerState) => {
+       fullWidth && 'fullWidth',
+       hasClearIcon && 'hasClearIcon',
+       hasPopupIcon && 'hasPopupIcon',
++      popupOpen && 'expanded',
+     ],
+     inputRoot: ['inputRoot'],
+     input: ['input', inputFocused && 'inputFocused'],
+@@ -69,7 +70,7 @@ const AutocompleteRoot = styled('div', {
+   slot: 'Root',
+   overridesResolver: (props, styles) => {
+     const { ownerState } = props;
+-    const { fullWidth, hasClearIcon, hasPopupIcon, inputFocused, size } = ownerState;
++    const { fullWidth, hasClearIcon, hasPopupIcon, inputFocused, popupOpen, size } = ownerState;
+ 
+     return [
+       { [`& .${autocompleteClasses.tag}`]: styles.tag },
+@@ -79,6 +80,7 @@ const AutocompleteRoot = styled('div', {
+       { [`& .${autocompleteClasses.input}`]: inputFocused && styles.inputFocused },
+       styles.root,
+       fullWidth && styles.fullWidth,
++      popupOpen && styles.expanded,
+       hasPopupIcon && styles.hasPopupIcon,
+       hasClearIcon && styles.hasClearIcon,
+     ];
+diff --git a/packages/mui-material/src/Autocomplete/autocompleteClasses.ts b/packages/mui-material/src/Autocomplete/autocompleteClasses.ts
+index e0e22b79..2e451f93 100644
+--- a/packages/mui-material/src/Autocomplete/autocompleteClasses.ts
++++ b/packages/mui-material/src/Autocomplete/autocompleteClasses.ts
+@@ -8,6 +8,8 @@ export interface AutocompleteClasses {
+   fullWidth: string;
+   /** State class applied to the root element if focused. */
+   focused: string;
++  /** State class applied to the root element if the popper is expanded. */
++  expanded: string;
+   /** Styles applied to the tag elements, e.g. the chips. */
+   tag: string;
+   /** Styles applied to the tag elements, e.g. the chips if `size="small"`. */
+@@ -62,6 +64,7 @@ const autocompleteClasses: AutocompleteClasses = generateUtilityClasses('MuiAuto
+   'root',
+   'fullWidth',
+   'focused',
++  'expanded',
+   'focusVisible',
+   'tag',
+   'tagSizeSmall',

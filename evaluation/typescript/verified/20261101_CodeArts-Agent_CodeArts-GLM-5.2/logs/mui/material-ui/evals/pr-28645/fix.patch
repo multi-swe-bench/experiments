@@ -1,0 +1,60 @@
+diff --git a/packages/mui-material/src/Button/Button.d.ts b/packages/mui-material/src/Button/Button.d.ts
+index 6575bea7..6c97bd7d 100644
+--- a/packages/mui-material/src/Button/Button.d.ts
++++ b/packages/mui-material/src/Button/Button.d.ts
+@@ -118,7 +118,7 @@ export type ExtendButton<M extends OverridableTypeMap> = ((
+  * - [Button API](https://mui.com/api/button/)
+  * - inherits [ButtonBase API](https://mui.com/api/button-base/)
+  */
+-declare const Button: ExtendButtonBase<ButtonTypeMap>;
++declare const Button: ExtendButtonBase<ButtonTypeMap> & { muiName: string };
+ 
+ export type ButtonProps<
+   D extends React.ElementType = ButtonTypeMap['defaultComponent'],
+diff --git a/packages/mui-material/src/Button/Button.js b/packages/mui-material/src/Button/Button.js
+index 26aaa397..f00e49f5 100644
+--- a/packages/mui-material/src/Button/Button.js
++++ b/packages/mui-material/src/Button/Button.js
+@@ -445,3 +445,5 @@ Button.propTypes /* remove-proptypes */ = {
+ };
+ 
+ export default Button;
++
++Button.muiName = 'Button';
+diff --git a/packages/mui-material/src/ButtonGroup/ButtonGroup.js b/packages/mui-material/src/ButtonGroup/ButtonGroup.js
+index b9b36a73..704f0bab 100644
+--- a/packages/mui-material/src/ButtonGroup/ButtonGroup.js
++++ b/packages/mui-material/src/ButtonGroup/ButtonGroup.js
+@@ -5,6 +5,7 @@ import clsx from 'clsx';
+ import { unstable_composeClasses as composeClasses } from '@mui/core';
+ import { alpha } from '@mui/system';
+ import capitalize from '../utils/capitalize';
++import isMuiElement from '../utils/isMuiElement';
+ import styled from '../styles/styled';
+ import useThemeProps from '../styles/useThemeProps';
+ import buttonGroupClasses, { getButtonGroupUtilityClass } from './buttonGroupClasses';
+@@ -226,14 +227,16 @@ const ButtonGroup = React.forwardRef(function ButtonGroup(inProps, ref) {
+ 
+         return React.cloneElement(child, {
+           className: clsx(classes.grouped, child.props.className),
+-          color: child.props.color || color,
+-          disabled: child.props.disabled || disabled,
+-          disableElevation: child.props.disableElevation || disableElevation,
+-          disableFocusRipple,
+-          disableRipple,
+-          fullWidth,
+-          size: child.props.size || size,
+-          variant: child.props.variant || variant,
++          ...(isMuiElement(child, ['Button']) && {
++            color: child.props.color || color,
++            disabled: child.props.disabled || disabled,
++            disableElevation: child.props.disableElevation || disableElevation,
++            disableFocusRipple,
++            disableRipple,
++            fullWidth,
++            size: child.props.size || size,
++            variant: child.props.variant || variant,
++          }),
+         });
+       })}
+     </ButtonGroupRoot>

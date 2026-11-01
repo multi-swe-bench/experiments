@@ -1,0 +1,40 @@
+diff --git a/packages/mui-base/src/SliderUnstyled/SliderUnstyled.js b/packages/mui-base/src/SliderUnstyled/SliderUnstyled.js
+index c5f73e2b..c462247e 100644
+--- a/packages/mui-base/src/SliderUnstyled/SliderUnstyled.js
++++ b/packages/mui-base/src/SliderUnstyled/SliderUnstyled.js
+@@ -45,6 +45,7 @@ const Forward = ({ children }) => children;
+ const SliderUnstyled = React.forwardRef(function SliderUnstyled(props, ref) {
+   const {
+     'aria-label': ariaLabel,
++    'aria-labelledby': ariaLabelledby,
+     'aria-valuetext': ariaValuetext,
+     className,
+     component,
+@@ -77,6 +78,7 @@ const SliderUnstyled = React.forwardRef(function SliderUnstyled(props, ref) {
+   // consider extracting to hook an reusing the lint rule for the variants
+   const ownerState = {
+     ...props,
++    'aria-labelledby': ariaLabelledby,
+     marks: marksProp,
+     classes: classesProp,
+     disabled,
+diff --git a/packages/mui-joy/src/Slider/Slider.tsx b/packages/mui-joy/src/Slider/Slider.tsx
+index 6154087f..e3b50d09 100644
+--- a/packages/mui-joy/src/Slider/Slider.tsx
++++ b/packages/mui-joy/src/Slider/Slider.tsx
+@@ -368,6 +368,7 @@ const Slider = React.forwardRef(function Slider(inProps, ref) {
+ 
+   const {
+     'aria-label': ariaLabel,
++    'aria-labelledby': ariaLabelledby,
+     'aria-valuetext': ariaValuetext,
+     component,
+     componentsProps = {},
+@@ -400,6 +401,7 @@ const Slider = React.forwardRef(function Slider(inProps, ref) {
+ 
+   const ownerState = {
+     ...props,
++    'aria-labelledby': ariaLabelledby,
+     marks: marksProp,
+     classes: classesProp,
+     disabled,

@@ -1,0 +1,40 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index b7687af..127c7af 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -179,6 +179,16 @@ export function migrate(source, { filename, use_ts } = {}) {
+ 				)
+ 		};
+ 
++		if (
++			parsed.instance &&
++			state.uses_ts &&
++			!parsed.instance.attributes.some(
++				(attr) => attr.name === 'lang' && /** @type {any} */ (attr).value[0].data === 'ts'
++			)
++		) {
++			str.appendLeft(/** @type {number} */ (parsed.instance.content.start) - 1, ' lang="ts"');
++		}
++
+ 		if (parsed.module) {
+ 			const context = parsed.module.attributes.find((attr) => attr.name === 'context');
+ 			if (context) {
+@@ -208,7 +218,7 @@ export function migrate(source, { filename, use_ts } = {}) {
+ 			state.has_svelte_self;
+ 
+ 		if (!parsed.instance && need_script) {
+-			str.appendRight(0, '<script>');
++			str.appendRight(0, `<script${state.uses_ts ? ' lang="ts"' : ''}>`);
+ 		}
+ 
+ 		if (state.has_svelte_self && filename) {
+diff --git a/packages/svelte/tests/migrate/samples/slot-use_ts/output.svelte b/packages/svelte/tests/migrate/samples/slot-use_ts/output.svelte
+index 3e92f5c..0ba0bf5 100644
+--- a/packages/svelte/tests/migrate/samples/slot-use_ts/output.svelte
++++ b/packages/svelte/tests/migrate/samples/slot-use_ts/output.svelte
+@@ -1,4 +1,4 @@
+-<script>
++<script lang="ts">
+ 	interface Props {
+ 		children?: import('svelte').Snippet;
+ 	}

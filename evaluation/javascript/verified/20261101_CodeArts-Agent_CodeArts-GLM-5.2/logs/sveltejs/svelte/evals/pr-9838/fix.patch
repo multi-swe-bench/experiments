@@ -1,0 +1,218 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 3be08c7..a8ac573 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -711,8 +711,8 @@ function validate_call_expression(node, scope, path) {
+ 	}
+ 
+ 	if (rune === '$inspect') {
+-		if (node.arguments.length < 1 || node.arguments.length > 2) {
+-			error(node, 'invalid-rune-args-length', rune, [1, 2]);
++		if (node.arguments.length < 1) {
++			error(node, 'invalid-rune-args-length', rune, [1]);
+ 		}
+ 	}
+ }
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
+index 4890630..9c10716 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
+@@ -317,12 +317,33 @@ export const javascript_visitors_runes = {
+ 
+ 		if (rune === '$inspect') {
+ 			if (state.options.dev) {
+-				const arg = /** @type {import('estree').Expression} */ (visit(node.arguments[0]));
+-				const fn =
+-					node.arguments[1] &&
+-					/** @type {import('estree').Expression} */ (visit(node.arguments[1]));
++				const args = /** @type {import('estree').Expression[]} */ (
++					node.arguments.map((arg) => visit(arg))
++				);
++
++				return b.call('$.inspect', b.thunk(b.array(args)));
++			}
++
++			return b.unary('void', b.literal(0));
++		}
++
++		// `$inspect(...).with(callback)`
++		if (
++			node.callee.type === 'MemberExpression' &&
++			!node.callee.computed &&
++			node.callee.property.type === 'Identifier' &&
++			node.callee.property.name === 'with' &&
++			node.callee.object.type === 'CallExpression' &&
++			get_rune(node.callee.object, state.scope) === '$inspect' &&
++			node.arguments.length === 1
++		) {
++			if (state.options.dev) {
++				const args = /** @type {import('estree').Expression[]} */ (
++					node.callee.object.arguments.map((arg) => visit(arg))
++				);
++				const callback = /** @type {import('estree').Expression} */ (visit(node.arguments[0]));
+ 
+-				return b.call('$.inspect', b.thunk(arg), fn);
++				return b.call('$.inspect', b.thunk(b.array(args)), callback);
+ 			}
+ 
+ 			return b.unary('void', b.literal(0));
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 798e58e..deb947b 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -649,6 +649,32 @@ const javascript_visitors_runes = {
+ 			return b.unary('void', b.literal(0));
+ 		}
+ 
++		// `$inspect(...).with(callback)`
++		if (
++			node.callee.type === 'MemberExpression' &&
++			!node.callee.computed &&
++			node.callee.property.type === 'Identifier' &&
++			node.callee.property.name === 'with' &&
++			node.callee.object.type === 'CallExpression' &&
++			get_rune(node.callee.object, state.scope) === '$inspect' &&
++			node.arguments.length === 1
++		) {
++			if (state.options.dev) {
++				const args = /** @type {import('estree').Expression[]} */ (
++					node.callee.object.arguments.map((arg) => visit(arg))
++				);
++				const callback = /** @type {import('estree').Expression} */ (visit(node.arguments[0]));
++
++				return b.call(
++					/** @type {import('estree').Expression} */ (callback),
++					b.literal('init'),
++					...args
++				);
++			}
++
++			return b.unary('void', b.literal(0));
++		}
++
+ 		next();
+ 	}
+ };
+diff --git a/packages/svelte/src/internal/client/runtime.js b/packages/svelte/src/internal/client/runtime.js
+index f49a22c..55fc26b 100644
+--- a/packages/svelte/src/internal/client/runtime.js
++++ b/packages/svelte/src/internal/client/runtime.js
+@@ -1776,23 +1776,31 @@ function deep_read(value, visited = new Set()) {
+ }
+ 
+ /**
+- * @param {() => any} get_value
+- * @param {Function} inspect
+- * @returns {void}
++ * @param {() => any[]} get_values
++ * @param {(type: 'init' | 'update', ...values: any[]) => void} [inspect]
++ * @returns {{ with: (callback: (type: 'init' | 'update', ...values: any[]) => void) => void }}
+  */
+ // eslint-disable-next-line no-console
+-export function inspect(get_value, inspect = console.log) {
++export function inspect(get_values, inspect = console.log) {
+ 	let initial = true;
+ 
++	const result = {
++		/** @param {(type: 'init' | 'update', ...values: any[]) => void} callback */
++		with: (callback) => {
++			inspect = callback;
++			return result;
++		}
++	};
++
+ 	pre_effect(() => {
+ 		const fn = () => {
+-			const value = get_value();
+-			inspect(value, initial ? 'init' : 'update');
++			const values = get_values();
++			inspect(initial ? 'init' : 'update', ...values);
+ 		};
+ 
+ 		inspect_fn = fn;
+-		const value = get_value();
+-		deep_read(value);
++		const values = get_values();
++		deep_read(values);
+ 		inspect_fn = null;
+ 
+ 		const signals = inspect_captured_signals.slice();
+@@ -1809,6 +1817,8 @@ export function inspect(get_value, inspect = console.log) {
+ 			}
+ 		};
+ 	});
++
++	return result;
+ }
+ 
+ /**
+diff --git a/packages/svelte/src/main/ambient.d.ts b/packages/svelte/src/main/ambient.d.ts
+index a351e48..a2eda87 100644
+--- a/packages/svelte/src/main/ambient.d.ts
++++ b/packages/svelte/src/main/ambient.d.ts
+@@ -138,17 +138,21 @@ declare function $props<T>(): T;
+  * $inspect({ someValue, someOtherValue })
+  * ```
+  *
+- * If a second argument is provided, it will be called with the value and the event type
+- * (`'init'` or `'update'`), otherwise the value will be logged to the console.
++ * `$inspect` returns an object with a `.with` method, which allows you to use a custom
++ * function instead of `console.log`. The first argument to the function is either `"init"`
++ * or `"update"`, the rest are the values passed to `$inspect`.
+  *
+  * ```ts
+- * $inspect(x, console.trace);
+- * $inspect(y, (y) => { debugger; });
++ * $inspect(x).with(console.trace);
++ * $inspect(x, y).with((type, x, y) => {
++ *   debugger;
++ * });
+  * ```
+  *
+  * https://svelte-5-preview.vercel.app/docs/runes#$inspect
+  */
+-declare function $inspect<T>(
+-	value: T,
+-	callback?: (value: T, type: 'init' | 'update') => void
+-): void;
++declare function $inspect<T extends unknown[]>(
++	...values: T
++): {
++	with: (callback: (type: 'init' | 'update', ...values: T) => void) => void;
++};
+diff --git a/sites/svelte-5-preview/src/routes/docs/content/01-api/02-runes.md b/sites/svelte-5-preview/src/routes/docs/content/01-api/02-runes.md
+index 8d84544..43c5837 100644
+--- a/sites/svelte-5-preview/src/routes/docs/content/01-api/02-runes.md
++++ b/sites/svelte-5-preview/src/routes/docs/content/01-api/02-runes.md
+@@ -281,14 +281,14 @@ or array using [fine-grained reactivity](/docs/fine-grained-reactivity) will cau
+ <input bind:value={message} />
+ ```
+ 
+-If a callback is also provided, it will be invoked instead of `console.log`. The first argument to the callback
+-is the current value. The second is either `"init"` or `"update"`. [Demo:](/#H4sIAAAAAAAAE0VP24qDMBD9lSEUqlTqPlsj7ON-w1qojWM3rE5CMmkpkn_fxFL26XBuw5lVTHpGL5rvVdCwoGjEp7WiEvy0mfg7zoyJexOcykrrldOWu556npFBmUAMEnaeB8biozwlJ3k7Td6i4mILVPDGfLgE2cGaUz3rCYqsgZQS9sGO6cq-fLs9j3gNtxu6E9Q1GAcXZcibGY_sBoWXKmuPn1S6o4OnCfAYiF_lmCHmQW39v5raa2A2BIbUrNWvXIttz7bvcIjdFymHCxK39SvZpf8XM-pJ4ygadgHjOf4B8TXIiDoBAAA=)
++`$inspect` returns an object with a `.with` method, which allows you to use a custom function instead of `console.log`.
++The first argument to the function is either `"init"` or `"update"`, the rest are the values passed to `$inspect`. [Demo:](/#H4sIAAAAAAAAE0VP24qDMBD9lSEUqlTqPlsj7ON-w1qojWM3rE5CMmkpkn_fxFL26XBuw5lVTHpGL5rvVdCwoGjEp7WiEvy0mfg7zoyJexOcykrrldOWu556npFBmUAMEnaeB8biozwlJ3k7Td6i4mILVPDGfLgE2cGaUz3rCYqsgZQS9sGO6cq-fLs9j3gNtxu6E9Q1GAcXZcibGY_sBoWXKmuPn1S6o4OnCfAYiF_lmCHmQW39v5raa2A2BIbUrNWvXIttz7bvcIjdFymHCxK39SvZpf8XM-pJ4ygadgHjOf4B8TXIiDoBAAA=)
+ 
+ ```svelte
+ <script>
+ 	let count = $state(0);
+ 
+-	$inspect(count, (count, type) => {
++	$inspect(count).with((type, count) => {
+ 		if (type === 'update') {
+ 			debugger; // or `console.trace`, or whatever you want
+ 		}
+@@ -298,11 +298,11 @@ is the current value. The second is either `"init"` or `"update"`. [Demo:](/#H4s
+ <button onclick={() => count++}>Increment</button>
+ ```
+ 
+-A convenient way to find the origin of some change is to pass `console.trace` as the second argument:
++A convenient way to find the origin of some change is to pass `console.trace` to `.with`:
+ 
+ ```js
+ // @errors: 2304
+-$inspect(stuff, console.trace);
++$inspect(stuff).with(console.trace);
+ ```
+ 
+ > `$inspect` only works during development.

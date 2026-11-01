@@ -1,0 +1,143 @@
+diff --git a/docs/data/material/components/grid/grid.md b/docs/data/material/components/grid/grid.md
+index 2c70b8f8..32f3db3c 100644
+--- a/docs/data/material/components/grid/grid.md
++++ b/docs/data/material/components/grid/grid.md
+@@ -146,6 +146,10 @@ You can change the default number of columns (12) with the `columns` prop.
+ 
+ The spacing between items is implemented with a negative margin. This might lead to unexpected behaviors. For instance, to apply a background color, you need to apply `display: flex;` to the parent.
+ 
++#### Full-width items
++
++When an item uses the full width of the container (e.g. `xs={12}`), the column spacing would otherwise push it out of alignment with the container. To avoid this layout shift, full-width items automatically compensate the container's negative margin and drop their left padding, so they stay aligned with the parent. This applies to `row` containers only; `direction="column"` and `direction="column-reverse"` are unaffected.
++
+ ### white-space: nowrap
+ 
+ The initial setting on flex items is `min-width: auto`.
+diff --git a/packages/mui-material/src/Grid/Grid.js b/packages/mui-material/src/Grid/Grid.js
+index 6d7a4742..479859af 100644
+--- a/packages/mui-material/src/Grid/Grid.js
++++ b/packages/mui-material/src/Grid/Grid.js
+@@ -31,10 +31,32 @@ function getOffset(val) {
+ 
+ export function generateGrid({ theme, ownerState }) {
+   let size;
++  let wasFullWidth = false;
++  let parentColumnSpacing;
++
++  const parentColumnSpacingValues = ownerState.parentColumnSpacing
++    ? resolveBreakpointValues({
++        values: ownerState.parentColumnSpacing,
++        breakpoints: theme.breakpoints.values,
++      })
++    : undefined;
+ 
+   return theme.breakpoints.keys.reduce((globalStyles, breakpoint) => {
+     // Use side effect over immutability for better performance.
+     let styles = {};
++
++    // Resolve the column spacing inherited from the parent container for the
++    // current breakpoint. The value is sticky to support responsive inheritance.
++    if (parentColumnSpacingValues !== undefined) {
++      if (typeof parentColumnSpacingValues === 'object') {
++        if (parentColumnSpacingValues[breakpoint] != null) {
++          parentColumnSpacing = parentColumnSpacingValues[breakpoint];
++        }
++      } else {
++        parentColumnSpacing = parentColumnSpacingValues;
++      }
++    }
++
+     if (ownerState[breakpoint]) {
+       size = ownerState[breakpoint];
+     }
+@@ -93,6 +115,47 @@ export function generateGrid({ theme, ownerState }) {
+         maxWidth: width,
+         ...more,
+       };
++
++      // A full-width item has no horizontal sibling, so the column spacing
++      // (left padding + container negative margin) is not necessary and would
++      // otherwise make the item overflow its parent on the left side.
++      // Compensate the container's negative margin and remove the left padding
++      // so that full-width items do not cause a layout shift.
++      if (
++        !ownerState.container &&
++        ownerState.direction !== 'column' &&
++        ownerState.direction !== 'column-reverse' &&
++        parentColumnSpacing &&
++        parentColumnSpacing !== 0
++      ) {
++        const themeSpacing = theme.spacing(parentColumnSpacing);
++        if (themeSpacing !== '0px') {
++          const offset = getOffset(themeSpacing);
++          const itemClass = gridClasses[`grid-${breakpoint}-${size}`];
++          if (size === columnValue) {
++            wasFullWidth = true;
++            styles = {
++              ...styles,
++              flexBasis: `calc(100% - ${offset})`,
++              maxWidth: `calc(100% - ${offset})`,
++              marginLeft: offset,
++              [`&.${itemClass}`]: {
++                paddingLeft: 0,
++              },
++            };
++          } else if (wasFullWidth) {
++            // The item was full-width at a smaller breakpoint. Reset the
++            // adjustment for this breakpoint where it is no longer full-width.
++            styles = {
++              ...styles,
++              marginLeft: 0,
++              [`&.${itemClass}`]: {
++                paddingLeft: offset,
++              },
++            };
++          }
++        }
++      }
+     }
+ 
+     // No need for a media query for the first size.
+@@ -310,11 +373,14 @@ const Grid = React.forwardRef(function Grid(inProps, ref) {
+   const rowSpacing = rowSpacingProp || spacing;
+   const columnSpacing = columnSpacingProp || spacing;
+ 
+-  const columnsContext = React.useContext(GridContext);
++  const parentContext = React.useContext(GridContext);
+ 
+   // setting prop before context to accomodate nesting
+   // colums set with default breakpoint unit of 12
+-  const columns = columnsProp || columnsContext || 12;
++  const columns = columnsProp || parentContext?.columns || 12;
++  // The column spacing inherited from the parent container. It is used to
++  // compensate the parent's negative margin on full-width items.
++  const parentColumnSpacing = parentContext?.columnSpacing;
+ 
+   const ownerState = {
+     ...props,
+@@ -327,6 +393,7 @@ const Grid = React.forwardRef(function Grid(inProps, ref) {
+     sm,
+     rowSpacing,
+     columnSpacing,
++    parentColumnSpacing,
+     wrap,
+     xl,
+     xs,
+@@ -335,12 +402,11 @@ const Grid = React.forwardRef(function Grid(inProps, ref) {
+ 
+   const classes = useUtilityClasses(ownerState);
+ 
+-  const wrapChild = (element) =>
+-    columns !== 12 ? (
+-      <GridContext.Provider value={columns}>{element}</GridContext.Provider>
+-    ) : (
+-      element
+-    );
++  const contextValue = React.useMemo(() => ({ columns, columnSpacing }), [columns, columnSpacing]);
++
++  const wrapChild = (element) => (
++    <GridContext.Provider value={contextValue}>{element}</GridContext.Provider>
++  );
+ 
+   return wrapChild(
+     <GridRoot

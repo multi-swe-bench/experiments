@@ -1,0 +1,18 @@
+diff --git a/packages/mui-base/src/useAutocomplete/useAutocomplete.js b/packages/mui-base/src/useAutocomplete/useAutocomplete.js
+index d4867241..b4551a18 100644
+--- a/packages/mui-base/src/useAutocomplete/useAutocomplete.js
++++ b/packages/mui-base/src/useAutocomplete/useAutocomplete.js
+@@ -483,9 +483,10 @@ export default function useAutocomplete(props) {
+       const previousHighlightedOption = previousProps.filteredOptions[highlightedIndexRef.current];
+ 
+       if (previousHighlightedOption) {
+-        const previousHighlightedOptionExists = filteredOptions.some((option) => {
+-          return getOptionLabel(option) === getOptionLabel(previousHighlightedOption);
+-        });
++        const previousHighlightedOptionExists =
++          highlightedIndexRef.current < filteredOptions.length &&
++          getOptionLabel(filteredOptions[highlightedIndexRef.current]) ===
++            getOptionLabel(previousHighlightedOption);
+ 
+         if (previousHighlightedOptionExists) {
+           return true;

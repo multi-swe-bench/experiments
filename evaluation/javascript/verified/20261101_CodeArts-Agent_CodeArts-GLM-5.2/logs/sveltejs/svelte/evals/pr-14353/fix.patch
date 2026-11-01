@@ -1,0 +1,588 @@
+diff --git a/.tmp-static-test/App.svelte b/.tmp-static-test/App.svelte
+new file mode 100644
+index 0000000..6caaa97
+--- /dev/null
++++ b/.tmp-static-test/App.svelte
+@@ -0,0 +1,20 @@
++<script>
++	const promise = new Promise((r) => setTimeout(() => r(42), 50));
++	const slow = new Promise((r) => setTimeout(() => r('done'), 80));
++</script>
++
++<p>before</p>
++
++{#await promise}
++	<p>loading...</p>
++{:then value}
++	<p>value: {value}</p>
++{:catch error}
++	<p>error: {error.message}</p>
++{/await}
++
++{#await slow then value}
++	<p>slow: {value}</p>
++{/await}
++
++<p>after</p>
+diff --git a/.tmp-static-test/App.svelte.js b/.tmp-static-test/App.svelte.js
+new file mode 100644
+index 0000000..7e38238
+--- /dev/null
++++ b/.tmp-static-test/App.svelte.js
+@@ -0,0 +1,37 @@
++import * as $ from "svelte/internal/server";
++
++export default function App($$payload, $$props) {
++	$.push();
++
++	const promise = new Promise((r) => setTimeout(() => r(42), 50));
++	const slow = new Promise((r) => setTimeout(() => r('done'), 80));
++
++	$$payload.out += `<p>before</p> <!---->`;
++
++	$.await(
++		promise,
++		() => {
++			$$payload.out += `<p>loading...</p>`;
++		},
++		(value) => {
++			$$payload.out += `<p>value: ${$.escape(value)}</p>`;
++		},
++		(error) => {
++			$$payload.out += `<p>error: ${$.escape(error.message)}</p>`;
++		}
++	);
++
++	$$payload.out += `<!----> <!---->`;
++
++	$.await(
++		slow,
++		() => {},
++		(value) => {
++			$$payload.out += `<p>slow: ${$.escape(value)}</p>`;
++		},
++		() => {}
++	);
++
++	$$payload.out += `<!----> <p>after</p>`;
++	$.pop();
++}
+\ No newline at end of file
+diff --git a/.tmp-static-test/App2.svelte b/.tmp-static-test/App2.svelte
+new file mode 100644
+index 0000000..4b3ab89
+--- /dev/null
++++ b/.tmp-static-test/App2.svelte
+@@ -0,0 +1,27 @@
++<script>
++	const rejectPromise = new Promise((_, r) => setTimeout(() => r(new Error('boom')), 10));
++	const outer = new Promise((r) => setTimeout(() => r('outer-val'), 10));
++	let props = $props();
++</script>
++
++<p>props: {props.name}</p>
++
++{#await rejectPromise}
++	<p>loading</p>
++{:catch error}
++	<p>caught: {error.message}</p>
++{/await}
++
++{#await outer then outerVal}
++	{#await new Promise((r) => setTimeout(() => r('inner-val'), 10)) then innerVal}
++		<p>nested: {outerVal}/{innerVal}</p>
++	{/await}
++{/await}
++
++{#await 'not-a-promise' then v}
++	<p>sync: {v}</p>
++{/await}
++
++<svelte:head>
++	<title>my title</title>
++</svelte:head>
+diff --git a/.tmp-static-test/App2.svelte.js b/.tmp-static-test/App2.svelte.js
+new file mode 100644
+index 0000000..256d3f2
+--- /dev/null
++++ b/.tmp-static-test/App2.svelte.js
+@@ -0,0 +1,62 @@
++import * as $ from "svelte/internal/server";
++
++export default function App2($$payload, $$props) {
++	$.push();
++
++	const rejectPromise = new Promise((_, r) => setTimeout(() => r(new Error('boom')), 10));
++	const outer = new Promise((r) => setTimeout(() => r('outer-val'), 10));
++	let { $$slots, $$events, ...props } = $$props;
++
++	$.head($$payload, ($$payload) => {
++		$$payload.title = `<title>my title</title>`;
++	});
++
++	$$payload.out += `<p>props: ${$.escape(props.name)}</p> <!---->`;
++
++	$.await(
++		rejectPromise,
++		() => {
++			$$payload.out += `<p>loading</p>`;
++		},
++		() => {},
++		(error) => {
++			$$payload.out += `<p>caught: ${$.escape(error.message)}</p>`;
++		}
++	);
++
++	$$payload.out += `<!----> <!---->`;
++
++	$.await(
++		outer,
++		() => {},
++		(outerVal) => {
++			$$payload.out += `<!---->`;
++
++			$.await(
++				new Promise((r) => setTimeout(() => r('inner-val'), 10)),
++				() => {},
++				(innerVal) => {
++					$$payload.out += `<p>nested: ${$.escape(outerVal)}/${$.escape(innerVal)}</p>`;
++				},
++				() => {}
++			);
++
++			$$payload.out += `<!---->`;
++		},
++		() => {}
++	);
++
++	$$payload.out += `<!----> <!---->`;
++
++	$.await(
++		'not-a-promise',
++		() => {},
++		(v) => {
++			$$payload.out += `<p>sync: ${$.escape(v)}</p>`;
++		},
++		() => {}
++	);
++
++	$$payload.out += `<!---->`;
++	$.pop();
++}
+\ No newline at end of file
+diff --git a/.tmp-static-test/App3.svelte b/.tmp-static-test/App3.svelte
+new file mode 100644
+index 0000000..146967d
+--- /dev/null
++++ b/.tmp-static-test/App3.svelte
+@@ -0,0 +1,7 @@
++<script>
++	let props = $props();
++	const promise = new Promise((r) => setTimeout(() => r(props.label), 20));
++</script>
++{#await promise then v}
++	<p>{v}</p>
++{/await}
+diff --git a/.tmp-static-test/App3.svelte.js b/.tmp-static-test/App3.svelte.js
+new file mode 100644
+index 0000000..f1a5ff7
+--- /dev/null
++++ b/.tmp-static-test/App3.svelte.js
+@@ -0,0 +1,22 @@
++import * as $ from "svelte/internal/server";
++
++export default function App3($$payload, $$props) {
++	$.push();
++
++	let { $$slots, $$events, ...props } = $$props;
++	const promise = new Promise((r) => setTimeout(() => r(props.label), 20));
++
++	$$payload.out += `<!---->`;
++
++	$.await(
++		promise,
++		() => {},
++		(v) => {
++			$$payload.out += `<p>${$.escape(v)}</p>`;
++		},
++		() => {}
++	);
++
++	$$payload.out += `<!---->`;
++	$.pop();
++}
+\ No newline at end of file
+diff --git a/.tmp-static-test/run.mjs b/.tmp-static-test/run.mjs
+new file mode 100644
+index 0000000..dca44e2
+--- /dev/null
++++ b/.tmp-static-test/run.mjs
+@@ -0,0 +1,21 @@
++import { compile } from 'svelte/compiler';
++import { render, renderStaticHTML } from 'svelte/server';
++import * as fs from 'node:fs';
++import { pathToFileURL } from 'node:url';
++
++const base = new URL('.', import.meta.url);
++const src = fs.readFileSync(new URL('App.svelte', base), 'utf-8');
++const result = compile(src, { generate: 'server', name: 'App' });
++const outFile = new URL('App.svelte.js', base);
++fs.writeFileSync(outFile, result.js.code);
++const mod = await import(pathToFileURL(fs.realpathSync(new URL(outFile, base))).href);
++const App = mod.default;
++
++console.log('=== render (sync) ===');
++const sync = render(App, {});
++console.log(JSON.stringify(sync.body));
++
++console.log('=== renderStaticHTML (async) ===');
++const async_result = await renderStaticHTML(App, {});
++console.log(JSON.stringify(async_result.body));
++console.log('head:', JSON.stringify(async_result.head));
+diff --git a/.tmp-static-test/run2.mjs b/.tmp-static-test/run2.mjs
+new file mode 100644
+index 0000000..d9caa7c
+--- /dev/null
++++ b/.tmp-static-test/run2.mjs
+@@ -0,0 +1,16 @@
++import { compile } from 'svelte/compiler';
++import { renderStaticHTML } from 'svelte/server';
++import * as fs from 'node:fs';
++import { pathToFileURL } from 'node:url';
++
++const base = new URL('.', import.meta.url);
++const src = fs.readFileSync(new URL('App2.svelte', base), 'utf-8');
++const result = compile(src, { generate: 'server', name: 'App2' });
++const outFile = new URL('App2.svelte.js', base);
++fs.writeFileSync(outFile, result.js.code);
++const mod = await import(pathToFileURL(fs.realpathSync(new URL(outFile, base))).href);
++const App = mod.default;
++
++const r = await renderStaticHTML(App, { props: { name: 'world' } });
++console.log('body:', JSON.stringify(r.body));
++console.log('head:', JSON.stringify(r.head));
+diff --git a/.tmp-static-test/run3.mjs b/.tmp-static-test/run3.mjs
+new file mode 100644
+index 0000000..60276cb
+--- /dev/null
++++ b/.tmp-static-test/run3.mjs
+@@ -0,0 +1,29 @@
++import { compile } from 'svelte/compiler';
++import { render, renderStaticHTML } from 'svelte/server';
++import * as fs from 'node:fs';
++import { pathToFileURL } from 'node:url';
++
++const base = new URL('.', import.meta.url);
++const src = fs.readFileSync(new URL('App3.svelte', base), 'utf-8');
++const result = compile(src, { generate: 'server', name: 'App3' });
++const outFile = new URL('App3.svelte.js', base);
++fs.writeFileSync(outFile, result.js.code);
++const mod = await import(pathToFileURL(fs.realpathSync(new URL(outFile, base))).href);
++const App = mod.default;
++
++// Concurrent renderStaticHTML calls
++const [a, b, c] = await Promise.all([
++	renderStaticHTML(App, { props: { label: 'A' } }),
++	renderStaticHTML(App, { props: { label: 'B' } }),
++	renderStaticHTML(App, { props: { label: 'C' } })
++]);
++console.log('a:', JSON.stringify(a.body));
++console.log('b:', JSON.stringify(b.body));
++console.log('c:', JSON.stringify(c.body));
++
++// Synchronous render during an in-flight renderStaticHTML
++const p = renderStaticHTML(App, { props: { label: 'D' } });
++const sync = render(App, { props: { label: 'sync' } });
++console.log('sync (during async):', JSON.stringify(sync.body));
++const d = await p;
++console.log('d:', JSON.stringify(d.body));
+diff --git a/packages/svelte/src/internal/server/index.js b/packages/svelte/src/internal/server/index.js
+index 615a49f..69e11e1 100644
+--- a/packages/svelte/src/internal/server/index.js
++++ b/packages/svelte/src/internal/server/index.js
+@@ -86,6 +86,32 @@ export function element(payload, tag, attributes_fn = noop, children_fn = noop)
+  */
+ export let on_destroy = [];
+ 
++/**
++ * Stack of active `renderStaticHTML` contexts. Each entry holds the payload that is currently
++ * being rendered and the deferred `await` blocks that still need to be resolved. `await` blocks
++ * use the top of the stack to know where to place their placeholder. When the stack is empty,
++ * `await` blocks render their pending state synchronously (the default `render` behavior).
++ * @type {Array<StaticContext>}
++ */
++const static_stack = [];
++
++let static_uid = 0;
++
++/**
++ * @typedef {Object} StaticContext
++ * @property {Payload} payload
++ * @property {StaticDeferred[]} deferred
++ */
++
++/**
++ * @typedef {Object} StaticDeferred
++ * @property {PromiseLike<any>} promise
++ * @property {null | ((value: any) => void)} then_fn
++ * @property {null | ((error: any) => void)} catch_fn
++ * @property {string} marker
++ * @property {Payload} payload
++ */
++
+ /**
+  * Only available on the server and when compiling with the `server` option.
+  * Takes a component and returns an object with `body` and `head` properties on it, which you can use to populate the HTML when server-rendering your app.
+@@ -114,9 +140,15 @@ export function render(component, options = {}) {
+ 		/** @type {Component} */ (current_component).c = options.context;
+ 	}
+ 
++	// `render` is always synchronous, so make sure it is not affected by any in-flight
++	// `renderStaticHTML` calls (which use the static await stack).
++	const prev_static_stack = static_stack.splice(0);
++
+ 	// @ts-expect-error
+ 	component(payload, options.props ?? {}, {}, {});
+ 
++	static_stack.push(...prev_static_stack);
++
+ 	if (options.context) {
+ 		pop();
+ 	}
+@@ -142,6 +174,121 @@ export function render(component, options = {}) {
+ 	};
+ }
+ 
++/**
++ * Only available on the server and when compiling with the `server` option.
++ * Similar to `render`, but returns a `Promise` and waits for `await` blocks to resolve instead of
++ * rendering their pending state. This is useful for rendering HTML without the need for hydration,
++ * e.g. for emails, RSS feeds or CMS content.
++ * @template {Record<string, any>} Props
++ * @param {import('svelte').Component<Props> | ComponentType<SvelteComponent<Props>>} component
++ * @param {{ props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any> }} [options]
++ * @returns {Promise<RenderOutput>}
++ */
++export async function render_static_html(component, options = {}) {
++	/** @type {Payload} */
++	const payload = { out: '', css: new Set(), head: { title: '', out: '' } };
++
++	const prev_on_destroy = on_destroy;
++	on_destroy = [];
++	payload.out += BLOCK_OPEN;
++
++	let reset_reset_element;
++
++	if (DEV) {
++		// prevent parent/child element state being corrupted by a bad render
++		reset_reset_element = reset_elements();
++	}
++
++	if (options.context) {
++		push();
++		/** @type {Component} */ (current_component).c = options.context;
++	}
++
++	/** @type {StaticContext} */
++	const context = { payload, deferred: [] };
++	static_stack.push(context);
++
++	try {
++		// @ts-expect-error
++		component(payload, options.props ?? {}, {}, {});
++
++		// Resolve all deferred `await` blocks. New deferreds may be added as a result of resolving
++		// existing ones (e.g. nested `await` blocks), so we loop until there are none left.
++		while (context.deferred.length > 0) {
++			const deferred = context.deferred;
++			context.deferred = [];
++			await Promise.all(deferred.map((d) => resolve_deferred(d, context)));
++		}
++	} finally {
++		static_stack.pop();
++	}
++
++	if (options.context) {
++		pop();
++	}
++
++	if (reset_reset_element) {
++		reset_reset_element();
++	}
++
++	payload.out += BLOCK_CLOSE;
++	for (const cleanup of on_destroy) cleanup();
++	on_destroy = prev_on_destroy;
++
++	let head = payload.head.out + payload.head.title;
++
++	for (const { hash, code } of payload.css) {
++		head += `<style id="${hash}">${code}</style>`;
++	}
++
++	return {
++		head,
++		html: payload.out,
++		body: payload.out
++	};
++}
++
++/**
++ * Resolves a single deferred `await` block, rendering its `then` or `catch` branch into the place
++ * of its placeholder marker.
++ * @param {StaticDeferred} deferred
++ * @param {StaticContext} context
++ * @returns {Promise<void>}
++ */
++async function resolve_deferred({ promise, then_fn, catch_fn, marker, payload }, context) {
++	let value;
++	let caught_error;
++	let threw = false;
++
++	try {
++		value = await promise;
++	} catch (error) {
++		caught_error = error;
++		threw = true;
++	}
++
++	// The rendering of the branch is synchronous. Push the context onto the stack so that any
++	// nested `await` blocks (which run synchronously while rendering the branch) defer onto the
++	// correct payload, even when multiple `renderStaticHTML` calls are in flight concurrently.
++	static_stack.push(context);
++
++	const full = payload.out;
++	payload.out = '';
++
++	if (threw) {
++		if (catch_fn !== null) {
++			catch_fn(caught_error);
++		}
++	} else if (then_fn !== null) {
++		then_fn(value);
++	}
++
++	const content = payload.out;
++	payload.out = full.replace(marker, () => content);
++
++	static_stack.pop();
++}
++
+ /**
+  * @param {Payload} payload
+  * @param {(head_payload: Payload['head']) => void} fn
+@@ -472,16 +619,30 @@ export function bind_props(props_parent, props_now) {
+ 
+ /**
+  * @template V
+- * @param {Promise<V>} promise
++ * @param {PromiseLike<V>} promise
+  * @param {null | (() => void)} pending_fn
+- * @param {(value: V) => void} then_fn
++ * @param {null | ((value: V) => void)} then_fn
++ * @param {null | ((error: any) => void)} catch_fn
+  * @returns {void}
+  */
+-function await_block(promise, pending_fn, then_fn) {
++function await_block(promise, pending_fn, then_fn, catch_fn) {
+ 	if (is_promise(promise)) {
+-		promise.then(null, noop);
+-		if (pending_fn !== null) {
+-			pending_fn();
++		const context = static_stack.length > 0 ? static_stack[static_stack.length - 1] : null;
++		if (context === null) {
++			promise.then(null, noop);
++			if (pending_fn !== null) {
++				pending_fn();
++			}
++		} else {
++			const marker = `<!--svelte-static-await-${static_uid++}-->`;
++			context.payload.out += marker;
++			context.deferred.push({
++				promise,
++				then_fn,
++				catch_fn,
++				marker,
++				payload: context.payload
++			});
+ 		}
+ 	} else if (then_fn !== null) {
+ 		then_fn(promise);
+diff --git a/packages/svelte/src/server/index.d.ts b/packages/svelte/src/server/index.d.ts
+index b65ce5b..c4e10cf 100644
+--- a/packages/svelte/src/server/index.d.ts
++++ b/packages/svelte/src/server/index.d.ts
+@@ -16,6 +16,28 @@ export function render<
+ 			]
+ 		: [
+ 				component: Comp extends SvelteComponent<any> ? ComponentType<Comp> : Comp,
+-				options: { props: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any> }
++				options: { props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any> }
+ 			]
+ ): RenderOutput;
++
++/**
++ * Only available on the server and when compiling with the `server` option.
++ *
++ * Like `render`, but returns a `Promise` and waits for `await` blocks to resolve instead of
++ * rendering their pending state. This is useful for rendering HTML without the need for hydration,
++ * for example for emails, RSS feeds or CMS content.
++ */
++export function renderStaticHTML<
++	Comp extends SvelteComponent<any> | Component<any>,
++	Props extends ComponentProps<Comp> = ComponentProps<Comp>
++>(
++	...args: {} extends Props
++		? [
++				component: Comp extends SvelteComponent<any> ? ComponentType<Comp> : Comp,
++				options?: { props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any> }
++			]
++		: [
++				component: Comp extends SvelteComponent<any> ? ComponentType<Comp> : Comp,
++				options: { props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any> }
++			]
++): Promise<RenderOutput>;
+diff --git a/packages/svelte/src/server/index.js b/packages/svelte/src/server/index.js
+index c02e9d0..7bb7611 100644
+--- a/packages/svelte/src/server/index.js
++++ b/packages/svelte/src/server/index.js
+@@ -1 +1 @@
+-export { render } from '../internal/server/index.js';
++export { render, render_static_html as renderStaticHTML } from '../internal/server/index.js';
+diff --git a/packages/svelte/types/index.d.ts b/packages/svelte/types/index.d.ts
+index 00ba255..3180f7f 100644
+--- a/packages/svelte/types/index.d.ts
++++ b/packages/svelte/types/index.d.ts
+@@ -1734,9 +1734,31 @@ declare module 'svelte/server' {
+ 				]
+ 			: [
+ 					component: Comp extends SvelteComponent<any> ? ComponentType<Comp> : Comp,
+-					options: { props: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any> }
++					options: { props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any> }
+ 				]
+ 	): RenderOutput;
++
++	/**
++	 * Only available on the server and when compiling with the `server` option.
++	 *
++	 * Like `render`, but returns a `Promise` and waits for `await` blocks to resolve instead of
++	 * rendering their pending state. This is useful for rendering HTML without the need for hydration,
++	 * for example for emails, RSS feeds or CMS content.
++	 */
++	export function renderStaticHTML<
++		Comp extends SvelteComponent<any> | Component<any>,
++		Props extends ComponentProps<Comp> = ComponentProps<Comp>
++	>(
++		...args: {} extends Props
++			? [
++					component: Comp extends SvelteComponent<any> ? ComponentType<Comp> : Comp,
++					options?: { props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any> }
++				]
++			: [
++					component: Comp extends SvelteComponent<any> ? ComponentType<Comp> : Comp,
++					options: { props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any> }
++				]
++	): Promise<RenderOutput>;
+ 	interface RenderOutput {
+ 		/** HTML that goes into the `<head>` */
+ 		head: string;

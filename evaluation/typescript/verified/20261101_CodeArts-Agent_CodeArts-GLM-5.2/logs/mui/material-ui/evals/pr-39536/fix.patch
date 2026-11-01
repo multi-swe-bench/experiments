@@ -1,0 +1,43 @@
+diff --git a/packages/mui-material/src/ToggleButton/toggleButtonClasses.ts b/packages/mui-material/src/ToggleButton/toggleButtonClasses.ts
+index 6ef6c053..1b32cf93 100644
+--- a/packages/mui-material/src/ToggleButton/toggleButtonClasses.ts
++++ b/packages/mui-material/src/ToggleButton/toggleButtonClasses.ts
+@@ -8,6 +8,8 @@ export interface ToggleButtonClasses {
+   disabled: string;
+   /** State class applied to the root element if `selected={true}`. */
+   selected: string;
++  /** State class applied to the root element if `fullWidth={true}`. */
++  fullWidth: string;
+   /** State class applied to the root element if `color="standard"`. */
+   standard: string;
+   /** State class applied to the root element if `color="primary"`. */
+@@ -32,6 +34,7 @@ const toggleButtonClasses: ToggleButtonClasses = generateUtilityClasses('MuiTogg
+   'root',
+   'disabled',
+   'selected',
++  'fullWidth',
+   'standard',
+   'primary',
+   'secondary',
+diff --git a/packages/mui-material/src/ToggleButtonGroup/toggleButtonGroupClasses.ts b/packages/mui-material/src/ToggleButtonGroup/toggleButtonGroupClasses.ts
+index c14fdf8c..4e31a855 100644
+--- a/packages/mui-material/src/ToggleButtonGroup/toggleButtonGroupClasses.ts
++++ b/packages/mui-material/src/ToggleButtonGroup/toggleButtonGroupClasses.ts
+@@ -6,6 +6,8 @@ export interface ToggleButtonGroupClasses {
+   root: string;
+   /** Styles applied to the root element if `orientation="vertical"`. */
+   vertical: string;
++  /** Styles applied to the root element if `fullWidth={true}`. */
++  fullWidth: string;
+   /** State class applied to the root element if `disabled={true}`. */
+   disabled: string;
+   /** Styles applied to the children. */
+@@ -24,7 +26,7 @@ export function getToggleButtonGroupUtilityClass(slot: string): string {
+ 
+ const toggleButtonGroupClasses: ToggleButtonGroupClasses = generateUtilityClasses(
+   'MuiToggleButtonGroup',
+-  ['root', 'selected', 'vertical', 'disabled', 'grouped', 'groupedHorizontal', 'groupedVertical'],
++  ['root', 'selected', 'vertical', 'fullWidth', 'disabled', 'grouped', 'groupedHorizontal', 'groupedVertical'],
+ );
+ 
+ export default toggleButtonGroupClasses;

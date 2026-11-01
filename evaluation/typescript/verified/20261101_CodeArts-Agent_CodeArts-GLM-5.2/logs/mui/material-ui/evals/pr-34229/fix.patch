@@ -1,0 +1,52 @@
+diff --git a/packages/mui-material/src/Select/SelectInput.js b/packages/mui-material/src/Select/SelectInput.js
+index 81f92e9c..2dc32215 100644
+--- a/packages/mui-material/src/Select/SelectInput.js
++++ b/packages/mui-material/src/Select/SelectInput.js
+@@ -82,6 +82,11 @@ function isEmpty(display) {
+   return display == null || (typeof display === 'string' && !display.trim());
+ }
+ 
++function getMenuMinWidth(displayNode) {
++  const { parentElement } = displayNode;
++  return Math.max(displayNode.clientWidth, parentElement ? parentElement.clientWidth : 0);
++}
++
+ const useUtilityClasses = (ownerState) => {
+   const { classes, variant, disabled, multiple, open } = ownerState;
+ 
+@@ -173,7 +178,7 @@ const SelectInput = React.forwardRef(function SelectInput(props, ref) {
+   // Resize menu on `defaultOpen` automatic toggle.
+   React.useEffect(() => {
+     if (defaultOpen && openState && displayNode && !isOpenControlled) {
+-      setMenuMinWidthState(autoWidth ? null : displayNode.clientWidth);
++      setMenuMinWidthState(autoWidth ? null : getMenuMinWidth(displayNode));
+       displayRef.current.focus();
+     }
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+@@ -215,7 +220,7 @@ const SelectInput = React.forwardRef(function SelectInput(props, ref) {
+     }
+ 
+     if (!isOpenControlled) {
+-      setMenuMinWidthState(autoWidth ? null : displayNode.clientWidth);
++      setMenuMinWidthState(autoWidth ? null : getMenuMinWidth(displayNode));
+       setOpenState(open);
+     }
+   };
+@@ -479,7 +484,7 @@ const SelectInput = React.forwardRef(function SelectInput(props, ref) {
+   let menuMinWidth = menuMinWidthState;
+ 
+   if (!autoWidth && isOpenControlled && displayNode) {
+-    menuMinWidth = displayNode.clientWidth;
++    menuMinWidth = getMenuMinWidth(displayNode);
+   }
+ 
+   let tabIndex;
+@@ -546,7 +551,7 @@ const SelectInput = React.forwardRef(function SelectInput(props, ref) {
+       <SelectIcon as={IconComponent} className={classes.icon} ownerState={ownerState} />
+       <Menu
+         id={`menu-${name || ''}`}
+-        anchorEl={displayNode}
++        anchorEl={displayNode ? displayNode.parentElement : null}
+         open={open}
+         onClose={handleClose}
+         anchorOrigin={{

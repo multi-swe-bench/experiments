@@ -1,0 +1,78 @@
+diff --git a/packages/material-ui/src/internal/SwitchBase.js b/packages/material-ui/src/internal/SwitchBase.js
+index 3db2a57..e29af20 100644
+--- a/packages/material-ui/src/internal/SwitchBase.js
++++ b/packages/material-ui/src/internal/SwitchBase.js
+@@ -46,6 +46,7 @@ const SwitchBase = React.forwardRef(function SwitchBase(props, ref) {
+     name,
+     onBlur,
+     onChange,
++    onClick,
+     onFocus,
+     readOnly,
+     required,
+@@ -63,6 +64,11 @@ const SwitchBase = React.forwardRef(function SwitchBase(props, ref) {
+ 
+   const muiFormControl = useFormControl();
+ 
++  // React fires the `change` event for checkboxes/radios even when the
++  // `click` event was prevented. We use this ref to track whether the click
++  // was prevented so that we can ignore the subsequent `change` event.
++  const defaultPreventedRef = React.useRef(false);
++
+   const handleFocus = (event) => {
+     if (onFocus) {
+       onFocus(event);
+@@ -84,6 +90,15 @@ const SwitchBase = React.forwardRef(function SwitchBase(props, ref) {
+   };
+ 
+   const handleInputChange = (event) => {
++    // Ignore the `change` event when the click that triggered it was prevented.
++    // Calling `event.preventDefault()` in `onClick` is not enough to stop React
++    // from firing `onChange` for checkboxes/radios, so we track the prevented
++    // state ourselves and bail out here to keep the component from toggling.
++    if (defaultPreventedRef.current) {
++      defaultPreventedRef.current = false;
++      return;
++    }
++
+     const newChecked = event.target.checked;
+ 
+     setCheckedState(newChecked);
+@@ -94,6 +109,18 @@ const SwitchBase = React.forwardRef(function SwitchBase(props, ref) {
+     }
+   };
+ 
++  const handleClick = (event) => {
++    defaultPreventedRef.current = false;
++
++    if (onClick) {
++      onClick(event);
++    }
++
++    if (event.isDefaultPrevented()) {
++      defaultPreventedRef.current = true;
++    }
++  };
++
+   let disabled = disabledProp;
+ 
+   if (muiFormControl) {
+@@ -120,6 +147,7 @@ const SwitchBase = React.forwardRef(function SwitchBase(props, ref) {
+       role={undefined}
+       onFocus={handleFocus}
+       onBlur={handleBlur}
++      onClick={handleClick}
+       ref={ref}
+       {...other}
+     >
+@@ -208,6 +236,10 @@ SwitchBase.propTypes = {
+    * You can pull out the new checked state by accessing `event.target.checked` (boolean).
+    */
+   onChange: PropTypes.func,
++  /**
++   * @ignore
++   */
++  onClick: PropTypes.func,
+   /**
+    * @ignore
+    */

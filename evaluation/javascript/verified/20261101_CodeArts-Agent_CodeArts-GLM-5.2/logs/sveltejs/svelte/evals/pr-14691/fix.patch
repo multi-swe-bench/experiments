@@ -1,0 +1,180 @@
+diff --git a/packages/svelte/src/compiler/index.js b/packages/svelte/src/compiler/index.js
+index fbd9c16..bcf2e96 100644
+--- a/packages/svelte/src/compiler/index.js
++++ b/packages/svelte/src/compiler/index.js
+@@ -74,9 +74,13 @@ export function compileModule(source, options) {
+  * The `modern` option (`false` by default in Svelte 5) makes the parser return a modern AST instead of the legacy AST.
+  * `modern` will become `true` by default in Svelte 6, and the option will be removed in Svelte 7.
+  *
++ * The `partial` option (`false` by default) makes the parser error-forgiving: instead of throwing when it encounters
++ * invalid or incomplete markup, it returns a best-effort partial AST up to the point where the error occurred. This is
++ * useful for tooling such as language servers that have to deal with incomplete input while the user is typing.
++ *
+  * @overload
+  * @param {string} source
+- * @param {{ filename?: string; modern: true }} options
++ * @param {{ filename?: string; modern: true; partial?: boolean }} options
+  * @returns {AST.Root}
+  */
+ 
+@@ -86,9 +90,13 @@ export function compileModule(source, options) {
+  * The `modern` option (`false` by default in Svelte 5) makes the parser return a modern AST instead of the legacy AST.
+  * `modern` will become `true` by default in Svelte 6, and the option will be removed in Svelte 7.
+  *
++ * The `partial` option (`false` by default) makes the parser error-forgiving: instead of throwing when it encounters
++ * invalid or incomplete markup, it returns a best-effort partial AST up to the point where the error occurred. This is
++ * useful for tooling such as language servers that have to deal with incomplete input while the user is typing.
++ *
+  * @overload
+  * @param {string} source
+- * @param {{ filename?: string; modern?: false }} [options]
++ * @param {{ filename?: string; modern?: false; partial?: boolean }} [options]
+  * @returns {Record<string, any>}
+  */
+ 
+@@ -98,16 +106,20 @@ export function compileModule(source, options) {
+  * The `modern` option (`false` by default in Svelte 5) makes the parser return a modern AST instead of the legacy AST.
+  * `modern` will become `true` by default in Svelte 6, and the option will be removed in Svelte 7.
+  *
++ * The `partial` option (`false` by default) makes the parser error-forgiving: instead of throwing when it encounters
++ * invalid or incomplete markup, it returns a best-effort partial AST up to the point where the error occurred. This is
++ * useful for tooling such as language servers that have to deal with incomplete input while the user is typing.
++ *
+  * @param {string} source
+- * @param {{ filename?: string; rootDir?: string; modern?: boolean }} [options]
++ * @param {{ filename?: string; rootDir?: string; modern?: boolean; partial?: boolean }} [options]
+  * @returns {AST.Root | LegacyRoot}
+  */
+-export function parse(source, { filename, rootDir, modern } = {}) {
++export function parse(source, { filename, rootDir, modern, partial } = {}) {
+ 	source = remove_bom(source);
+ 	state.reset_warning_filter(() => false);
+ 	state.reset(source, { filename: filename ?? '(unknown)', rootDir });
+ 
+-	const ast = _parse(source);
++	const ast = _parse(source, { partial });
+ 	return to_public_ast(source, ast, modern);
+ }
+ 
+diff --git a/packages/svelte/src/compiler/phases/1-parse/index.js b/packages/svelte/src/compiler/phases/1-parse/index.js
+index 7639c2f..bdbeaca 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/index.js
++++ b/packages/svelte/src/compiler/phases/1-parse/index.js
+@@ -43,13 +43,20 @@ export class Parser {
+ 	/** @type {LastAutoClosedTag | undefined} */
+ 	last_auto_closed_tag;
+ 
+-	/** @param {string} template */
+-	constructor(template) {
++	/** Whether the parser should return a partial AST on error instead of throwing */
++	partial = false;
++
++	/**
++	 * @param {string} template
++	 * @param {{ partial?: boolean }} [options]
++	 */
++	constructor(template, options = {}) {
+ 		if (typeof template !== 'string') {
+ 			throw new TypeError('Template must be a string');
+ 		}
+ 
+ 		this.template = template.trimEnd();
++		this.partial = options.partial ?? false;
+ 
+ 		let match_lang;
+ 
+@@ -81,24 +88,30 @@ export class Parser {
+ 		/** @type {ParserState} */
+ 		let state = fragment;
+ 
+-		while (this.index < this.template.length) {
+-			state = state(this) || fragment;
+-		}
++		try {
++			while (this.index < this.template.length) {
++				state = state(this) || fragment;
++			}
+ 
+-		if (this.stack.length > 1) {
+-			const current = this.current();
++			if (this.stack.length > 1) {
++				const current = this.current();
+ 
+-			if (current.type === 'RegularElement') {
+-				current.end = current.start + 1;
+-				e.element_unclosed(current, current.name);
+-			} else {
+-				current.end = current.start + 1;
+-				e.block_unclosed(current);
++				if (current.type === 'RegularElement') {
++					current.end = current.start + 1;
++					e.element_unclosed(current, current.name);
++				} else {
++					current.end = current.start + 1;
++					e.block_unclosed(current);
++				}
+ 			}
+-		}
+ 
+-		if (state !== fragment) {
+-			e.unexpected_eof(this.index);
++			if (state !== fragment) {
++				e.unexpected_eof(this.index);
++			}
++		} catch (error) {
++			if (!this.partial) {
++				throw error;
++			}
+ 		}
+ 
+ 		if (this.root.fragment.nodes.length) {
+@@ -274,10 +287,11 @@ export class Parser {
+ 
+ /**
+  * @param {string} template
++ * @param {{ partial?: boolean }} [options]
+  * @returns {AST.Root}
+  */
+-export function parse(template) {
+-	const parser = new Parser(template);
++export function parse(template, options = {}) {
++	const parser = new Parser(template, options);
+ 	return parser.root;
+ }
+ 
+diff --git a/packages/svelte/types/index.d.ts b/packages/svelte/types/index.d.ts
+index 435476d..d341a84 100644
+--- a/packages/svelte/types/index.d.ts
++++ b/packages/svelte/types/index.d.ts
+@@ -628,10 +628,15 @@ declare module 'svelte/compiler' {
+ 	 * The `modern` option (`false` by default in Svelte 5) makes the parser return a modern AST instead of the legacy AST.
+ 	 * `modern` will become `true` by default in Svelte 6, and the option will be removed in Svelte 7.
+ 	 *
++	 * The `partial` option (`false` by default) makes the parser error-forgiving: instead of throwing when it encounters
++	 * invalid or incomplete markup, it returns a best-effort partial AST up to the point where the error occurred. This is
++	 * useful for tooling such as language servers that have to deal with incomplete input while the user is typing.
++	 *
+ 	 * */
+ 	export function parse(source: string, options: {
+ 		filename?: string;
+ 		modern: true;
++		partial?: boolean;
+ 	}): AST.Root;
+ 	/**
+ 	 * The parse function parses a component, returning only its abstract syntax tree.
+@@ -639,10 +644,15 @@ declare module 'svelte/compiler' {
+ 	 * The `modern` option (`false` by default in Svelte 5) makes the parser return a modern AST instead of the legacy AST.
+ 	 * `modern` will become `true` by default in Svelte 6, and the option will be removed in Svelte 7.
+ 	 *
++	 * The `partial` option (`false` by default) makes the parser error-forgiving: instead of throwing when it encounters
++	 * invalid or incomplete markup, it returns a best-effort partial AST up to the point where the error occurred. This is
++	 * useful for tooling such as language servers that have to deal with incomplete input while the user is typing.
++	 *
+ 	 * */
+ 	export function parse(source: string, options?: {
+ 		filename?: string;
+ 		modern?: false;
++		partial?: boolean;
+ 	} | undefined): Record<string, any>;
+ 	/**
+ 	 * @deprecated Replace this with `import { walk } from 'estree-walker'`
