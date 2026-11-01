@@ -1,0 +1,24 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-analyze.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-analyze.js
+index 1dd2d9a..57b434a 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-analyze.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-analyze.js
+@@ -238,6 +238,19 @@ const css_visitors = {
+ 				({ metadata }) => !metadata.is_global && !metadata.is_global_like
+ 			);
+ 		});
++
++		if (node.metadata.is_global_block) {
++			// Nested rules inside a `:global { ... }` block are always kept (they are not
++			// pruned for being unused), so mark their selectors as used. Without this, a
++			// rule that only contains nested rules (e.g. `:global { :root { .x { ... } } }`)
++			// would be treated as empty and commented out.
++			walk(/** @type {Css.Node} */ (node.block), null, {
++				ComplexSelector(node, context) {
++					node.metadata.used = true;
++					context.next();
++				}
++			});
++		}
+ 	},
+ 	NestingSelector(node, context) {
+ 		const rule = /** @type {Css.Rule} */ (context.state.rule);

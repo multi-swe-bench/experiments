@@ -1,0 +1,15 @@
+diff --git a/packages/material-ui/src/TableCell/TableCell.js b/packages/material-ui/src/TableCell/TableCell.js
+index 3b8c32a..cd86939 100644
+--- a/packages/material-ui/src/TableCell/TableCell.js
++++ b/packages/material-ui/src/TableCell/TableCell.js
+@@ -157,6 +157,10 @@ const TableCell = React.forwardRef(function TableCell(inProps, ref) {
+     component = isHeadCell ? 'th' : 'td';
+   }
+ 
++  if (component === 'th' || component === 'td') {
++    role = undefined;
++  }
++
+   let scope = scopeProp;
+   if (!scope && isHeadCell) {
+     scope = 'col';

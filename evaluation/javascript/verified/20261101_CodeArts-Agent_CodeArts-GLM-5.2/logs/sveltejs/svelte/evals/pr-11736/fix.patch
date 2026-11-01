@@ -1,0 +1,23 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/element.js b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+index 235f64f..2b30a89 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/element.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+@@ -687,6 +687,7 @@ function read_attribute_value(parser) {
+ 			() => {
+ 				// handle common case of quote marks existing outside of regex for performance reasons
+ 				if (quote_mark) return parser.match(quote_mark);
++				if (parser.match('}')) return true;
+ 				return !!parser.match_regex(regex_starts_with_invalid_attr_value);
+ 			},
+ 			'in attribute value'
+@@ -709,6 +710,10 @@ function read_attribute_value(parser) {
+ 		e.expected_attribute_value(parser.index);
+ 	}
+ 
++	if (!quote_mark && parser.match('}')) {
++		e.js_parse_error(parser.index, "Unexpected token '}'");
++	}
++
+ 	if (quote_mark) parser.index += 1;
+ 	return value;
+ }

@@ -1,0 +1,15 @@
+diff --git a/packages/svelte/src/internal/client/dom/elements/attributes.js b/packages/svelte/src/internal/client/dom/elements/attributes.js
+index a2fffe8..f1c99f4 100644
+--- a/packages/svelte/src/internal/client/dom/elements/attributes.js
++++ b/packages/svelte/src/internal/client/dom/elements/attributes.js
+@@ -75,7 +75,9 @@ export function set_value(element, value) {
+ 	}
+ 
+ 	// @ts-expect-error
+-	element.value = value;
++	// `null`/`undefined` are coerced to the string "null"/"undefined" when assigned to the
++	// `value` property, so coerce them to the empty string instead (consistent with `bind:value`)
++	element.value = value ?? '';
+ }
+ 
+ /**

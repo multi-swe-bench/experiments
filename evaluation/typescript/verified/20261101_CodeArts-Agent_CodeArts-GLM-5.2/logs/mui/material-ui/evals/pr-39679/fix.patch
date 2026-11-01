@@ -1,0 +1,47 @@
+diff --git a/packages/mui-lab/src/LoadingButton/LoadingButton.js b/packages/mui-lab/src/LoadingButton/LoadingButton.js
+index 15d2b757..f9215ad8 100644
+--- a/packages/mui-lab/src/LoadingButton/LoadingButton.js
++++ b/packages/mui-lab/src/LoadingButton/LoadingButton.js
+@@ -1,10 +1,11 @@
+ import * as React from 'react';
+ import PropTypes from 'prop-types';
+-import { chainPropTypes } from '@mui/utils';
++import { chainPropTypes, internal_resolveProps as resolveProps } from '@mui/utils';
+ import { capitalize, unstable_useId as useId } from '@mui/material/utils';
+ import { unstable_composeClasses as composeClasses } from '@mui/base';
+ import { styled, useThemeProps } from '@mui/material/styles';
+ import Button from '@mui/material/Button';
++import ButtonGroupContext from '@mui/material/ButtonGroup/ButtonGroupContext';
+ import CircularProgress from '@mui/material/CircularProgress';
+ import loadingButtonClasses, { getLoadingButtonUtilityClass } from './loadingButtonClasses';
+ 
+@@ -135,7 +136,10 @@ const LoadingButtonLoadingIndicator = styled('span', {
+ }));
+ 
+ const LoadingButton = React.forwardRef(function LoadingButton(inProps, ref) {
+-  const props = useThemeProps({ props: inProps, name: 'MuiLoadingButton' });
++  // props priority: `inProps` > `contextProps` > `themeDefaultProps`
++  const contextProps = React.useContext(ButtonGroupContext);
++  const resolvedProps = resolveProps(contextProps, inProps);
++  const props = useThemeProps({ props: resolvedProps, name: 'MuiLoadingButton' });
+   const {
+     children,
+     disabled = false,
+diff --git a/packages/mui-material/src/ButtonGroup/index.d.ts b/packages/mui-material/src/ButtonGroup/index.d.ts
+index cb8b2e79..b53691da 100644
+--- a/packages/mui-material/src/ButtonGroup/index.d.ts
++++ b/packages/mui-material/src/ButtonGroup/index.d.ts
+@@ -2,3 +2,4 @@ export { default } from './ButtonGroup';
+ export * from './ButtonGroup';
+ export { default as buttonGroupClasses } from './buttonGroupClasses';
+ export * from './buttonGroupClasses';
++export { default as ButtonGroupContext } from './ButtonGroupContext';
+diff --git a/packages/mui-material/src/ButtonGroup/index.js b/packages/mui-material/src/ButtonGroup/index.js
+index 3a585146..3c42aa3a 100644
+--- a/packages/mui-material/src/ButtonGroup/index.js
++++ b/packages/mui-material/src/ButtonGroup/index.js
+@@ -2,3 +2,4 @@
+ export { default } from './ButtonGroup';
+ export { default as buttonGroupClasses } from './buttonGroupClasses';
+ export * from './buttonGroupClasses';
++export { default as ButtonGroupContext } from './ButtonGroupContext';

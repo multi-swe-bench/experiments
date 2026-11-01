@@ -1,0 +1,28 @@
+diff --git a/lib/router/layer.js b/lib/router/layer.js
+index 4dc8e86..abe088f 100644
+--- a/lib/router/layer.js
++++ b/lib/router/layer.js
+@@ -68,7 +68,10 @@ Layer.prototype.handle_error = function handle_error(error, req, res, next) {
+   }
+ 
+   try {
+-    fn(error, req, res, next);
++    var ret = fn(error, req, res, next);
++    if (ret && typeof ret.catch === 'function') {
++      ret.catch(next);
++    }
+   } catch (err) {
+     next(err);
+   }
+@@ -92,7 +95,10 @@ Layer.prototype.handle_request = function handle(req, res, next) {
+   }
+ 
+   try {
+-    fn(req, res, next);
++    var ret = fn(req, res, next);
++    if (ret && typeof ret.catch === 'function') {
++      ret.catch(next);
++    }
+   } catch (err) {
+     next(err);
+   }

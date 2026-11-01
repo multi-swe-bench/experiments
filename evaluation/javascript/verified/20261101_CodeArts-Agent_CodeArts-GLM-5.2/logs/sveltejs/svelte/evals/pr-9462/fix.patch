@@ -1,0 +1,113 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index a8ac315..9844af9 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -22,6 +22,7 @@ import {
+ import { is_custom_element_node, is_element_node } from '../../../nodes.js';
+ import * as b from '../../../../utils/builders.js';
+ import { error } from '../../../../errors.js';
++import { regex_is_valid_identifier } from '../../../patterns.js';
+ import {
+ 	function_visitor,
+ 	get_assignment_value,
+@@ -2414,11 +2415,24 @@ export const template_visitors = {
+ 			params.push(b.id('$$props'));
+ 		}
+ 
++		/** @type {import('estree').Expression} */
++		let callee;
++
++		const parts = node.name.split('.');
++		if (parts.length === 1) {
++			callee = serialize_get_binding(b.id(node.name), state);
++		} else {
++			callee = serialize_get_binding(b.id(/** @type {string} */ (parts[0])), state);
++			for (let i = 1; i < parts.length; i += 1) {
++				const part = parts[i];
++				callee = regex_is_valid_identifier.test(part)
++					? b.member(callee, b.id(part))
++					: b.member(callee, b.literal(part), true);
++			}
++		}
++
+ 		/** @type {import('estree').Expression[]} */
+-		const args = [
+-			state.node,
+-			b.arrow(params, b.call(serialize_get_binding(b.id(node.name), state), ...params))
+-		];
++		const args = [state.node, b.arrow(params, b.call(callee, ...params))];
+ 
+ 		if (node.expression) {
+ 			args.push(b.thunk(/** @type {import('estree').Expression} */ (visit(node.expression))));
+diff --git a/packages/svelte/tests/runtime-legacy/samples/action-object-property-escape/_config.js b/packages/svelte/tests/runtime-legacy/samples/action-object-property-escape/_config.js
+new file mode 100644
+index 0000000..0d11d9b
+--- /dev/null
++++ b/packages/svelte/tests/runtime-legacy/samples/action-object-property-escape/_config.js
+@@ -0,0 +1,13 @@
++import { test } from '../../test';
++
++export default test({
++	html: `
++		<button>action</button>
++	`,
++	async test({ assert, target }) {
++		const button = /** @type {HTMLButtonElement & { color: string }} */ (
++			target.querySelector('button')
++		);
++		assert.equal(button.color, 'red');
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-legacy/samples/action-object-property-escape/main.svelte b/packages/svelte/tests/runtime-legacy/samples/action-object-property-escape/main.svelte
+new file mode 100644
+index 0000000..56bb4c7
+--- /dev/null
++++ b/packages/svelte/tests/runtime-legacy/samples/action-object-property-escape/main.svelte
+@@ -0,0 +1,9 @@
++<script>
++	const a = {
++		'set-color': (node, color) => {
++			node.color = color;
++		}
++	};
++</script>
++
++<button use:a.set-color={'red'}>action</button>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/action-object-property-escape/_config.js b/packages/svelte/tests/runtime-runes/samples/action-object-property-escape/_config.js
+new file mode 100644
+index 0000000..0d11d9b
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/action-object-property-escape/_config.js
+@@ -0,0 +1,13 @@
++import { test } from '../../test';
++
++export default test({
++	html: `
++		<button>action</button>
++	`,
++	async test({ assert, target }) {
++		const button = /** @type {HTMLButtonElement & { color: string }} */ (
++			target.querySelector('button')
++		);
++		assert.equal(button.color, 'red');
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/action-object-property-escape/main.svelte b/packages/svelte/tests/runtime-runes/samples/action-object-property-escape/main.svelte
+new file mode 100644
+index 0000000..56bb4c7
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/action-object-property-escape/main.svelte
+@@ -0,0 +1,9 @@
++<script>
++	const a = {
++		'set-color': (node, color) => {
++			node.color = color;
++		}
++	};
++</script>
++
++<button use:a.set-color={'red'}>action</button>
+\ No newline at end of file

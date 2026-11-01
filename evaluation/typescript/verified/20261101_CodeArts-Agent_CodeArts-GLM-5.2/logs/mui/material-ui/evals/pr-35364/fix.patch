@@ -1,0 +1,15 @@
+diff --git a/packages/mui-utils/src/deepmerge.ts b/packages/mui-utils/src/deepmerge.ts
+index da53439d..fb13019f 100644
+--- a/packages/mui-utils/src/deepmerge.ts
++++ b/packages/mui-utils/src/deepmerge.ts
+@@ -24,7 +24,9 @@ export default function deepmerge<T>(
+         // Since `output` is a clone of `target` and we have narrowed `target` in this block we can cast to the same type.
+         (output as Record<keyof any, unknown>)[key] = deepmerge(target[key], source[key], options);
+       } else {
+-        (output as Record<keyof any, unknown>)[key] = source[key];
++        (output as Record<keyof any, unknown>)[key] = isPlainObject(source[key])
++          ? deepmerge({}, source[key], options)
++          : source[key];
+       }
+     });
+   }

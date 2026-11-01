@@ -1,0 +1,21 @@
+diff --git a/packages/svelte/src/motion/tweened.js b/packages/svelte/src/motion/tweened.js
+index 8aaefe5..c10a402 100644
+--- a/packages/svelte/src/motion/tweened.js
++++ b/packages/svelte/src/motion/tweened.js
+@@ -245,6 +245,16 @@ export class Tween {
+ 		/** @type {(t: number) => T} */
+ 		let fn;
+ 
++		if (duration === 0) {
++			if (previous_task) {
++				previous_task.abort();
++			}
++
++			this.#task = null;
++			set(this.#current, value);
++			return Promise.resolve();
++		}
++
+ 		this.#task = loop((now) => {
+ 			if (now < start) {
+ 				return true;

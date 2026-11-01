@@ -1,0 +1,293 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/RegularElement.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/RegularElement.js
+index d4624c9..1a55179 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/RegularElement.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/RegularElement.js
+@@ -219,7 +219,10 @@ export function RegularElement(node, context) {
+ 			node_id,
+ 			attributes_id,
+ 			(node.metadata.svg || node.metadata.mathml || is_custom_element_node(node)) && b.true,
+-			node.name.includes('-') && b.true
++			node.name.includes('-') && b.true,
++			class_directives,
++			style_directives,
++			lookup.has('style') || has_spread
+ 		);
+ 
+ 		// If value binding exists, that one takes care of calling $.init_select
+@@ -285,17 +288,17 @@ export function RegularElement(node, context) {
+ 				: build_element_attribute_update_assignment(node, node_id, attribute, context);
+ 			if (is) is_attributes_reactive = true;
+ 		}
+-	}
+ 
+-	// class/style directives must be applied last since they could override class/style attributes
+-	build_class_directives(class_directives, node_id, context, is_attributes_reactive);
+-	build_style_directives(
+-		style_directives,
+-		node_id,
+-		context,
+-		is_attributes_reactive,
+-		lookup.has('style') || has_spread
+-	);
++		// class/style directives must be applied last since they could override class/style attributes
++		build_class_directives(class_directives, node_id, context, is_attributes_reactive);
++		build_style_directives(
++			style_directives,
++			node_id,
++			context,
++			is_attributes_reactive,
++			lookup.has('style') || has_spread
++		);
++	}
+ 
+ 	// Apply the src and loading attributes for <img> elements after the element is appended to the document
+ 	if (node.name === 'img' && (has_spread || lookup.has('loading'))) {
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/SvelteElement.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/SvelteElement.js
+index 85a2b04..e68adfe 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/SvelteElement.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/SvelteElement.js
+@@ -102,13 +102,25 @@ export function SvelteElement(node, context) {
+ 			element_id,
+ 			attributes_id,
+ 			b.binary('!==', b.member(element_id, 'namespaceURI'), b.id('$.NAMESPACE_SVG')),
+-			b.call(b.member(b.member(element_id, 'nodeName'), 'includes'), b.literal('-'))
++			b.call(b.member(b.member(element_id, 'nodeName'), 'includes'), b.literal('-')),
++			class_directives,
++			style_directives,
++			true
+ 		);
+ 	}
+ 
+-	// class/style directives must be applied last since they could override class/style attributes
+-	build_class_directives(class_directives, element_id, inner_context, is_attributes_reactive);
+-	build_style_directives(style_directives, element_id, inner_context, is_attributes_reactive, true);
++	// class/style directives must be applied last since they could override class/style attributes.
++	// If the attributes are reactive, they are applied as part of the attribute effect by `build_set_attributes`.
++	if (!is_attributes_reactive) {
++		build_class_directives(class_directives, element_id, inner_context, is_attributes_reactive);
++		build_style_directives(
++			style_directives,
++			element_id,
++			inner_context,
++			is_attributes_reactive,
++			true
++		);
++	}
+ 
+ 	const get_tag = b.thunk(/** @type {Expression} */ (context.visit(node.tag)));
+ 
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/element.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/element.js
+index d2bf3d5..0daa903 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/element.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/element.js
+@@ -1,4 +1,4 @@
+-/** @import { Expression, Identifier, ObjectExpression } from 'estree' */
++/** @import { Expression, Identifier, ObjectExpression, Statement } from 'estree' */
+ /** @import { AST, Namespace } from '#compiler' */
+ /** @import { ComponentContext } from '../../types' */
+ import { normalize_attribute } from '../../../../../../utils.js';
+@@ -16,6 +16,10 @@ import { build_template_literal, build_update } from './utils.js';
+  * @param {Identifier} attributes_id
+  * @param {false | Expression} preserve_attribute_case
+  * @param {false | Expression} is_custom_element
++ * @param {AST.ClassDirective[]} class_directives
++ * @param {AST.StyleDirective[]} style_directives
++ * @param {boolean} style_force_check
++ * @returns {boolean} Returns `true` if the class/style directives were applied as part of the (reactive) attribute effect, `false` otherwise (in which case the caller needs to apply them).
+  */
+ export function build_set_attributes(
+ 	attributes,
+@@ -24,7 +28,10 @@ export function build_set_attributes(
+ 	element_id,
+ 	attributes_id,
+ 	preserve_attribute_case,
+-	is_custom_element
++	is_custom_element,
++	class_directives,
++	style_directives,
++	style_force_check
+ ) {
+ 	let needs_isolation = false;
+ 	let has_state = false;
+@@ -75,12 +82,27 @@ export function build_set_attributes(
+ 
+ 		const update = b.stmt(b.assignment('=', attributes_id, call));
+ 
++		// class/style directives must be applied last since they could override class/style attributes.
++		// They are added to the same effect as the spread attributes so that they are re-applied
++		// whenever the attributes change (which would otherwise overwrite the classes/styles set by the directives).
++		const class_updates = build_class_directive_updates(class_directives, element_id, context).map(
++			(u) => u.update
++		);
++		const style_updates = build_style_directive_updates(
++			style_directives,
++			element_id,
++			context,
++			style_force_check
++		).map((u) => u.update);
++
++		const updates = [update, ...class_updates, ...style_updates];
++
+ 		if (needs_isolation) {
+-			context.state.init.push(build_update(update));
+-			return false;
++			context.state.init.push(build_render_effect(updates));
++			return true;
+ 		}
+ 
+-		context.state.update.push(update);
++		context.state.update.push(...updates);
+ 		return true;
+ 	}
+ 
+@@ -88,6 +110,18 @@ export function build_set_attributes(
+ 	return false;
+ }
+ 
++/**
++ * Wraps the given statements in a `$.template_effect`. If there is only one statement, it is inlined.
++ * @param {Statement[]} updates
++ */
++function build_render_effect(updates) {
++	if (updates.length === 1) {
++		return build_update(updates[0]);
++	}
++
++	return b.stmt(b.call('$.template_effect', b.thunk(b.block(updates))));
++}
++
+ /**
+  * Serializes each style directive into something like `$.set_style(element, style_property, value)`
+  * and adds it either to init or update, depending on whether or not the value or the attributes are dynamic.
+@@ -105,6 +139,31 @@ export function build_style_directives(
+ 	force_check
+ ) {
+ 	const state = context.state;
++	const updates = build_style_directive_updates(style_directives, element_id, context, force_check);
++
++	for (const { update, has_state, has_call } of updates) {
++		if (!is_attributes_reactive && has_call) {
++			state.init.push(build_update(update));
++		} else if (is_attributes_reactive || has_state || has_call) {
++			state.update.push(update);
++		} else {
++			state.init.push(update);
++		}
++	}
++}
++
++/**
++ * Builds the update statements for each style directive without placing them.
++ * @param {AST.StyleDirective[]} style_directives
++ * @param {Identifier} element_id
++ * @param {ComponentContext} context
++ * @param {boolean} force_check
++ * @returns {{ update: Statement, has_state: boolean, has_call: boolean }[]}
++ */
++function build_style_directive_updates(style_directives, element_id, context, force_check) {
++	const state = context.state;
++	/** @type {{ update: Statement, has_state: boolean, has_call: boolean }[]} */
++	const updates = [];
+ 
+ 	for (const directive of style_directives) {
+ 		const { has_state, has_call } = directive.metadata.expression;
+@@ -121,25 +180,25 @@ export function build_style_directives(
+ 			value = b.call('$.get', id);
+ 		}
+ 
+-		const update = b.stmt(
+-			b.call(
+-				'$.set_style',
+-				element_id,
+-				b.literal(directive.name),
+-				value,
+-				/** @type {Expression} */ (directive.modifiers.includes('important') ? b.true : undefined),
+-				force_check ? b.true : undefined
+-			)
+-		);
+-
+-		if (!is_attributes_reactive && has_call) {
+-			state.init.push(build_update(update));
+-		} else if (is_attributes_reactive || has_state || has_call) {
+-			state.update.push(update);
+-		} else {
+-			state.init.push(update);
+-		}
++		updates.push({
++			update: b.stmt(
++				b.call(
++					'$.set_style',
++					element_id,
++					b.literal(directive.name),
++					value,
++					/** @type {Expression} */ (
++						directive.modifiers.includes('important') ? b.true : undefined
++					),
++					force_check ? b.true : undefined
++				)
++			),
++			has_state,
++			has_call
++		});
+ 	}
++
++	return updates;
+ }
+ 
+ /**
+@@ -157,6 +216,31 @@ export function build_class_directives(
+ 	is_attributes_reactive
+ ) {
+ 	const state = context.state;
++	const updates = build_class_directive_updates(class_directives, element_id, context);
++
++	for (const { update, has_state, has_call } of updates) {
++		if (!is_attributes_reactive && has_call) {
++			state.init.push(build_update(update));
++		} else if (is_attributes_reactive || has_state || has_call) {
++			state.update.push(update);
++		} else {
++			state.init.push(update);
++		}
++	}
++}
++
++/**
++ * Builds the update statements for each class directive without placing them.
++ * @param {AST.ClassDirective[]} class_directives
++ * @param {Identifier} element_id
++ * @param {ComponentContext} context
++ * @returns {{ update: Statement, has_state: boolean, has_call: boolean }[]}
++ */
++function build_class_directive_updates(class_directives, element_id, context) {
++	const state = context.state;
++	/** @type {{ update: Statement, has_state: boolean, has_call: boolean }[]} */
++	const updates = [];
++
+ 	for (const directive of class_directives) {
+ 		const { has_state, has_call } = directive.metadata.expression;
+ 		let value = /** @type {Expression} */ (context.visit(directive.expression));
+@@ -168,16 +252,14 @@ export function build_class_directives(
+ 			value = b.call('$.get', id);
+ 		}
+ 
+-		const update = b.stmt(b.call('$.toggle_class', element_id, b.literal(directive.name), value));
+-
+-		if (!is_attributes_reactive && has_call) {
+-			state.init.push(build_update(update));
+-		} else if (is_attributes_reactive || has_state || has_call) {
+-			state.update.push(update);
+-		} else {
+-			state.init.push(update);
+-		}
++		updates.push({
++			update: b.stmt(b.call('$.toggle_class', element_id, b.literal(directive.name), value)),
++			has_state,
++			has_call
++		});
+ 	}
++
++	return updates;
+ }
+ 
+ /**

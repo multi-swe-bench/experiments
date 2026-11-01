@@ -1,0 +1,78 @@
+diff --git a/packages/mui-system/src/style.js b/packages/mui-system/src/style.js
+index 9ee5757e..96054c5e 100644
+--- a/packages/mui-system/src/style.js
++++ b/packages/mui-system/src/style.js
+@@ -24,7 +24,13 @@ export function getPath(obj, path, checkVars = true) {
+   }, obj);
+ }
+ 
+-export function getStyleValue(themeMapping, transform, propValueFinal, userValue = propValueFinal) {
++export function getStyleValue(
++  themeMapping,
++  transform,
++  propValueFinal,
++  userValue = propValueFinal,
++  skipObjectWarning = false,
++) {
+   let value;
+ 
+   if (typeof themeMapping === 'function') {
+@@ -35,7 +41,7 @@ export function getStyleValue(themeMapping, transform, propValueFinal, userValue
+     value = getPath(themeMapping, propValueFinal) || userValue;
+   }
+ 
+-  if (typeof value === 'object') {
++  if (typeof value === 'object' && !skipObjectWarning) {
+     if (process.env.NODE_ENV !== 'production') {
+       console.warn(
+         `MUI: The value found in theme for prop: "${propValueFinal}" is an [Object] instead of string or number. Check if you forgot to add the correct dotted notation, eg, "background.paper" instead of "background".`,
+@@ -64,7 +70,13 @@ function style(options) {
+     const theme = props.theme;
+     const themeMapping = getPath(theme, themeKey) || {};
+     const styleFromPropValue = (propValueFinal) => {
+-      let value = getStyleValue(themeMapping, transform, propValueFinal);
++      let value = getStyleValue(
++        themeMapping,
++        transform,
++        propValueFinal,
++        propValueFinal,
++        cssProperty === false,
++      );
+ 
+       if (propValueFinal === value && typeof propValueFinal === 'string') {
+         // Haven't found value
+@@ -73,6 +85,7 @@ function style(options) {
+           transform,
+           `${prop}${propValueFinal === 'default' ? '' : capitalize(propValueFinal)}`,
+           propValueFinal,
++          cssProperty === false,
+         );
+       }
+ 
+diff --git a/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js b/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js
+index 4f391e56..d1fc6f11 100644
+--- a/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js
++++ b/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js
+@@ -50,7 +50,13 @@ export function unstable_createStyleFunctionSx() {
+     }
+ 
+     const styleFromPropValue = (propValueFinal) => {
+-      let value = getValue(themeMapping, transform, propValueFinal);
++      let value = getValue(
++        themeMapping,
++        transform,
++        propValueFinal,
++        propValueFinal,
++        cssProperty === false,
++      );
+ 
+       if (propValueFinal === value && typeof propValueFinal === 'string') {
+         // Haven't found value
+@@ -59,6 +65,7 @@ export function unstable_createStyleFunctionSx() {
+           transform,
+           `${prop}${propValueFinal === 'default' ? '' : capitalize(propValueFinal)}`,
+           propValueFinal,
++          cssProperty === false,
+         );
+       }
+ 

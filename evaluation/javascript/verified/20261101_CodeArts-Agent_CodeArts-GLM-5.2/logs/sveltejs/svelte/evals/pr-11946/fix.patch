@@ -1,0 +1,20 @@
+diff --git a/packages/svelte/src/reactivity/set.js b/packages/svelte/src/reactivity/set.js
+index 98d941a..7b1e6b9 100644
+--- a/packages/svelte/src/reactivity/set.js
++++ b/packages/svelte/src/reactivity/set.js
+@@ -109,10 +109,12 @@ export class ReactiveSet extends Set {
+ 		var s = sources.get(value);
+ 		var res = super.delete(value);
+ 
+-		if (s !== undefined) {
+-			sources.delete(value);
++		if (res) {
++			if (s !== undefined) {
++				set(s, false);
++				sources.delete(value);
++			}
+ 			set(this.#size, super.size);
+-			set(s, false);
+ 			increment(this.#version);
+ 		}
+ 

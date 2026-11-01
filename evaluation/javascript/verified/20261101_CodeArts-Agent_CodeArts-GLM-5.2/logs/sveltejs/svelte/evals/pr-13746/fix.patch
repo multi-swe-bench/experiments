@@ -1,0 +1,67 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/css/index.js b/packages/svelte/src/compiler/phases/3-transform/css/index.js
+index e1da4ec..ff33a48 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/css/index.js
++++ b/packages/svelte/src/compiler/phases/3-transform/css/index.js
+@@ -306,7 +306,9 @@ const visitors = {
+ 			}
+ 		}
+ 
+-		context.next();
++		if (node.metadata.used) {
++			context.next();
++		}
+ 
+ 		context.state.specificity.bumped = before_bumped;
+ 	},
+diff --git a/packages/svelte/tests/css/samples/has-unused-nested-comment/_config.js b/packages/svelte/tests/css/samples/has-unused-nested-comment/_config.js
+new file mode 100644
+index 0000000..67636d8
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/has-unused-nested-comment/_config.js
+@@ -0,0 +1,20 @@
++import { test } from '../../test';
++
++export default test({
++	warnings: [
++		{
++			code: 'css_unused_selector',
++			message: 'Unused CSS selector ".dropzone:has(+ dragenter-top)"',
++			start: {
++				line: 2,
++				column: 1,
++				character: 9
++			},
++			end: {
++				line: 2,
++				column: 31,
++				character: 39
++			}
++		}
++	]
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/has-unused-nested-comment/expected.css b/packages/svelte/tests/css/samples/has-unused-nested-comment/expected.css
+new file mode 100644
+index 0000000..9a4ecc7
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/has-unused-nested-comment/expected.css
+@@ -0,0 +1,5 @@
++
++	/* (unused) .dropzone:has(+ dragenter-top)*/
++	.dragenter-bottom + .dropzone {
++		background-color: blue;
++	}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/has-unused-nested-comment/input.svelte b/packages/svelte/tests/css/samples/has-unused-nested-comment/input.svelte
+new file mode 100644
+index 0000000..b2952d3
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/has-unused-nested-comment/input.svelte
+@@ -0,0 +1,6 @@
++<style>
++	.dropzone:has(+ dragenter-top),
++	:global(.dragenter-bottom + .dropzone) {
++		background-color: blue;
++	}
++</style>
+\ No newline at end of file

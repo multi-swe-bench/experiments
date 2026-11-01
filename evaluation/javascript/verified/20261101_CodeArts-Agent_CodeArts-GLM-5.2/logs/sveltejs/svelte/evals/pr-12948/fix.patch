@@ -1,0 +1,119 @@
+diff --git a/.changeset/script-module-attribute.md b/.changeset/script-module-attribute.md
+new file mode 100644
+index 0000000..cc8ca8d
+--- /dev/null
++++ b/.changeset/script-module-attribute.md
+@@ -0,0 +1,5 @@
++---
++"svelte": minor
++---
++
++feat: introduce `<script module>` as the syntax for module-level scripts, deprecating `<script context="module">` (which is now converted by the migration script)
+\ No newline at end of file
+diff --git a/documentation/docs/02-template-syntax/01-component-fundamentals.md b/documentation/docs/02-template-syntax/01-component-fundamentals.md
+index debe482..b4c1521 100644
+--- a/documentation/docs/02-template-syntax/01-component-fundamentals.md
++++ b/documentation/docs/02-template-syntax/01-component-fundamentals.md
+@@ -161,16 +161,16 @@ If you'd like to react to changes to a prop, use the `$derived` or `$effect` run
+ 
+ For more information on reactivity, read the documentation around runes.
+ 
+-## &lt;script context="module"&gt;
++## &lt;script module&gt;
+ 
+-A `<script>` tag with a `context="module"` attribute runs once when the module first evaluates, rather than for each component instance. Values declared in this block are accessible from a regular `<script>` (and the component markup) but not vice versa.
++A `<script>` tag with a `module` attribute runs once when the module first evaluates, rather than for each component instance. Values declared in this block are accessible from a regular `<script>` (and the component markup) but not vice versa.
+ 
+ You can `export` bindings from this block, and they will become exports of the compiled module.
+ 
+ You cannot `export default`, since the default export is the component itself.
+ 
+ ```svelte
+-<script context="module">
++<script module>
+ 	let totalComponents = 0;
+ 
+ 	// the export keyword allows this function to imported with e.g.
+@@ -186,6 +186,8 @@ You cannot `export default`, since the default export is the component itself.
+ </script>
+ ```
+ 
++> The legacy `context="module"` attribute is still supported but deprecated, and will be removed in a future version of Svelte. Use `<script module>` instead.
++
+ ## &lt;style&gt;
+ 
+ CSS inside a `<style>` block will be scoped to that component.
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 31aee08..2f7d90e 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -42,6 +42,17 @@ export function migrate(source) {
+ 		const analysis = analyze_component(parsed, source, combined_options);
+ 		const indent = guess_indent(source);
+ 
++		// `<script context="module">` is deprecated, migrate it to `<script module>`
++		if (parsed.module) {
++			const context = parsed.module.attributes.find(
++				/** @param {any} attribute */ (attribute) => attribute.name === 'context'
++			);
++
++			if (context) {
++				str.overwrite(context.start, context.end, 'module');
++			}
++		}
++
+ 		/** @type {State} */
+ 		let state = {
+ 			scope: analysis.instance.scope,
+diff --git a/packages/svelte/src/compiler/phases/1-parse/read/script.js b/packages/svelte/src/compiler/phases/1-parse/read/script.js
+index 1b85da6..0727739 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/read/script.js
++++ b/packages/svelte/src/compiler/phases/1-parse/read/script.js
+@@ -16,19 +16,26 @@ function get_context(attributes) {
+ 	const context = attributes.find(
+ 		/** @param {any} attribute */ (attribute) => attribute.name === 'context'
+ 	);
+-	if (!context) return 'default';
+ 
+-	if (context.value.length !== 1 || context.value[0].type !== 'Text') {
+-		e.script_invalid_context(context.start);
+-	}
++	if (context) {
++		if (context.value.length !== 1 || context.value[0].type !== 'Text') {
++			e.script_invalid_context(context.start);
++		}
++
++		const value = context.value[0].data;
+ 
+-	const value = context.value[0].data;
++		if (value !== 'module') {
++			e.script_invalid_context(context.start);
++		}
+ 
+-	if (value !== 'module') {
+-		e.script_invalid_context(context.start);
++		return value;
+ 	}
+ 
+-	return value;
++	return attributes.some(
++		/** @param {any} attribute */ (attribute) => attribute.name === 'module'
++	)
++		? 'module'
++		: 'default';
+ }
+ 
+ /**
+diff --git a/packages/svelte/src/compiler/types/template.d.ts b/packages/svelte/src/compiler/types/template.d.ts
+index c803dfb..58b42a1 100644
+--- a/packages/svelte/src/compiler/types/template.d.ts
++++ b/packages/svelte/src/compiler/types/template.d.ts
+@@ -61,7 +61,7 @@ export interface Root extends BaseNode {
+ 	css: Css.StyleSheet | null;
+ 	/** The parsed `<script>` element, if exists */
+ 	instance: Script | null;
+-	/** The parsed `<script context="module">` element, if exists */
++	/** The parsed `<script module>` element, if exists */
+ 	module: Script | null;
+ 	metadata: {
+ 		/** Whether the component was parsed with typescript */

@@ -1,0 +1,14 @@
+diff --git a/packages/compiler-sfc/src/script/resolveType.ts b/packages/compiler-sfc/src/script/resolveType.ts
+index 54b207e..55ac4cf 100644
+--- a/packages/compiler-sfc/src/script/resolveType.ts
++++ b/packages/compiler-sfc/src/script/resolveType.ts
+@@ -1642,6 +1642,9 @@ export function inferRuntimeType(
+ 
+       // e.g. readonly
+       case 'TSTypeOperator': {
++        if (node.operator === 'keyof') {
++          return ['String', 'Number', 'Symbol']
++        }
+         return inferRuntimeType(ctx, node.typeAnnotation, scope)
+       }
+     }

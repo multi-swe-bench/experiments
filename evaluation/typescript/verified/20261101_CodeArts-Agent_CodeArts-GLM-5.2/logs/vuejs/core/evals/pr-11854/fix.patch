@@ -1,0 +1,40 @@
+diff --git a/packages/compiler-sfc/src/style/pluginScoped.ts b/packages/compiler-sfc/src/style/pluginScoped.ts
+index 3812e67..1c1b74a 100644
+--- a/packages/compiler-sfc/src/style/pluginScoped.ts
++++ b/packages/compiler-sfc/src/style/pluginScoped.ts
+@@ -71,9 +71,13 @@ function processRule(id: string, rule: Rule) {
+     return
+   }
+   processedRules.add(rule)
++  // check if this rule is nested inside another rule (CSS nesting).
++  // in that case the scope attribute is already provided by the parent
++  // rule, so we should not inject it again at every nesting level.
++  const isNested = !!rule.parent && rule.parent.type === 'rule'
+   rule.selector = selectorParser(selectorRoot => {
+     selectorRoot.each(selector => {
+-      rewriteSelector(id, selector, selectorRoot)
++      rewriteSelector(id, selector, selectorRoot, false, isNested)
+     })
+   }).processSync(rule.selector)
+ }
+@@ -83,9 +87,10 @@ function rewriteSelector(
+   selector: selectorParser.Selector,
+   selectorRoot: selectorParser.Root,
+   slotted = false,
++  nested = false,
+ ) {
+   let node: selectorParser.Node | null = null
+-  let shouldInject = true
++  let shouldInject = !nested
+   // find the last child node to insert attribute selector
+   selector.each(n => {
+     // DEPRECATED ">>>" and "/deep/" combinator
+@@ -210,7 +215,7 @@ function rewriteSelector(
+     const { type, value } = node as selectorParser.Node
+     if (type === 'pseudo' && (value === ':is' || value === ':where')) {
+       ;(node as selectorParser.Pseudo).nodes.forEach(value =>
+-        rewriteSelector(id, value, selectorRoot, slotted),
++        rewriteSelector(id, value, selectorRoot, slotted, nested),
+       )
+       shouldInject = false
+     }

@@ -1,0 +1,298 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+index cc15c0c..470540b 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+@@ -31,7 +31,7 @@ export function get_assignment_value(node, { state, visit }) {
+ 				);
+ 	} else if (
+ 		node.left.type === 'MemberExpression' &&
+-		node.left.object.type === 'ThisExpression' &&
++		(node.left.object.type === 'ThisExpression' || is_this_alias(node.left.object, state)) &&
+ 		node.left.property.type === 'PrivateIdentifier' &&
+ 		state.private_state.has(node.left.property.name)
+ 	) {
+@@ -188,64 +188,66 @@ export function serialize_set_binding(node, context, fallback, options) {
+ 
+ 	// Handle class private/public state assignment cases
+ 	if (assignee.type === 'MemberExpression') {
+-		if (
+-			assignee.object.type === 'ThisExpression' &&
+-			assignee.property.type === 'PrivateIdentifier'
+-		) {
+-			const private_state = context.state.private_state.get(assignee.property.name);
+-			const value = get_assignment_value(node, context);
+-			if (private_state !== undefined) {
+-				if (state.in_constructor) {
+-					// See if we should wrap value in $.proxy
+-					if (
+-						context.state.analysis.runes &&
+-						!options?.skip_proxy_and_freeze &&
+-						should_proxy_or_freeze(value, context.state.scope)
+-					) {
+-						const assignment = fallback();
+-						if (assignment.type === 'AssignmentExpression') {
+-							assignment.right =
+-								private_state.kind === 'frozen_state'
+-									? b.call('$.freeze', value)
+-									: b.call('$.proxy', value);
+-							return assignment;
+-						}
+-					}
+-				} else {
+-					return b.call(
+-						'$.set',
+-						assignee,
+-						context.state.analysis.runes &&
++		if (assignee.object.type === 'ThisExpression' || is_this_alias(assignee.object, state)) {
++			if (
++				assignee.property.type === 'PrivateIdentifier' &&
++				state.private_state.has(assignee.property.name)
++			) {
++				const private_state = context.state.private_state.get(assignee.property.name);
++				const value = get_assignment_value(node, context);
++				if (private_state !== undefined) {
++					if (state.in_constructor) {
++						// See if we should wrap value in $.proxy
++						if (
++							context.state.analysis.runes &&
+ 							!options?.skip_proxy_and_freeze &&
+ 							should_proxy_or_freeze(value, context.state.scope)
+-							? private_state.kind === 'frozen_state'
+-								? b.call('$.freeze', value)
+-								: b.call('$.proxy', value)
+-							: value
+-					);
++						) {
++							const assignment = fallback();
++							if (assignment.type === 'AssignmentExpression') {
++								assignment.right =
++									private_state.kind === 'frozen_state'
++										? b.call('$.freeze', value)
++										: b.call('$.proxy', value);
++								return assignment;
++							}
++						}
++					} else {
++						return b.call(
++							'$.set',
++							assignee,
++							context.state.analysis.runes &&
++								!options?.skip_proxy_and_freeze &&
++								should_proxy_or_freeze(value, context.state.scope)
++								? private_state.kind === 'frozen_state'
++									? b.call('$.freeze', value)
++									: b.call('$.proxy', value)
++								: value
++						);
++					}
+ 				}
+-			}
+-		} else if (
+-			assignee.object.type === 'ThisExpression' &&
+-			assignee.property.type === 'Identifier' &&
+-			state.in_constructor
+-		) {
+-			const public_state = context.state.public_state.get(assignee.property.name);
+-			const value = get_assignment_value(node, context);
+-			// See if we should wrap value in $.proxy
+-			if (
+-				context.state.analysis.runes &&
+-				public_state !== undefined &&
+-				!options?.skip_proxy_and_freeze &&
+-				should_proxy_or_freeze(value, context.state.scope)
++			} else if (
++				assignee.property.type === 'Identifier' &&
++				state.in_constructor &&
++				state.public_state.has(assignee.property.name)
+ 			) {
+-				const assignment = fallback();
+-				if (assignment.type === 'AssignmentExpression') {
+-					assignment.right =
+-						public_state.kind === 'frozen_state'
+-							? b.call('$.freeze', value)
+-							: b.call('$.proxy', value);
+-					return assignment;
++				const public_state = context.state.public_state.get(assignee.property.name);
++				const value = get_assignment_value(node, context);
++				// See if we should wrap value in $.proxy
++				if (
++					context.state.analysis.runes &&
++					public_state !== undefined &&
++					!options?.skip_proxy_and_freeze &&
++					should_proxy_or_freeze(value, context.state.scope)
++				) {
++					const assignment = fallback();
++					if (assignment.type === 'AssignmentExpression') {
++						assignment.right =
++							public_state.kind === 'frozen_state'
++								? b.call('$.freeze', value)
++								: b.call('$.proxy', value);
++						return assignment;
++					}
+ 				}
+ 			}
+ 		}
+@@ -626,6 +628,20 @@ export function should_proxy_or_freeze(node, scope) {
+ 	return true;
+ }
+ 
++/**
++ * Returns true if the given expression is an identifier that aliases `this`,
++ * e.g. `const self = this;`.
++ * @template {import('./types').ClientTransformState | import('../types').TransformState} State
++ * @param {import('estree').Node} node
++ * @param {State} state
++ * @returns {node is import('estree').Identifier}
++ */
++export function is_this_alias(node, state) {
++	if (node.type !== 'Identifier') return false;
++	const binding = state.scope.get(node.name);
++	return binding !== null && !binding.reassigned && binding.initial?.type === 'ThisExpression';
++}
++
+ /**
+  * Port over the location information from the source to the target identifier.
+  * but keep the target as-is (i.e. a new id is created).
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/global.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/global.js
+index 811407b..ea9df04 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/global.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/global.js
+@@ -1,5 +1,5 @@
+ import is_reference from 'is-reference';
+-import { serialize_get_binding, serialize_set_binding } from '../utils.js';
++import { is_this_alias, serialize_get_binding, serialize_set_binding } from '../utils.js';
+ import * as b from '../../../../utils/builders.js';
+ 
+ /** @type {import('../types').Visitors} */
+@@ -13,7 +13,7 @@ export const global_visitors = {
+ 		}
+ 	},
+ 	MemberExpression(node, { state, next }) {
+-		if (node.object.type === 'ThisExpression') {
++		if (node.object.type === 'ThisExpression' || is_this_alias(node.object, state)) {
+ 			// rewrite `this.#foo` as `this.#foo.v` inside a constructor
+ 			if (node.property.type === 'PrivateIdentifier') {
+ 				const field = state.private_state.get(node.property.name);
+@@ -27,7 +27,7 @@ export const global_visitors = {
+ 				const field = state.public_state.get(node.property.name);
+ 
+ 				if (field && state.in_constructor) {
+-					return b.member(b.member(b.this, field.id), b.id('v'));
++					return b.member(b.member(node.object, field.id), b.id('v'));
+ 				}
+ 			}
+ 		}
+@@ -79,7 +79,7 @@ export const global_visitors = {
+ 			return next();
+ 		} else if (
+ 			argument.type === 'MemberExpression' &&
+-			argument.object.type === 'ThisExpression' &&
++			(argument.object.type === 'ThisExpression' || is_this_alias(argument.object, state)) &&
+ 			argument.property.type === 'PrivateIdentifier' &&
+ 			context.state.private_state.has(argument.property.name)
+ 		) {
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 12e02eb..5fb6fe3 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -27,6 +27,7 @@ import { DOMBooleanAttributes, HYDRATION_END, HYDRATION_START } from '../../../.
+ import { escape_html } from '../../../../escaping.js';
+ import { sanitize_template_string } from '../../../utils/sanitize_template_string.js';
+ import { BLOCK_CLOSE, BLOCK_CLOSE_ELSE } from '../../../../internal/server/hydration.js';
++import { is_this_alias } from '../client/utils.js';
+ 
+ export const block_open = t_string(`<!--${HYDRATION_START}-->`);
+ export const block_close = t_string(`<!--${HYDRATION_END}-->`);
+@@ -785,7 +786,10 @@ const javascript_visitors_runes = {
+ 		context.next();
+ 	},
+ 	MemberExpression(node, context) {
+-		if (node.object.type === 'ThisExpression' && node.property.type === 'PrivateIdentifier') {
++		if (
++			(node.object.type === 'ThisExpression' || is_this_alias(node.object, context.state)) &&
++			node.property.type === 'PrivateIdentifier'
++		) {
+ 			const field = context.state.private_derived.get(node.property.name);
+ 			if (field) {
+ 				return b.call(node);
+diff --git a/packages/svelte/tests/runtime-runes/samples/class-state-this-alias/_config.js b/packages/svelte/tests/runtime-runes/samples/class-state-this-alias/_config.js
+new file mode 100644
+index 0000000..c335eb9
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/class-state-this-alias/_config.js
+@@ -0,0 +1,29 @@
++import { test } from '../../test';
++
++export default test({
++	html: `<button id="inc">0 / 0</button><button id="dec">dec</button><button id="add">add</button>`,
++
++	async test({ assert, target }) {
++		const inc = target.querySelector('#inc');
++		const dec = target.querySelector('#dec');
++		const add = target.querySelector('#add');
++
++		await inc?.click();
++		assert.htmlEqual(
++			target.innerHTML,
++			`<button id="inc">1 / 2</button><button id="dec">dec</button><button id="add">add</button>`
++		);
++
++		await add?.click();
++		assert.htmlEqual(
++			target.innerHTML,
++			`<button id="inc">11 / 22</button><button id="dec">dec</button><button id="add">add</button>`
++		);
++
++		await dec?.click();
++		assert.htmlEqual(
++			target.innerHTML,
++			`<button id="inc">10 / 20</button><button id="dec">dec</button><button id="add">add</button>`
++		);
++	}
++});
+diff --git a/packages/svelte/tests/runtime-runes/samples/class-state-this-alias/main.svelte b/packages/svelte/tests/runtime-runes/samples/class-state-this-alias/main.svelte
+new file mode 100644
+index 0000000..50063a0
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/class-state-this-alias/main.svelte
+@@ -0,0 +1,39 @@
++<script>
++	class Counter {
++		#count = $state(0);
++		double = $derived(this.count * 2);
++
++		get count() {
++			return this.#count;
++		}
++		set count(value) {
++			this.#count = value;
++		}
++
++		increment() {
++			const self = this;
++			self.#count++;
++		}
++
++		decrement() {
++			const self = this;
++			self.#count -= 1;
++		}
++
++		add(value) {
++			const self = this;
++			self.#count = self.#count + value;
++		}
++
++		getCount() {
++			const self = this;
++			return self.#count;
++		}
++	}
++
++	const counter = new Counter();
++</script>
++
++<button on:click={() => counter.increment()} id="inc">{counter.getCount()} / {counter.double}</button>
++<button on:click={() => counter.decrement()} id="dec">dec</button>
++<button on:click={() => counter.add(10)} id="add">add</button>
+\ No newline at end of file

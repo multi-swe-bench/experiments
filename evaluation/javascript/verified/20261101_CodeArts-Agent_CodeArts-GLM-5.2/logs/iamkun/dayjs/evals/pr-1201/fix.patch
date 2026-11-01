@@ -1,0 +1,21 @@
+diff --git a/src/plugin/utc/index.js b/src/plugin/utc/index.js
+index 5fb0497..34e7de0 100644
+--- a/src/plugin/utc/index.js
++++ b/src/plugin/utc/index.js
+@@ -112,11 +112,11 @@ export default (option, Dayjs, dayjs) => {
+   }
+   const oldDiff = proto.diff
+   proto.diff = function (input, units, float) {
+-    if (this.$u === input.$u) {
+-      return oldDiff.call(this, input, units, float)
++    const localThis = this
++    const localInput = dayjs(input)
++    if (localThis.$u === localInput.$u) {
++      return oldDiff.call(localThis, localInput, units, float)
+     }
+-    const localThis = this.local()
+-    const localInput = dayjs(input).local()
+-    return oldDiff.call(localThis, localInput, units, float)
++    return oldDiff.call(localThis.local(), localInput.local(), units, float)
+   }
+ }

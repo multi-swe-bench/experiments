@@ -1,0 +1,20 @@
+diff --git a/packages/svelte/src/internal/client/dom/elements/bindings/props.js b/packages/svelte/src/internal/client/dom/elements/bindings/props.js
+index 0838332..52d2ef6 100644
+--- a/packages/svelte/src/internal/client/dom/elements/bindings/props.js
++++ b/packages/svelte/src/internal/client/dom/elements/bindings/props.js
+@@ -14,9 +14,13 @@ export function bind_prop(props, prop, value) {
+ 	var desc = get_descriptor(props, prop);
+ 
+ 	if (desc && desc.set) {
+-		props[prop] = value;
++		// Rather than assigning via `props[prop] = value`, call the setter directly. When `props`
++		// is a `spread_props` proxy (i.e. the consumer uses both a spread and a `bind:` directive),
++		// a normal assignment would fail because the proxy reports the property as a non-configurable
++		// accessor on the receiver.
++		desc.set.call(props, value);
+ 		teardown(() => {
+-			props[prop] = null;
++			desc.set.call(props, null);
+ 		});
+ 	}
+ }

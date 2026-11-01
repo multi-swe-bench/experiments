@@ -1,0 +1,87 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index b877d27..68f4bec 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -18,6 +18,24 @@ import { validate_component_options } from '../validate-options.js';
+ const regex_style_tags = /(<style[^>]+>)([\S\s]*?)(<\/style>)/g;
+ const style_placeholder = '/*$$__STYLE_CONTENT__$$*/';
+ 
++/**
++ * Returns true if `{@const}` is a valid immediate child of the given node.
++ * @param {SvelteNode} node
++ */
++function is_valid_const_placement(node) {
++	return (
++		node.type === 'EachBlock' ||
++		node.type === 'AwaitBlock' ||
++		node.type === 'IfBlock' ||
++		node.type === 'SnippetBlock' ||
++		node.type === 'Component' ||
++		node.type === 'SvelteComponent' ||
++		node.type === 'SvelteFragment' ||
++		((node.type === 'RegularElement' || node.type === 'SvelteElement') &&
++			node.attributes.some((a) => a.type === 'Attribute' && a.name === 'slot'))
++	);
++}
++
+ /**
+  * Does a best-effort migration of Svelte code towards using runes, event attributes and render tags.
+  * May throw an error if the code is too complex to migrate automatically.
+@@ -618,36 +636,27 @@ const template = {
+ 		) {
+ 			let current_expression = expression;
+ 			expression = state.scope.generate('SvelteComponent');
+-			let needs_derived = true;
+-			for (let i = path.length - 1; i >= 0; i--) {
+-				const part = path[i];
+-				if (
+-					part.type === 'EachBlock' ||
+-					part.type === 'AwaitBlock' ||
+-					part.type === 'IfBlock' ||
+-					part.type === 'KeyBlock' ||
+-					part.type === 'SnippetBlock' ||
+-					part.type === 'Component' ||
+-					part.type === 'SvelteComponent'
+-				) {
+-					const indent = state.str.original.substring(
+-						state.str.original.lastIndexOf('\n', node.start) + 1,
+-						node.start
+-					);
+-					state.str.prependLeft(
+-						node.start,
+-						`{@const ${expression} = ${current_expression}}\n${indent}`
+-					);
+-					needs_derived = false;
+-					continue;
+-				}
+-			}
+-			if (needs_derived) {
+-				if (state.derived_components.has(current_expression)) {
+-					expression = /** @type {string} */ (state.derived_components.get(current_expression));
+-				} else {
+-					state.derived_components.set(current_expression, expression);
+-				}
++
++			// `{@const}` must be the immediate child of a block, component, `<svelte:fragment>`
++			// or an element with a `slot` attribute. If the `<svelte:component>` is a direct
++			// child of such a node we can use `{@const}`; otherwise we fall back to a
++			// `$derived` value, as the `@const` would be invalidly placed.
++			const parent = path.at(-1);
++			const container = parent?.type === 'Fragment' ? path.at(-2) : parent;
++
++			if (container && is_valid_const_placement(container)) {
++				const indent = state.str.original.substring(
++					state.str.original.lastIndexOf('\n', node.start) + 1,
++					node.start
++				);
++				state.str.prependLeft(
++					node.start,
++					`{@const ${expression} = ${current_expression}}\n${indent}`
++				);
++			} else if (state.derived_components.has(current_expression)) {
++				expression = /** @type {string} */ (state.derived_components.get(current_expression));
++			} else {
++				state.derived_components.set(current_expression, expression);
+ 			}
+ 		}
+ 

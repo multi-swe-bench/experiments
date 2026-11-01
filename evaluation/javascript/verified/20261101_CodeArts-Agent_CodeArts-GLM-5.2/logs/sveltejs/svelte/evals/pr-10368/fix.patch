@@ -1,0 +1,73 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 28e7e9a..20c98aa 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -1024,14 +1024,36 @@ const common_visitors = {
+ 		const binding = id === null ? null : context.state.scope.get(id.name);
+ 		assert.ok(binding);
+ 
+-		let group = context.state.analysis.binding_groups.get(binding);
++		// Compute the static property path so that groups bound to different
++		// properties of the same object (e.g. `$order.scoops` and `$order.flavours`)
++		// are not merged into a single group.
++		const path = [];
++		let current = /** @type {import('estree').Expression} */ (node.expression);
++		while (current.type === 'MemberExpression') {
++			const property = current.property;
++			if (!current.computed && property.type === 'Identifier') {
++				path.unshift(property.name);
++			} else if (current.computed && property.type === 'Literal') {
++				path.unshift(String(property.value));
++			}
++			current = /** @type {import('estree').Expression} */ (current.object);
++		}
++		const path_key = path.join('.');
++
++		let groups = context.state.analysis.binding_groups.get(binding);
++		if (!groups) {
++			groups = new Map();
++			context.state.analysis.binding_groups.set(binding, groups);
++		}
++
++		let group = groups.get(path_key);
+ 		if (!group) {
+ 			group = {
+ 				name: context.state.scope.root.unique('binding_group'),
+ 				directives: []
+ 			};
+ 
+-			context.state.analysis.binding_groups.set(binding, group);
++			groups.set(path_key, group);
+ 		}
+ 
+ 		group.directives.push(node);
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+index 124eee0..676777d 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+@@ -215,8 +215,10 @@ export function client_component(source, analysis, options) {
+ 	 * @type {import('estree').VariableDeclaration[]}
+ 	 */
+ 	const group_binding_declarations = [];
+-	for (const group of analysis.binding_groups.values()) {
+-		group_binding_declarations.push(b.const(group.name, b.array([])));
++	for (const groups of analysis.binding_groups.values()) {
++		for (const group of groups.values()) {
++			group_binding_declarations.push(b.const(group.name, b.array([])));
++		}
+ 	}
+ 
+ 	// Bind static exports to props so that people can access them with bind:x
+diff --git a/packages/svelte/src/compiler/phases/types.d.ts b/packages/svelte/src/compiler/phases/types.d.ts
+index f2f9868..4ed6c41 100644
+--- a/packages/svelte/src/compiler/phases/types.d.ts
++++ b/packages/svelte/src/compiler/phases/types.d.ts
+@@ -72,7 +72,7 @@ export interface ComponentAnalysis extends Analysis {
+ 	/** If `true`, should append styles through JavaScript */
+ 	inject_styles: boolean;
+ 	reactive_statements: Map<LabeledStatement, ReactiveStatement>;
+-	binding_groups: Map<Binding, BindingGroup>;
++	binding_groups: Map<Binding, Map<string, BindingGroup>>;
+ 	slot_names: Set<string>;
+ }
+ 

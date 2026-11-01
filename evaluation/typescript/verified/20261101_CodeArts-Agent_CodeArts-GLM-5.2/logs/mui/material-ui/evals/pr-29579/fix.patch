@@ -1,0 +1,61 @@
+diff --git a/docs/pages/api-docs/table-pagination.json b/docs/pages/api-docs/table-pagination.json
+index fe32e032..338b531b 100644
+--- a/docs/pages/api-docs/table-pagination.json
++++ b/docs/pages/api-docs/table-pagination.json
+@@ -14,7 +14,7 @@
+     },
+     "labelDisplayedRows": {
+       "type": { "name": "func" },
+-      "default": "function defaultLabelDisplayedRows({ from, to, count }) {\n  return `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`;\n}"
++      "default": "function defaultLabelDisplayedRows({ from, to, count }) {\n  return `${from}–${to} of ${count !== -1 ? count : `more than ${to}`}`;\n}"
+     },
+     "labelRowsPerPage": { "type": { "name": "node" }, "default": "'Rows per page:'" },
+     "nextIconButtonProps": { "type": { "name": "object" } },
+diff --git a/packages/mui-material/src/TablePagination/TablePagination.d.ts b/packages/mui-material/src/TablePagination/TablePagination.d.ts
+index f4034719..4ceea701 100644
+--- a/packages/mui-material/src/TablePagination/TablePagination.d.ts
++++ b/packages/mui-material/src/TablePagination/TablePagination.d.ts
+@@ -56,7 +56,7 @@ export interface TablePaginationTypeMap<P, D extends React.ElementType> {
+        *
+        * For localization purposes, you can use the provided [translations](/guides/localization/).
+        * @default function defaultLabelDisplayedRows({ from, to, count }) {
+-       *   return `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`;
++       *   return `${from}–${to} of ${count !== -1 ? count : `more than ${to}`}`;
+        * }
+        */
+       labelDisplayedRows?: (paginationInfo: LabelDisplayedRowsArgs) => React.ReactNode;
+diff --git a/packages/mui-material/src/TablePagination/TablePagination.js b/packages/mui-material/src/TablePagination/TablePagination.js
+index 77f1da0b..10331465 100644
+--- a/packages/mui-material/src/TablePagination/TablePagination.js
++++ b/packages/mui-material/src/TablePagination/TablePagination.js
+@@ -107,7 +107,7 @@ const TablePaginationDisplayedRows = styled('p', {
+ }));
+ 
+ function defaultLabelDisplayedRows({ from, to, count }) {
+-  return `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`;
++  return `${from}–${to} of ${count !== -1 ? count : `more than ${to}`}`;
+ }
+ 
+ function defaultGetAriaLabel(type) {
+@@ -310,7 +310,7 @@ TablePagination.propTypes /* remove-proptypes */ = {
+    *
+    * For localization purposes, you can use the provided [translations](/guides/localization/).
+    * @default function defaultLabelDisplayedRows({ from, to, count }) {
+-   *   return `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`;
++   *   return `${from}–${to} of ${count !== -1 ? count : `more than ${to}`}`;
+    * }
+    */
+   labelDisplayedRows: PropTypes.func,
+diff --git a/packages/mui-material/src/locale/index.ts b/packages/mui-material/src/locale/index.ts
+index d835964c..9bd9c423 100644
+--- a/packages/mui-material/src/locale/index.ts
++++ b/packages/mui-material/src/locale/index.ts
+@@ -710,7 +710,7 @@ export const enUS: Localization = {
+       },
+       labelRowsPerPage: 'Rows per page:',
+       labelDisplayedRows: ({ from, to, count }) =>
+-  `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`,
++  `${from}–${to} of ${count !== -1 ? count : `more than ${to}`}`,
+     }},
+     MuiRating: { defaultProps: { 
+       getLabelText: value => `${value} Star${value !== 1 ? 's' : ''}`,

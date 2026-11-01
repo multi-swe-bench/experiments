@@ -1,0 +1,35 @@
+diff --git a/packages/compiler-core/src/transforms/transformExpression.ts b/packages/compiler-core/src/transforms/transformExpression.ts
+index eab6b23..14757b5 100644
+--- a/packages/compiler-core/src/transforms/transformExpression.ts
++++ b/packages/compiler-core/src/transforms/transformExpression.ts
+@@ -225,7 +225,8 @@ export function processExpression(
+ 
+   if (isSimpleIdentifier(rawExp)) {
+     const isScopeVarReference = context.identifiers[rawExp]
+-    const isAllowedGlobal = isGloballyAllowed(rawExp)
++    const isAllowedGlobal =
++      isGloballyAllowed(rawExp) && !hasOwn(bindingMetadata, rawExp)
+     const isLiteral = isLiteralWhitelisted(rawExp)
+     if (!asParams && !isScopeVarReference && !isAllowedGlobal && !isLiteral) {
+       // const bindings exposed from setup can be skipped for patching but
+@@ -285,7 +286,7 @@ export function processExpression(
+         return
+       }
+ 
+-      const needPrefix = isReferenced && canPrefix(node)
++      const needPrefix = isReferenced && canPrefix(node, bindingMetadata)
+       if (needPrefix && !isLocal) {
+         if (isStaticProperty(parent!) && parent.shorthand) {
+           // property shorthand like { foo }, we need to add the key since
+@@ -356,9 +357,9 @@ export function processExpression(
+   return ret
+ }
+ 
+-function canPrefix(id: Identifier) {
++function canPrefix(id: Identifier, bindingMetadata: Record<string, any>) {
+   // skip whitelisted globals
+-  if (isGloballyAllowed(id.name)) {
++  if (isGloballyAllowed(id.name) && !hasOwn(bindingMetadata, id.name)) {
+     return false
+   }
+   // special case for webpack compilation

@@ -1,0 +1,58 @@
+diff --git a/docs/en/Plugin.md b/docs/en/Plugin.md
+index c54ec91..54694e9 100644
+--- a/docs/en/Plugin.md
++++ b/docs/en/Plugin.md
+@@ -286,6 +286,19 @@ dayjs('2018-06-27').week() // 26
+ dayjs('2018-06-27').week(5) // set week
+ ```
+ 
++### WeekDay
++
++- WeekDay adds `.weekday()` API to get or set the locale aware day of the week, an alternative for `moment.weekday()`.
++
++```javascript
++import weekday from 'dayjs/plugin/weekday'
++
++dayjs.extend(weekday)
++
++dayjs('2019-03-31').weekday() // 0 (Sunday is the first day of the week in the `en` locale)
++dayjs('2019-03-31').weekday(6) // set weekday
++```
++
+ ### IsoWeeksInYear
+ 
+ - IsoWeeksInYear adds `.isoWeeksInYear()` API to return a `number` to get the number of weeks in year, according to ISO weeks.
+diff --git a/src/plugin/weekday/index.js b/src/plugin/weekday/index.js
+new file mode 100644
+index 0000000..2d64fc8
+--- /dev/null
++++ b/src/plugin/weekday/index.js
+@@ -0,0 +1,9 @@
++export default (o, c) => {
++  const proto = c.prototype
++  proto.weekday = function (input) {
++    const weekStart = this.$locale().weekStart || 0
++    const day = this.day()
++    const weekday = ((day < weekStart ? day + 7 : day) - weekStart) % 7
++    return input == null ? weekday : this.add(input - weekday, 'day')
++  }
++}
+diff --git a/types/plugin/weekday.d.ts b/types/plugin/weekday.d.ts
+new file mode 100644
+index 0000000..03d020c
+--- /dev/null
++++ b/types/plugin/weekday.d.ts
+@@ -0,0 +1,12 @@
++import { PluginFunc } from 'dayjs'
++
++declare const plugin: PluginFunc
++export = plugin
++
++declare module 'dayjs' {
++  interface Dayjs {
++    weekday(): number
++
++    weekday(value: number): Dayjs
++  }
++}
+\ No newline at end of file

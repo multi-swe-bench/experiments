@@ -1,0 +1,20 @@
+diff --git a/packages/compiler-sfc/src/script/importUsageCheck.ts b/packages/compiler-sfc/src/script/importUsageCheck.ts
+index b42397d..eb5241d 100644
+--- a/packages/compiler-sfc/src/script/importUsageCheck.ts
++++ b/packages/compiler-sfc/src/script/importUsageCheck.ts
+@@ -56,6 +56,15 @@ function resolveTemplateUsageCheckString(sfc: SFCDescriptor) {
+                   prop.name
+                 )}`
+               }
++              if (
++                prop.arg &&
++                !(prop.arg as SimpleExpressionNode).isStatic
++              ) {
++                code += `,${processExp(
++                  (prop.arg as SimpleExpressionNode).content,
++                  prop.name
++                )}`
++              }
+             }
+           }
+         } else if (node.type === NodeTypes.INTERPOLATION) {

@@ -1,0 +1,385 @@
+diff --git a/docs/data/base/components/select/UnstyledSelectIntroduction.js b/docs/data/base/components/select/UnstyledSelectIntroduction.js
+index 9ede0e7f..cc8d408a 100644
+--- a/docs/data/base/components/select/UnstyledSelectIntroduction.js
++++ b/docs/data/base/components/select/UnstyledSelectIntroduction.js
+@@ -83,6 +83,7 @@ Button.propTypes = {
+     defaultValue: PropTypes.any,
+     disabled: PropTypes.bool.isRequired,
+     focusVisible: PropTypes.bool.isRequired,
++    serializeValue: PropTypes.func,
+     getSerializedValue: PropTypes.func,
+     listboxId: PropTypes.string,
+     listboxOpen: PropTypes.bool,
+@@ -91,7 +92,7 @@ Button.propTypes = {
+     onChange: PropTypes.func,
+     onListboxOpenChange: PropTypes.func,
+     open: PropTypes.bool.isRequired,
+-    optionStringifier: PropTypes.func,
++    stringifyOption: PropTypes.func,
+     renderValue: PropTypes.func,
+     slotProps: PropTypes.shape({
+       listbox: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
+diff --git a/docs/data/base/components/select/UnstyledSelectObjectValuesForm.js b/docs/data/base/components/select/UnstyledSelectObjectValuesForm.js
+index f014070c..9e8e817c 100644
+--- a/docs/data/base/components/select/UnstyledSelectObjectValuesForm.js
++++ b/docs/data/base/components/select/UnstyledSelectObjectValuesForm.js
+@@ -8,7 +8,7 @@ import { styled } from '@mui/system';
+ import Box from '@mui/system/Box';
+ 
+ export default function UnstyledSelectObjectValuesForm() {
+-  const getSerializedValue = (option) => {
++  const serializeValue = (option) => {
+     if (option?.value == null) {
+       return '';
+     }
+@@ -57,10 +57,10 @@ export default function UnstyledSelectObjectValuesForm() {
+               id="object-value-serialize-label"
+               htmlFor="object-value-serialize-button"
+             >
+-              Custom getSerializedValue
++              Custom serializeValue
+             </Label>
+             <CustomSelect
+-              getSerializedValue={getSerializedValue}
++              serializeValue={serializeValue}
+               name="character"
+               id="object-value-serialize-button"
+               aria-labelledby="object-value-serialize-label object-value-serialize-button"
+diff --git a/docs/data/base/components/select/UnstyledSelectObjectValuesForm.tsx b/docs/data/base/components/select/UnstyledSelectObjectValuesForm.tsx
+index bffabf78..8922988b 100644
+--- a/docs/data/base/components/select/UnstyledSelectObjectValuesForm.tsx
++++ b/docs/data/base/components/select/UnstyledSelectObjectValuesForm.tsx
+@@ -7,7 +7,7 @@ import { styled } from '@mui/system';
+ import Box from '@mui/system/Box';
+ 
+ export default function UnstyledSelectObjectValuesForm() {
+-  const getSerializedValue = (option: SelectOption<Character> | null) => {
++  const serializeValue = (option: SelectOption<Character> | null) => {
+     if (option?.value == null) {
+       return '';
+     }
+@@ -56,10 +56,10 @@ export default function UnstyledSelectObjectValuesForm() {
+               id="object-value-serialize-label"
+               htmlFor="object-value-serialize-button"
+             >
+-              Custom getSerializedValue
++              Custom serializeValue
+             </Label>
+             <CustomSelect
+-              getSerializedValue={getSerializedValue}
++              serializeValue={serializeValue}
+               name="character"
+               id="object-value-serialize-button"
+               aria-labelledby="object-value-serialize-label object-value-serialize-button"
+diff --git a/docs/data/base/components/select/select-pt.md b/docs/data/base/components/select/select-pt.md
+index abb7e73c..6e680d7c 100644
+--- a/docs/data/base/components/select/select-pt.md
++++ b/docs/data/base/components/select/select-pt.md
+@@ -158,7 +158,7 @@ The `SelectUnstyled` component can be used with non-string values:
+ 
+ {{"demo": "UnstyledSelectObjectValues.js", "defaultCodeOpen": false}}
+ 
+-If you use a SelectUnstyled with object values in a form and post the form contents to a server, the selected value will be converted to JSON. You can change this behavior with the help of the `getSerializedValue` prop.
++If you use a SelectUnstyled with object values in a form and post the form contents to a server, the selected value will be converted to JSON. You can change this behavior with the help of the `serializeValue` prop.
+ 
+ {{"demo": "UnstyledSelectObjectValuesForm.js", "defaultCodeOpen": false}}
+ 
+diff --git a/docs/data/base/components/select/select-zh.md b/docs/data/base/components/select/select-zh.md
+index abb7e73c..6e680d7c 100644
+--- a/docs/data/base/components/select/select-zh.md
++++ b/docs/data/base/components/select/select-zh.md
+@@ -158,7 +158,7 @@ The `SelectUnstyled` component can be used with non-string values:
+ 
+ {{"demo": "UnstyledSelectObjectValues.js", "defaultCodeOpen": false}}
+ 
+-If you use a SelectUnstyled with object values in a form and post the form contents to a server, the selected value will be converted to JSON. You can change this behavior with the help of the `getSerializedValue` prop.
++If you use a SelectUnstyled with object values in a form and post the form contents to a server, the selected value will be converted to JSON. You can change this behavior with the help of the `serializeValue` prop.
+ 
+ {{"demo": "UnstyledSelectObjectValuesForm.js", "defaultCodeOpen": false}}
+ 
+diff --git a/docs/data/base/components/select/select.md b/docs/data/base/components/select/select.md
+index 0c550540..90936ac7 100644
+--- a/docs/data/base/components/select/select.md
++++ b/docs/data/base/components/select/select.md
+@@ -185,7 +185,7 @@ The Select component can be used with non-string values:
+ {{"demo": "UnstyledSelectObjectValues.js", "defaultCodeOpen": false}}
+ 
+ If you use a Select with object values in a form and post the form contents to a server, the selected value will be converted to JSON.
+-You can change this behavior with the help of the `getSerializedValue` prop.
++You can change this behavior with the help of the `serializeValue` prop.
+ 
+ {{"demo": "UnstyledSelectObjectValuesForm.js", "defaultCodeOpen": false}}
+ 
+diff --git a/docs/pages/base/api/select.json b/docs/pages/base/api/select.json
+index e1a504d9..b68a690c 100644
+--- a/docs/pages/base/api/select.json
++++ b/docs/pages/base/api/select.json
+@@ -4,6 +4,7 @@
+     "defaultListboxOpen": { "type": { "name": "bool" }, "default": "false" },
+     "defaultValue": { "type": { "name": "any" } },
+     "disabled": { "type": { "name": "bool" }, "default": "false" },
++    "serializeValue": { "type": { "name": "func" } },
+     "getSerializedValue": { "type": { "name": "func" } },
+     "listboxId": { "type": { "name": "string" } },
+     "listboxOpen": { "type": { "name": "bool" }, "default": "undefined" },
+@@ -11,7 +12,7 @@
+     "name": { "type": { "name": "string" } },
+     "onChange": { "type": { "name": "func" } },
+     "onListboxOpenChange": { "type": { "name": "func" } },
+-    "optionStringifier": { "type": { "name": "func" }, "default": "defaultOptionStringifier" },
++    "stringifyOption": { "type": { "name": "func" }, "default": "defaultStringifyOption" },
+     "renderValue": { "type": { "name": "func" } },
+     "slotProps": {
+       "type": {
+diff --git a/docs/pages/base/api/use-select.json b/docs/pages/base/api/use-select.json
+index c3cfcd10..575dd282 100644
+--- a/docs/pages/base/api/use-select.json
++++ b/docs/pages/base/api/use-select.json
+@@ -38,12 +38,12 @@
+         "description": "SelectOptionDefinition&lt;OptionValue&gt;[]"
+       }
+     },
+-    "optionStringifier": {
++    "stringifyOption": {
+       "type": {
+         "name": "(option: SelectOption&lt;OptionValue&gt;) =&gt; string",
+         "description": "(option: SelectOption&lt;OptionValue&gt;) =&gt; string"
+       },
+-      "default": "defaultOptionStringifier"
++      "default": "defaultStringifyOption"
+     },
+     "value": {
+       "type": {
+diff --git a/docs/translations/api-docs-base/select/select.json b/docs/translations/api-docs-base/select/select.json
+index 368c5541..61176de9 100644
+--- a/docs/translations/api-docs-base/select/select.json
++++ b/docs/translations/api-docs-base/select/select.json
+@@ -5,6 +5,7 @@
+     "defaultListboxOpen": "If <code>true</code>, the select will be initially open.",
+     "defaultValue": "The default selected value. Use when the component is not controlled.",
+     "disabled": "If <code>true</code>, the select is disabled.",
++    "serializeValue": "A function to convert the currently selected value to a string. Used to set a value of a hidden input associated with the select, so that the selected value can be posted with a form.",
+     "getSerializedValue": "A function to convert the currently selected value to a string. Used to set a value of a hidden input associated with the select, so that the selected value can be posted with a form.",
+     "listboxId": "<code>id</code> attribute of the listbox element.",
+     "listboxOpen": "Controls the open state of the select&#39;s listbox.",
+@@ -12,7 +13,7 @@
+     "name": "Name of the element. For example used by the server to identify the fields in form submits. If the name is provided, the component will render a hidden input element that can be submitted to a server.",
+     "onChange": "Callback fired when an option is selected.",
+     "onListboxOpenChange": "Callback fired when the component requests to be opened. Use in controlled mode (see listboxOpen).",
+-    "optionStringifier": "A function used to convert the option label to a string. It&#39;s useful when labels are elements and need to be converted to plain text to enable navigation using character keys on a keyboard.",
++    "stringifyOption": "A function used to convert the option label to a string. It&#39;s useful when labels are elements and need to be converted to plain text to enable navigation using character keys on a keyboard.",
+     "renderValue": "Function that customizes the rendering of the selected value.",
+     "slotProps": "The props used for each slot inside the Input.",
+     "slots": "The components used for each slot inside the Select. Either a string to use a HTML element or a component. See <a href=\"#slots\">Slots API</a> below for more details.",
+diff --git a/docs/translations/api-docs/use-select/use-select.json b/docs/translations/api-docs/use-select/use-select.json
+index ec626227..eae039dc 100644
+--- a/docs/translations/api-docs/use-select/use-select.json
++++ b/docs/translations/api-docs/use-select/use-select.json
+@@ -13,7 +13,7 @@
+     "onOpenChange": "Callback fired when the listbox is opened or closed.",
+     "open": "Controls the open state of the select's listbox.\nThis is the controlled equivalent of the <code>defaultOpen</code> prop.",
+     "options": "An alternative way to specify the options.\nIf this parameter is set, options defined as JSX children are ignored.",
+-    "optionStringifier": "A function used to convert the option label to a string.\nThis is useful when labels are elements and need to be converted to plain text\nto enable keyboard navigation with character keys.",
++    "stringifyOption": "A function used to convert the option label to a string.\nThis is useful when labels are elements and need to be converted to plain text\nto enable keyboard navigation with character keys.",
+     "value": "The selected value.\nSet to <code>null</code> to deselect all options."
+   },
+   "returnValueDescriptions": {
+diff --git a/packages/mui-base/src/Select/Select.tsx b/packages/mui-base/src/Select/Select.tsx
+index 8fdf9b4a..b5472d53 100644
+--- a/packages/mui-base/src/Select/Select.tsx
++++ b/packages/mui-base/src/Select/Select.tsx
+@@ -14,7 +14,7 @@ import { useSlotProps, WithOptionalOwnerState } from '../utils';
+ import Popper from '../Popper';
+ import composeClasses from '../composeClasses';
+ import { getSelectUtilityClass } from './selectClasses';
+-import defaultOptionStringifier from '../useSelect/defaultOptionStringifier';
++import defaultStringifyOption from '../useSelect/defaultStringifyOption';
+ import { useClassNamesOverride } from '../utils/ClassNameConfigurator';
+ import { SelectOption } from '../useOption';
+ import SelectProvider from '../useSelect/SelectProvider';
+@@ -29,7 +29,7 @@ function defaultRenderValue<OptionValue>(
+   return selectedOptions?.label ?? '';
+ }
+ 
+-function defaultFormValueProvider<OptionValue>(
++function defaultSerializeValue<OptionValue>(
+   selectedOption: SelectOption<OptionValue> | SelectOption<OptionValue>[] | null,
+ ) {
+   if (Array.isArray(selectedOption)) {
+@@ -107,14 +107,15 @@ const Select = React.forwardRef(function Select<
+     defaultValue,
+     defaultListboxOpen = false,
+     disabled: disabledProp,
+-    getSerializedValue = defaultFormValueProvider,
++    serializeValue: serializeValueProp,
++    getSerializedValue,
+     listboxId,
+     listboxOpen: listboxOpenProp,
+     multiple = false as Multiple,
+     name,
+     onChange,
+     onListboxOpenChange,
+-    optionStringifier = defaultOptionStringifier,
++    stringifyOption = defaultStringifyOption,
+     renderValue: renderValueProp,
+     slotProps = {},
+     slots = {},
+@@ -125,6 +126,11 @@ const Select = React.forwardRef(function Select<
+   const renderValue: (option: SelectValue<SelectOption<OptionValue>, Multiple>) => React.ReactNode =
+     renderValueProp ?? defaultRenderValue;
+ 
++  const serializeValue: (
++    option: SelectValue<SelectOption<OptionValue>, Multiple>,
++  ) => React.InputHTMLAttributes<HTMLInputElement>['value'] =
++    serializeValueProp ?? getSerializedValue ?? defaultSerializeValue;
++
+   const [buttonDefined, setButtonDefined] = React.useState(false);
+   const buttonRef = React.useRef<HTMLElement | null>(null);
+   const listboxRef = React.useRef<HTMLElement>(null);
+@@ -165,7 +171,7 @@ const Select = React.forwardRef(function Select<
+     open: listboxOpenProp,
+     onChange,
+     onOpenChange: onListboxOpenChange,
+-    optionStringifier,
++    stringifyOption,
+     value: valueProp,
+   });
+ 
+@@ -243,9 +249,7 @@ const Select = React.forwardRef(function Select<
+         </PopperComponent>
+       )}
+ 
+-      {name && (
+-        <input type="hidden" name={name} value={getSerializedValue(selectedOptionsMetadata)} />
+-      )}
++      {name && <input type="hidden" name={name} value={serializeValue(selectedOptionsMetadata)} />}
+     </React.Fragment>
+   );
+ }) as SelectType;
+@@ -283,6 +287,10 @@ Select.propTypes /* remove-proptypes */ = {
+    * Used to set a value of a hidden input associated with the select,
+    * so that the selected value can be posted with a form.
+    */
++  serializeValue: PropTypes.func,
++  /**
++   * @deprecated Use `serializeValue` instead.
++   */
+   getSerializedValue: PropTypes.func,
+   /**
+    * `id` attribute of the listbox element.
+@@ -319,9 +327,9 @@ Select.propTypes /* remove-proptypes */ = {
+    * It's useful when labels are elements and need to be converted to plain text
+    * to enable navigation using character keys on a keyboard.
+    *
+-   * @default defaultOptionStringifier
++   * @default defaultStringifyOption
+    */
+-  optionStringifier: PropTypes.func,
++  stringifyOption: PropTypes.func,
+   /**
+    * Function that customizes the rendering of the selected value.
+    */
+diff --git a/packages/mui-base/src/Select/Select.types.ts b/packages/mui-base/src/Select/Select.types.ts
+index 6df6757d..3cf77bef 100644
+--- a/packages/mui-base/src/Select/Select.types.ts
++++ b/packages/mui-base/src/Select/Select.types.ts
+@@ -36,6 +36,16 @@ export interface SelectOwnProps<OptionValue extends {}, Multiple extends boolean
+    * Used to set a value of a hidden input associated with the select,
+    * so that the selected value can be posted with a form.
+    */
++  serializeValue?: (
++    option: SelectValue<SelectOption<OptionValue>, Multiple>,
++  ) => React.InputHTMLAttributes<HTMLInputElement>['value'];
++  /**
++   * A function to convert the currently selected value to a string.
++   * Used to set a value of a hidden input associated with the select,
++   * so that the selected value can be posted with a form.
++   *
++   * @deprecated Use `serializeValue` instead.
++   */
+   getSerializedValue?: (
+     option: SelectValue<SelectOption<OptionValue>, Multiple>,
+   ) => React.InputHTMLAttributes<HTMLInputElement>['value'];
+@@ -77,9 +87,9 @@ export interface SelectOwnProps<OptionValue extends {}, Multiple extends boolean
+    * It's useful when labels are elements and need to be converted to plain text
+    * to enable navigation using character keys on a keyboard.
+    *
+-   * @default defaultOptionStringifier
++   * @default defaultStringifyOption
+    */
+-  optionStringifier?: (option: SelectOption<OptionValue>) => string;
++  stringifyOption?: (option: SelectOption<OptionValue>) => string;
+   /**
+    * Function that customizes the rendering of the selected value.
+    */
+diff --git a/packages/mui-base/src/useSelect/defaultOptionStringifier.ts b/packages/mui-base/src/useSelect/defaultStringifyOption.ts
+similarity index 67%
+rename from packages/mui-base/src/useSelect/defaultOptionStringifier.ts
+rename to packages/mui-base/src/useSelect/defaultStringifyOption.ts
+index e30bf637..99d055c2 100644
+--- a/packages/mui-base/src/useSelect/defaultOptionStringifier.ts
++++ b/packages/mui-base/src/useSelect/defaultStringifyOption.ts
+@@ -1,6 +1,6 @@
+ import { SelectOption } from '../useOption';
+ 
+-const defaultOptionStringifier = <OptionValue>(option: SelectOption<OptionValue>) => {
++const defaultStringifyOption = <OptionValue>(option: SelectOption<OptionValue>) => {
+   const { label, value } = option;
+   if (typeof label === 'string') {
+     return label;
+@@ -14,4 +14,4 @@ const defaultOptionStringifier = <OptionValue>(option: SelectOption<OptionValue>
+   return String(option);
+ };
+ 
+-export default defaultOptionStringifier;
++export default defaultStringifyOption;
+diff --git a/packages/mui-base/src/useSelect/useSelect.ts b/packages/mui-base/src/useSelect/useSelect.ts
+index 066e3302..ba181054 100644
+--- a/packages/mui-base/src/useSelect/useSelect.ts
++++ b/packages/mui-base/src/useSelect/useSelect.ts
+@@ -18,7 +18,7 @@ import {
+ } from './useSelect.types';
+ import useList, { UseListParameters } from '../useList';
+ import { EventHandlers } from '../utils/types';
+-import defaultOptionStringifier from './defaultOptionStringifier';
++import defaultStringifyOption from './defaultStringifyOption';
+ import { SelectProviderValue } from './SelectProvider';
+ import { useCompoundParent } from '../utils/useCompound';
+ import { SelectOption } from '../useOption/useOption.types';
+@@ -50,7 +50,7 @@ function useSelect<OptionValue, Multiple extends boolean = false>(
+     onOpenChange,
+     open: openProp,
+     options: optionsParam,
+-    optionStringifier = defaultOptionStringifier,
++    stringifyOption: stringifyOptionProp = defaultStringifyOption,
+     value: valueProp,
+   } = props;
+ 
+@@ -147,9 +147,9 @@ function useSelect<OptionValue, Multiple extends boolean = false>(
+         return '';
+       }
+ 
+-      return optionStringifier(option);
++      return stringifyOptionProp(option);
+     },
+-    [options, optionStringifier],
++    [options, stringifyOptionProp],
+   );
+ 
+   const controlledState = React.useMemo(
+diff --git a/packages/mui-base/src/useSelect/useSelect.types.ts b/packages/mui-base/src/useSelect/useSelect.types.ts
+index 67482280..6950b6f9 100644
+--- a/packages/mui-base/src/useSelect/useSelect.types.ts
++++ b/packages/mui-base/src/useSelect/useSelect.types.ts
+@@ -90,9 +90,9 @@ export interface UseSelectParameters<OptionValue, Multiple extends boolean = fal
+    * This is useful when labels are elements and need to be converted to plain text
+    * to enable keyboard navigation with character keys.
+    *
+-   * @default defaultOptionStringifier
++   * @default defaultStringifyOption
+    */
+-  optionStringifier?: (option: SelectOption<OptionValue>) => string;
++  stringifyOption?: (option: SelectOption<OptionValue>) => string;
+   /**
+    * The selected value.
+    * Set to `null` to deselect all options.

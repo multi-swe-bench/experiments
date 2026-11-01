@@ -1,0 +1,26 @@
+diff --git a/packages/compiler-sfc/src/script/resolveType.ts b/packages/compiler-sfc/src/script/resolveType.ts
+index ee0a723..9e4206f 100644
+--- a/packages/compiler-sfc/src/script/resolveType.ts
++++ b/packages/compiler-sfc/src/script/resolveType.ts
+@@ -1070,7 +1070,12 @@ function loadTSConfig(
+   configPath: string,
+   ts: typeof TS,
+   fs: FS,
++  visited: Set<string> = new Set(),
+ ): TS.ParsedCommandLine[] {
++  if (visited.has(configPath)) {
++    return []
++  }
++  visited.add(configPath)
+   // The only case where `fs` is NOT `ts.sys` is during tests.
+   // parse config host requires an extra `readDirectory` method
+   // during tests, which is stubbed.
+@@ -1096,7 +1101,7 @@ function loadTSConfig(
+         continue
+       }
+       tsConfigRefMap.set(refPath, configPath)
+-      res.unshift(...loadTSConfig(refPath, ts, fs))
++      res.unshift(...loadTSConfig(refPath, ts, fs, visited))
+     }
+   }
+   return res

@@ -1,0 +1,66 @@
+diff --git a/packages/svelte/src/compiler/errors.js b/packages/svelte/src/compiler/errors.js
+index 213b689..4242270 100644
+--- a/packages/svelte/src/compiler/errors.js
++++ b/packages/svelte/src/compiler/errors.js
+@@ -232,7 +232,8 @@ const elements = {
+ 
+ /** @satisfies {Errors} */
+ const components = {
+-	'invalid-component-directive': () => `This type of directive is not valid on components`
++	'invalid-component-directive': () => `This type of directive is not valid on components`,
++	'invalid-children': () => `Cannot have both implicit and explicit children`
+ };
+ 
+ /** @satisfies {Errors} */
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index ddb0d1d..4bc2f70 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -16,7 +16,7 @@ import { warn } from '../../warnings.js';
+ import fuzzymatch from '../1-parse/utils/fuzzymatch.js';
+ import { binding_properties } from '../bindings.js';
+ import { ContentEditableBindings, EventModifiers, SVGElements } from '../constants.js';
+-import { is_custom_element_node } from '../nodes.js';
++import { is_custom_element_node, is_element_node } from '../nodes.js';
+ import {
+ 	regex_illegal_attribute_character,
+ 	regex_not_whitespace,
+@@ -54,6 +54,38 @@ function validate_component(node, context) {
+ 		}
+ 	}
+ 
++	const has_explicit_children =
++		node.attributes.some(
++			(attribute) => attribute.type === 'Attribute' && attribute.name === 'children'
++		) ||
++		node.fragment.nodes.some(
++			(child) => child.type === 'SnippetBlock' && child.expression.name === 'children'
++		);
++
++	if (has_explicit_children) {
++		for (const child of node.fragment.nodes) {
++			if (child.type === 'SnippetBlock' || child.type === 'Comment') {
++				continue;
++			}
++
++			if (child.type === 'Text' && regex_only_whitespaces.test(child.data)) {
++				continue;
++			}
++
++			if (
++				is_element_node(child) &&
++				child.attributes.some(
++					(attribute) => attribute.type === 'Attribute' && attribute.name === 'slot'
++				)
++			) {
++				continue;
++			}
++
++			error(child, 'invalid-children');
++			break;
++		}
++	}
++
+ 	context.next({
+ 		...context.state,
+ 		parent_element: null,

@@ -1,0 +1,225 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index b5a1e55..214f358 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -54,11 +54,13 @@ export function migrate(source) {
+ 			rest_props_name: analysis.root.unique('rest').name,
+ 			end: source.length,
+ 			run_name: analysis.root.unique('run').name,
+-			needs_run: false
++			needs_run: false,
++			derived_labeled: new Set()
+ 		};
+ 
+ 		if (parsed.instance) {
+ 			walk(parsed.instance.content, state, instance_script);
++			reorder_derived_statements(parsed, state);
+ 		}
+ 
+ 		state = { ...state, scope: analysis.template.scope };
+@@ -178,6 +180,7 @@ export function migrate(source) {
+  *  end: number;
+  *  run_name: string;
+  *  needs_run: boolean;
++ *  derived_labeled: Set<any>;
+  * }} State
+  */
+ 
+@@ -372,6 +375,7 @@ const instance_script = {
+ 			const reassigned_bindings = bindings.filter((b) => b?.reassigned);
+ 			if (reassigned_bindings.length === 0 && !bindings.some((b) => b?.kind === 'store_sub')) {
+ 				// $derived
++				state.derived_labeled.add(node);
+ 				state.str.update(
+ 					/** @type {number} */ (node.start),
+ 					/** @type {number} */ (node.body.expression.start),
+@@ -887,3 +891,159 @@ function guess_indent(content) {
+ 
+ 	return ' '.repeat(min);
+ }
++
++/**
++ * Reorders top-level `$derived` statements that reference variables declared later
++ * in the script, so that declarations come before their use (as required in runes mode).
++ * Only derived statements are moved; everything else stays in place.
++ * @param {ReturnType<typeof parse>} parsed
++ * @param {State} state
++ */
++function reorder_derived_statements(parsed, state) {
++	if (!parsed.instance) return;
++
++	const body = parsed.instance.content.body;
++	const str = state.str;
++	const original = str.original;
++
++	/** @type {Map<string, any>} */
++	const decl_map = new Map();
++	for (const stmt of body) {
++		for (const name of declared_names(stmt)) {
++			decl_map.set(name, stmt);
++		}
++	}
++
++	/**
++	 * For each derived `$:` statement, the set of top-level statements that declare
++	 * variables it depends on and that appear after it (i.e. forward references).
++	 * @type {Map<any, Set<any>>}
++	 */
++	const must_come_after = new Map();
++
++	for (const stmt of body) {
++		if (!state.derived_labeled.has(stmt)) continue;
++
++		const reactive_statement = state.analysis.reactive_statements.get(stmt);
++		if (!reactive_statement) continue;
++
++		/** @type {Set<any>} */
++		const after = new Set();
++		for (const binding of reactive_statement.dependencies) {
++			if (
++				binding.kind === 'prop' ||
++				binding.kind === 'bindable_prop' ||
++				binding.kind === 'rest_prop'
++			) {
++				// props are hoisted to the `$props()` declaration at the top
++				continue;
++			}
++			const dep = decl_map.get(binding.node.name);
++			if (
++				dep &&
++				dep !== stmt &&
++				/** @type {number} */ (dep.start) > /** @type {number} */ (stmt.start)
++			) {
++				after.add(dep);
++			}
++		}
++		if (after.size > 0) must_come_after.set(stmt, after);
++	}
++
++	if (must_come_after.size === 0) return;
++
++	// Compute the anchor (original source position after which the statement should be
++	// placed) for each derived statement that needs moving. If a dependency is itself a
++	// moved derived statement, its anchor is used (so chains of derivations work).
++	/** @type {Map<any, number>} */
++	const anchor = new Map();
++
++	/**
++	 * @param {any} stmt
++	 * @returns {number}
++	 */
++	function compute_anchor(stmt) {
++		if (anchor.has(stmt)) return /** @type {number} */ (anchor.get(stmt));
++		let max_end = 0;
++		for (const dep of must_come_after.get(stmt)) {
++			const end = must_come_after.has(dep) ? compute_anchor(dep) : /** @type {number} */ (dep.end);
++			if (end > max_end) max_end = end;
++		}
++		anchor.set(stmt, max_end);
++		return max_end;
++	}
++
++	for (const stmt of must_come_after.keys()) compute_anchor(stmt);
++
++	// Process statements in topological order (dependencies before dependents) so that
++	// when several statements share the same anchor, they are appended in the right order.
++	/** @type {any[]} */
++	const ordered = [];
++	const visited = new Set();
++	/**
++	 * @param {any} stmt
++	 */
++	function visit(stmt) {
++		if (visited.has(stmt)) return;
++		visited.add(stmt);
++		for (const dep of must_come_after.get(stmt)) {
++			if (must_come_after.has(dep)) visit(dep);
++		}
++		ordered.push(stmt);
++	}
++	for (const stmt of must_come_after.keys()) visit(stmt);
++
++	for (const stmt of ordered) {
++		const start = /** @type {number} */ (stmt.start);
++		const end = /** @type {number} */ (stmt.end);
++
++		let line_start = start;
++		while (line_start > 0 && original[line_start - 1] !== '\n') line_start--;
++
++		let line_end = end;
++		while (line_end < original.length && original[line_end] !== '\n') line_end++;
++
++		const indent = original.substring(line_start, start);
++		const text = str.slice(start, end);
++
++		// remove the statement's line, including the leading newline
++		str.remove(line_start > 0 ? line_start - 1 : line_start, line_end);
++
++		str.appendRight(/** @type {number} */ (anchor.get(stmt)), '\n' + indent + text);
++	}
++}
++
++/**
++ * Returns the names of the top-level bindings declared by a statement.
++ * @param {any} stmt
++ * @returns {string[]}
++ */
++function declared_names(stmt) {
++	/** @type {string[]} */
++	const names = [];
++
++	if (stmt.type === 'VariableDeclaration') {
++		for (const declarator of stmt.declarations) {
++			for (const id of extract_identifiers(declarator.id)) {
++				names.push(id.name);
++			}
++		}
++	} else if (stmt.type === 'LabeledStatement' && stmt.label?.name === '$') {
++		const body = stmt.body;
++		if (body?.type === 'ExpressionStatement' && body.expression?.type === 'AssignmentExpression') {
++			for (const id of extract_identifiers(body.expression.left)) {
++				names.push(id.name);
++			}
++		}
++	} else if (stmt.type === 'ExportNamedDeclaration' && stmt.declaration) {
++		names.push(...declared_names(stmt.declaration));
++	} else if (stmt.type === 'FunctionDeclaration' || stmt.type === 'ClassDeclaration') {
++		if (stmt.id) names.push(stmt.id.name);
++	} else if (stmt.type === 'ImportDeclaration') {
++		for (const specifier of stmt.specifiers) {
++			names.push(specifier.local.name);
++		}
++	}
++
++	return names;
++}
+diff --git a/packages/svelte/tests/migrate/samples/derivations-reordered/input.svelte b/packages/svelte/tests/migrate/samples/derivations-reordered/input.svelte
+new file mode 100644
+index 0000000..281964c
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/derivations-reordered/input.svelte
+@@ -0,0 +1,8 @@
++<script>
++	$: mobile = width < 640;
++	let width = 0;
++</script>
++
++<svelte:window bind:innerWidth={width} />
++
++<p>{mobile ? 'mobile' : 'desktop'}</p>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/migrate/samples/derivations-reordered/output.svelte b/packages/svelte/tests/migrate/samples/derivations-reordered/output.svelte
+new file mode 100644
+index 0000000..8538089
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/derivations-reordered/output.svelte
+@@ -0,0 +1,8 @@
++<script>
++	let width = $state(0);
++	let mobile = $derived(width < 640);
++</script>
++
++<svelte:window bind:innerWidth={width} />
++
++<p>{mobile ? 'mobile' : 'desktop'}</p>
+\ No newline at end of file

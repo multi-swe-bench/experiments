@@ -1,0 +1,26 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index e068802..5473c4e 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -1694,9 +1694,19 @@ function serialize_element_attributes(node, context) {
+ 			if (binding?.omit_in_ssr) continue;
+ 
+ 			if (ContentEditableBindings.includes(attribute.name)) {
+-				content = { escape: false, expression: attribute.expression };
++				content = {
++					escape: false,
++					expression: /** @type {import('estree').Expression} */ (
++						context.visit(attribute.expression)
++					)
++				};
+ 			} else if (attribute.name === 'value' && node.name === 'textarea') {
+-				content = { escape: true, expression: attribute.expression };
++				content = {
++					escape: true,
++					expression: /** @type {import('estree').Expression} */ (
++						context.visit(attribute.expression)
++					)
++				};
+ 			} else if (attribute.name === 'group') {
+ 				const value_attribute = /** @type {import('#compiler').Attribute | undefined} */ (
+ 					node.attributes.find((attr) => attr.type === 'Attribute' && attr.name === 'value')

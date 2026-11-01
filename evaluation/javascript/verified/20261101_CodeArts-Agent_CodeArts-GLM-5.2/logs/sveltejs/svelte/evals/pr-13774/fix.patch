@@ -1,0 +1,75 @@
+diff --git a/packages/svelte/src/internal/client/dom/elements/transitions.js b/packages/svelte/src/internal/client/dom/elements/transitions.js
+index b473d00..524d13e 100644
+--- a/packages/svelte/src/internal/client/dom/elements/transitions.js
++++ b/packages/svelte/src/internal/client/dom/elements/transitions.js
+@@ -188,9 +188,11 @@ export function transition(flags, element, get_fn, get_params) {
+ 		// If a transition is still ongoing, we use the existing options rather than generating
+ 		// new ones. This ensures that reversible transitions reverse smoothly, rather than
+ 		// jumping to a new spot because (for example) a different `duration` was used
+-		return (current_options ??= get_fn()(element, get_params?.() ?? /** @type {P} */ ({}), {
+-			direction
+-		}));
++		return (current_options ??= untrack(() =>
++			get_fn()(element, get_params?.() ?? /** @type {P} */ ({}), {
++				direction
++			})
++		));
+ 	}
+ 
+ 	/** @type {TransitionManager} */
+diff --git a/packages/svelte/tests/runtime-runes/samples/transition-tracking/_config.js b/packages/svelte/tests/runtime-runes/samples/transition-tracking/_config.js
+new file mode 100644
+index 0000000..26434f4
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/transition-tracking/_config.js
+@@ -0,0 +1,25 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++
++export default test({
++	async test({ assert, target, logs, raf }) {
++		const btn = target.querySelector('button');
++
++		// intro
++		flushSync(() => {
++			btn.click();
++		});
++
++		assert.deepEqual(logs, ['tracking', false]);
++
++		// complete the intro animation so current_options is reset
++		raf.tick(200);
++
++		// outro
++		flushSync(() => {
++			btn.click();
++		});
++
++		assert.deepEqual(logs, ['tracking', false, 'tracking', false]);
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/transition-tracking/main.svelte b/packages/svelte/tests/runtime-runes/samples/transition-tracking/main.svelte
+new file mode 100644
+index 0000000..30d9fc3
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/transition-tracking/main.svelte
+@@ -0,0 +1,17 @@
++<script>
++	let visible = $state(false);
++
++	function customTransition() {
++		console.log('tracking', $effect.tracking());
++		return {
++			duration: 100,
++			tick: () => {}
++		};
++	}
++</script>
++
++<button onclick={() => visible = !visible}>toggle</button>
++
++{#if visible}
++	<div transition:customTransition>clicks</div>
++{/if}
+\ No newline at end of file

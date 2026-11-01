@@ -1,0 +1,88 @@
+diff --git a/packages/material-ui/src/IconButton/IconButton.d.ts b/packages/material-ui/src/IconButton/IconButton.d.ts
+index b5a82bc1..007181c4 100644
+--- a/packages/material-ui/src/IconButton/IconButton.d.ts
++++ b/packages/material-ui/src/IconButton/IconButton.d.ts
+@@ -57,6 +57,10 @@ export type IconButtonTypeMap<P = {}, D extends React.ElementType = 'button'> =
+        * The system prop that allows defining system overrides as well as additional CSS styles.
+        */
+       sx?: SxProps<Theme>;
++      /**
++       * @ignore
++       */
++      disableThemeStyleOverrides?: boolean;
+     };
+     defaultComponent: D;
+   }>;
+diff --git a/packages/material-ui/src/IconButton/IconButton.js b/packages/material-ui/src/IconButton/IconButton.js
+index 6268946d..3a40bd05 100644
+--- a/packages/material-ui/src/IconButton/IconButton.js
++++ b/packages/material-ui/src/IconButton/IconButton.js
+@@ -33,6 +33,13 @@ const IconButtonRoot = experimentalStyled(ButtonBase, {
+   overridesResolver: (props, styles) => {
+     const { styleProps } = props;
+ 
++    // SwitchBase renders an IconButton under the hood for Checkbox, Switch and
++    // Radio. In that case the IconButton theme overrides should not be applied
++    // so that customizing IconButton via the theme does not affect them.
++    if (styleProps.disableThemeStyleOverrides) {
++      return null;
++    }
++
+     return {
+       ...styles.root,
+       ...(styleProps.color !== 'default' && styles[`color${capitalize(styleProps.color)}`]),
+@@ -112,7 +119,12 @@ const IconButtonRoot = experimentalStyled(ButtonBase, {
+ const IconButtonLabel = experimentalStyled('span', {
+   name: 'MuiIconButton',
+   slot: 'Label',
+-  overridesResolver: (props, styles) => styles.label,
++  overridesResolver: (props, styles) => {
++    if (props.styleProps.disableThemeStyleOverrides) {
++      return null;
++    }
++    return styles.label;
++  },
+ })({
+   /* Styles applied to the children container element. */
+   width: '100%',
+@@ -135,6 +147,7 @@ const IconButton = React.forwardRef(function IconButton(inProps, ref) {
+     disabled = false,
+     disableFocusRipple = false,
+     size = 'medium',
++    disableThemeStyleOverrides = false,
+     ...other
+   } = props;
+ 
+@@ -145,6 +158,7 @@ const IconButton = React.forwardRef(function IconButton(inProps, ref) {
+     disabled,
+     disableFocusRipple,
+     size,
++    disableThemeStyleOverrides,
+   };
+ 
+   const classes = useUtilityClasses(styleProps);
+@@ -225,6 +239,10 @@ IconButton.propTypes /* remove-proptypes */ = {
+    * @default false
+    */
+   disableRipple: PropTypes.bool,
++  /**
++   * @ignore
++   */
++  disableThemeStyleOverrides: PropTypes.bool,
+   /**
+    * If given, uses a negative margin to counteract the padding on one
+    * side (this is often helpful for aligning the left or right
+diff --git a/packages/material-ui/src/internal/SwitchBase.js b/packages/material-ui/src/internal/SwitchBase.js
+index 169baeb9..1b61ab1f 100644
+--- a/packages/material-ui/src/internal/SwitchBase.js
++++ b/packages/material-ui/src/internal/SwitchBase.js
+@@ -135,6 +135,9 @@ const SwitchBase = React.forwardRef(function SwitchBase(props, ref) {
+       onFocus={handleFocus}
+       onBlur={handleBlur}
+       styleProps={styleProps}
++      // Prevent the IconButton theme overrides from leaking into the
++      // Checkbox, Switch and Radio components which are built on top of SwitchBase.
++      disableThemeStyleOverrides
+       ref={ref}
+       {...other}
+     >

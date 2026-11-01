@@ -1,0 +1,245 @@
+$ bash /home/test-run.sh
+
+
+> dayjs@0.0.0-development test
+> jest --verbose --maxWorkers=4
+
+FAIL test/display.test.js
+  ✓ Format no formatStr (4ms)
+  ✓ Format Year YY YYYY (1ms)
+  ✓ Format Month M MM MMM MMMM (1ms)
+  ✓ Format Day of Month D DD 1 - 31
+  ✓ Format Day of Week d Sun - Sat (1ms)
+  ✓ Format Hour H HH 24-hour (1ms)
+  ✓ Format Hour h hh 12-hour
+  ✓ Format meridiens a A am / pm
+  ✓ Format Minute m mm
+  ✓ Format Second s ss SSS (1ms)
+  ✓ Format Time Zone ZZ (1ms)
+  ✓ Format ddd dd MMM with short locale (1ms)
+  ✓ Format Complex with other string - : /  (1ms)
+  ✓ Format Escaping characters
+  ✕ Format LTS LT L LL LLL LLLL (9ms)
+  ✕ French LTS, LT, L, LL, LLL, LLLL (2ms)
+  ✕ Spanish LTS, LT, L, LL, LLL, LLLL (1ms)
+  ✓ Unix Timestamp (milliseconds) (1ms)
+  ✓ Unix Timestamp (seconds)
+  ✓ Days in Month
+  ✓ As Javascript Date -> toDate (1ms)
+  ✓ As Array -> toArray
+  ✓ As JSON -> toJSON
+  ✓ As ISO 8601 String -> toISOString e.g. 2013-02-04T22:44:30.652Z
+  ✓ As Object -> toObject (1ms)
+  Difference
+    ✓ empty -> default milliseconds (2ms)
+    ✓ diff -> none dayjs object
+    ✓ diff -> in seconds, minutes, hours, days, weeks, months, quarters, years  (5ms)
+    ✓ Special diff in month according to moment.js (2ms)
+
+  ● Format LTS LT L LL LLL LLLL
+
+    expect(received).toBe(expected) // Object.is equality
+    
+    Expected value to be:
+      "1:19:22 PM"
+    Received:
+      "LTS"
+
+      118 | 
+      119 | it('Format LTS LT L LL LLL LLLL', () => {
+    > 120 |   expect(dayjs().format('LTS')).toBe(moment().format('LTS'))
+      121 |   expect(dayjs().format('LT')).toBe(moment().format('LT'))
+      122 |   expect(dayjs().format('L')).toBe(moment().format('L'))
+      123 |   expect(dayjs().format('LL')).toBe(moment().format('LL'))
+      
+      at Object.<anonymous> (test/display.test.js:120:33)
+      at processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+  ● French LTS, LT, L, LL, LLL, LLLL
+
+    expect(received).toBe(expected) // Object.is equality
+    
+    Expected value to be:
+      "13:19:22"
+    Received:
+      "LTS"
+
+      127 | 
+      128 | it('French LTS, LT, L, LL, LLL, LLLL', () => {
+    > 129 |   expect(dayjs().locale('fr').format('LTS')).toBe(moment().locale('fr').format('LTS'))
+      130 |   expect(dayjs().locale('fr').format('LT')).toBe(moment().locale('fr').format('LT'))
+      131 |   expect(dayjs().locale('fr').format('L').toLowerCase()).toBe(moment().locale('fr').format('L'))
+      132 |   expect(dayjs().locale('fr').format('LL').toLowerCase()).toBe(moment().locale('fr').format('LL'))
+      
+      at Object.<anonymous> (test/display.test.js:129:46)
+      at processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+  ● Spanish LTS, LT, L, LL, LLL, LLLL
+
+    expect(received).toBe(expected) // Object.is equality
+    
+    Expected value to be:
+      "13:19:22"
+    Received:
+      "LTS"
+
+      136 | 
+      137 | it('Spanish LTS, LT, L, LL, LLL, LLLL', () => {
+    > 138 |   expect(dayjs().locale('es').format('LTS')).toBe(moment().locale('es').format('LTS'))
+      139 |   expect(dayjs().locale('es').format('LT')).toBe(moment().locale('es').format('LT'))
+      140 |   expect(dayjs().locale('es').format('L')).toBe(moment().locale('es').format('L'))
+      141 |   expect(dayjs().locale('es').format('LL').toLowerCase()).toBe(moment().locale('es').format('LL').toLowerCase())
+      
+      at Object.<anonymous> (test/display.test.js:138:46)
+      at processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+PASS test/locale.test.js
+  ✓ Uses spanish locale through constructor
+  ✓ set locale for one instance only (1ms)
+  ✓ set global locale
+  ✓ immutable instance locale
+  ✓ User custom locale
+  Instance locale inheritance
+    ✓ Clone
+    ✓ StartOf EndOf (1ms)
+    ✓ Set
+    ✓ Add
+
+PASS test/parse.test.js
+  ✓ Unix Timestamp Number (milliseconds) 1523520536000
+  ✓ String and Number 20180101
+  ✓ Number 0
+  ✓ Clone not affect each other
+  ✓ Clone with same value
+  Parse
+    ✓ Now (1ms)
+    ✓ String 20130208 (7ms)
+    ✓ String ISO 8601 date, time and zone
+    ✓ String Other, Null and isValid
+
+PASS test/manipulate.test.js
+  ✓ Add Time days (1ms)
+  ✓ Subtract Time days
+  StartOf EndOf
+    ✓ StartOf EndOf Year ... with s and upper case (2ms)
+    ✓ StartOf EndOf Other -> no change
+
+PASS test/locale/keys.test.js
+  ✓ Locale keys (6ms)
+
+PASS test/plugin/relativeTime.test.js
+  ✓ Time from X (11ms)
+  ✓ Time from now (1ms)
+  ✓ Time to now (1ms)
+  ✓ Time to X (1ms)
+
+PASS test/plugin/advancedFormat.test.js
+  ✓ Format empty string
+  ✓ Format Quarter Q (1ms)
+  ✓ Format Timestamp X x
+  ✓ Format Day of Month Do 1 - 31 (1ms)
+  ✓ Format Hour k kk 24-hour 1 - 24 (1ms)
+
+PASS test/plugin/weekOfYear.test.js
+  ✓ Week of year (1ms)
+
+PASS test/plugin/isBetween.test.js
+  ✓ is between (1ms)
+
+PASS test/get-set.test.js
+  ✓ Year (1ms)
+  ✓ Month
+  ✓ Day of Week
+  ✓ Date
+  ✓ Hour
+  ✓ Minute
+  ✓ Second (1ms)
+  ✓ Millisecond
+  ✓ Set Day
+  ✓ Set Day of Week
+  ✓ Set Month (1ms)
+  ✓ Set Year
+  ✓ Set Hour
+  ✓ Set Minute
+  ✓ Set Second
+  ✓ Set Millisecond
+  ✓ Set Unknown String
+  ✓ Immutable Set (1ms)
+
+PASS test/plugin/isLeapYear.test.js
+  ✓ IsLeapYear (1ms)
+
+PASS test/plugin/buddhistEra.test.js
+  ✓ Format empty string (1ms)
+  ✓ Format Buddhist Era 2 digit (1ms)
+  ✓ Format Buddhist Era 4 digit
+  ✓ Format Buddhist Era 4 digit with other format
+
+PASS test/query.test.js
+  Is Before Is After Is Same
+    ✓ Compare to dayjs object (2ms)
+    ✓ No value
+    ✓ With string (1ms)
+
+PASS test/utils.test.js
+  ✓ PrettyUnit (1ms)
+  ✓ PadZoneStr
+  ✓ PadStart
+
+PASS test/plugin.test.js
+  ✓ Plugin extend method and option (1ms)
+  ✓ Plugin extend dayjs
+  ✓ Plugin use core utils
+
+---------------------------|----------|----------|----------|----------|-------------------|
+File                       |  % Stmts | % Branch |  % Funcs |  % Lines | Uncovered Line #s |
+---------------------------|----------|----------|----------|----------|-------------------|
+All files                  |      100 |      100 |      100 |      100 |                   |
+ src                       |      100 |      100 |      100 |      100 |                   |
+  constant.js              |      100 |      100 |      100 |      100 |                   |
+  index.js                 |      100 |      100 |      100 |      100 |                   |
+  utils.js                 |      100 |      100 |      100 |      100 |                   |
+ src/locale                |      100 |      100 |      100 |      100 |                   |
+  bg.js                    |      100 |      100 |      100 |      100 |                   |
+  ca.js                    |      100 |      100 |      100 |      100 |                   |
+  da.js                    |      100 |      100 |      100 |      100 |                   |
+  de.js                    |      100 |      100 |      100 |      100 |                   |
+  es.js                    |      100 |      100 |      100 |      100 |                   |
+  fa.js                    |      100 |      100 |      100 |      100 |                   |
+  fr.js                    |      100 |      100 |      100 |      100 |                   |
+  hr.js                    |      100 |      100 |      100 |      100 |                   |
+  id.js                    |      100 |      100 |      100 |      100 |                   |
+  it.js                    |      100 |      100 |      100 |      100 |                   |
+  ja.js                    |      100 |      100 |      100 |      100 |                   |
+  ka.js                    |      100 |      100 |      100 |      100 |                   |
+  ko.js                    |      100 |      100 |      100 |      100 |                   |
+  nb.js                    |      100 |      100 |      100 |      100 |                   |
+  nl.js                    |      100 |      100 |      100 |      100 |                   |
+  pt-br.js                 |      100 |      100 |      100 |      100 |                   |
+  ro.js                    |      100 |      100 |      100 |      100 |                   |
+  ru.js                    |      100 |      100 |      100 |      100 |                   |
+  sv.js                    |      100 |      100 |      100 |      100 |                   |
+  th.js                    |      100 |      100 |      100 |      100 |                   |
+  tr.js                    |      100 |      100 |      100 |      100 |                   |
+  zh-cn.js                 |      100 |      100 |      100 |      100 |                   |
+  zh-tw.js                 |      100 |      100 |      100 |      100 |                   |
+ src/plugin/advancedFormat |      100 |      100 |      100 |      100 |                   |
+  index.js                 |      100 |      100 |      100 |      100 |                   |
+ src/plugin/buddhistEra    |      100 |      100 |      100 |      100 |                   |
+  index.js                 |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isBetween      |      100 |      100 |      100 |      100 |                   |
+  index.js                 |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isLeapYear     |      100 |      100 |      100 |      100 |                   |
+  index.js                 |      100 |      100 |      100 |      100 |                   |
+ src/plugin/relativeTime   |      100 |      100 |      100 |      100 |                   |
+  index.js                 |      100 |      100 |      100 |      100 |                   |
+ src/plugin/weekOfYear     |      100 |      100 |      100 |      100 |                   |
+  index.js                 |      100 |      100 |      100 |      100 |                   |
+---------------------------|----------|----------|----------|----------|-------------------|
+Test Suites: 1 failed, 14 passed, 15 total
+Tests:       3 failed, 92 passed, 95 total
+Snapshots:   0 total
+Time:        2.222s
+Ran all test suites.
+
+[exit code: 1]

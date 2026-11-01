@@ -1,0 +1,27 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 4c14f2b..7255648 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -385,6 +385,22 @@ const validation = {
+ 
+ 			if (node.name in binding_properties) {
+ 				const property = binding_properties[node.name];
++
++				if (
++					node.name !== 'this' &&
++					(parent.type === 'SvelteWindow' || parent.type === 'SvelteDocument') &&
++					!property.valid_elements?.includes(parent.name)
++				) {
++					const valid = Object.keys(binding_properties)
++						.filter((k) => binding_properties[k].valid_elements?.includes(parent.name))
++						.concat('this');
++					e.bind_invalid_name(
++						node,
++						node.name,
++						`valid bindings on \`<${parent.name}>\` are ${valid.join(', ')}`
++					);
++				}
++
+ 				if (property.valid_elements && !property.valid_elements.includes(parent.name)) {
+ 					e.bind_invalid_target(
+ 						node,

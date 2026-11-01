@@ -1,0 +1,32 @@
+diff --git a/packages/svelte/src/internal/client/render.js b/packages/svelte/src/internal/client/render.js
+index 68f9ffd..d342cff 100644
+--- a/packages/svelte/src/internal/client/render.js
++++ b/packages/svelte/src/internal/client/render.js
+@@ -904,8 +904,16 @@ export function selected(dom) {
+ 			const select_value = select.__value;
+ 			// @ts-ignore
+ 			const option_value = dom.__value;
+-			// @ts-ignore
+-			dom.selected = select_value === option_value;
++			if (select.multiple) {
++				// @ts-ignore
++				dom.selected = select_value != null ? ~select_value.indexOf(option_value) : false;
++			} else if (select_value === option_value) {
++				// For a non-multiple select, setting `selected` to false is either a no-op
++				// or causes the first option to be (re)selected, so we only opt in to
++				// selection here; deselection is handled by the select value binding.
++				// @ts-ignore
++				dom.selected = true;
++			}
+ 			// @ts-ignore
+ 			dom.value = option_value;
+ 		}
+@@ -992,7 +1000,7 @@ export function bind_select_value(dom, get_value, update) {
+ 			dom.__value = value;
+ 		}
+ 		mounted = true;
+-	});
++	}, current_block, false, false);
+ }
+ 
+ /**

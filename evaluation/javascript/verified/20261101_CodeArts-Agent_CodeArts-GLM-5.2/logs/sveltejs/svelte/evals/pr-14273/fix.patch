@@ -1,0 +1,130 @@
+diff --git a/.changeset/nullish-coalescing-assignment-state.md b/.changeset/nullish-coalescing-assignment-state.md
+new file mode 100644
+index 0000000..920af18
+--- /dev/null
++++ b/.changeset/nullish-coalescing-assignment-state.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++Fix `??=`, `&&=` and `||=` assignments to `$state` not proxifying the assigned value. Previously, logical assignment operators produced a `BinaryExpression` that was not wrapped in `$.proxy`, so mutations to the newly assigned array/object were not tracked. They now produce a `LogicalExpression`, matching the behaviour of the equivalent `x = x ?? y` reassignment.
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/utils/ast.js b/packages/svelte/src/compiler/utils/ast.js
+index cc8339f..d206386 100644
+--- a/packages/svelte/src/compiler/utils/ast.js
++++ b/packages/svelte/src/compiler/utils/ast.js
+@@ -577,8 +577,14 @@ export function build_fallback(expression, fallback) {
+  * @param {ESTree.Expression} right
+  */
+ export function build_assignment_value(operator, left, right) {
+-	return operator === '='
+-		? right
+-		: // turn something like x += 1 into x = x + 1
+-			b.binary(/** @type {ESTree.BinaryOperator} */ (operator.slice(0, -1)), left, right);
++	if (operator === '=') {
++		return right;
++	}
++
++	const binary_operator = operator.slice(0, -1);
++
++	// turn something like x += 1 into x = x + 1, and x ??= y into x = x ?? y
++	return binary_operator === '??' || binary_operator === '&&' || binary_operator === '||'
++		? b.logical(/** @type {ESTree.LogicalOperator} */ (binary_operator), left, right)
++		: b.binary(/** @type {ESTree.BinaryOperator} */ (binary_operator), left, right);
+ }
+diff --git a/packages/svelte/tests/runtime-runes/samples/nullish-coalescing-assignment/_config.js b/packages/svelte/tests/runtime-runes/samples/nullish-coalescing-assignment/_config.js
+new file mode 100644
+index 0000000..d100bd1
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/nullish-coalescing-assignment/_config.js
+@@ -0,0 +1,53 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++
++export default test({
++	html: `
++		<p>null</p>
++		<button>addItem</button>
++		<button>addItem2</button>
++		<button>addItem3</button>
++		<button>reset</button>
++	`,
++
++	test({ assert, target }) {
++		const [addItem, addItem2, addItem3, reset] = target.querySelectorAll('button');
++		const p = () => target.querySelector('p')?.textContent ?? '';
++
++		// addItem: null -> "1" -> "1,2" -> "1,2,3"
++		flushSync(() => addItem?.click());
++		assert.htmlEqual(p(), '1');
++
++		flushSync(() => addItem?.click());
++		assert.htmlEqual(p(), '1,2');
++
++		flushSync(() => addItem?.click());
++		assert.htmlEqual(p(), '1,2,3');
++
++		flushSync(() => reset?.click());
++		assert.htmlEqual(p(), 'null');
++
++		// addItem2: null -> "1" -> "1,2" -> "1,2,3"
++		flushSync(() => addItem2?.click());
++		assert.htmlEqual(p(), '1');
++
++		flushSync(() => addItem2?.click());
++		assert.htmlEqual(p(), '1,2');
++
++		flushSync(() => addItem2?.click());
++		assert.htmlEqual(p(), '1,2,3');
++
++		flushSync(() => reset?.click());
++		assert.htmlEqual(p(), 'null');
++
++		// addItem3: null -> "1" -> "1,2" -> "1,2,3"
++		flushSync(() => addItem3?.click());
++		assert.htmlEqual(p(), '1');
++
++		flushSync(() => addItem3?.click());
++		assert.htmlEqual(p(), '1,2');
++
++		flushSync(() => addItem3?.click());
++		assert.htmlEqual(p(), '1,2,3');
++	}
++});
+diff --git a/packages/svelte/tests/runtime-runes/samples/nullish-coalescing-assignment/main.svelte b/packages/svelte/tests/runtime-runes/samples/nullish-coalescing-assignment/main.svelte
+new file mode 100644
+index 0000000..c4c13a1
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/nullish-coalescing-assignment/main.svelte
+@@ -0,0 +1,29 @@
++<script>
++	let items = $state(null);
++	let counter = 0;
++
++	function addItem() {
++		(items ??= []).push('' + ++counter);
++	}
++
++	function addItem2() {
++		items ??= [];
++		items.push('' + ++counter);
++	}
++
++	function addItem3() {
++		items = items ?? [];
++		items.push('' + ++counter);
++	}
++
++	function reset() {
++		items = null;
++		counter = 0;
++	}
++</script>
++
++<p>{items == null ? 'null' : items.join(',')}</p>
++<button onclick={addItem}>addItem</button>
++<button onclick={addItem2}>addItem2</button>
++<button onclick={addItem3}>addItem3</button>
++<button onclick={reset}>reset</button>
+\ No newline at end of file

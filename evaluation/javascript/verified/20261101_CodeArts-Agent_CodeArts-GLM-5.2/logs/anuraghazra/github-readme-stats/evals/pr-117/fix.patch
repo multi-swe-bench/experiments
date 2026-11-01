@@ -1,0 +1,35 @@
+diff --git a/api/index.js b/api/index.js
+index 0a25e37..e2b05f9 100644
+--- a/api/index.js
++++ b/api/index.js
+@@ -17,10 +17,11 @@ module.exports = async (req, res) => {
+     text_color,
+     bg_color,
+     theme,
++    cache_control,
+   } = req.query;
+   let stats;
+ 
+-  res.setHeader("Cache-Control", "public, max-age=1800");
++  res.setHeader("Cache-Control", `public, max-age=${Math.max(parseInt(cache_control, 10) || 1800, 1800)}`);
+   res.setHeader("Content-Type", "image/svg+xml");
+ 
+   try {
+diff --git a/api/pin.js b/api/pin.js
+index bebe529..f1e1fd7 100644
+--- a/api/pin.js
++++ b/api/pin.js
+@@ -13,11 +13,12 @@ module.exports = async (req, res) => {
+     bg_color,
+     theme,
+     show_owner,
++    cache_control,
+   } = req.query;
+ 
+   let repoData;
+ 
+-  res.setHeader("Cache-Control", "public, max-age=1800");
++  res.setHeader("Cache-Control", `public, max-age=${Math.max(parseInt(cache_control, 10) || 1800, 1800)}`);
+   res.setHeader("Content-Type", "image/svg+xml");
+ 
+   try {

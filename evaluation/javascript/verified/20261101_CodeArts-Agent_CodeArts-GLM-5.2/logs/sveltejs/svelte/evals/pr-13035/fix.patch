@@ -1,0 +1,27 @@
+diff --git a/.changeset/binding-import-fix.md b/.changeset/binding-import-fix.md
+new file mode 100644
+index 0000000..baf52cc
+--- /dev/null
++++ b/.changeset/binding-import-fix.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++Fix: disallow binding to imported values, which previously produced an "Illegal reassignment of import" RollupError at build time instead of a clear compile error. Binding to an import now throws `bind_invalid_value` at compile time. To bind to a value from another module, mutate a property of an imported object (e.g. `bind:value={store.count}`) instead of reassigning the import itself.
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/BindDirective.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/BindDirective.js
+index 43d1a3d..10f8002 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/visitors/BindDirective.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/BindDirective.js
+@@ -29,6 +29,10 @@ export function BindDirective(node, context) {
+ 	const binding = context.state.scope.get(left.name);
+ 
+ 	if (assignee.type === 'Identifier') {
++		if (binding?.declaration_kind === 'import') {
++			e.bind_invalid_value(node.expression);
++		}
++
+ 		// reassignment
+ 		if (
+ 			node.name !== 'this' && // bind:this also works for regular variables

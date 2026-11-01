@@ -1,0 +1,241 @@
+diff --git a/src/cards/repo-card.js b/src/cards/repo-card.js
+index 4573fcf..d77238d 100644
+--- a/src/cards/repo-card.js
++++ b/src/cards/repo-card.js
+@@ -6,6 +6,7 @@ const {
+   wrapTextMultiline,
+   measureText,
+   parseEmojis,
++  truncateText,
+ } = require("../common/utils");
+ const I18n = require("../common/I18n");
+ const Card = require("../common/Card");
+@@ -94,6 +95,16 @@ const renderRepoCard = (repo, options = {}) => {
+   const langName = (primaryLanguage && primaryLanguage.name) || "Unspecified";
+   const langColor = (primaryLanguage && primaryLanguage.color) || "#333";
+ 
++  // The title is rendered at 18px starting after the prefix icon, keep it
++  // within the card so that long repository names don't overflow.
++  const TITLE_FONT_SIZE = 18;
++  const MAX_TITLE_WIDTH = 300;
++  const truncatedHeader = truncateText(
++    header,
++    MAX_TITLE_WIDTH,
++    TITLE_FONT_SIZE,
++  );
++
+   const desc = parseEmojis(description || "No description provided");
+   const multiLineDescription = wrapTextMultiline(desc);
+   const descriptionLines = multiLineDescription.length;
+@@ -140,7 +151,7 @@ const renderRepoCard = (repo, options = {}) => {
+   }).join("");
+ 
+   const card = new Card({
+-    defaultTitle: header,
++    defaultTitle: truncatedHeader,
+     titlePrefixIcon: icons.contribs,
+     width: 400,
+     height,
+diff --git a/src/common/utils.js b/src/common/utils.js
+index 7834dba..eb3d9cd 100644
+--- a/src/common/utils.js
++++ b/src/common/utils.js
+@@ -1,5 +1,4 @@
+ const axios = require("axios");
+-const wrap = require("word-wrap");
+ const themes = require("../../themes");
+ const toEmoji = require("emoji-name-map");
+ 
+@@ -157,21 +156,174 @@ function getCardColors({
+   return { titleColor, iconColor, textColor, bgColor, borderColor };
+ }
+ 
++/**
++ * Whether a unicode code point should be treated as a wide (full width)
++ * character such as CJK ideographs, kana, hangul and fullwidth forms. These
++ * characters take roughly twice the horizontal space of a latin character so
++ * they need to be accounted for while wrapping text.
++ *
++ * @param {number} code
++ * @returns {boolean}
++ */
++const isWideChar = (code) => {
++  return (
++    (code >= 0x1100 && code <= 0x115f) ||
++    (code >= 0x2e80 && code <= 0x303e) ||
++    (code >= 0x3041 && code <= 0x33ff) ||
++    (code >= 0x3400 && code <= 0x4dbf) ||
++    (code >= 0x4e00 && code <= 0x9fff) ||
++    (code >= 0xa000 && code <= 0xa4cf) ||
++    (code >= 0xac00 && code <= 0xd7a3) ||
++    (code >= 0xf900 && code <= 0xfaff) ||
++    (code >= 0xfe30 && code <= 0xfe4f) ||
++    (code >= 0xff00 && code <= 0xffef) ||
++    (code >= 0x1f000 && code <= 0x1faff) ||
++    (code >= 0x20000 && code <= 0x2fffd)
++  );
++};
++
++/**
++ * Wrap a text into multiple lines. Unlike a naive character based wrapper this
++ * implementation is aware of wide (CJK/fullwidth) characters and is able to
++ * break long runs of characters that do not contain any word boundaries (for
++ * example chinese sentences or very long repository names) so that the text
++ * never overflows the card.
++ *
++ * The `width` parameter is a character based budget (kept for backwards
++ * compatibility). Wide characters consume `2.4` units which corresponds to
++ * their rendered width relative to a latin character, keeping wrapped lines
++ * of both latin and CJK text at roughly the same visual width.
++ *
++ * @param {string} text
++ * @param {number} width
++ * @param {number} maxLines
++ * @returns {string[]}
++ */
+ function wrapTextMultiline(text, width = 60, maxLines = 3) {
+-  const wrapped = wrap(encodeHTML(text), { width })
+-    .split("\n") // Split wrapped lines to get an array of lines
+-    .map((line) => line.trim()); // Remove leading and trailing whitespace of each line
++  const WIDE_CHAR_WIDTH = 2.4;
++
++  let encoded = encodeHTML(text);
++  // Encode any remaining non-ascii characters (e.g. CJK/emoji that
++  // `encodeHTML` leaves untouched) as numeric entities. This guarantees that
++  // every unit we operate on is either an ascii character or a complete entity
++  // that must never be split across two lines. The `u` flag makes sure
++  // surrogate pairs (such as emoji) are treated as a single code point.
++  encoded = encoded.replace(/[^\x00-\x7f]/gu, (c) => {
++    return `&#${c.codePointAt(0)};`;
++  });
+ 
+-  const lines = wrapped.slice(0, maxLines); // Only consider maxLines lines
++  // Tokenize the encoded string into breakable units: HTML entities or single
++  // characters.
++  const units = encoded.match(/&#\d+;|[\s\S]/g) || [];
+ 
+-  // Add "..." to the last line if the text exceeds maxLines
+-  if (wrapped.length > maxLines) {
+-    lines[maxLines - 1] += "...";
++  const unitWidth = (unit) => {
++    if (unit.charCodeAt(0) === 38 /* & */) {
++      const code = parseInt(unit.slice(2, -1), 10);
++      return isWideChar(code) ? WIDE_CHAR_WIDTH : unit.length;
++    }
++    return 1;
++  };
++
++  // Group the units into words separated by whitespace.
++  const words = [];
++  let current = [];
++  for (const unit of units) {
++    if (/\s/.test(unit)) {
++      if (current.length) {
++        words.push(current);
++        current = [];
++      }
++    } else {
++      current.push(unit);
++    }
+   }
++  if (current.length) words.push(current);
++
++  const lines = [];
++  let line = "";
++  let lineWidth = 0;
++
++  const breakLongWord = (wordUnits) => {
++    let chunk = "";
++    let chunkWidth = 0;
++    for (const unit of wordUnits) {
++      const unitW = unitWidth(unit);
++      if (chunkWidth + unitW > width && chunk.length > 0) {
++        lines.push(chunk);
++        chunk = unit;
++        chunkWidth = unitW;
++      } else {
++        chunk += unit;
++        chunkWidth += unitW;
++      }
++    }
++    if (chunk) {
++      line = chunk;
++      lineWidth = chunkWidth;
++    }
++  };
++
++  const addWord = (wordUnits) => {
++    const wordStr = wordUnits.join("");
++    const wordW = wordUnits.reduce((acc, u) => acc + unitWidth(u), 0);
++
++    if (line === "") {
++      if (wordW <= width) {
++        line = wordStr;
++        lineWidth = wordW;
++      } else {
++        breakLongWord(wordUnits);
++      }
++    } else {
++      const candidateWidth = lineWidth + 1 + wordW;
++      if (candidateWidth <= width) {
++        line += " " + wordStr;
++        lineWidth = candidateWidth;
++      } else {
++        lines.push(line);
++        line = "";
++        lineWidth = 0;
++        addWord(wordUnits);
++      }
++    }
++  };
++
++  for (const word of words) {
++    addWord(word);
++  }
++  if (line) lines.push(line);
++
++  const result = lines.slice(0, maxLines).map((l) => l.trim());
++  if (lines.length > maxLines) {
++    result[maxLines - 1] += "...";
++  }
++  return result.filter(Boolean);
++}
+ 
+-  // Remove empty lines if text fits in less than maxLines lines
+-  const multiLineText = lines.filter(Boolean);
+-  return multiLineText;
++/**
++ * Truncate a string so that its rendered width never exceeds `maxWidth`,
++ * appending an ellipsis ("...") when the text had to be shortened.
++ *
++ * @param {string} text
++ * @param {number} maxWidth
++ * @param {number} fontSize
++ * @returns {string}
++ */
++function truncateText(text, maxWidth, fontSize = 10) {
++  if (measureText(text, fontSize) <= maxWidth) return text;
++
++  const ellipsis = "...";
++  let lo = 0;
++  let hi = text.length;
++  while (lo < hi) {
++    const mid = Math.ceil((lo + hi) / 2);
++    if (measureText(text.slice(0, mid) + ellipsis, fontSize) <= maxWidth) {
++      lo = mid;
++    } else {
++      hi = mid - 1;
++    }
++  }
++  return text.slice(0, lo) + ellipsis;
+ }
+ 
+ const noop = () => {};
+@@ -284,6 +436,7 @@ module.exports = {
+   getCardColors,
+   clampValue,
+   wrapTextMultiline,
++  truncateText,
+   measureText,
+   logger,
+   CONSTANTS,

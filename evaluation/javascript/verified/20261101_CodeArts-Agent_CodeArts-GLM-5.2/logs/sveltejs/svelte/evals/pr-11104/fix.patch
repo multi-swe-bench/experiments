@@ -1,0 +1,88 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 3f07e4d..c5443b3 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -2221,14 +2221,31 @@ export function server_component(analysis, options) {
+ 	// If the component binds to a child, we need to put the template in a loop and repeat until legacy bindings are stable.
+ 	// We can remove this once the legacy syntax is gone.
+ 	if (analysis.uses_component_bindings) {
++		// Snippets that are declared at the top level of the template need to be
++		// hoisted out of the render loop, so that they are accessible from the
++		// instance script (and not trapped inside `$$render_inner`).
++		/** @type {import('estree').FunctionDeclaration[]} */
++		const hoisted_snippets = [];
++		/** @type {import('estree').Statement[]} */
++		const inner_body = [];
++
++		for (const statement of /** @type {import('estree').Statement[]} */ (template.body)) {
++			if (statement.type === 'FunctionDeclaration') {
++				hoisted_snippets.push(statement);
++			} else {
++				inner_body.push(statement);
++			}
++		}
++
+ 		template.body = [
++			...hoisted_snippets,
+ 			b.let('$$settled', b.true),
+ 			b.let('$$inner_payload'),
+ 			b.stmt(
+ 				b.function(
+ 					b.id('$$render_inner'),
+ 					[b.id('$$payload')],
+-					b.block(/** @type {import('estree').Statement[]} */ (template.body))
++					b.block(inner_body)
+ 				)
+ 			),
+ 			b.do_while(
+diff --git a/packages/svelte/tests/server-side-rendering/samples/snippet-with-binding/TextInput.svelte b/packages/svelte/tests/server-side-rendering/samples/snippet-with-binding/TextInput.svelte
+new file mode 100644
+index 0000000..db1ca56
+--- /dev/null
++++ b/packages/svelte/tests/server-side-rendering/samples/snippet-with-binding/TextInput.svelte
+@@ -0,0 +1,5 @@
++<script>
++	let { value = $bindable() } = $props();
++</script>
++
++<input type="text" bind:value />
+\ No newline at end of file
+diff --git a/packages/svelte/tests/server-side-rendering/samples/snippet-with-binding/_config.js b/packages/svelte/tests/server-side-rendering/samples/snippet-with-binding/_config.js
+new file mode 100644
+index 0000000..fad8ba2
+--- /dev/null
++++ b/packages/svelte/tests/server-side-rendering/samples/snippet-with-binding/_config.js
+@@ -0,0 +1,3 @@
++import { test } from '../../test';
++
++export default test({});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/server-side-rendering/samples/snippet-with-binding/_expected.html b/packages/svelte/tests/server-side-rendering/samples/snippet-with-binding/_expected.html
+new file mode 100644
+index 0000000..69a5d9d
+--- /dev/null
++++ b/packages/svelte/tests/server-side-rendering/samples/snippet-with-binding/_expected.html
+@@ -0,0 +1,2 @@
++<input type="text" value="">
++value:
+\ No newline at end of file
+diff --git a/packages/svelte/tests/server-side-rendering/samples/snippet-with-binding/main.svelte b/packages/svelte/tests/server-side-rendering/samples/snippet-with-binding/main.svelte
+new file mode 100644
+index 0000000..4297552
+--- /dev/null
++++ b/packages/svelte/tests/server-side-rendering/samples/snippet-with-binding/main.svelte
+@@ -0,0 +1,13 @@
++<script>
++	import TextInput from './TextInput.svelte';
++
++	let value = $state('');
++	const _snippet = snippet;
++</script>
++
++{#snippet snippet()}
++	Something
++{/snippet}
++
++<TextInput bind:value />
++value: {value}
+\ No newline at end of file

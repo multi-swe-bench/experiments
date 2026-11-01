@@ -1,0 +1,61 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 3513098..826a5bc 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -1531,7 +1531,7 @@ function extract_type_and_comment(declarator, state, path) {
+ 		state.has_type_or_fallback = true;
+ 		const match = /@type {(.+)}/.exec(comment_node.value);
+ 		if (match) {
+-			return { type: match[1], comment: cleaned_comment };
++			return { type: match[1], comment: state.uses_ts ? comment : cleaned_comment };
+ 		}
+ 	}
+ 
+diff --git a/packages/svelte/tests/migrate/samples/props-ts-jsdoc-type/input.svelte b/packages/svelte/tests/migrate/samples/props-ts-jsdoc-type/input.svelte
+new file mode 100644
+index 0000000..1aefff9
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/props-ts-jsdoc-type/input.svelte
+@@ -0,0 +1,14 @@
++<script lang="ts">
++	/**
++	 * The name of the user.
++	 * @type {string}
++	 */
++	export let name;
++	/**
++	 * The age of the user.
++	 * @type {number}
++	 */
++	export let age;
++</script>
++
++{name} {age}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/migrate/samples/props-ts-jsdoc-type/output.svelte b/packages/svelte/tests/migrate/samples/props-ts-jsdoc-type/output.svelte
+new file mode 100644
+index 0000000..0d36ad6
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/props-ts-jsdoc-type/output.svelte
+@@ -0,0 +1,20 @@
++<script lang="ts">
++	
++	
++	interface Props {
++		/**
++	 * The name of the user.
++	 * @type {string}
++	 */
++		name: string;
++		/**
++	 * The age of the user.
++	 * @type {number}
++	 */
++		age: number;
++	}
++
++	let { name, age }: Props = $props();
++</script>
++
++{name} {age}
+\ No newline at end of file

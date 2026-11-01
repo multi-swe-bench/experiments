@@ -1,0 +1,115 @@
+diff --git a/packages/insomnia/src/common/markdown-to-html.ts b/packages/insomnia/src/common/markdown-to-html.ts
+index cbc1c7d..ab22dc0 100644
+--- a/packages/insomnia/src/common/markdown-to-html.ts
++++ b/packages/insomnia/src/common/markdown-to-html.ts
+@@ -11,4 +11,9 @@ marked.setOptions({
+   mangle: false,
+ });
+ 
+-export const markdownToHTML = (input: string) => dompurify.sanitize(marked.parse(input));
++export const markdownToHTML = (input: unknown) => {
++  if (typeof input !== 'string') {
++    return '';
++  }
++  return dompurify.sanitize(marked.parse(input));
++};
+diff --git a/packages/insomnia/src/ui/components/markdown-editor.tsx b/packages/insomnia/src/ui/components/markdown-editor.tsx
+index a052458..f070fdb 100644
+--- a/packages/insomnia/src/ui/components/markdown-editor.tsx
++++ b/packages/insomnia/src/ui/components/markdown-editor.tsx
+@@ -22,7 +22,7 @@ export const MarkdownEditor = forwardRef<CodeEditorHandle, Props>(({
+   onChange,
+ }, ref): ReactElement => {
+   // default value is added here to capture the original class component's behavior, but this way cuts the flow of prop change event after the initial rendering
+-  const [markdown, setMarkdown] = useState(defaultValue);
++  const [markdown, setMarkdown] = useState(typeof defaultValue === 'string' ? defaultValue : '');
+ 
+   const handleChange = useCallback((markdown: string) => {
+     onChange(markdown);
+@@ -33,7 +33,7 @@ export const MarkdownEditor = forwardRef<CodeEditorHandle, Props>(({
+     <Tabs
+       className="w-full h-full flex flex-col overflow-hidden"
+       aria-label="Markdown editor tabs"
+-      defaultSelectedKey={defaultValue ? 'preview' : 'write'}
++      defaultSelectedKey={markdown ? 'preview' : 'write'}
+     >
+       <TabList className="w-full flex-shrink-0 overflow-x-auto border-solid border-b border-b-[--hl-md] px-2 bg-[--color-bg] flex items-center gap-2 h-[--line-height-sm]" aria-label="Request scripts tabs">
+         <Tab
+diff --git a/packages/insomnia/src/utils/importers/importers/postman.ts b/packages/insomnia/src/utils/importers/importers/postman.ts
+index 2ac60fb..f96a5d2 100644
+--- a/packages/insomnia/src/utils/importers/importers/postman.ts
++++ b/packages/insomnia/src/utils/importers/importers/postman.ts
+@@ -17,6 +17,7 @@ import type {
+ import type {
+   Auth as V210Auth,
+   Auth1 as V210Auth1,
++  DefinitionsDescription as V210DefinitionsDescription,
+   EventList as V210EventList,
+   Folder as V210Folder,
+   FormParameter as V210FormParameter,
+@@ -49,6 +50,8 @@ type Folder = V200Folder | V210Folder;
+ 
+ type Header = V200Header | V210Header;
+ 
++type Description = V210DefinitionsDescription;
++
+ let requestCount = 1;
+ let requestGroupCount = 1;
+ const fakerTags = Object.keys(fakerFunctions);
+@@ -58,6 +61,21 @@ const postmanToNunjucksLookup = fakerTags
+   .map(tag => ({ [tag]: `{% faker '${tag}' %}` }))
+   .reduce((acc, obj) => ({ ...acc, ...obj }), {});
+ 
++/**
++ * A Postman description can be a raw string, or an object holding the
++ * description along with its format (e.g. `{ content, type }`).
++ * Extract the raw string content from either form so it can be rendered.
++ */
++const getDescription = (description?: Description): string => {
++  if (!description) {
++    return '';
++  }
++  if (typeof description === 'string') {
++    return description;
++  }
++  return description.content || '';
++};
++
+ export const transformPostmanToNunjucksString = (inputString?: string | null) => {
+   if (!inputString) {
+     return '';
+@@ -151,7 +169,6 @@ export class ImportPostman {
+     items: PostmanCollection['item'],
+     parentId = '__WORKSPACE_ID__',
+   ): ImportRequest[] => {
+-    // @ts-expect-error this is because there are devergent behaviors for how the function treats this collection.  This is handled appropriately in the function itself in different branches.
+     return items.reduce((accumulator: ImportRequest[], item: Item | Folder) => {
+       if (Object.prototype.hasOwnProperty.call(item, 'request')) {
+         return [...accumulator, this.importRequestItem(item as Item, parentId)];
+@@ -235,7 +252,7 @@ export class ImportPostman {
+       _id: `__REQ_${requestCount++}__`,
+       _type: 'request',
+       name,
+-      description: (request.description as string) || '',
++      description: getDescription(request.description),
+       url: transformPostmanToNunjucksString(this.importUrl(request.url)),
+       parameters: parameters,
+       method: request.method || 'GET',
+@@ -272,7 +289,7 @@ export class ImportPostman {
+       _id: `__GRP_${requestGroupCount++}__`,
+       _type: 'request_group',
+       name,
+-      description: description || '',
++      description: getDescription(description),
+       preRequestScript,
+       afterResponseScript,
+       authentication,
+@@ -298,7 +315,7 @@ export class ImportPostman {
+       _id: `__GRP_${requestGroupCount++}__`,
+       _type: 'request_group',
+       name,
+-      description: typeof description === 'string' ? description : '',
++      description: getDescription(description),
+       authentication,
+       preRequestScript,
+       afterResponseScript,

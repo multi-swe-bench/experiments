@@ -1,0 +1,42 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 89eb32f..172f13f 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -1210,6 +1210,37 @@ function serialize_event_handler(node, { state, visit }) {
+ 			handler = /** @type {import('estree').Expression} */ (visit(handler));
+ 		}
+ 
++		// If the handler refers to a function that was hoisted (because it's also used
++		// as a delegated event attribute) but this event is not delegated, we need to
++		// wrap it so that the hoistable params are passed in when the handler is invoked.
++		if (node.delegated == null && node.expression.type === 'Identifier') {
++			const binding = state.scope.get(node.expression.name);
++			const fn = binding?.initial;
++			if (
++				fn != null &&
++				(fn.type === 'FunctionDeclaration' ||
++					fn.type === 'FunctionExpression' ||
++					fn.type === 'ArrowFunctionExpression') &&
++				fn.metadata?.hoistable === true &&
++				fn.metadata?.hoistable_params.length > 0
++			) {
++				const hoistable_params = fn.metadata.hoistable_params;
++				handler = b.function(
++					null,
++					[b.rest(b.id('$$args'))],
++					b.block([
++						b.return(
++							b.call(
++								b.member(handler, b.id('apply'), false, true),
++								b.this,
++								b.array([b.spread(b.id('$$args')), ...hoistable_params])
++							)
++						)
++					])
++				);
++			}
++		}
++
+ 		if (node.modifiers.includes('stopPropagation')) {
+ 			handler = b.call('$.stopPropagation', handler);
+ 		}

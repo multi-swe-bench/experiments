@@ -1,0 +1,331 @@
+$ bash /home/test-run.sh
+
+
+> axios@1.5.0 test
+> npm run test:eslint && npm run test:mocha && npm run test:karma && npm run test:dtslint && npm run test:exports --reporter console
+
+[axios-test-env] offline gateway active; cleared ambient proxy variables: HTTP_PROXY, HTTPS_PROXY, NO_PROXY, http_proxy, https_proxy, no_proxy
+
+> axios@1.5.0 test:eslint
+> node bin/ssl_hotfix.js eslint lib/**/*.js
+
+[axios-test-env] offline gateway active; cleared ambient proxy variables: (none)
+Running eslint lib/adapters/adapters.js lib/adapters/http.js lib/adapters/xhr.js lib/cancel/CancelToken.js lib/cancel/CanceledError.js lib/cancel/isCancel.js lib/core/Axios.js lib/core/AxiosError.js lib/core/AxiosHeaders.js lib/core/InterceptorManager.js lib/core/buildFullPath.js lib/core/dispatchRequest.js lib/core/mergeConfig.js lib/core/settle.js lib/core/transformData.js lib/defaults/index.js lib/defaults/transitional.js lib/env/data.js lib/helpers/AxiosTransformStream.js lib/helpers/AxiosURLSearchParams.js lib/helpers/HttpStatusCode.js lib/helpers/ZlibHeaderTransformStream.js lib/helpers/bind.js lib/helpers/buildURL.js lib/helpers/callbackify.js lib/helpers/combineURLs.js lib/helpers/cookies.js lib/helpers/deprecatedMethod.js lib/helpers/formDataToJSON.js lib/helpers/formDataToStream.js lib/helpers/fromDataURI.js lib/helpers/isAbsoluteURL.js lib/helpers/isAxiosError.js lib/helpers/isURLSameOrigin.js lib/helpers/null.js lib/helpers/parseHeaders.js lib/helpers/parseProtocol.js lib/helpers/readBlob.js lib/helpers/speedometer.js lib/helpers/spread.js lib/helpers/throttle.js lib/helpers/toFormData.js lib/helpers/toURLEncodedForm.js lib/helpers/validator.js lib/platform/index.js on v20.19.0
+
+Setting --openssl-legacy-provider as ssl hotfix
+[axios-test-env] offline gateway active; cleared ambient proxy variables: (none)
+[axios-test-env] offline gateway active; cleared ambient proxy variables: HTTP_PROXY, HTTPS_PROXY, NO_PROXY, http_proxy, https_proxy, no_proxy
+
+> axios@1.5.0 test:mocha
+> node bin/ssl_hotfix.js mocha test/unit/**/*.js --timeout 30000 --exit
+
+[axios-test-env] offline gateway active; cleared ambient proxy variables: (none)
+Running mocha test/unit/adapters/adapters.js test/unit/adapters/http.js test/unit/core/AxiosHeaders.js test/unit/defaults/transformReponse.js test/unit/helpers/fromDataURI.js test/unit/helpers/parseProtocol.js test/unit/regression/SNYK-JS-AXIOS-1038255.js test/unit/regression/bugs.js test/unit/utils/utils.js --timeout 30000 --exit on v20.19.0
+
+Setting --openssl-legacy-provider as ssl hotfix
+[axios-test-env] offline gateway active; cleared ambient proxy variables: (none)
+
+
+  adapters
+    ✔ should support loading by fn handle
+    ✔ should support loading by name
+    1) should detect adapter unavailable status
+    ✔ should detect adapter unsupported status
+    ✔ should pick suitable adapter from the list
+
+  supports http with nodejs
+    ✔ should throw an error if the timeout property is not parsable as a number (317ms)
+    ✔ should parse the timeout property (304ms)
+    ✔ should respect the timeout property (303ms)
+    ✔ should respect the timeoutErrorMessage property (303ms)
+    ✔ should allow passing JSON
+    ✔ should allow passing JSON with BOM
+    ✔ should redirect
+    ✔ should not redirect
+    ✔ should support max redirects
+    ✔ should support beforeRedirect
+    ✔ should support beforeRedirect and proxy with redirect
+    ✔ should preserve the HTTP verb on redirect
+    ✔ should support UTF8
+    ✔ should support basic auth
+    ✔ should support basic auth with a header
+    ✔ should provides a default User-Agent header
+    ✔ should allow the User-Agent header to be overridden
+    ✔ should allow the Content-Length header to be overridden
+    2) should support max content length
+    ✔ should support max content length for redirected (105ms)
+    ✔ should support max body length (105ms)
+    ✔ should properly support default max body length (follow-redirects as well) (428ms)
+    ✔ should display error while parsing params
+    ✔ should support sockets
+    ✔ should support buffers
+    ✔ should support HTTP proxies
+    ✔ should support HTTPS proxies
+    ✔ should not pass through disabled proxy
+    ✔ should support proxy set via env var
+    ✔ should support HTTPS proxy set via env var
+    ✔ should re-evaluate proxy on redirect when proxy set via env var
+    ✔ should not use proxy for domains in no_proxy
+    ✔ should use proxy for domains not in no_proxy
+    ✔ should support HTTP proxy auth
+    ✔ should support proxy auth from env
+    ✔ should support proxy auth with header
+    ✔ should support cancel
+    ✔ should combine baseURL and url
+    ✔ should support HTTP protocol (1003ms)
+    ✔ should support HTTPS protocol (50ms)
+    ✔ should return malformed URL (303ms)
+    ✔ should return unsupported protocol (303ms)
+    ✔ should supply a user-agent if one is not specified
+    ✔ should omit a user-agent if one is explicitly disclaimed
+    ✔ should throw an error if http server that aborts a chunked request (203ms)
+    ✔ should able to cancel multiple requests with CancelToken
+    ✔ should respect formSerializer config
+    ✔ should properly handle synchronous errors inside the adapter
+    ✔ should support function as paramsSerializer value
+    compression
+      ✔ should support transparent gunzip
+      ✔ should support gunzip error handling
+      ✔ should support disabling automatic decompression of response data
+      algorithms
+        gzip decompression
+          ✔ should support decompression
+          ✔ should not fail if response content-length header is missing (gzip)
+          ✔ should not fail with chunked responses (without Content-Length header)
+          ✔ should not fail with an empty response without content-length header (Z_BUF_ERROR)
+          ✔ should not fail with an empty response with content-length header (Z_BUF_ERROR)
+        GZIP decompression
+          ✔ should support decompression
+          ✔ should not fail if response content-length header is missing (GZIP)
+          ✔ should not fail with chunked responses (without Content-Length header)
+          ✔ should not fail with an empty response without content-length header (Z_BUF_ERROR)
+          ✔ should not fail with an empty response with content-length header (Z_BUF_ERROR)
+        compress decompression
+          ✔ should support decompression
+          ✔ should not fail if response content-length header is missing (compress)
+          ✔ should not fail with chunked responses (without Content-Length header)
+          ✔ should not fail with an empty response without content-length header (Z_BUF_ERROR)
+          ✔ should not fail with an empty response with content-length header (Z_BUF_ERROR)
+        deflate decompression
+          ✔ should support decompression
+          ✔ should not fail if response content-length header is missing (deflate)
+          ✔ should not fail with chunked responses (without Content-Length header)
+          ✔ should not fail with an empty response without content-length header (Z_BUF_ERROR)
+          ✔ should not fail with an empty response with content-length header (Z_BUF_ERROR)
+        deflate-raw decompression
+          ✔ should support decompression
+          ✔ should not fail if response content-length header is missing (deflate)
+          ✔ should not fail with chunked responses (without Content-Length header)
+          ✔ should not fail with an empty response without content-length header (Z_BUF_ERROR)
+          ✔ should not fail with an empty response with content-length header (Z_BUF_ERROR)
+        br decompression
+          ✔ should support decompression
+          ✔ should not fail if response content-length header is missing (br)
+          ✔ should not fail with chunked responses (without Content-Length header)
+          ✔ should not fail with an empty response without content-length header (Z_BUF_ERROR)
+          ✔ should not fail with an empty response with content-length header (Z_BUF_ERROR)
+    streams
+      ✔ should support streams
+      ✔ should pass errors for a failed stream
+pipeline error: CanceledError: Request stream has been aborted
+      ✔ should destroy the response stream with an error on request stream destroying (1008ms)
+Server warning: Premature close
+    different options for direct proxy configuration (without env variables)
+      ✔ hostname and trailing colon in protocol
+      ✔ hostname and no trailing colon in protocol
+      ✔ both hostname and host -> hostname takes precedence
+      ✔ only host and https protocol
+    FormData
+      form-data instance (https://www.npmjs.com/package/form-data)
+        ✔ should allow passing FormData
+      SpecCompliant FormData
+        ✔ should allow passing FormData
+      toFormData helper
+        ✔ should properly serialize nested objects for parsing with multer.js (express.js)
+    Blob
+      ✔ should support Blob
+    URLEncoded Form
+      ✔ should post object data as url-encoded form if content-type is application/x-www-form-urlencoded
+    Data URL
+      ✔ should support requesting data URL as a Buffer
+      ✔ should support requesting data URL as a Blob (if supported by the environment)
+      ✔ should support requesting data URL as a String (text)
+      ✔ should support requesting data URL as a Stream
+    progress
+      upload
+        ✔ should support upload progress capturing (11012ms)
+      download
+        ✔ should support download progress capturing (11013ms)
+    Rate limit
+      ✔ should support upload rate limit (9518ms)
+      ✔ should support download rate limit (9521ms)
+    request aborting
+pipeline error: CanceledError: canceled
+      ✔ should be able to abort the response stream (609ms)
+Server warning: Premature close
+    DNS
+      3) should support custom DNS lookup function
+      4) should support custom DNS lookup function (async)
+      5) should support custom DNS lookup function that returns only IP address (async)
+
+  AxiosHeaders
+    ✔ should support headers argument
+    ✔ should support uppercase name mapping for names overlapped by class methods
+    ✔ should be caseless
+    set
+      ✔ should support adding a single header
+      ✔ should support adding multiple headers
+      ✔ should support adding multiple headers from raw headers string
+      ✔ should not rewrite header the header if the value is false
+      ✔ should not rewrite the header if its value is false, unless rewrite options is set to true
+    get
+      filter
+        ✔ should support RegExp
+        ✔ should support function
+    has
+      ✔ should return true if the header is defined, otherwise false
+      filter
+        ✔ should support RegExp
+        ✔ should support function
+        ✔ should support string pattern
+    delete
+      ✔ should delete the header
+      ✔ should return true if the header has been deleted, otherwise false
+      ✔ should support headers array
+      filter
+        ✔ should support RegExp
+        ✔ should support function
+        ✔ should support string pattern
+    clear
+      ✔ should clear all headers
+      ✔ should clear matching headers if a matcher was specified
+    toJSON
+      ✔ should return headers object with original headers case
+    accessors
+      ✔ should support get accessor
+      ✔ should support set accessor
+      ✔ should support has accessor
+    normalize()
+      ✔ should support auto-formatting
+      ✔ should support external defined values
+      ✔ should support array values
+    AxiosHeaders.concat
+      ✔ should concatenate plain headers into an AxiosHeader instance
+      ✔ should concatenate raw headers into an AxiosHeader instance
+      ✔ should concatenate Axios headers into a new AxiosHeader instance
+    toString
+      ✔ should serialize AxiosHeader instance to a raw headers string
+
+  transformResponse
+    200 request
+      ✔ parses json
+      ✔ ignores XML
+    204 request
+      ✔ does not parse the empty string
+      ✔ does not parse undefined
+
+  helpers::fromDataURI
+    ✔ should return buffer from data uri
+
+  helpers::parseProtocol
+    ✔ should parse protocol part if it exists
+
+  Server-Side Request Forgery (SSRF)
+    ✔ obeys proxy settings when following redirects
+
+  issues
+    4999
+      ✔ should not fail with query parsing (46ms)
+    5028
+      ✔ should handle set-cookie headers as an array
+
+  utils
+    ✔ should validate Stream
+    ✔ should validate Buffer
+    utils::isFormData
+      ✔ should detect the FormData instance provided by the `form-data` package
+      ✔ should not call toString method on built-in objects instances
+      ✔ should not call toString method on built-in objects instances, even if append method exists
+      ✔ should detect custom FormData instances by toStringTag signature and append method presence
+    toJSON
+      ✔ should convert to a plain object without circular references
+      ✔ should use objects with defined toJSON method without rebuilding
+
+
+  156 passing (47s)
+  5 failing
+
+  1) adapters
+       should detect adapter unavailable status:
+     AssertionError [ERR_ASSERTION]: The input did not match the regular expression /is not available in the build/. Input:
+
+"Error: Unknown adapter 'testAdapter'"
+
+      at Context.<anonymous> (file:///home/axios/test/unit/adapters/adapters.js:29:12)
+      at process.processImmediate (node:internal/timers:483:21)
+
+  2) supports http with nodejs
+       should support max content length:
+
+      Uncaught AssertionError [ERR_ASSERTION]: 'Request failed with status code 400' == 'maxContentLength size of 2000 exceeded'
+      + expected - actual
+
+      -Request failed with status code 400
+      +maxContentLength size of 2000 exceeded
+      
+      at Timeout._onTimeout (file:///home/axios/test/unit/adapters/http.js:690:16)
+      at listOnTimeout (node:internal/timers:581:17)
+      at process.processTimers (node:internal/timers:519:7)
+
+  3) supports http with nodejs
+       DNS
+         should support custom DNS lookup function:
+     TypeError: Invalid IP address: undefined
+      at AxiosError.from (file:///home/axios/lib/core/AxiosError.js:89:14)
+      at RedirectableRequest.handleRequestError (file:///home/axios/lib/adapters/http.js:593:25)
+      at RedirectableRequest.emit (node:events:524:28)
+      at eventHandlers.<computed> (node_modules/follow-redirects/index.js:14:24)
+      at ClientRequest.emit (node:events:524:28)
+      at emitErrorEvent (node:_http_client:101:11)
+      at Socket.socketErrorListener (node:_http_client:504:5)
+      at Socket.emit (node:events:524:28)
+      at emitErrorNT (node:internal/streams/destroy:169:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+
+  4) supports http with nodejs
+       DNS
+         should support custom DNS lookup function (async):
+     TypeError: Invalid IP address: undefined
+      at AxiosError.from (file:///home/axios/lib/core/AxiosError.js:89:14)
+      at RedirectableRequest.handleRequestError (file:///home/axios/lib/adapters/http.js:593:25)
+      at RedirectableRequest.emit (node:events:524:28)
+      at eventHandlers.<computed> (node_modules/follow-redirects/index.js:14:24)
+      at ClientRequest.emit (node:events:524:28)
+      at emitErrorEvent (node:_http_client:101:11)
+      at Socket.socketErrorListener (node:_http_client:504:5)
+      at Socket.emit (node:events:524:28)
+      at emitErrorNT (node:internal/streams/destroy:169:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+
+  5) supports http with nodejs
+       DNS
+         should support custom DNS lookup function that returns only IP address (async):
+     TypeError: Invalid IP address: undefined
+      at AxiosError.from (file:///home/axios/lib/core/AxiosError.js:89:14)
+      at RedirectableRequest.handleRequestError (file:///home/axios/lib/adapters/http.js:593:25)
+      at RedirectableRequest.emit (node:events:524:28)
+      at eventHandlers.<computed> (node_modules/follow-redirects/index.js:14:24)
+      at ClientRequest.emit (node:events:524:28)
+      at emitErrorEvent (node:_http_client:101:11)
+      at Socket.socketErrorListener (node:_http_client:504:5)
+      at Socket.emit (node:events:524:28)
+      at emitErrorNT (node:internal/streams/destroy:169:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+
+
+
+
+[exit code: 5]

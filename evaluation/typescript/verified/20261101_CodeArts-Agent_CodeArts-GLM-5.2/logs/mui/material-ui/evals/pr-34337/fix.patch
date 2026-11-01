@@ -1,0 +1,13 @@
+diff --git a/packages/mui-base/src/ButtonUnstyled/ButtonUnstyled.tsx b/packages/mui-base/src/ButtonUnstyled/ButtonUnstyled.tsx
+index 502a2a49..904a046f 100644
+--- a/packages/mui-base/src/ButtonUnstyled/ButtonUnstyled.tsx
++++ b/packages/mui-base/src/ButtonUnstyled/ButtonUnstyled.tsx
+@@ -86,7 +86,7 @@ const ButtonUnstyled = React.forwardRef(function ButtonUnstyled<
+ 
+   const classes = useUtilityClasses(ownerState);
+ 
+-  const Root: React.ElementType = component ?? slots.root ?? 'button';
++  const Root: React.ElementType = component ?? slots.root ?? (props.href || props.to ? 'a' : 'button');
+   const rootProps: WithOptionalOwnerState<ButtonUnstyledRootSlotProps> = useSlotProps({
+     elementType: Root,
+     getSlotProps: getRootProps,

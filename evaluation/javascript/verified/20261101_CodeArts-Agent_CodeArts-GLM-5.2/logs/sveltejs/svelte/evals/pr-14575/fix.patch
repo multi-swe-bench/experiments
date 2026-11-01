@@ -1,0 +1,96 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/component.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/component.js
+index 5dde60b..3aa0296 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/component.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/component.js
+@@ -48,6 +48,13 @@ export function build_component(node, component_name, context, anchor = context.
+ 	/** @type {ExpressionStatement[]} */
+ 	const binding_initializers = [];
+ 
++	/**
++	 * Binding props are collected separately and applied last, so that they always take
++	 * priority over spread props (e.g. `{...$$props}`), regardless of source order.
++	 * @type {Property[]}
++	 */
++	const binding_props = [];
++
+ 	/**
+ 	 * If this component has a slot property, it is a named slot within another component. In this case
+ 	 * the slot scope applies to the component itself, too, and not just its children.
+@@ -203,15 +210,15 @@ export function build_component(node, component_name, context, anchor = context.
+ 					context.state.scope.get(attribute.expression.name)?.kind === 'store_sub';
+ 
+ 				if (is_store_sub) {
+-					push_prop(
++					binding_props.push(
+ 						b.get(attribute.name, [b.stmt(b.call('$.mark_store_binding')), b.return(expression)])
+ 					);
+ 				} else {
+-					push_prop(b.get(attribute.name, [b.return(expression)]));
++					binding_props.push(b.get(attribute.name, [b.return(expression)]));
+ 				}
+ 
+ 				const assignment = b.assignment('=', attribute.expression, b.id('$$value'));
+-				push_prop(
++				binding_props.push(
+ 					b.set(attribute.name, [b.stmt(/** @type {Expression} */ (context.visit(assignment)))])
+ 				);
+ 			}
+@@ -336,6 +343,12 @@ export function build_component(node, component_name, context, anchor = context.
+ 		push_prop(b.init('$$legacy', b.true));
+ 	}
+ 
++	// Binding props are applied last so that they always take priority over spread props
++	// (e.g. `{...$$props}`), regardless of the order in which they appear in source.
++	for (const prop of binding_props) {
++		push_prop(prop);
++	}
++
+ 	const props_expression =
+ 		props_and_spreads.length === 0 ||
+ 		(props_and_spreads.length === 1 && Array.isArray(props_and_spreads[0]))
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/component.js b/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/component.js
+index 79df3cd..0674d14 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/component.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/visitors/shared/component.js
+@@ -17,6 +17,13 @@ export function build_inline_component(node, expression, context) {
+ 	/** @type {Property[]} */
+ 	const custom_css_props = [];
+ 
++	/**
++	 * Binding props are collected separately and applied last, so that they always take
++	 * priority over spread props (e.g. `{...$$props}`), regardless of source order.
++	 * @type {Property[]}
++	 */
++	const binding_props = [];
++
+ 	/** @type {Record<string, AST.LetDirective[]>} */
+ 	const lets = { default: [] };
+ 
+@@ -82,12 +89,12 @@ export function build_inline_component(node, expression, context) {
+ 			push_prop(b.prop('init', b.key(attribute.name), value));
+ 		} else if (attribute.type === 'BindDirective' && attribute.name !== 'this') {
+ 			// TODO this needs to turn the whole thing into a while loop because the binding could be mutated eagerly in the child
+-			push_prop(
++			binding_props.push(
+ 				b.get(attribute.name, [
+ 					b.return(/** @type {Expression} */ (context.visit(attribute.expression)))
+ 				])
+ 			);
+-			push_prop(
++			binding_props.push(
+ 				b.set(attribute.name, [
+ 					b.stmt(
+ 						/** @type {Expression} */ (
+@@ -229,6 +236,12 @@ export function build_inline_component(node, expression, context) {
+ 		push_prop(b.prop('init', b.id('$$slots'), b.object(serialized_slots)));
+ 	}
+ 
++	// Binding props are applied last so that they always take priority over spread props
++	// (e.g. `{...$$props}`), regardless of the order in which they appear in source.
++	for (const prop of binding_props) {
++		push_prop(prop);
++	}
++
+ 	const props_expression =
+ 		props_and_spreads.length === 0 ||
+ 		(props_and_spreads.length === 1 && Array.isArray(props_and_spreads[0]))

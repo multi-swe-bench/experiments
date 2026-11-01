@@ -1,0 +1,34 @@
+diff --git a/packages/mui-base/src/useAutocomplete/useAutocomplete.js b/packages/mui-base/src/useAutocomplete/useAutocomplete.js
+index ce64b6a3..16de6589 100644
+--- a/packages/mui-base/src/useAutocomplete/useAutocomplete.js
++++ b/packages/mui-base/src/useAutocomplete/useAutocomplete.js
+@@ -1100,6 +1100,17 @@ export function useAutocomplete(props) {
+     handleBlur();
+   }
+ 
++  const duplicateOptionLabels = new Set();
++  const seenOptionLabels = new Set();
++  filteredOptions.forEach((option) => {
++    const optionLabel = getOptionLabel(option);
++    if (seenOptionLabels.has(optionLabel)) {
++      duplicateOptionLabels.add(optionLabel);
++    } else {
++      seenOptionLabels.add(optionLabel);
++    }
++  });
++
+   return {
+     getRootProps: (other = {}) => ({
+       'aria-owns': listboxAvailable ? `${id}-listbox` : null,
+@@ -1166,8 +1177,10 @@ export function useAutocomplete(props) {
+       );
+       const disabled = getOptionDisabled ? getOptionDisabled(option) : false;
+ 
++      const optionLabel = getOptionLabel(option);
++
+       return {
+-        key: getOptionLabel(option),
++        key: duplicateOptionLabels.has(optionLabel) ? `${optionLabel}-${index}` : optionLabel,
+         tabIndex: -1,
+         role: 'option',
+         id: `${id}-option-${index}`,

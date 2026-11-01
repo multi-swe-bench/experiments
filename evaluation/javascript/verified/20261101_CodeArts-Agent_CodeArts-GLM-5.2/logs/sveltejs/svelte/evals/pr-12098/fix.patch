@@ -1,0 +1,21 @@
+diff --git a/packages/svelte/src/internal/client/dom/blocks/each.js b/packages/svelte/src/internal/client/dom/blocks/each.js
+index 0b6209c..1664904 100644
+--- a/packages/svelte/src/internal/client/dom/blocks/each.js
++++ b/packages/svelte/src/internal/client/dom/blocks/each.js
+@@ -172,6 +172,7 @@ export function each(anchor, flags, get_collection, get_key, render_fn, fallback
+ 
+ 			for (var i = 0; i < length; i++) {
+ 				if (
++					!child_anchor ||
+ 					child_anchor.nodeType !== 8 ||
+ 					/** @type {Comment} */ (child_anchor).data !== HYDRATION_START
+ 				) {
+@@ -194,7 +195,7 @@ export function each(anchor, flags, get_collection, get_key, render_fn, fallback
+ 			}
+ 
+ 			// remove excess nodes
+-			if (length > 0) {
++			if (length > 0 && !mismatch) {
+ 				while (child_anchor !== anchor) {
+ 					var next = /** @type {import('#client').TemplateNode} */ (child_anchor.nextSibling);
+ 					/** @type {import('#client').TemplateNode} */ (child_anchor).remove();

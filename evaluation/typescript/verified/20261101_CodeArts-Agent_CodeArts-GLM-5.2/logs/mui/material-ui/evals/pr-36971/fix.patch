@@ -1,0 +1,45 @@
+diff --git a/docs/translations/api-docs/autocomplete/autocomplete.json b/docs/translations/api-docs/autocomplete/autocomplete.json
+index ab08b631..40562a83 100644
+--- a/docs/translations/api-docs/autocomplete/autocomplete.json
++++ b/docs/translations/api-docs/autocomplete/autocomplete.json
+@@ -56,7 +56,7 @@
+     "readOnly": "If <code>true</code>, the component becomes readonly. It is also supported for multiple tags where the tag cannot be deleted.",
+     "renderGroup": "Render the group.<br><br><strong>Signature:</strong><br><code>function(params: AutocompleteRenderGroupParams) =&gt; ReactNode</code><br><em>params:</em> The group to render.",
+     "renderInput": "Render the input.<br><br><strong>Signature:</strong><br><code>function(params: object) =&gt; ReactNode</code><br>",
+-    "renderOption": "Render the option, use <code>getOptionLabel</code> by default.<br><br><strong>Signature:</strong><br><code>function(props: object, option: T, state: object) =&gt; ReactNode</code><br><em>props:</em> The props to apply on the li element.<br><em>option:</em> The option to render.<br><em>state:</em> The state of the component.",
++    "renderOption": "Render the option, use <code>getOptionLabel</code> by default.<br><br><strong>Signature:</strong><br><code>function(props: object, option: T, state: object, getOptionLabel: function) =&gt; ReactNode</code><br><em>props:</em> The props to apply on the li element.<br><em>option:</em> The option to render.<br><em>state:</em> The state of the component.<br><em>getOptionLabel:</em> The getOptionLabel function.",
+     "renderTags": "Render the selected value.<br><br><strong>Signature:</strong><br><code>function(value: Array&lt;T&gt;, getTagProps: function, ownerState: object) =&gt; ReactNode</code><br><em>value:</em> The <code>value</code> provided to the component.<br><em>getTagProps:</em> A tag props getter.<br><em>ownerState:</em> The state of the Autocomplete component.",
+     "selectOnFocus": "If <code>true</code>, the input&#39;s text is selected on focus. It helps the user clear the selected value.",
+     "size": "The size of the component.",
+diff --git a/packages/mui-material/src/Autocomplete/Autocomplete.d.ts b/packages/mui-material/src/Autocomplete/Autocomplete.d.ts
+index a453c649..c178640e 100644
+--- a/packages/mui-material/src/Autocomplete/Autocomplete.d.ts
++++ b/packages/mui-material/src/Autocomplete/Autocomplete.d.ts
+@@ -238,12 +238,14 @@ export interface AutocompleteProps<
+    * @param {object} props The props to apply on the li element.
+    * @param {T} option The option to render.
+    * @param {object} state The state of the component.
++   * @param {function} getOptionLabel The getOptionLabel function.
+    * @returns {ReactNode}
+    */
+   renderOption?: (
+     props: React.HTMLAttributes<HTMLLIElement>,
+     option: T,
+     state: AutocompleteRenderOptionState,
++    getOptionLabel: (option: T) => string,
+   ) => React.ReactNode;
+   /**
+    * Render the selected value.
+diff --git a/packages/mui-material/src/Autocomplete/Autocomplete.js b/packages/mui-material/src/Autocomplete/Autocomplete.js
+index 853f3be7..d2ca966b 100644
+--- a/packages/mui-material/src/Autocomplete/Autocomplete.js
++++ b/packages/mui-material/src/Autocomplete/Autocomplete.js
+@@ -556,7 +556,7 @@ const Autocomplete = React.forwardRef(function Autocomplete(inProps, ref) {
+       selected: optionProps['aria-selected'],
+       index,
+       inputValue,
+-    });
++    }, getOptionLabel);
+   };
+ 
+   const clearIndicatorSlotProps = slotProps.clearIndicator ?? componentsProps.clearIndicator;

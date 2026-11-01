@@ -1,0 +1,30 @@
+diff --git a/src/plugin/utc/index.js b/src/plugin/utc/index.js
+index 70223ce..88ea6a4 100644
+--- a/src/plugin/utc/index.js
++++ b/src/plugin/utc/index.js
+@@ -1,7 +1,6 @@
+ import { MILLISECONDS_A_MINUTE, MIN } from '../../constant'
+ 
+ export default (option, Dayjs, dayjs) => {
+-  const localOffset = (new Date()).getTimezoneOffset()
+   const proto = Dayjs.prototype
+   dayjs.utc = function (date, format) {
+     const cfg = { date, utc: true, format }
+@@ -59,7 +58,7 @@ export default (option, Dayjs, dayjs) => {
+     const offset = Math.abs(input) <= 16 ? input * 60 : input
+     let ins
+     if (input !== 0) {
+-      ins = this.local().add(offset + localOffset, MIN)
++      ins = this.local().add(offset + this.$d.getTimezoneOffset(), MIN)
+       ins.$offset = offset
+     } else {
+       ins = this.utc()
+@@ -76,7 +75,7 @@ export default (option, Dayjs, dayjs) => {
+ 
+   proto.valueOf = function () {
+     const addedOffset = !this.$utils().u(this.$offset)
+-      ? this.$offset + localOffset : 0
++      ? this.$offset + this.$d.getTimezoneOffset() : 0
+     return this.$d.valueOf() - (addedOffset * MILLISECONDS_A_MINUTE)
+   }
+ 

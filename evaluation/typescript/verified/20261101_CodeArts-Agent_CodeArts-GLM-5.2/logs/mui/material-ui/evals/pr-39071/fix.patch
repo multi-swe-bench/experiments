@@ -1,0 +1,121 @@
+diff --git a/packages/mui-material/src/utils/index.d.ts b/packages/mui-material/src/utils/index.d.ts
+index 4f675ba3..de5175bb 100644
+--- a/packages/mui-material/src/utils/index.d.ts
++++ b/packages/mui-material/src/utils/index.d.ts
+@@ -4,6 +4,7 @@ export { default as createSvgIcon } from './createSvgIcon';
+ export { default as debounce } from './debounce';
+ export { default as deprecatedPropType } from './deprecatedPropType';
+ export { default as isMuiElement } from './isMuiElement';
++export { isColorValid } from './isColorValid';
+ export { default as ownerDocument } from './ownerDocument';
+ export { default as ownerWindow } from './ownerWindow';
+ export { default as requirePropFactory } from './requirePropFactory';
+diff --git a/packages/mui-material/src/utils/index.js b/packages/mui-material/src/utils/index.js
+index 415505ff..8d8c2208 100644
+--- a/packages/mui-material/src/utils/index.js
++++ b/packages/mui-material/src/utils/index.js
+@@ -7,6 +7,7 @@ export { default as createSvgIcon } from './createSvgIcon';
+ export { default as debounce } from './debounce';
+ export { default as deprecatedPropType } from './deprecatedPropType';
+ export { default as isMuiElement } from './isMuiElement';
++export { isColorValid } from './isColorValid';
+ export { default as ownerDocument } from './ownerDocument';
+ export { default as ownerWindow } from './ownerWindow';
+ export { default as requirePropFactory } from './requirePropFactory';
+diff --git a/packages/mui-material/src/utils/isColorValid.d.ts b/packages/mui-material/src/utils/isColorValid.d.ts
+new file mode 100644
+index 00000000..1de22bbf
+--- /dev/null
++++ b/packages/mui-material/src/utils/isColorValid.d.ts
+@@ -0,0 +1 @@
++export const isColorValid: (color?: unknown) => void;
+\ No newline at end of file
+diff --git a/packages/mui-material/src/utils/isColorValid.js b/packages/mui-material/src/utils/isColorValid.js
+new file mode 100644
+index 00000000..2074605d
+--- /dev/null
++++ b/packages/mui-material/src/utils/isColorValid.js
+@@ -0,0 +1,82 @@
++import createPalette from '../styles/createPalette';
++
++let validColors;
++/**
++ * @__NO_SIDE_EFFECTS__
++ */
++export const isColorValid = /* @__PURE__ */ (color) => {
++  if (process.env.NODE_ENV === 'production') return;
++  if (typeof color !== 'string') return;
++
++  if (!validColors) {
++    const palette = createPalette({});
++
++    const tones = Object.keys({
++      main: true,
++      light: true,
++      dark: true,
++      contrastText: true,
++    });
++
++    const colors = Object.keys({
++      primary: true,
++      secondary: true,
++      error: true,
++      warning: true,
++      info: true,
++      success: true,
++    });
++
++    const text = Object.keys({
++      disabled: true,
++      primary: true,
++      secondary: true,
++    });
++
++    const background = Object.keys({
++      default: true,
++      paper: true,
++    });
++
++    /**
++     * Sometimes, we want to let the user use a color that is not in the palette (theme)
++     */
++    const validStaticColors = ['white'];
++
++    /**
++     * A user can use a literal color by using `useTheme` and then pass a literal color
++     */
++    const literalThemeColors = Object.keys(palette).flatMap((paletteName) => {
++      const value = palette[paletteName];
++      const literals = new Set(); // to avoid duplicates
++      if (typeof value === 'string') {
++        literals.add(value);
++      } else if (value && typeof value === 'object') {
++        for (const valueKey of Object.keys(value)) {
++          const nestedValue = value[valueKey];
++          if (typeof nestedValue === 'string') {
++            literals.add(nestedValue);
++          }
++        }
++      }
++      return [...literals];
++    });
++
++    validColors = [
++      ...validStaticColors,
++      ...literalThemeColors,
++      'primary',
++      'secondary',
++      ...background.map((tone) => `background.${tone}`),
++      ...text.map((tone) => `text.${tone}`),
++      ...colors.flatMap((color) => tones.map((tone) => `${color}.${tone}`)),
++    ];
++  }
++
++  if (!validColors.includes(color)) {
++    throw new Error(
++      `Invalid color: "${color}"\n` +
++        `Valid colors are: ${validColors.join(', ')}`,
++    );
++  }
++};
+\ No newline at end of file

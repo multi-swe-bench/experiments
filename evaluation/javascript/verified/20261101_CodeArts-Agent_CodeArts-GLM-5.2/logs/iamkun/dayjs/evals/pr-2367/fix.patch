@@ -1,0 +1,13 @@
+diff --git a/src/plugin/duration/index.js b/src/plugin/duration/index.js
+index 26bc75e..8d24ed4 100644
+--- a/src/plugin/duration/index.js
++++ b/src/plugin/duration/index.js
+@@ -141,7 +141,7 @@ class Duration {
+     if (this.$d.milliseconds) {
+       seconds += this.$d.milliseconds / 1000
+     }
+-
++    seconds = Math.round(seconds * 1000) / 1000
+     const S = getNumberUnitFormat(seconds, 'S')
+ 
+     const negativeMode =

@@ -1,0 +1,14 @@
+diff --git a/packages/material-ui/src/useMediaQuery/useMediaQuery.js b/packages/material-ui/src/useMediaQuery/useMediaQuery.js
+index d4a7160..6312dcc 100644
+--- a/packages/material-ui/src/useMediaQuery/useMediaQuery.js
++++ b/packages/material-ui/src/useMediaQuery/useMediaQuery.js
+@@ -54,7 +54,8 @@ export default function useMediaQuery(queryInput, options = {}) {
+     return defaultMatches;
+   });
+ 
+-  React.useEffect(() => {
++  const useMatchEffect = supportMatchMedia ? React.useLayoutEffect : React.useEffect;
++  useMatchEffect(() => {
+     let active = true;
+ 
+     if (!supportMatchMedia) {

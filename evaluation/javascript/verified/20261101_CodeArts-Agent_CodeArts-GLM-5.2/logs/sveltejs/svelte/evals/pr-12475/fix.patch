@@ -1,0 +1,92 @@
+diff --git a/packages/svelte/src/internal/client/dom/blocks/svelte-head.js b/packages/svelte/src/internal/client/dom/blocks/svelte-head.js
+index bfd4291..38a6480 100644
+--- a/packages/svelte/src/internal/client/dom/blocks/svelte-head.js
++++ b/packages/svelte/src/internal/client/dom/blocks/svelte-head.js
+@@ -51,6 +51,9 @@ export function head(render_fn) {
+ 		block(() => render_fn(anchor), HEAD_EFFECT);
+ 	} finally {
+ 		if (was_hydrating) {
++			// Advance the head anchor past the block we just hydrated, so that a subsequent
++			// `svelte:head` block finds its own opening comment rather than re-hydrating this one
++			head_anchor = hydrate_node;
+ 			set_hydrate_node(/** @type {TemplateNode} */ (previous_hydrate_node));
+ 		}
+ 	}
+diff --git a/packages/svelte/tests/runtime-runes/samples/multiple-head-if/MetaTags.svelte b/packages/svelte/tests/runtime-runes/samples/multiple-head-if/MetaTags.svelte
+new file mode 100644
+index 0000000..af8a2cc
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/multiple-head-if/MetaTags.svelte
+@@ -0,0 +1,13 @@
++<script>
++	let { title, description } = $props();
++</script>
++
++<svelte:head>
++	{#if title}
++		<title>{title}</title>
++	{/if}
++
++	{#if description}
++		<meta name="description" content={description} />
++	{/if}
++</svelte:head>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/multiple-head-if/Runatics.svelte b/packages/svelte/tests/runtime-runes/samples/multiple-head-if/Runatics.svelte
+new file mode 100644
+index 0000000..f257bf0
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/multiple-head-if/Runatics.svelte
+@@ -0,0 +1,7 @@
++<script>
++	let { analyticsId } = $props();
++</script>
++
++<svelte:head>
++	<meta name="analytics" content={analyticsId} />
++</svelte:head>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/multiple-head-if/_config.js b/packages/svelte/tests/runtime-runes/samples/multiple-head-if/_config.js
+new file mode 100644
+index 0000000..e9cb9c0
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/multiple-head-if/_config.js
+@@ -0,0 +1,21 @@
++import { test } from '../../test';
++
++export default test({
++	html: `<div>Hello</div>`,
++
++	async test({ assert, target, variant }) {
++		const head = target.ownerDocument.head.innerHTML;
++
++		if (variant === 'hydrate') {
++			assert.htmlEqual(
++				head,
++				`<meta content="Some description" name="description"><meta content="ABCDEFG" name="analytics"><title>Hello world</title>`
++			);
++		} else {
++			assert.htmlEqual(
++				head,
++				`<meta content="Some description" name="description"><title>Hello world</title><meta content="ABCDEFG" name="analytics">`
++			);
++		}
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/multiple-head-if/main.svelte b/packages/svelte/tests/runtime-runes/samples/multiple-head-if/main.svelte
+new file mode 100644
+index 0000000..e692ff3
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/multiple-head-if/main.svelte
+@@ -0,0 +1,9 @@
++<script>
++	import MetaTags from './MetaTags.svelte';
++	import Runatics from './Runatics.svelte';
++</script>
++
++<MetaTags title="Hello world" description="Some description" />
++<Runatics analyticsId="ABCDEFG" />
++
++<div>Hello</div>
+\ No newline at end of file

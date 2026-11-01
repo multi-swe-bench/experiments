@@ -1,0 +1,34 @@
+diff --git a/packages/mui-material/src/Chip/Chip.js b/packages/mui-material/src/Chip/Chip.js
+index 097d79a4..1d5db1ee 100644
+--- a/packages/mui-material/src/Chip/Chip.js
++++ b/packages/mui-material/src/Chip/Chip.js
+@@ -129,7 +129,6 @@ const ChipRoot = styled('div', {
+         fontSize: theme.typography.pxToRem(10),
+       },
+       [`& .${chipClasses.icon}`]: {
+-        color: theme.vars ? theme.vars.palette.Chip.defaultIconColor : textColor,
+         marginLeft: 5,
+         marginRight: -6,
+         ...(ownerState.size === 'small' && {
+@@ -137,8 +136,11 @@ const ChipRoot = styled('div', {
+           marginLeft: 4,
+           marginRight: -4,
+         }),
+-        ...(ownerState.color !== 'default' && {
+-          color: 'inherit',
++        ...(!ownerState.iconColor && {
++          color: theme.vars ? theme.vars.palette.Chip.defaultIconColor : textColor,
++          ...(ownerState.color !== 'default' && {
++            color: 'inherit',
++          }),
+         }),
+       },
+       [`& .${chipClasses.deleteIcon}`]: {
+@@ -399,6 +401,7 @@ const Chip = React.forwardRef(function Chip(inProps, ref) {
+     onDelete: !!onDelete,
+     clickable,
+     variant,
++    iconColor: iconProp && React.isValidElement(iconProp) ? iconProp.props.color : undefined,
+   };
+ 
+   const classes = useUtilityClasses(ownerState);

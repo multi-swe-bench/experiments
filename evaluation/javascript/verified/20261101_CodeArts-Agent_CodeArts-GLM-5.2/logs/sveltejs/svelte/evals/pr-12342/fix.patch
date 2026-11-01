@@ -1,0 +1,14 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/tag.js b/packages/svelte/src/compiler/phases/1-parse/state/tag.js
+index 14af03f..49f2970 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/tag.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/tag.js
+@@ -39,7 +39,8 @@ export default function tag(parser) {
+ 
+ /** @param {import('../index.js').Parser} parser */
+ function open(parser) {
+-	const start = parser.index - 2;
++	let start = parser.index;
++	while (parser.template[start] !== '{') start -= 1;
+ 
+ 	if (parser.eat('if')) {
+ 		parser.require_whitespace();

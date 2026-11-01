@@ -1,0 +1,81 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index b877d27..0a190b5 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -501,7 +501,8 @@ const instance_script = {
+ 			const ids = extract_identifiers(node.body.expression.left);
+ 			const bindings = ids.map((id) => state.scope.get(id.name));
+ 			const reassigned_bindings = bindings.filter((b) => b?.reassigned);
+-			if (reassigned_bindings.length === 0 && !bindings.some((b) => b?.kind === 'store_sub')) {
++			const has_store_sub = bindings.some((b) => b?.kind === 'store_sub');
++			if (reassigned_bindings.length === 0 && !has_store_sub) {
+ 				let { start, end } = /** @type {{ start: number, end: number }} */ (
+ 					node.body.expression.right
+ 				);
+@@ -526,6 +527,38 @@ const instance_script = {
+ 					state.str.appendLeft(end, `)`);
+ 				}
+ 
++				return;
++			} else if (
++				!has_store_sub &&
++				bindings.every((b) => b && ids.includes(b.node)) &&
++				state.analysis.reactive_statements.get(node)?.dependencies.length === 0
++			) {
++				// The reactive statement has no dependencies, so it only runs once.
++				// That means it's just initializing state, so we can use `$state` instead of `run`.
++				let { start, end } = /** @type {{ start: number, end: number }} */ (
++					node.body.expression.right
++				);
++
++				// $state
++				state.str.update(
++					/** @type {number} */ (node.start),
++					/** @type {number} */ (node.body.expression.start),
++					'let '
++				);
++
++				if (node.body.expression.right.type === 'SequenceExpression') {
++					while (state.str.original[start] !== '(') start -= 1;
++					while (state.str.original[end - 1] !== ')') end += 1;
++				}
++
++				state.str.prependRight(start, `$state(`);
++
++				// in a case like `$: ({ a } = b())`, there's already a trailing parenthesis.
++				// otherwise, we need to add one
++				if (state.str.original[/** @type {number} */ (node.body.start)] !== '(') {
++					state.str.appendLeft(end, `)`);
++				}
++
+ 				return;
+ 			} else {
+ 				for (const binding of reassigned_bindings) {
+diff --git a/packages/svelte/tests/migrate/samples/state-reactive-statement/input.svelte b/packages/svelte/tests/migrate/samples/state-reactive-statement/input.svelte
+new file mode 100644
+index 0000000..255874c
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/state-reactive-statement/input.svelte
+@@ -0,0 +1,7 @@
++<script>
++	let count = 0;
++	$: showingHiddenPeople = false;
++</script>
++
++<button on:click={() => (showingHiddenPeople = !showingHiddenPeople)}>toggle</button>
++{showingHiddenPeople}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/migrate/samples/state-reactive-statement/output.svelte b/packages/svelte/tests/migrate/samples/state-reactive-statement/output.svelte
+new file mode 100644
+index 0000000..25c0069
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/state-reactive-statement/output.svelte
+@@ -0,0 +1,7 @@
++<script>
++	let count = 0;
++	let showingHiddenPeople = $state(false);
++</script>
++
++<button onclick={() => (showingHiddenPeople = !showingHiddenPeople)}>toggle</button>
++{showingHiddenPeople}
+\ No newline at end of file

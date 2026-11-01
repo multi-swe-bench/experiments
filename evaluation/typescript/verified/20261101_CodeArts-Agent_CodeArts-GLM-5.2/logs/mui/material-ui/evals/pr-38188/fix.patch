@@ -1,0 +1,18 @@
+diff --git a/packages/mui-base/src/useAutocomplete/useAutocomplete.js b/packages/mui-base/src/useAutocomplete/useAutocomplete.js
+index 724d5a9a..82620883 100644
+--- a/packages/mui-base/src/useAutocomplete/useAutocomplete.js
++++ b/packages/mui-base/src/useAutocomplete/useAutocomplete.js
+@@ -529,7 +529,12 @@ export default function useAutocomplete(props) {
+     }
+ 
+     // Synchronize the value with the highlighted index
+-    if (valueItem != null) {
++    // When `freeSolo` is enabled with `multiple`, the highlight should not be
++    // synced to an already selected value. Otherwise, pressing `Enter` on a
++    // partial input (that matches an existing option) would select that option
++    // and, because it is already part of the value, remove it. With `freeSolo`
++    // the typed text should be created instead, respecting `autoHighlight`.
++    if (valueItem != null && !(multiple && freeSolo)) {
+       const currentOption = filteredOptions[highlightedIndexRef.current];
+ 
+       // Keep the current highlighted index if possible

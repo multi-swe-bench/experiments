@@ -1,0 +1,108 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/element.js b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+index 42c48a8..b712b8c 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/element.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+@@ -147,7 +147,8 @@ export default function tag(parser) {
+ 					fragment: create_fragment(true),
+ 					metadata: {
+ 						svg: false,
+-						has_spread: false
++						has_spread: false,
++						self_closing: false
+ 					},
+ 					parent: null
+ 				}
+@@ -329,11 +330,15 @@ export default function tag(parser) {
+ 
+ 	parser.append(element);
+ 
+-	const self_closing = parser.eat('/') || is_void(name);
++	const self_closing = parser.eat('/');
+ 
+ 	parser.eat('>', true);
+ 
+-	if (self_closing) {
++	if (element.type === 'RegularElement') {
++		element.metadata.self_closing = self_closing;
++	}
++
++	if (self_closing || is_void(name)) {
+ 		// don't push self-closing elements onto the stack
+ 		element.end = parser.index;
+ 	} else if (name === 'textarea') {
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index d9c6dfe..9dd2c34 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -19,6 +19,7 @@ import check_graph_for_cycles from './utils/check_graph_for_cycles.js';
+ import { regex_starts_with_newline } from '../patterns.js';
+ import { create_attribute, is_element_node } from '../nodes.js';
+ import { DelegatedEvents, namespace_svg } from '../../../constants.js';
++import { is_void } from '../1-parse/utils/names.js';
+ import { should_proxy_or_freeze } from '../3-transform/client/utils.js';
+ import { analyze_css } from './css/css-analyze.js';
+ import { prune } from './css/css-prune.js';
+@@ -1302,6 +1303,21 @@ const common_visitors = {
+ 		}
+ 
+ 		context.state.analysis.elements.push(node);
++
++		if (
++			node.metadata.self_closing &&
++			context.state.options.namespace === 'html' &&
++			!is_void(node.name) &&
++			!node.metadata.svg
++		) {
++			warn(
++				context.state.analysis.warnings,
++				node,
++				context.path,
++				'invalid-self-closing-tag',
++				node.name
++			);
++		}
+ 	},
+ 	SvelteElement(node, context) {
+ 		context.state.analysis.elements.push(node);
+diff --git a/packages/svelte/src/compiler/types/template.d.ts b/packages/svelte/src/compiler/types/template.d.ts
+index 695720d..cc57903 100644
+--- a/packages/svelte/src/compiler/types/template.d.ts
++++ b/packages/svelte/src/compiler/types/template.d.ts
+@@ -291,6 +291,8 @@ export interface RegularElement extends BaseElement {
+ 		/** `true` if contains a SpreadAttribute */
+ 		has_spread: boolean;
+ 		scoped: boolean;
++		/** `true` if the element is self-closing, e.g. `<div />` */
++		self_closing: boolean;
+ 	};
+ }
+ 
+diff --git a/packages/svelte/src/compiler/warnings.js b/packages/svelte/src/compiler/warnings.js
+index 8f0e81d..57e50bc 100644
+--- a/packages/svelte/src/compiler/warnings.js
++++ b/packages/svelte/src/compiler/warnings.js
+@@ -24,7 +24,10 @@ const attributes = {
+ 	 * @param {string} right
+ 	 */
+ 	'invalid-html-attribute': (wrong, right) =>
+-		`'${wrong}' is not a valid HTML attribute. Did you mean '${right}'?`
++		`'${wrong}' is not a valid HTML attribute. Did you mean '${right}'?`,
++	/** @param {string} name */
++	'invalid-self-closing-tag': (name) =>
++		`<${name} /> is not valid HTML. Use <${name}>...</${name}> instead`
+ };
+ 
+ /** @satisfies {Warnings} */
+diff --git a/packages/svelte/types/index.d.ts b/packages/svelte/types/index.d.ts
+index fb90150..817b1aa 100644
+--- a/packages/svelte/types/index.d.ts
++++ b/packages/svelte/types/index.d.ts
+@@ -1504,6 +1504,8 @@ declare module 'svelte/compiler' {
+ 			/** `true` if contains a SpreadAttribute */
+ 			has_spread: boolean;
+ 			scoped: boolean;
++			/** `true` if the element is self-closing, e.g. `<div />` */
++			self_closing: boolean;
+ 		};
+ 	}
+ 

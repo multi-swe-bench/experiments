@@ -1,0 +1,34 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/Selector.js b/packages/svelte/src/compiler/phases/2-analyze/css/Selector.js
+index b6796ff..84a6965 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/Selector.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/Selector.js
+@@ -180,15 +180,22 @@ export default class Selector {
+ 			for (let i = 0; i < block.selectors.length; i++) {
+ 				const selector = block.selectors[i];
+ 				if (
+-					selector.type === 'PseudoClassSelector' &&
+-					selector.name === 'global' &&
+-					block.selectors.length !== 1 &&
+-					(i === block.selectors.length - 1 ||
+-						block.selectors
+-							.slice(i + 1)
+-							.some((s) => s.type !== 'PseudoElementSelector' && s.type !== 'PseudoClassSelector'))
++					selector.type !== 'PseudoClassSelector' ||
++					selector.name !== 'global' ||
++					block.selectors.length === 1
+ 				) {
++					continue;
++				}
++				const followed_by_non_pseudo = block.selectors
++					.slice(i + 1)
++					.some((s) => s.type !== 'PseudoElementSelector' && s.type !== 'PseudoClassSelector');
++				if (followed_by_non_pseudo) {
+ 					error(selector, 'invalid-css-global-selector-list');
++				} else if (i === block.selectors.length - 1) {
++					const first = selector.args?.children?.[0]?.children?.[0];
++					if (first?.type === 'TypeSelector' || first?.type === 'AttributeSelector') {
++						error(selector, 'invalid-css-global-selector-list');
++					}
+ 				}
+ 			}
+ 		}

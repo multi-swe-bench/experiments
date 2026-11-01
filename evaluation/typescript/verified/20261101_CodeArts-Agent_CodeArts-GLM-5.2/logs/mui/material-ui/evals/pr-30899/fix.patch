@@ -1,0 +1,26 @@
+diff --git a/packages/mui-base/src/BadgeUnstyled/useBadge.ts b/packages/mui-base/src/BadgeUnstyled/useBadge.ts
+index ac5c2f59..23401215 100644
+--- a/packages/mui-base/src/BadgeUnstyled/useBadge.ts
++++ b/packages/mui-base/src/BadgeUnstyled/useBadge.ts
+@@ -34,7 +34,7 @@ export default function useBadge(props: UseBadgeProps) {
+   let invisible = invisibleProp;
+ 
+   if (
+-    invisibleProp == null &&
++    invisibleProp !== true &&
+     ((badgeContentProp === 0 && !showZero) || (badgeContentProp == null && variantProp !== 'dot'))
+   ) {
+     invisible = true;
+diff --git a/packages/mui-material/src/Badge/Badge.js b/packages/mui-material/src/Badge/Badge.js
+index a7527a3c..c22a60cd 100644
+--- a/packages/mui-material/src/Badge/Badge.js
++++ b/packages/mui-material/src/Badge/Badge.js
+@@ -242,7 +242,7 @@ const Badge = React.forwardRef(function Badge(inProps, ref) {
+   let invisible = invisibleProp;
+ 
+   if (
+-    invisibleProp == null &&
++    invisibleProp !== true &&
+     ((badgeContentProp === 0 && !showZero) || (badgeContentProp == null && variantProp !== 'dot'))
+   ) {
+     invisible = true;

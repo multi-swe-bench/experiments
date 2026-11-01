@@ -1,0 +1,26 @@
+diff --git a/packages/material-ui/src/FormLabel/FormLabel.js b/packages/material-ui/src/FormLabel/FormLabel.js
+index 61f4ad8..19a1858 100644
+--- a/packages/material-ui/src/FormLabel/FormLabel.js
++++ b/packages/material-ui/src/FormLabel/FormLabel.js
+@@ -25,7 +25,7 @@ export const styles = (theme) => ({
+   },
+   /* Styles applied to the root element if the color is secondary. */
+   colorSecondary: {
+-    '&$focused': {
++    '&$focused:not($error)': {
+       color: theme.palette.secondary.main,
+     },
+   },
+diff --git a/packages/material-ui/src/OutlinedInput/OutlinedInput.js b/packages/material-ui/src/OutlinedInput/OutlinedInput.js
+index 589fae5..07761c6 100644
+--- a/packages/material-ui/src/OutlinedInput/OutlinedInput.js
++++ b/packages/material-ui/src/OutlinedInput/OutlinedInput.js
+@@ -37,7 +37,7 @@ export const styles = (theme) => {
+     },
+     /* Styles applied to the root element if the color is secondary. */
+     colorSecondary: {
+-      '&$focused $notchedOutline': {
++      '&$focused:not($error) $notchedOutline': {
+         borderColor: theme.palette.secondary.main,
+       },
+     },

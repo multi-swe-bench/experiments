@@ -1,0 +1,18 @@
+diff --git a/lib/request.js b/lib/request.js
+index 8bb86a9..0cf9f05 100644
+--- a/lib/request.js
++++ b/lib/request.js
+@@ -434,6 +434,13 @@ defineGetter(req, 'hostname', function hostname(){
+ 
+   if (!host) return;
+ 
++  // Use only the first entry when the header contains multiple
++  // comma-delimited values (e.g. when behind multiple proxies).
++  var commaIndex = host.indexOf(',');
++  if (commaIndex !== -1) {
++    host = host.substring(0, commaIndex).trim();
++  }
++
+   // IPv6 literal support
+   var offset = host[0] === '['
+     ? host.indexOf(']') + 1

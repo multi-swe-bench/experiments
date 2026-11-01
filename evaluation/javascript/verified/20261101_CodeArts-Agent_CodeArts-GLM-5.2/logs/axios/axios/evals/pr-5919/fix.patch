@@ -1,0 +1,65 @@
+diff --git a/dist/axios.js b/dist/axios.js
+index 0f335a3..4b717f7 100644
+--- a/dist/axios.js
++++ b/dist/axios.js
+@@ -1387,7 +1387,7 @@
+   }
+   var defaults = {
+     transitional: transitionalDefaults,
+-    adapter: platform.isNode ? 'http' : 'xhr',
++    adapter: ['xhr', 'http'],
+     transformRequest: [function transformRequest(data, headers) {
+       var contentType = headers.getContentType() || '';
+       var hasJSONContentType = contentType.indexOf('application/json') > -1;
+diff --git a/dist/browser/axios.cjs b/dist/browser/axios.cjs
+index c4af9b7..eb2d6ef 100644
+--- a/dist/browser/axios.cjs
++++ b/dist/browser/axios.cjs
+@@ -1418,7 +1418,7 @@ const defaults = {
+ 
+   transitional: transitionalDefaults,
+ 
+-  adapter: platform.isNode ? 'http' : 'xhr',
++  adapter: ['xhr', 'http'],
+ 
+   transformRequest: [function transformRequest(data, headers) {
+     const contentType = headers.getContentType() || '';
+diff --git a/dist/esm/axios.js b/dist/esm/axios.js
+index 6d4d546..676832d 100644
+--- a/dist/esm/axios.js
++++ b/dist/esm/axios.js
+@@ -1416,7 +1416,7 @@ const defaults = {
+ 
+   transitional: transitionalDefaults,
+ 
+-  adapter: platform.isNode ? 'http' : 'xhr',
++  adapter: ['xhr', 'http'],
+ 
+   transformRequest: [function transformRequest(data, headers) {
+     const contentType = headers.getContentType() || '';
+diff --git a/dist/node/axios.cjs b/dist/node/axios.cjs
+index fbd7868..d92f641 100644
+--- a/dist/node/axios.cjs
++++ b/dist/node/axios.cjs
+@@ -1383,7 +1383,7 @@ const defaults = {
+ 
+   transitional: transitionalDefaults,
+ 
+-  adapter: 'http' ,
++  adapter: ['xhr', 'http'],
+ 
+   transformRequest: [function transformRequest(data, headers) {
+     const contentType = headers.getContentType() || '';
+diff --git a/lib/defaults/index.js b/lib/defaults/index.js
+index 27c71b4..a883bfe 100644
+--- a/lib/defaults/index.js
++++ b/lib/defaults/index.js
+@@ -37,7 +37,7 @@ const defaults = {
+ 
+   transitional: transitionalDefaults,
+ 
+-  adapter: platform.isNode ? 'http' : 'xhr',
++  adapter: ['xhr', 'http'],
+ 
+   transformRequest: [function transformRequest(data, headers) {
+     const contentType = headers.getContentType() || '';

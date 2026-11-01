@@ -1,0 +1,23 @@
+diff --git a/packages/mui-lab/src/internal/pickers/PureDateInput.tsx b/packages/mui-lab/src/internal/pickers/PureDateInput.tsx
+index 10347561..9aedcf9b 100644
+--- a/packages/mui-lab/src/internal/pickers/PureDateInput.tsx
++++ b/packages/mui-lab/src/internal/pickers/PureDateInput.tsx
+@@ -116,6 +116,7 @@ export const PureDateInput = React.forwardRef(function PureDateInput(
+     label,
+     openPicker: onOpen,
+     rawValue,
++    readOnly,
+     renderInput,
+     TextFieldProps = {},
+     validationError,
+@@ -145,8 +146,8 @@ export const PureDateInput = React.forwardRef(function PureDateInput(
+       'aria-readonly': true,
+       'aria-label': getOpenDialogAriaText(rawValue, utils),
+       value: inputValue,
+-      onClick: onOpen,
+-      onKeyDown: onSpaceOrEnter(onOpen),
++      onClick: readOnly ? undefined : onOpen,
++      onKeyDown: readOnly ? undefined : onSpaceOrEnter(onOpen),
+     },
+     ...TextFieldProps,
+   });

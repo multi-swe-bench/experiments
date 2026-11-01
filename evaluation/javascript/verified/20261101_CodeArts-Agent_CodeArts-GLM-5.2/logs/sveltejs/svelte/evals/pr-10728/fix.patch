@@ -1,0 +1,38 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 9a09a1e..070135b 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -997,11 +997,28 @@ export const validation_runes = merge(validation, a11y_validators, {
+ 		if (node.label.name !== '$' || path.at(-1)?.type !== 'Program') return;
+ 		error(node, 'invalid-legacy-reactive-statement');
+ 	},
+-	ExportNamedDeclaration(node, { state }) {
+-		if (node.declaration?.type !== 'VariableDeclaration') return;
+-		if (node.declaration.kind !== 'let') return;
+-		if (state.analysis.instance.scope !== state.scope) return;
+-		error(node, 'invalid-legacy-export');
++	ExportNamedDeclaration(node, { state, next }) {
++		if (state.scope === state.analysis.instance.scope) {
++			if (node.declaration?.type !== 'VariableDeclaration') return;
++			if (node.declaration.kind !== 'let') return;
++			error(node, 'invalid-legacy-export');
++		} else if (
++			state.scope === state.analysis.module.scope &&
++			node.declaration?.type === 'VariableDeclaration'
++		) {
++			// visit children, so bindings are correctly initialised
++			next();
++
++			for (const declarator of node.declaration.declarations) {
++				for (const id of extract_identifiers(declarator.id)) {
++					validate_export(node, state.scope, id.name);
++				}
++			}
++		}
++	},
++	ExportSpecifier(node, { state }) {
++		if (state.scope !== state.analysis.module.scope) return;
++		validate_export(node, state.scope, node.local.name);
+ 	},
+ 	CallExpression(node, { state, path }) {
+ 		validate_call_expression(node, state.scope, path);

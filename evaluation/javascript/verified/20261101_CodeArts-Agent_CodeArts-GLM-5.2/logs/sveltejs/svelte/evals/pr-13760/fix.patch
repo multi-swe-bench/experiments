@@ -1,0 +1,14 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 33a369b..39a6c3d 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -1152,6 +1152,9 @@ function migrate_slot_usage(node, path, state) {
+ 			is_text_attribute(attribute)
+ 		) {
+ 			snippet_name = attribute.value[0].data;
++			if (snippet_name === 'default') {
++				snippet_name = 'children';
++			}
+ 			if (!regex_is_valid_identifier.test(snippet_name)) {
+ 				has_migration_task = true;
+ 				state.str.appendLeft(

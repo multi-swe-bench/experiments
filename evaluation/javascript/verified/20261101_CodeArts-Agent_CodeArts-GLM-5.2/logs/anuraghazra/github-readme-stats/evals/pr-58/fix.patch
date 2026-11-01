@@ -1,0 +1,74 @@
+diff --git a/api/pin.js b/api/pin.js
+index 2d69c0e..035c21f 100644
+--- a/api/pin.js
++++ b/api/pin.js
+@@ -2,6 +2,7 @@ require("dotenv").config();
+ const { renderError } = require("../src/utils");
+ const fetchRepo = require("../src/fetchRepo");
+ const renderRepoCard = require("../src/renderRepoCard");
++const retryer = require("../src/retryer");
+ 
+ module.exports = async (req, res) => {
+   const {
+@@ -17,7 +18,7 @@ module.exports = async (req, res) => {
+   res.setHeader("Content-Type", "image/svg+xml");
+ 
+   try {
+-    repoData = await fetchRepo(username, repo);
++    repoData = await retryer(() => fetchRepo(username, repo));
+   } catch (err) {
+     console.log(err);
+     return res.send(renderError(err.message));
+diff --git a/src/fetchStats.js b/src/fetchStats.js
+index dc28590..fd2f14d 100644
+--- a/src/fetchStats.js
++++ b/src/fetchStats.js
+@@ -1,12 +1,14 @@
+ const { request } = require("./utils");
++const retryer = require("./retryer");
+ const calculateRank = require("./calculateRank");
+ require("dotenv").config();
+ 
+ async function fetchStats(username) {
+   if (!username) throw Error("Invalid username");
+ 
+-  const res = await request({
+-    query: `
++  const res = await retryer(() =>
++    request({
++      query: `
+       query userInfo($login: String!) {
+         user(login: $login) {
+           name
+@@ -38,7 +40,8 @@ async function fetchStats(username) {
+       }
+     `,
+     variables: { login: username },
+-  });
++  })
++  );
+ 
+   const stats = {
+     name: "",
+diff --git a/src/retryer.js b/src/retryer.js
+new file mode 100644
+index 0000000..3ffe46e
+--- /dev/null
++++ b/src/retryer.js
+@@ -0,0 +1,15 @@
++const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
++
++const retryer = async (fn, retries = 0) => {
++  try {
++    return await fn();
++  } catch (err) {
++    if (retries > 7 || !err.response) {
++      throw err;
++    }
++    await sleep(2000);
++    return retryer(fn, retries + 1);
++  }
++};
++
++module.exports = retryer;
+\ No newline at end of file

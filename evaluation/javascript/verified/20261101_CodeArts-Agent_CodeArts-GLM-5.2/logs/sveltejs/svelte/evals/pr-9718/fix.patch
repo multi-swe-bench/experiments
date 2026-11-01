@@ -1,0 +1,26 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index ef5d807..b54a410 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -523,10 +523,6 @@ const legacy_scope_tweaker = {
+ 				state.analysis.uses_rest_props = true;
+ 			}
+ 
+-			if (node.name === '$$slots') {
+-				state.analysis.uses_slots = true;
+-			}
+-
+ 			let binding = state.scope.get(node.name);
+ 
+ 			if (binding?.kind === 'store_sub') {
+@@ -892,6 +888,10 @@ const common_visitors = {
+ 		const parent = /** @type {import('estree').Node} */ (context.path.at(-1));
+ 		if (!is_reference(node, parent)) return;
+ 
++		if (node.name === '$$slots') {
++			context.state.analysis.uses_slots = true;
++		}
++
+ 		const binding = context.state.scope.get(node.name);
+ 
+ 		// if no binding, means some global variable

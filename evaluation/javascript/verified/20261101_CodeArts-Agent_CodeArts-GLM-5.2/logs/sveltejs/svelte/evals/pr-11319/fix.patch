@@ -1,0 +1,178 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 5eae33a..c9b2e49 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -370,6 +370,7 @@ export function analyze_component(root, source, options) {
+ 		uses_slots: false,
+ 		uses_component_bindings: false,
+ 		uses_render_tags: false,
++		uses_context: false,
+ 		custom_element: options.customElementOptions ?? options.customElement,
+ 		inject_styles: options.css === 'injected' || options.customElement,
+ 		accessors: options.customElement
+@@ -1019,6 +1020,18 @@ function is_known_safe_call(node, context) {
+ 	return false;
+ }
+ 
++/**
++ * Returns true if the call expression is guaranteed not to (indirectly) call
++ * `setContext` or any other context-dependent function. Used to determine whether
++ * the component needs a context stack (`push`/`pop`).
++ * @param {import('estree').CallExpression} node
++ * @param {import('./types').Context} context
++ * @returns {boolean}
++ */
++function is_safe_call(node, context) {
++	return get_rune(node, context.state.scope) !== null || is_known_safe_call(node, context);
++}
++
+ /**
+  * @param {import('estree').ArrowFunctionExpression | import('estree').FunctionExpression | import('estree').FunctionDeclaration} node
+  * @param {import('./types').Context} context
+@@ -1228,6 +1241,39 @@ const common_visitors = {
+ 			}
+ 		}
+ 
++		// The component only needs a context stack (push/pop) if it contains a call
++		// expression that we can't guarantee is "safe" (i.e. it could, directly or
++		// indirectly, end up calling `setContext` or another context-dependent function).
++		// Rune calls and known-safe global casts are guaranteed not to do so.
++		if (context.state.ast_type !== 'module' && !is_safe_call(node, context)) {
++			context.state.analysis.uses_context = true;
++		}
++
++		// `$effect` and `$effect.pre` defer their execution to the component context,
++		// and self-mutating effects rely on `is_runes()` (which requires a component
++		// context) to reschedule themselves, so the component needs a context stack.
++		const rune = get_rune(node, context.state.scope);
++		if (
++			context.state.ast_type !== 'module' &&
++			(rune === '$effect' || rune === '$effect.pre' || rune === '$effect.root')
++		) {
++			context.state.analysis.uses_context = true;
++		}
++
++		context.next();
++	},
++	NewExpression(node, context) {
++		if (context.state.ast_type !== 'module') {
++			context.state.analysis.uses_context = true;
++		}
++
++		context.next();
++	},
++	TaggedTemplateExpression(node, context) {
++		if (context.state.ast_type !== 'module') {
++			context.state.analysis.uses_context = true;
++		}
++
+ 		context.next();
+ 	},
+ 	MemberExpression(node, context) {
+@@ -1235,9 +1281,20 @@ const common_visitors = {
+ 			context.state.expression.metadata.dynamic = true;
+ 		}
+ 
++		// A member expression could invoke an arbitrary getter, which means we can't
++		// guarantee that it won't (indirectly) call `setContext` or similar, so the
++		// component needs a context stack.
++		if (context.state.ast_type !== 'module') {
++			context.state.analysis.uses_context = true;
++		}
++
+ 		context.next();
+ 	},
+ 	BindDirective(node, context) {
++		// `bind:` directives create effects whose lifecycle is tied to the component,
++		// so the component needs a context stack.
++		context.state.analysis.uses_context = true;
++
+ 		let i = context.path.length;
+ 		while (i--) {
+ 			const parent = context.path[i];
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+index 61a0377..9ce236b 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+@@ -347,11 +347,40 @@ export function client_component(source, analysis, options) {
+ 		);
+ 	}
+ 
++	// In runes mode, the component context (`push`/`pop`) is only needed if the component
++	// uses features that depend on it (exports, accessors, props, slots, stores, bindings,
++	// lifecycle/context functions, or any call/member expression we can't guarantee is
++	// "safe"). Otherwise we can leave it out — effects that would normally attach to this
++	// component's context simply attach to the parent's instead — and the `$$props`
++	// parameter is unnecessary too.
++	const has_props_bindings = Array.from(analysis.instance.scope.declarations.values()).some(
++		(binding) =>
++			binding.kind === 'prop' ||
++			binding.kind === 'bindable_prop' ||
++			binding.kind === 'rest_prop' ||
++			binding.kind === 'store_sub'
++	);
++
++	const can_omit_context =
++		analysis.runes &&
++		!options.dev &&
++		!analysis.uses_context &&
++		analysis.exports.length === 0 &&
++		!analysis.accessors &&
++		!analysis.custom_element &&
++		!analysis.uses_props &&
++		!analysis.uses_rest_props &&
++		!analysis.uses_slots &&
++		!analysis.uses_component_bindings &&
++		!has_props_bindings &&
++		analysis.slot_names.size === 0 &&
++		analysis.reactive_statements.size === 0;
++
+ 	const push_args = [b.id('$$props'), b.literal(analysis.runes)];
+ 	if (options.dev) push_args.push(b.id(analysis.name));
+ 
+ 	const component_block = b.block([
+-		b.stmt(b.call('$.push', ...push_args)),
++		...(can_omit_context ? [] : [b.stmt(b.call('$.push', ...push_args))]),
+ 		...store_setup,
+ 		...legacy_reactive_declarations,
+ 		...group_binding_declarations,
+@@ -392,11 +421,13 @@ export function client_component(source, analysis, options) {
+ 			: () => {};
+ 
+ 	append_styles();
+-	component_block.body.push(
+-		component_returned_object.length > 0
+-			? b.return(b.call('$.pop', b.object(component_returned_object)))
+-			: b.stmt(b.call('$.pop'))
+-	);
++	if (!can_omit_context) {
++		component_block.body.push(
++			component_returned_object.length > 0
++				? b.return(b.call('$.pop', b.object(component_returned_object)))
++				: b.stmt(b.call('$.pop'))
++		);
++	}
+ 
+ 	if (analysis.uses_rest_props) {
+ 		const named_props = analysis.exports.map(({ name, alias }) => alias ?? name);
+@@ -434,7 +465,7 @@ export function client_component(source, analysis, options) {
+ 
+ 	const component = b.function_declaration(
+ 		b.id(analysis.name),
+-		[b.id('$$anchor'), b.id('$$props')],
++		can_omit_context ? [b.id('$$anchor')] : [b.id('$$anchor'), b.id('$$props')],
+ 		component_block
+ 	);
+ 
+diff --git a/packages/svelte/src/compiler/phases/types.d.ts b/packages/svelte/src/compiler/phases/types.d.ts
+index c2ece7d..dc31b24 100644
+--- a/packages/svelte/src/compiler/phases/types.d.ts
++++ b/packages/svelte/src/compiler/phases/types.d.ts
+@@ -57,6 +57,7 @@ export interface ComponentAnalysis extends Analysis {
+ 	uses_slots: boolean;
+ 	uses_component_bindings: boolean;
+ 	uses_render_tags: boolean;
++	uses_context: boolean;
+ 	custom_element: boolean | SvelteOptions['customElement'];
+ 	/** If `true`, should append styles through JavaScript */
+ 	inject_styles: boolean;

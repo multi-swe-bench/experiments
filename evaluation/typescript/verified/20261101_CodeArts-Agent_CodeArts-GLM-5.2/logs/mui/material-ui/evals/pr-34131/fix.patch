@@ -1,0 +1,59 @@
+diff --git a/packages/mui-material/src/AppBar/AppBar.js b/packages/mui-material/src/AppBar/AppBar.js
+index f68b30d8..9de2bd9a 100644
+--- a/packages/mui-material/src/AppBar/AppBar.js
++++ b/packages/mui-material/src/AppBar/AppBar.js
+@@ -18,10 +18,6 @@ const useUtilityClasses = (ownerState) => {
+   return composeClasses(slots, getAppBarUtilityClass, classes);
+ };
+ 
+-// var2 is the fallback.
+-// Ex. var1: 'var(--a)', var2: 'var(--b)'; return: 'var(--a, var(--b))'
+-const joinVars = (var1, var2) => `${var1?.replace(')', '')}, ${var2})`;
+-
+ const AppBarRoot = styled(Paper, {
+   name: 'MuiAppBar',
+   slot: 'Root',
+@@ -106,24 +102,13 @@ const AppBarRoot = styled(Paper, {
+     }),
+     ...(theme.vars && {
+       ...(ownerState.color === 'default' && {
+-        '--AppBar-background': ownerState.enableColorOnDark
+-          ? theme.vars.palette.AppBar.defaultBg
+-          : joinVars(theme.vars.palette.AppBar.darkBg, theme.vars.palette.AppBar.defaultBg),
+-        '--AppBar-color': ownerState.enableColorOnDark
+-          ? theme.vars.palette.text.primary
+-          : joinVars(theme.vars.palette.AppBar.darkColor, theme.vars.palette.text.primary),
++        '--AppBar-background': theme.vars.palette.AppBar.defaultBg,
++        '--AppBar-color': theme.vars.palette.text.primary,
+       }),
+       ...(ownerState.color &&
+         !ownerState.color.match(/^(default|inherit|transparent)$/) && {
+-          '--AppBar-background': ownerState.enableColorOnDark
+-            ? theme.vars.palette[ownerState.color].main
+-            : joinVars(theme.vars.palette.AppBar.darkBg, theme.vars.palette[ownerState.color].main),
+-          '--AppBar-color': ownerState.enableColorOnDark
+-            ? theme.vars.palette[ownerState.color].contrastText
+-            : joinVars(
+-                theme.vars.palette.AppBar.darkColor,
+-                theme.vars.palette[ownerState.color].contrastText,
+-              ),
++          '--AppBar-background': theme.vars.palette[ownerState.color].main,
++          '--AppBar-color': theme.vars.palette[ownerState.color].contrastText,
+         }),
+       backgroundColor: 'var(--AppBar-background)',
+       color: ownerState.color === 'inherit' ? 'inherit' : 'var(--AppBar-color)',
+@@ -132,6 +117,14 @@ const AppBarRoot = styled(Paper, {
+         backgroundColor: 'transparent',
+         color: 'inherit',
+       }),
++      [theme.getColorSchemeSelector('dark')]: {
++        ...(!ownerState.enableColorOnDark &&
++          ownerState.color !== 'transparent' &&
++          ownerState.color !== 'inherit' && {
++            '--AppBar-background': theme.vars.palette.AppBar.darkBg,
++            '--AppBar-color': theme.vars.palette.AppBar.darkColor,
++          }),
++      },
+     }),
+   };
+ });

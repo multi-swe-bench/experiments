@@ -1,0 +1,400 @@
+diff --git a/packages/material-ui-lab/src/Stack/index.d.ts b/packages/material-ui-lab/src/Stack/index.d.ts
+new file mode 100644
+index 0000000..44f16ce
+--- /dev/null
++++ b/packages/material-ui-lab/src/Stack/index.d.ts
+@@ -0,0 +1,2 @@
++export { default } from '@material-ui/core/Stack';
++export * from '@material-ui/core/Stack';
+diff --git a/packages/material-ui-lab/src/Stack/index.js b/packages/material-ui-lab/src/Stack/index.js
+new file mode 100644
+index 0000000..44f16ce
+--- /dev/null
++++ b/packages/material-ui-lab/src/Stack/index.js
+@@ -0,0 +1,2 @@
++export { default } from '@material-ui/core/Stack';
++export * from '@material-ui/core/Stack';
+diff --git a/packages/material-ui-lab/src/index.d.ts b/packages/material-ui-lab/src/index.d.ts
+index 15b7a56..41d2921 100644
+--- a/packages/material-ui-lab/src/index.d.ts
++++ b/packages/material-ui-lab/src/index.d.ts
+@@ -88,6 +88,9 @@ export * from './SpeedDialAction';
+ export { default as SpeedDialIcon } from './SpeedDialIcon';
+ export * from './SpeedDialIcon';
+ 
++export { default as Stack } from './Stack';
++export * from './Stack';
++
+ export { default as StaticDatePicker } from './StaticDatePicker';
+ export * from './StaticDatePicker';
+ 
+diff --git a/packages/material-ui-lab/src/index.js b/packages/material-ui-lab/src/index.js
+index 438645d..42afa5e 100644
+--- a/packages/material-ui-lab/src/index.js
++++ b/packages/material-ui-lab/src/index.js
+@@ -89,6 +89,9 @@ export * from './SpeedDialAction';
+ export { default as SpeedDialIcon } from './SpeedDialIcon';
+ export * from './SpeedDialIcon';
+ 
++export { default as Stack } from './Stack';
++export * from './Stack';
++
+ export { default as StaticDatePicker } from './StaticDatePicker';
+ export * from './StaticDatePicker';
+ 
+diff --git a/packages/material-ui/src/Stack/Stack.d.ts b/packages/material-ui/src/Stack/Stack.d.ts
+new file mode 100644
+index 0000000..515fa89
+--- /dev/null
++++ b/packages/material-ui/src/Stack/Stack.d.ts
+@@ -0,0 +1,66 @@
++import * as React from 'react';
++import { SxProps, SystemProps, ResponsiveStyleValue } from '@material-ui/system';
++import { Theme } from '../styles';
++import { OverridableComponent, OverrideProps } from '../OverridableComponent';
++
++export type StackDirection = 'row' | 'row-reverse' | 'column' | 'column-reverse';
++
++export type StackSpacing = number | string;
++
++export type StackClassKey = keyof NonNullable<StackTypeMap['props']['classes']>;
++
++export interface StackTypeMap<P = {}, D extends React.ElementType = 'div'> {
++  props: P &
++    SystemProps & {
++      /**
++       * The content of the component.
++       */
++      children?: React.ReactNode;
++      /**
++       * Override or extend the styles applied to the component.
++       */
++      classes?: {
++        /** Styles applied to the root element. */
++        root?: string;
++      };
++      /**
++       * Defines the `flex-direction` style property.
++       * It is applied for all screen sizes.
++       * @default 'column'
++       */
++      direction?: StackDirection;
++      /**
++       * Add an element between each child.
++       */
++      divider?: React.ReactElement;
++      /**
++       * Defines the space between the immediate children.
++       * @default 0
++       */
++      spacing?: ResponsiveStyleValue<StackSpacing>;
++      /**
++       * The system prop that allows defining system overrides as well as additional CSS styles.
++       */
++      sx?: SxProps<Theme>;
++    };
++  defaultComponent: D;
++}
++
++/**
++ *
++ * Demos:
++ *
++ * - [Stack](https://material-ui.com/components/stack/)
++ *
++ * API:
++ *
++ * - [Stack API](https://material-ui.com/api/stack/)
++ */
++declare const Stack: OverridableComponent<StackTypeMap>;
++
++export type StackProps<
++  D extends React.ElementType = StackTypeMap['defaultComponent'],
++  P = {}
++> = OverrideProps<StackTypeMap<P, D>, D>;
++
++export default Stack;
+diff --git a/packages/material-ui/src/Stack/Stack.js b/packages/material-ui/src/Stack/Stack.js
+new file mode 100644
+index 0000000..ed02d75
+--- /dev/null
++++ b/packages/material-ui/src/Stack/Stack.js
+@@ -0,0 +1,183 @@
++import * as React from 'react';
++import PropTypes from 'prop-types';
++import clsx from 'clsx';
++import {
++  unstable_extendSxProp as extendSxProp,
++  handleBreakpoints,
++  createUnarySpacing,
++} from '@material-ui/system';
++import { unstable_composeClasses as composeClasses } from '@material-ui/unstyled';
++import experimentalStyled from '../styles/experimentalStyled';
++import useThemeProps from '../styles/useThemeProps';
++import { getStackUtilityClass } from './stackClasses';
++
++const overridesResolver = (props, styles) => styles.root || {};
++
++function getValue(transformer, propValue) {
++  if (typeof propValue === 'string' || propValue == null) {
++    return propValue;
++  }
++
++  const abs = Math.abs(propValue);
++  const transformed = transformer(abs);
++
++  if (propValue >= 0) {
++    return transformed;
++  }
++
++  if (typeof transformed === 'number') {
++    return -transformed;
++  }
++
++  return `-${transformed}`;
++}
++
++const StackRoot = experimentalStyled(
++  'div',
++  {},
++  { name: 'MuiStack', slot: 'Root', overridesResolver },
++)(
++  ({ styleProps }) => ({
++    display: 'flex',
++    flexDirection: styleProps.direction,
++  }),
++  ({ theme, styleProps }) => {
++    const { spacing, direction } = styleProps;
++    const transformer = createUnarySpacing(theme);
++
++    return handleBreakpoints({ theme, ...styleProps, spacing }, spacing, (spacingValue) => {
++      let styles = {};
++      if (direction === 'row') {
++        styles = {
++          '& > :not(style) + :not(style)': {
++            marginLeft: getValue(transformer, spacingValue),
++          },
++        };
++      } else if (direction === 'row-reverse') {
++        styles = {
++          '& > :not(style) + :not(style)': {
++            marginRight: getValue(transformer, spacingValue),
++          },
++        };
++      } else if (direction === 'column') {
++        styles = {
++          '& > :not(style) + :not(style)': {
++            marginTop: getValue(transformer, spacingValue),
++          },
++        };
++      } else if (direction === 'column-reverse') {
++        styles = {
++          '& > :not(style) + :not(style)': {
++            marginBottom: getValue(transformer, spacingValue),
++          },
++        };
++      }
++
++      return styles;
++    });
++  },
++);
++
++const useUtilityClasses = (styleProps) => {
++  const { classes } = styleProps;
++
++  const slots = {
++    root: ['root'],
++  };
++
++  return composeClasses(slots, getStackUtilityClass, classes);
++};
++
++const Stack = React.forwardRef(function Stack(inProps, ref) {
++  const themeProps = useThemeProps({ props: inProps, name: 'MuiStack' });
++  const props = extendSxProp(themeProps);
++  const {
++    children,
++    component = 'div',
++    direction = 'column',
++    spacing = 0,
++    divider,
++    className,
++    ...other
++  } = props;
++
++  const styleProps = {
++    ...props,
++    component,
++    direction,
++    spacing,
++    divider,
++  };
++
++  const classes = useUtilityClasses(styleProps);
++
++  return (
++    <StackRoot
++      as={component}
++      className={clsx(classes.root, className)}
++      ref={ref}
++      styleProps={styleProps}
++      {...other}
++    >
++      {divider
++        ? React.Children.toArray(children).map((child, index) => (
++            // eslint-disable-next-line react/no-array-index-key
++            <React.Fragment key={index}>
++              {index !== 0 ? divider : null}
++              {child}
++            </React.Fragment>
++          ))
++        : children}
++    </StackRoot>
++  );
++});
++
++Stack.propTypes /* remove-proptypes */ = {
++  // ----------------------------- Warning --------------------------------
++  // | These PropTypes are generated from the TypeScript type definitions |
++  // |     To update them edit the d.ts file and run "yarn proptypes"     |
++  // ----------------------------------------------------------------------
++  /**
++   * The content of the component.
++   */
++  children: PropTypes.node,
++  /**
++   * Override or extend the styles applied to the component.
++   */
++  classes: PropTypes.object,
++  /**
++   * @ignore
++   */
++  className: PropTypes.string,
++  /**
++   * The component used for the root node.
++   * Either a string to use a HTML element or a component.
++   */
++  component: PropTypes.elementType,
++  /**
++   * Defines the `flex-direction` style property.
++   * It is applied for all screen sizes.
++   * @default 'column'
++   */
++  direction: PropTypes.oneOf(['column-reverse', 'column', 'row-reverse', 'row']),
++  /**
++   * Add an element between each child.
++   */
++  divider: PropTypes.element,
++  /**
++   * Defines the space between the immediate children.
++   * @default 0
++   */
++  spacing: PropTypes.oneOfType([
++    PropTypes.number,
++    PropTypes.string,
++    PropTypes.object,
++    PropTypes.array,
++  ]),
++  /**
++   * The system prop that allows defining system overrides as well as additional CSS styles.
++   */
++  sx: PropTypes.object,
++};
++
++export default Stack;
+diff --git a/packages/material-ui/src/Stack/Stack.spec.tsx b/packages/material-ui/src/Stack/Stack.spec.tsx
+new file mode 100644
+index 0000000..85c1f6c
+--- /dev/null
++++ b/packages/material-ui/src/Stack/Stack.spec.tsx
+@@ -0,0 +1,10 @@
++import * as React from 'react';
++import Paper from '@material-ui/core/Paper';
++import Stack from '@material-ui/core/Stack';
++
++function ResponsiveTest() {
++  <Stack component={Paper} direction="row" spacing={{ xs: 1, sm: 2, md: 3 }} divider={<span />}>
++    <span>A</span>
++    <span>B</span>
++  </Stack>;
++}
+diff --git a/packages/material-ui/src/Stack/index.d.ts b/packages/material-ui/src/Stack/index.d.ts
+new file mode 100644
+index 0000000..4f6b182
+--- /dev/null
++++ b/packages/material-ui/src/Stack/index.d.ts
+@@ -0,0 +1,5 @@
++export { default } from './Stack';
++export * from './Stack';
++
++export { default as stackClasses } from './stackClasses';
++export * from './stackClasses';
+diff --git a/packages/material-ui/src/Stack/index.js b/packages/material-ui/src/Stack/index.js
+new file mode 100644
+index 0000000..4d7a546
+--- /dev/null
++++ b/packages/material-ui/src/Stack/index.js
+@@ -0,0 +1,4 @@
++export { default } from './Stack';
++
++export { default as stackClasses } from './stackClasses';
++export * from './stackClasses';
+diff --git a/packages/material-ui/src/Stack/stackClasses.d.ts b/packages/material-ui/src/Stack/stackClasses.d.ts
+new file mode 100644
+index 0000000..c45916a
+--- /dev/null
++++ b/packages/material-ui/src/Stack/stackClasses.d.ts
+@@ -0,0 +1,9 @@
++import { StackClassKey } from './Stack';
++
++export type StackClasses = Record<StackClassKey, string>;
++
++declare const stackClasses: StackClasses;
++
++export function getStackUtilityClass(slot: string): string;
++
++export default stackClasses;
+diff --git a/packages/material-ui/src/Stack/stackClasses.js b/packages/material-ui/src/Stack/stackClasses.js
+new file mode 100644
+index 0000000..c9c8252
+--- /dev/null
++++ b/packages/material-ui/src/Stack/stackClasses.js
+@@ -0,0 +1,9 @@
++import { generateUtilityClass, generateUtilityClasses } from '@material-ui/unstyled';
++
++export function getStackUtilityClass(slot) {
++  return generateUtilityClass('MuiStack', slot);
++}
++
++const stackClasses = generateUtilityClasses('MuiStack', ['root']);
++
++export default stackClasses;
+diff --git a/packages/material-ui/src/index.d.ts b/packages/material-ui/src/index.d.ts
+index 0d91b4e..22fdc0c 100644
+--- a/packages/material-ui/src/index.d.ts
++++ b/packages/material-ui/src/index.d.ts
+@@ -360,6 +360,9 @@ export * from './SpeedDialAction';
+ export { default as SpeedDialIcon } from './SpeedDialIcon';
+ export * from './SpeedDialIcon';
+ 
++export { default as Stack } from './Stack';
++export * from './Stack';
++
+ export { default as Step } from './Step';
+ export * from './Step';
+ 
+diff --git a/packages/material-ui/src/index.js b/packages/material-ui/src/index.js
+index 2fb6ebb..f617b19 100644
+--- a/packages/material-ui/src/index.js
++++ b/packages/material-ui/src/index.js
+@@ -293,6 +293,9 @@ export * from './SpeedDialAction';
+ export { default as SpeedDialIcon } from './SpeedDialIcon';
+ export * from './SpeedDialIcon';
+ 
++export { default as Stack } from './Stack';
++export * from './Stack';
++
+ export { default as Step } from './Step';
+ export * from './Step';
+ 

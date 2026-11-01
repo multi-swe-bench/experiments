@@ -1,0 +1,35 @@
+diff --git a/packages/material-ui-unstyled/src/SliderUnstyled/SliderUnstyled.js b/packages/material-ui-unstyled/src/SliderUnstyled/SliderUnstyled.js
+index c2f3e72..3a11474 100644
+--- a/packages/material-ui-unstyled/src/SliderUnstyled/SliderUnstyled.js
++++ b/packages/material-ui-unstyled/src/SliderUnstyled/SliderUnstyled.js
+@@ -118,15 +118,27 @@ function focusThumb({ sliderRef, activeIndex, setActive }) {
+ const axisProps = {
+   horizontal: {
+     offset: (percent) => ({ left: `${percent}%` }),
+-    leap: (percent) => ({ width: `${percent}%` }),
++    leap: (percent) => ({
++      width: '100%',
++      transformOrigin: 'left',
++      transform: `scaleX(${percent / 100})`,
++    }),
+   },
+   'horizontal-reverse': {
+     offset: (percent) => ({ right: `${percent}%` }),
+-    leap: (percent) => ({ width: `${percent}%` }),
++    leap: (percent) => ({
++      width: '100%',
++      transformOrigin: 'right',
++      transform: `scaleX(${percent / 100})`,
++    }),
+   },
+   vertical: {
+     offset: (percent) => ({ bottom: `${percent}%` }),
+-    leap: (percent) => ({ height: `${percent}%` }),
++    leap: (percent) => ({
++      height: '100%',
++      transformOrigin: 'bottom',
++      transform: `scaleY(${percent / 100})`,
++    }),
+   },
+ };
+ 

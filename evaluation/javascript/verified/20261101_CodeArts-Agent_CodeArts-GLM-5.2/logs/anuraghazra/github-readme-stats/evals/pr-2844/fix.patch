@@ -1,0 +1,90 @@
+diff --git a/api/index.js b/api/index.js
+index a3d9f2a..fbf7ca4 100644
+--- a/api/index.js
++++ b/api/index.js
+@@ -38,6 +38,7 @@ export default async (req, res) => {
+     border_color,
+     rank_icon,
+     show_total_reviews,
++    show,
+   } = req.query;
+   res.setHeader("Content-Type", "image/svg+xml");
+ 
+@@ -97,6 +98,7 @@ export default async (req, res) => {
+         disable_animations: parseBoolean(disable_animations),
+         rank_icon,
+         show_total_reviews: parseBoolean(show_total_reviews),
++        show: parseArray(show),
+       }),
+     );
+   } catch (err) {
+diff --git a/readme.md b/readme.md
+index 4c15007..451ea8d 100644
+--- a/readme.md
++++ b/readme.md
+@@ -88,6 +88,7 @@ Please visit [this link](https://give.do/fundraisers/stand-beside-the-victims-of
+ 
+ - [GitHub Stats Card](#github-stats-card)
+     - [Hiding individual stats](#hiding-individual-stats)
++    - [Showing individual stats](#showing-individual-stats)
+     - [Showing icons](#showing-icons)
+     - [Themes](#themes)
+     - [Customization](#customization)
+@@ -149,6 +150,16 @@ You can pass a query parameter `&hide=` to hide any specific stats with comma-se
+ ![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=anuraghazra&hide=contribs,prs)
+ ```
+ 
++### Showing individual stats
++
++You can pass a query parameter `&show=` to show any specific stats with comma-separated values.
++
++> Options: `&show=reviews`
++
++```md
++![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=anuraghazra&show=reviews)
++```
++
+ ### Showing icons
+ 
+ To enable icons, you can pass `&show_icons=true` in the query param, like so:
+@@ -307,6 +318,7 @@ You can provide multiple comma-separated values in the bg_color option to render
+ -   `ring_color` - Color of the rank circle _(hex color)_. Defaults to the theme ring color if it exists and otherwise the title color.
+ -   `number_format` - Switch between two available formats for displaying the card values `short` (i.e. `6.6k`) and `long` (i.e. `6626`). Default: `short`.
+ -   `show_total_reviews` - Show total PR reviews _(boolean)_. Default: `false`.
++-   `show` - Show the [specified items](#showing-individual-stats) from the stats _(Comma-separated values)_. Default: `[] (blank array)`.
+ 
+ > **Note**
+ > When hide_rank=`true`, the minimum card width is 270 px + the title length and padding.
+diff --git a/src/cards/stats-card.js b/src/cards/stats-card.js
+index 9b5763e..62a0c8c 100644
+--- a/src/cards/stats-card.js
++++ b/src/cards/stats-card.js
+@@ -113,6 +113,7 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
+     disable_animations = false,
+     rank_icon = "default",
+     show_total_reviews = false,
++    show = [],
+   } = options;
+ 
+   const lheight = parseInt(String(line_height), 10);
+@@ -161,7 +162,7 @@ const renderStatsCard = (stats = {}, options = { hide: [] }) => {
+     id: "prs",
+   };
+ 
+-  if (show_total_reviews) {
++  if (show_total_reviews || show.includes("reviews")) {
+     STATS.reviews = {
+       icon: icons.reviews,
+       label: i18n.t("statcard.reviews"),
+diff --git a/src/cards/types.d.ts b/src/cards/types.d.ts
+index cec7b7f..d337dca 100644
+--- a/src/cards/types.d.ts
++++ b/src/cards/types.d.ts
+@@ -28,6 +28,7 @@ export type StatCardOptions = CommonOptions & {
+   text_bold: boolean;
+   rank_icon: RankIcon;
+   show_total_reviews: boolean;
++  show: string[];
+ };
+ 
+ export type RepoCardOptions = CommonOptions & {

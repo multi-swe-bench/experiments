@@ -1,0 +1,107 @@
+diff --git a/docs/en/Plugin.md b/docs/en/Plugin.md
+index 2b46d53..039d26a 100644
+--- a/docs/en/Plugin.md
++++ b/docs/en/Plugin.md
+@@ -232,6 +232,22 @@ dayjs.extend(weekOfYear);
+ dayjs("2018-06-27").week(); // 26
+ ```
+ 
++### IsoWeek
++
++- IsoWeek adds `.isoWeek()` `.isoWeeks()` `.isoWeekday()` APIs to returns a `number` indicating the `Dayjs`'s ISO week of the year (week starts on Monday) and to get/set the ISO day of the week (1 - 7, Monday to Sunday). It also enables `startOf('isoWeek')` and `endOf('isoWeek')` which respect Monday as the first day of the week.
++
++```javascript
++import isoWeek from "dayjs/plugin/isoWeek";
++
++dayjs.extend(isoWeek);
++
++dayjs("2018-06-27").isoWeek(); // 26
++dayjs("2018-06-27").isoWeekday(); // 3
++dayjs("2018-06-27").isoWeekday(1).format("YYYY-MM-DD"); // 2018-06-25
++dayjs("2018-06-27").startOf("isoWeek").format("YYYY-MM-DD"); // 2018-06-25
++dayjs("2018-06-27").endOf("isoWeek").format("YYYY-MM-DD"); // 2018-07-01
++```
++
+ ### QuarterOfYear
+ 
+ - QuarterOfYear add `.quarter()` API to return to which quarter of the year belongs a date
+diff --git a/src/plugin/isoWeek/index.js b/src/plugin/isoWeek/index.js
+new file mode 100644
+index 0000000..4fc031d
+--- /dev/null
++++ b/src/plugin/isoWeek/index.js
+@@ -0,0 +1,74 @@
++import { D, Y } from '../../constant'
++
++const daysInYear = (y) => {
++  if ((y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0)) {
++    return 366
++  }
++  return 365
++}
++
++const firstWeekOffset = (year, dow, doy) => {
++  const fwd = (7 + dow) - doy
++  const fwdDay = new Date(year, 0, fwd).getDay()
++  const fwdlw = (7 + (fwdDay - dow)) % 7
++  return ((-fwdlw) + fwd) - 1
++}
++
++const weeksInYear = (year, dow, doy) => {
++  const weekOffset = firstWeekOffset(year, dow, doy)
++  const weekOffsetNext = firstWeekOffset((year + 1), dow, doy)
++  return ((daysInYear(year) - weekOffset) + weekOffsetNext) / 7
++}
++
++const weekOfYear = (that, dow, doy) => {
++  const dayOfYear = Math.round((that.startOf('day') - that.startOf(Y)) / 864e5) + 1
++  const weekOffset = firstWeekOffset(that.year(), dow, doy)
++  const week = Math.floor(((dayOfYear - weekOffset) - 1) / 7) + 1
++  const weeksThis = weeksInYear(that.year(), dow, doy)
++  let resYear
++  let resWeek
++  if (week < 1) {
++    resYear = that.year() - 1
++    resWeek = week + weeksInYear(resYear, dow, doy)
++  } else if (week > weeksThis) {
++    resYear = that.year() + 1
++    resWeek = week - weeksThis
++  } else {
++    resYear = that.year()
++    resWeek = week
++  }
++  return { week: resWeek, year: resYear }
++}
++
++export default (o, c) => {
++  const proto = c.prototype
++  proto.isoWeek = function (week = null) {
++    if (week !== null) {
++      return this.add(((week - this.isoWeek()) * 7), D)
++    }
++    return weekOfYear(this, 1, 4).week
++  }
++  proto.isoWeeks = function (week = null) {
++    return this.isoWeek(week)
++  }
++  proto.isoWeekday = function (weekday = null) {
++    if (weekday !== null) {
++      const wd = parseInt(weekday, 10)
++      const currentIsoDay = ((this.day() + 6) % 7) + 1
++      return this.add((wd - currentIsoDay), D)
++    }
++    return ((this.day() + 6) % 7) + 1
++  }
++  const oldStartOf = proto.startOf
++  proto.startOf = function (units, startOf) {
++    const utils = this.$utils()
++    const isStartOf = !utils.isUndefined(startOf) ? startOf : true
++    const unit = utils.prettyUnit(units)
++    if (unit === 'isoweek') {
++      const isoDay = ((this.day() + 6) % 7) + 1
++      const dayDiff = isStartOf ? (1 - isoDay) : (7 - isoDay)
++      return this.add(dayDiff, D)[isStartOf ? 'startOf' : 'endOf'](D)
++    }
++    return oldStartOf.call(this, units, startOf)
++  }
++}

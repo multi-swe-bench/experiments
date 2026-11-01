@@ -1,0 +1,13 @@
+diff --git a/src/plugin/duration/index.js b/src/plugin/duration/index.js
+index 31ab685..5365f1b 100644
+--- a/src/plugin/duration/index.js
++++ b/src/plugin/duration/index.js
+@@ -172,7 +172,7 @@ export default (option, Dayjs, dayjs) => {
+   $d = dayjs
+   $u = dayjs().$utils()
+   dayjs.duration = function (input, unit) {
+-    return wrapper(input, {}, unit)
++    return wrapper(input, { $l: dayjs().$L }, unit)
+   }
+   dayjs.isDuration = isDuration
+ }

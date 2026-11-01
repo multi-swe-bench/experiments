@@ -1,0 +1,28 @@
+diff --git a/packages/mui-material/src/Select/SelectInput.js b/packages/mui-material/src/Select/SelectInput.js
+index 1c20c299..925de42e 100644
+--- a/packages/mui-material/src/Select/SelectInput.js
++++ b/packages/mui-material/src/Select/SelectInput.js
+@@ -21,6 +21,7 @@ import selectClasses, { getSelectUtilityClasses } from './selectClasses';
+ const SelectSelect = styled('div', {
+   name: 'MuiSelect',
+   slot: 'Select',
++  skipVariantsResolver: false,
+   overridesResolver: (props, styles) => {
+     const { ownerState } = props;
+     return [
+@@ -44,6 +45,7 @@ const SelectSelect = styled('div', {
+ const SelectIcon = styled('svg', {
+   name: 'MuiSelect',
+   slot: 'Icon',
++  skipVariantsResolver: false,
+   overridesResolver: (props, styles) => {
+     const { ownerState } = props;
+     return [
+@@ -58,6 +60,7 @@ const SelectNativeInput = styled('input', {
+   shouldForwardProp: (prop) => slotShouldForwardProp(prop) && prop !== 'classes',
+   name: 'MuiSelect',
+   slot: 'NativeInput',
++  skipVariantsResolver: false,
+   overridesResolver: (props, styles) => styles.nativeInput,
+ })({
+   bottom: 0,

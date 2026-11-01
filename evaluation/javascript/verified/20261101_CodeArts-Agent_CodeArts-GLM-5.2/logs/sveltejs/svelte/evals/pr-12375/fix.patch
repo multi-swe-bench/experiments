@@ -1,0 +1,115 @@
+diff --git a/packages/svelte/src/internal/client/reactivity/effects.js b/packages/svelte/src/internal/client/reactivity/effects.js
+index c0cb219..081be15 100644
+--- a/packages/svelte/src/internal/client/reactivity/effects.js
++++ b/packages/svelte/src/internal/client/reactivity/effects.js
+@@ -109,6 +109,24 @@ function create_effect(type, fn, sync, push = true) {
+ 			set_is_flushing_effect(true);
+ 			update_effect(effect);
+ 			effect.f |= EFFECT_RAN;
++		} catch (error) {
++			// If the effect threw during its initial run it would normally be orphaned
++			// (the push to the parent happens after `update_effect`), which means it and
++			// its descendants would never be cleaned up. This is especially problematic
++			// during hydration, where event listeners (e.g. on `<svelte:window>`) would be
++			// leaked. Attach it to the tree so that destroying the parent also destroys it.
++			if (!is_root && push) {
++				if (current_effect !== null) {
++					push_effect(effect, current_effect);
++				}
++
++				// if we're in a derived, add the effect there too
++				if (current_reaction !== null && (current_reaction.f & DERIVED) !== 0) {
++					push_effect(effect, current_reaction);
++				}
++			}
++
++			throw error;
+ 		} finally {
+ 			set_is_flushing_effect(previously_flushing_effect);
+ 		}
+diff --git a/packages/svelte/src/internal/client/render.js b/packages/svelte/src/internal/client/render.js
+index a00fd23..773b4c8 100644
+--- a/packages/svelte/src/internal/client/render.js
++++ b/packages/svelte/src/internal/client/render.js
+@@ -122,6 +122,9 @@ export function hydrate(component, options) {
+ 	const target = options.target;
+ 	const was_hydrating = hydrating;
+ 
++	/** @type {Record<string, any> | undefined} */
++	let instance;
++
+ 	try {
+ 		// Don't flush previous effects to ensure order of outer effects stays consistent
+ 		return flush_sync(() => {
+@@ -141,7 +144,7 @@ export function hydrate(component, options) {
+ 			set_hydrate_node(/** @type {Comment} */ (anchor));
+ 			hydrate_next();
+ 
+-			const instance = _mount(component, { ...options, anchor });
++			instance = _mount(component, { ...options, anchor });
+ 
+ 			if (
+ 				hydrate_node.nodeType !== 8 ||
+@@ -159,8 +162,12 @@ export function hydrate(component, options) {
+ 		}, false);
+ 	} catch (error) {
+ 		if (error === HYDRATION_ERROR) {
+-			// TODO it's possible for event listeners to have been added and
+-			// not removed, e.g. with `<svelte:window>` or `<svelte:document>`
++			// If the mount completed (but the surrounding hydration check failed) we need
++			// to clean up the partially-mounted component — otherwise event listeners (e.g.
++			// on `<svelte:window>` or `<svelte:document>`) would be duplicated when we retry.
++			if (instance !== undefined) {
++				unmount(instance);
++			}
+ 
+ 			if (options.recover === false) {
+ 				e.hydration_failed();
+@@ -227,6 +234,9 @@ function _mount(Component, { target, anchor, props = {}, events, context, intro
+ 	// @ts-expect-error will be defined because the render effect runs synchronously
+ 	let component = undefined;
+ 
++	/** @type {unknown} */
++	let render_error;
++
+ 	const unmount = effect_root(() => {
+ 		branch(() => {
+ 			if (context) {
+@@ -245,8 +255,17 @@ function _mount(Component, { target, anchor, props = {}, events, context, intro
+ 			}
+ 
+ 			should_intro = intro;
+-			// @ts-expect-error the public typings are not what the actual function looks like
+-			component = Component(anchor, props) || {};
++
++			try {
++				// @ts-expect-error the public typings are not what the actual function looks like
++				component = Component(anchor, props) || {};
++			} catch (error) {
++				// The render threw (e.g. because of a hydration mismatch). Capture the error
++				// so we can clean up the partially-created effects (and their event listeners)
++				// before re-throwing — otherwise they would be leaked/duplicated.
++				render_error = error;
++			}
++
+ 			should_intro = true;
+ 
+ 			if (hydrating) {
+@@ -271,7 +290,17 @@ function _mount(Component, { target, anchor, props = {}, events, context, intro
+ 		};
+ 	});
+ 
++	// If the render threw, the mount is incomplete. Destroy the partially-created
++	// effects (which removes any event listeners that were added, e.g. on
++	// `<svelte:window>` or `<svelte:document>`) before re-throwing so that they
++	// don't end up duplicated when the caller retries the mount.
++	if (render_error !== undefined) {
++		unmount();
++		throw render_error;
++	}
++
+ 	mounted_components.set(component, unmount);
++
+ 	return component;
+ }
+ 

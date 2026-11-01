@@ -1,0 +1,154 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 0ca0fba..893b15d 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -95,15 +95,22 @@ export function migrate(source) {
+ 				);
+ 				const type_name = state.scope.root.unique('Props').name;
+ 				let type = '';
++				const has_comments = state.props.some((prop) => prop.comment);
++				const type_separator = has_comments ? `\n${indent}${indent}` : props_separator;
+ 				if (uses_ts) {
+ 					if (analysis.uses_props || analysis.uses_rest_props) {
+-						type = `interface ${type_name} { [key: string]: any }`;
++						const comments = state.props
++							.map((prop) => prop.comment)
++							.filter(Boolean)
++							.join(`\n${indent}`);
++						type = `${comments ? `${comments}\n${indent}` : ''}interface ${type_name} { [key: string]: any }`;
+ 					} else {
+-						type = `interface ${type_name} {${props_separator}${state.props
++						type = `interface ${type_name} {${type_separator}${state.props
+ 							.map((prop) => {
+-								return `${prop.exported}${prop.optional ? '?' : ''}: ${prop.type}`;
++								const comment = prop.comment ? `${prop.comment}\n${indent}${indent}` : '';
++								return `${comment}${prop.exported}${prop.optional ? '?' : ''}: ${prop.type}`;
+ 							})
+-							.join(`,${props_separator}`)}${has_many_props ? `\n${indent}` : ' '}}`;
++							.join(`,${type_separator}`)}${has_comments || has_many_props ? `\n${indent}` : ' '}}`;
+ 					}
+ 				} else {
+ 					if (analysis.uses_props || analysis.uses_rest_props) {
+@@ -122,7 +129,11 @@ export function migrate(source) {
+ 					props_declaration = `${type}\n\n${indent}${props_declaration}`;
+ 					props_declaration = `${props_declaration}${type ? `: ${type_name}` : ''} = $props();`;
+ 				} else {
+-					props_declaration = `/** @type {${type}} */\n${indent}${props_declaration}`;
++					const comments = state.props
++						.map((prop) => prop.comment)
++						.filter(Boolean)
++						.join(`\n${indent}`);
++					props_declaration = `${comments ? `${comments}\n${indent}` : ''}/** @type {${type}} */\n${indent}${props_declaration}`;
+ 					props_declaration = `${props_declaration} = $props();`;
+ 				}
+ 
+@@ -162,7 +173,7 @@ export function migrate(source) {
+  *  str: MagicString;
+  *  analysis: import('../phases/types.js').ComponentAnalysis;
+  *  indent: string;
+- *  props: Array<{ local: string; exported: string; init: string; bindable: boolean; optional: boolean; type: string }>;
++ *  props: Array<{ local: string; exported: string; init: string; bindable: boolean; optional: boolean; type: string; comment: string }>;
+  *  props_insertion_point: number;
+  *  has_props_rune: boolean;
+  * 	props_name: string;
+@@ -300,7 +311,8 @@ const instance_script = {
+ 						: '',
+ 					optional: !!declarator.init,
+ 					type: extract_type(declarator, state.str, path),
+-					bindable: binding.mutated || binding.reassigned
++					bindable: binding.mutated || binding.reassigned,
++					comment: ''
+ 				});
+ 				state.props_insertion_point = /** @type {number} */ (declarator.end);
+ 				state.str.update(
+@@ -329,8 +341,30 @@ const instance_script = {
+ 			if (parent?.type === 'ExportNamedDeclaration') {
+ 				start = /** @type {number} */ (parent.start);
+ 				end = /** @type {number} */ (parent.end);
++
++				const comment = get_prop_comment(parent, state.str);
++				if (comment) {
++					const first_prop = state.props[state.props.length - nr_of_props];
++					if (first_prop) {
++						first_prop.comment = comment;
++					}
++				}
++
++				if (parent.leadingComments && parent.leadingComments.length > 0) {
++					start = /** @type {number} */ (/** @type {any} */ (parent.leadingComments[0]).start);
++				}
+ 			}
+ 			while (state.str.original[start] !== '\n') start--;
++			// consume preceding blank lines so they don't remain as orphaned whitespace
++			while (start > 0) {
++				let i = start - 1;
++				while (i > 0 && (state.str.original[i] === ' ' || state.str.original[i] === '\t')) i--;
++				if (state.str.original[i] === '\n') {
++					start = i;
++				} else {
++					break;
++				}
++			}
+ 			while (state.str.original[end] !== '\n') end++;
+ 			state.str.update(start, end, '');
+ 		}
+@@ -500,7 +534,8 @@ const template = {
+ 			init: '',
+ 			bindable: false,
+ 			optional: true,
+-			type: `import('svelte').${slot_props ? 'Snippet<[any]>' : 'Snippet'}`
++			type: `import('svelte').${slot_props ? 'Snippet<[any]>' : 'Snippet'}`,
++			comment: ''
+ 		});
+ 
+ 		if (node.fragment.nodes.length > 0) {
+@@ -523,6 +558,29 @@ const template = {
+ 	}
+ };
+ 
++/**
++ * @param {import('estree').ExportNamedDeclaration} node
++ * @param {MagicString} str
++ * @returns {string}
++ */
++function get_prop_comment(node, str) {
++	if (!node.leadingComments) return '';
++	for (let i = node.leadingComments.length - 1; i >= 0; i--) {
++		const comment = node.leadingComments[i];
++		if (comment.type === 'Block') {
++			const text = str.original.substring(
++				/** @type {number} */ (/** @type {any} */ (comment).start),
++				/** @type {number} */ (/** @type {any} */ (comment).end)
++			);
++			if (text.startsWith('/**') && !/@type {([^}]+)}/.test(comment.value)) {
++				return text;
++			}
++			return '';
++		}
++	}
++	return '';
++}
++
+ /**
+  * @param {import('estree').VariableDeclarator} declarator
+  * @param {MagicString} str
+@@ -635,7 +693,8 @@ function handle_events(node, state) {
+ 						init: '',
+ 						bindable: false,
+ 						optional: true,
+-						type: '(event: any) => void'
++						type: '(event: any) => void',
++						comment: ''
+ 					});
+ 				}
+ 				prepend += `\n${state.indent}${local}?.(${payload_name});\n`;
+@@ -724,7 +783,8 @@ function handle_events(node, state) {
+ 					init: '',
+ 					bindable: false,
+ 					optional: true,
+-					type: '(event: any) => void'
++					type: '(event: any) => void',
++					comment: ''
+ 				});
+ 			}
+ 

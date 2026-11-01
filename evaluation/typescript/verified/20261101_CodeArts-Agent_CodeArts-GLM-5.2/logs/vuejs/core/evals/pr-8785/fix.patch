@@ -1,0 +1,35 @@
+diff --git a/packages/compiler-core/src/transforms/transformElement.ts b/packages/compiler-core/src/transforms/transformElement.ts
+index fd61f01..3ce052e 100644
+--- a/packages/compiler-core/src/transforms/transformElement.ts
++++ b/packages/compiler-core/src/transforms/transformElement.ts
+@@ -60,6 +60,7 @@ import {
+ import { buildSlots } from './vSlot'
+ import { getConstantType } from './hoistStatic'
+ import { BindingTypes } from '../options'
++import { genPropsAccessExp } from '@vue/shared'
+ import {
+   checkCompatEnabled,
+   CompilerDeprecationTypes,
+@@ -385,6 +386,22 @@ function resolveSetupReference(name: string, context: TransformContext) {
+         `${context.helperString(UNREF)}(${fromMaybeRef})`
+       : `$setup[${JSON.stringify(fromMaybeRef)}]`
+   }
++
++  const fromProps = checkType(BindingTypes.PROPS)
++  if (fromProps) {
++    return context.inline
++      ? // props are accessed via __props in inline mode
++        genPropsAccessExp(fromProps)
++      : `$props[${JSON.stringify(fromProps)}]`
++  }
++
++  const fromPropsAliased = checkType(BindingTypes.PROPS_ALIASED)
++  if (fromPropsAliased) {
++    const aliasedName = bindings.__propsAliases![fromPropsAliased]
++    return context.inline
++      ? genPropsAccessExp(aliasedName)
++      : `$props[${JSON.stringify(aliasedName)}]`
++  }
+ }
+ 
+ export type PropsExpression = ObjectExpression | CallExpression | ExpressionNode

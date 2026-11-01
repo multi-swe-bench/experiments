@@ -1,0 +1,66 @@
+diff --git a/.changeset/option-nullish-value-spread.md b/.changeset/option-nullish-value-spread.md
+new file mode 100644
+index 0000000..6c74c97
+--- /dev/null
++++ b/.changeset/option-nullish-value-spread.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: ensure `value` on `<option>`/`<select>` is applied when nullish with spread or reactive values
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index c879183..0144bf3 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -617,7 +617,11 @@ function serialize_element_special_value_attribute(element, node_id, attribute,
+ 
+ 	if (is_reactive) {
+ 		const id = state.scope.generate(`${node_id.name}_value`);
+-		serialize_update_assignment(state, id, undefined, value, update);
++		// Initialize the tracking variable to a sentinel value so that the update
++		// is guaranteed to run on the first render even if the value is nullish.
++		// Otherwise, `null`/`undefined` values would be skipped and the `__value`
++		// property would never be set, causing the option value to fall back to its label.
++		serialize_update_assignment(state, id, b.member_id('$.noop'), value, update);
+ 		return true;
+ 	} else {
+ 		state.init.push(update);
+diff --git a/packages/svelte/src/internal/client/dom/elements/attributes.js b/packages/svelte/src/internal/client/dom/elements/attributes.js
+index c65acc9..4209525 100644
+--- a/packages/svelte/src/internal/client/dom/elements/attributes.js
++++ b/packages/svelte/src/internal/client/dom/elements/attributes.js
+@@ -179,7 +179,9 @@ export function set_attributes(element, prev, next, lowercase_attributes, css_ha
+ 		// let instead of var because referenced in a closure
+ 		let value = next[key];
+ 		var prev_value = current[key];
+-		if (value === prev_value) continue;
++		if (value === prev_value && !((key === 'value' || key === '__value') && !(key in current))) {
++			continue;
++		}
+ 
+ 		current[key] = value;
+ 
+@@ -234,6 +236,11 @@ export function set_attributes(element, prev, next, lowercase_attributes, css_ha
+ 					delegate([event_name]);
+ 				}
+ 			}
++		} else if (key === '__value' || key === 'value') {
++			// @ts-ignore
++			element.__value = value;
++			// @ts-ignore
++			element.value = value == null ? '' : value;
+ 		} else if (value == null) {
+ 			attributes[key] = null;
+ 			element.removeAttribute(key);
+@@ -241,9 +248,6 @@ export function set_attributes(element, prev, next, lowercase_attributes, css_ha
+ 			element.style.cssText = value + '';
+ 		} else if (key === 'autofocus') {
+ 			autofocus(/** @type {HTMLElement} */ (element), Boolean(value));
+-		} else if (key === '__value' || key === 'value') {
+-			// @ts-ignore
+-			element.value = element[key] = element.__value = value;
+ 		} else {
+ 			var name = key;
+ 			if (lowercase_attributes) {

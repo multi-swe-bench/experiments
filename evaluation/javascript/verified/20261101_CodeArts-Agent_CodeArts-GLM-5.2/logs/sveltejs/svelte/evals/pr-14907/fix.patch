@@ -1,0 +1,20 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/RegularElement.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/RegularElement.js
+index 59a6faf..f4ffaef 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/RegularElement.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/RegularElement.js
+@@ -648,6 +648,15 @@ function build_custom_element_attribute_update_assignment(node_id, attribute, co
+ 	const name = attribute.name; // don't lowercase, as we set the element's property, which might be case sensitive
+ 	let { has_call, value } = build_attribute_value(attribute.value, context);
+ 
++	if (name === 'class' && attribute.metadata.needs_clsx) {
++		value = b.call('$.clsx', value);
++
++		const hash = context.state.analysis.css.hash;
++		if (hash) {
++			value = b.binary('+', b.binary('+', value, b.literal(' ')), b.literal(hash));
++		}
++	}
++
+ 	const update = b.stmt(b.call('$.set_custom_element_data', node_id, b.literal(name), value));
+ 
+ 	if (attribute.metadata.expression.has_state) {

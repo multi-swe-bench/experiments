@@ -1,0 +1,35 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/element.js b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+index 6a5be67..4834509 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/element.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/element.js
+@@ -24,7 +24,7 @@ const regex_whitespace_or_slash_or_closing_tag = /(\s|\/|>)/;
+ const regex_token_ending_character = /[\s=/>"']/;
+ const regex_starts_with_quote_characters = /^["']/;
+ const regex_attribute_value = /^(?:"([^"]*)"|'([^'])*'|([^>\s]+))/;
+-const regex_valid_tag_name = /^!?[a-zA-Z]{1,}:?[a-zA-Z0-9-]*/;
++const regex_valid_tag_name = /^!?[a-zA-Z]{1,}:?[a-zA-Z0-9-]*$/;
+ 
+ /** @type {Map<string, Compiler.ElementLike['type']>} */
+ const root_only_meta_tags = new Map([
+@@ -107,11 +107,6 @@ export default function element(parser) {
+ 		e.svelte_meta_invalid_tag(bounds, list(Array.from(meta_tags.keys())));
+ 	}
+ 
+-	if (!regex_valid_tag_name.test(name)) {
+-		const bounds = { start: start + 1, end: start + 1 + name.length };
+-		e.element_invalid_tag_name(bounds);
+-	}
+-
+ 	if (root_only_meta_tags.has(name)) {
+ 		if (name in parser.meta_tags) {
+ 			e.svelte_meta_duplicate(start, name);
+@@ -137,6 +132,9 @@ export default function element(parser) {
+ 
+ 	if (type === 'Component' && !regex_valid_component_name.test(name)) {
+ 		e.component_invalid_name({ start: start + 1, end: start + name.length + 1 });
++	} else if (type === 'RegularElement' && !regex_valid_tag_name.test(name)) {
++		const bounds = { start: start + 1, end: start + 1 + name.length };
++		e.element_invalid_tag_name(bounds);
+ 	}
+ 
+ 	/** @type {Compiler.ElementLike} */

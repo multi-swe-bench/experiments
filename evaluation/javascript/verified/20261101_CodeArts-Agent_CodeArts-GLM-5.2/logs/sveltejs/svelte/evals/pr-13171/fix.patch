@@ -1,0 +1,126 @@
+diff --git a/.changeset/class-directive-effects.md b/.changeset/class-directive-effects.md
+new file mode 100644
+index 0000000..ad13423
+--- /dev/null
++++ b/.changeset/class-directive-effects.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: avoid grouping unrelated state into the same template effect when using ` `class`/`style` attributes together with `class:`/`style:` directives that contain function calls
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/RegularElement.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/RegularElement.js
+index 8166675..2d140fa 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/RegularElement.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/RegularElement.js
+@@ -201,12 +201,18 @@ export function RegularElement(node, context) {
+ 	context.state.init.push(...lets);
+ 
+ 	// Then do attributes
+-	let is_attributes_reactive = false;
++	// `is_class/style_attribute_reactive` tracks whether the corresponding `class`/`style` attribute
++	// update ends up in the shared template effect. When that's the case, class/style directives must
++	// be applied within that same effect (after the attribute update) so they don't get overridden.
++	// When the attribute update is in its own effect (e.g. it contains a call) or is static, the
++	// directives can live in their own effects, avoiding unrelated state being grouped together.
++	let is_class_attribute_reactive = false;
++	let is_style_attribute_reactive = false;
+ 	if (node.metadata.has_spread) {
+ 		if (node.name === 'img') {
+ 			img_might_be_lazy = true;
+ 		}
+-		build_element_spread_attributes(
++		const is_spread_in_update_effect = build_element_spread_attributes(
+ 			attributes,
+ 			context,
+ 			node,
+@@ -214,7 +220,8 @@ export function RegularElement(node, context) {
+ 			// If value binding exists, that one takes care of calling $.init_select
+ 			value_binding === null && node.name === 'select'
+ 		);
+-		is_attributes_reactive = true;
++		is_class_attribute_reactive = is_spread_in_update_effect;
++		is_style_attribute_reactive = is_spread_in_update_effect;
+ 	} else {
+ 		for (const attribute of /** @type {AST.Attribute[]} */ (attributes)) {
+ 			if (is_event_attribute(attribute)) {
+@@ -253,10 +260,20 @@ export function RegularElement(node, context) {
+ 				continue;
+ 			}
+ 
+-			const is = is_custom_element
+-				? build_custom_element_attribute_update_assignment(node_id, attribute, context)
+-				: build_element_attribute_update_assignment(node, node_id, attribute, context);
+-			if (is) is_attributes_reactive = true;
++			if (is_custom_element) {
++				build_custom_element_attribute_update_assignment(node_id, attribute, context);
++			} else {
++				build_element_attribute_update_assignment(node, node_id, attribute, context);
++			}
++
++			const { has_state, has_call } = attribute.metadata.expression;
++			const is_in_update_effect = has_state && !has_call;
++
++			if (attribute.name === 'class') {
++				is_class_attribute_reactive = is_in_update_effect;
++			} else if (attribute.name === 'style') {
++				is_style_attribute_reactive = is_in_update_effect;
++			}
+ 		}
+ 	}
+ 
+@@ -266,12 +283,12 @@ export function RegularElement(node, context) {
+ 	}
+ 
+ 	// class/style directives must be applied last since they could override class/style attributes
+-	build_class_directives(class_directives, node_id, context, is_attributes_reactive);
++	build_class_directives(class_directives, node_id, context, is_class_attribute_reactive);
+ 	build_style_directives(
+ 		style_directives,
+ 		node_id,
+ 		context,
+-		is_attributes_reactive,
++		is_style_attribute_reactive,
+ 		has_style_attribute || node.metadata.has_spread
+ 	);
+ 
+@@ -448,6 +465,7 @@ function setup_select_synchronization(value_binding, context) {
+  * @param {AST.RegularElement} element
+  * @param {Identifier} element_id
+  * @param {boolean} needs_select_handling
++ * @returns {boolean} `true` if the spread attribute update is part of the shared template effect
+  */
+ function build_element_spread_attributes(
+ 	attributes,
+@@ -542,6 +560,8 @@ function build_element_spread_attributes(
+ 			)
+ 		);
+ 	}
++
++	return !needs_isolation;
+ }
+ 
+ /**
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/element.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/element.js
+index 5ac6d0a..d73c137 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/element.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/element.js
+@@ -12,7 +12,7 @@ import { build_template_literal, build_update } from './utils.js';
+  * @param {AST.StyleDirective[]} style_directives
+  * @param {Identifier} element_id
+  * @param {ComponentContext} context
+- * @param {boolean} is_attributes_reactive
++ * @param {boolean} is_attributes_reactive `true` if the corresponding `style` attribute update is part of the shared template effect — in that case the directive must be applied within that same effect (after the attribute update) so it isn't overridden
+  * @param {boolean} force_check Should be `true` if we can't rely on our cached value, because for example there's also a `style` attribute
+  */
+ export function build_style_directives(
+@@ -59,7 +59,7 @@ export function build_style_directives(
+  * @param {AST.ClassDirective[]} class_directives
+  * @param {Identifier} element_id
+  * @param {ComponentContext} context
+- * @param {boolean} is_attributes_reactive
++ * @param {boolean} is_attributes_reactive `true` if the corresponding `class` attribute update is part of the shared template effect — in that case the directive must be applied within that same effect (after the attribute update) so it isn't overridden
+  */
+ export function build_class_directives(
+ 	class_directives,

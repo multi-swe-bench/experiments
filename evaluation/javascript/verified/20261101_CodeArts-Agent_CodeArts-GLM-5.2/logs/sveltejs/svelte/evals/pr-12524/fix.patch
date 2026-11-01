@@ -1,0 +1,40 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 6458951..eec45b4 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -1163,6 +1163,35 @@ function serialize_event_handler(node, { state, visit }) {
+ 			}
+ 		} else if (handler.type === 'ConditionalExpression' || handler.type === 'LogicalExpression') {
+ 			handler = dynamic_handler();
++		} else if (handler.type === 'CallExpression') {
++			// The handler is the result of a call expression (e.g. a higher-order
++			// function like `onclick={factory('Tama')}`). Such handlers need to be
++			// reactive: when the dependencies of the call expression change, the
++			// handler should be re-created. We re-evaluate the expression inside a
++			// render effect (so it only runs when its dependencies change, not on
++			// every event) and store it in a variable that a stable wrapper reads.
++			const id = state.scope.generate('event_handler');
++			state.init.push(b.let(id));
++			state.init.push(
++				b.stmt(
++					b.call(
++						'$.template_effect',
++						b.arrow(
++							[],
++							b.block([
++								b.stmt(b.assignment('=', b.id(id), /** @type {Expression} */ (visit(handler))))
++							])
++						)
++					)
++				)
++			);
++			handler = b.function(
++				null,
++				[b.rest(b.id('$$args'))],
++				b.block([
++					b.return(b.call(b.member(b.id(id), b.id('apply'), false, true), b.this, b.id('$$args')))
++				])
++			);
+ 		} else {
+ 			handler = /** @type {Expression} */ (visit(handler));
+ 		}

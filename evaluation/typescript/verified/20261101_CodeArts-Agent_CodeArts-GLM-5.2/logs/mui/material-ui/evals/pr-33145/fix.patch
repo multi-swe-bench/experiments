@@ -1,0 +1,59 @@
+diff --git a/packages/mui-base/src/MenuItemUnstyled/useMenuItem.ts b/packages/mui-base/src/MenuItemUnstyled/useMenuItem.ts
+index c3e12c93..1edb8839 100644
+--- a/packages/mui-base/src/MenuItemUnstyled/useMenuItem.ts
++++ b/packages/mui-base/src/MenuItemUnstyled/useMenuItem.ts
+@@ -35,6 +35,36 @@ export default function useMenuItem(props: UseMenuItemParameters) {
+     ref: handleRef,
+   });
+ 
++  // `useButton` only fires `onClick` on `Enter`/`Space` for non-native elements.
++  // When the menu item is rendered as a native interactive element (e.g. `component="a"`),
++  // it relies on the browser to fire the click. However, the `MenuUnstyled` listbox
++  // prevents the default behavior of these keys, so the action is never triggered.
++  // Manually fire a click for native elements to keep the behavior in sync with a mouse click.
++  const createHandleKeyDown =
++    (otherHandlers: Record<string, any> | undefined) => (event: React.KeyboardEvent) => {
++      otherHandlers?.onKeyDown?.(event);
++
++      if (event.defaultPrevented || disabled) {
++        return;
++      }
++
++      const element = itemRef.current;
++      const isNativeButton =
++        element?.tagName === 'BUTTON' ||
++        (element?.tagName === 'INPUT' &&
++          ['button', 'submit', 'reset'].includes((element as HTMLInputElement).type)) ||
++        (element?.tagName === 'A' && (element as HTMLAnchorElement).hasAttribute('href'));
++
++      if (
++        isNativeButton &&
++        event.target === event.currentTarget &&
++        (event.key === 'Enter' || event.key === ' ')
++      ) {
++        event.preventDefault();
++        element!.click();
++      }
++    };
++
+   // Ensure the menu item is focused when highlighted
+   const [focusRequested, requestFocus] = React.useState(false);
+ 
+@@ -63,7 +93,7 @@ export default function useMenuItem(props: UseMenuItemParameters) {
+     return {
+       getRootProps: (other?: Record<string, any>) => ({
+         ...other,
+-        ...getButtonProps(other),
++        ...getButtonProps({ ...other, onKeyDown: createHandleKeyDown(other) }),
+         role: 'menuitem',
+       }),
+       disabled: false,
+@@ -77,7 +107,7 @@ export default function useMenuItem(props: UseMenuItemParameters) {
+ 
+       return {
+         ...other,
+-        ...getButtonProps(other),
++        ...getButtonProps({ ...other, onKeyDown: createHandleKeyDown(other) }),
+         tabIndex: optionProps.tabIndex,
+         id: optionProps.id,
+         role: 'menuitem',

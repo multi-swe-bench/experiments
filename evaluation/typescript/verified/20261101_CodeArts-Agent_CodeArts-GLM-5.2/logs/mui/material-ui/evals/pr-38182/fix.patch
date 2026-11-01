@@ -1,0 +1,54 @@
+diff --git a/packages/mui-material/src/Checkbox/Checkbox.js b/packages/mui-material/src/Checkbox/Checkbox.js
+index a25d4fc8..b926557a 100644
+--- a/packages/mui-material/src/Checkbox/Checkbox.js
++++ b/packages/mui-material/src/Checkbox/Checkbox.js
+@@ -15,10 +15,15 @@ import styled, { rootShouldForwardProp } from '../styles/styled';
+ import checkboxClasses, { getCheckboxUtilityClass } from './checkboxClasses';
+ 
+ const useUtilityClasses = (ownerState) => {
+-  const { classes, indeterminate, color } = ownerState;
++  const { classes, indeterminate, color, size } = ownerState;
+ 
+   const slots = {
+-    root: ['root', indeterminate && 'indeterminate', `color${capitalize(color)}`],
++    root: [
++      'root',
++      indeterminate && 'indeterminate',
++      `color${capitalize(color)}`,
++      `size${capitalize(size)}`,
++    ],
+   };
+ 
+   const composedClasses = composeClasses(slots, getCheckboxUtilityClass, classes);
+@@ -40,6 +45,7 @@ const CheckboxRoot = styled(SwitchBase, {
+       styles.root,
+       ownerState.indeterminate && styles.indeterminate,
+       ownerState.color !== 'default' && styles[`color${capitalize(ownerState.color)}`],
++      styles[`size${capitalize(ownerState.size)}`],
+     ];
+   },
+ })(({ theme, ownerState }) => ({
+diff --git a/packages/mui-material/src/Checkbox/checkboxClasses.ts b/packages/mui-material/src/Checkbox/checkboxClasses.ts
+index 885fd0ae..ab7a6d04 100644
+--- a/packages/mui-material/src/Checkbox/checkboxClasses.ts
++++ b/packages/mui-material/src/Checkbox/checkboxClasses.ts
+@@ -14,6 +14,10 @@ export interface CheckboxClasses {
+   colorPrimary: string;
+   /** Styles applied to the root element if `color="secondary"`. */
+   colorSecondary: string;
++  /** Styles applied to the root element if `size="medium"`. */
++  sizeMedium: string;
++  /** Styles applied to the root element if `size="small"`. */
++  sizeSmall: string;
+ }
+ 
+ export type CheckboxClassKey = keyof CheckboxClasses;
+@@ -29,6 +33,8 @@ const checkboxClasses: CheckboxClasses = generateUtilityClasses('MuiCheckbox', [
+   'indeterminate',
+   'colorPrimary',
+   'colorSecondary',
++  'sizeMedium',
++  'sizeSmall',
+ ]);
+ 
+ export default checkboxClasses;

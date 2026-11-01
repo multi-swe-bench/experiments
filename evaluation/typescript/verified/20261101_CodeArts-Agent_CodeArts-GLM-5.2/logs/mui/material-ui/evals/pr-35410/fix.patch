@@ -1,0 +1,24 @@
+diff --git a/packages/mui-base/src/ButtonUnstyled/useButton.ts b/packages/mui-base/src/ButtonUnstyled/useButton.ts
+index ec5e1cfe..094cc0a2 100644
+--- a/packages/mui-base/src/ButtonUnstyled/useButton.ts
++++ b/packages/mui-base/src/ButtonUnstyled/useButton.ts
+@@ -91,7 +91,7 @@ export default function useButton(parameters: UseButtonParameters) {
+   };
+ 
+   const createHandleMouseDown = (otherHandlers: EventHandlers) => (event: React.MouseEvent) => {
+-    if (event.target === event.currentTarget && !disabled) {
++    if (!disabled) {
+       setActive(true);
+     }
+ 
+@@ -99,9 +99,7 @@ export default function useButton(parameters: UseButtonParameters) {
+   };
+ 
+   const createHandleMouseUp = (otherHandlers: EventHandlers) => (event: React.MouseEvent) => {
+-    if (event.target === event.currentTarget) {
+-      setActive(false);
+-    }
++    setActive(false);
+ 
+     otherHandlers.onMouseUp?.(event);
+   };

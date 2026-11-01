@@ -1,0 +1,67 @@
+diff --git a/packages/svelte/src/internal/client/reactivity/props.js b/packages/svelte/src/internal/client/reactivity/props.js
+index 665d7fd..b55efd4 100644
+--- a/packages/svelte/src/internal/client/reactivity/props.js
++++ b/packages/svelte/src/internal/client/reactivity/props.js
+@@ -8,11 +8,11 @@ import {
+ import { get_descriptor, is_function } from '../utils.js';
+ import { mutable_source, set, source } from './sources.js';
+ import { derived, derived_safe_equal } from './deriveds.js';
+-import { get, is_signals_recorded, untrack, update } from '../runtime.js';
++import { current_reaction, get, is_signals_recorded, untrack, update } from '../runtime.js';
+ import { safe_equals } from './equality.js';
+ import { inspect_fn } from '../dev/inspect.js';
+ import * as e from '../errors.js';
+-import { LEGACY_DERIVED_PROP } from '../constants.js';
++import { LEGACY_DERIVED_PROP, DESTROYED, DERIVED } from '../constants.js';
+ 
+ /**
+  * @param {((value?: number) => number)} fn
+@@ -152,12 +152,43 @@ export function legacy_rest_props(props, exclude) {
+  */
+ const spread_props_handler = {
+ 	get(target, key) {
+-		let i = target.props.length;
+-		while (i--) {
+-			let p = target.props[i];
+-			if (is_function(p)) p = p();
+-			if (typeof p === 'object' && p !== null && key in p) return p[key];
++		var cache = target.cache;
++
++		if (cache === undefined) {
++			cache = target.cache = new Map();
+ 		}
++
++		var d = cache.get(key);
++
++		if (d === undefined || (d.f & DESTROYED) !== 0) {
++			d = derived(() => {
++				let i = target.props.length;
++				while (i--) {
++					let p = target.props[i];
++					if (is_function(p)) p = p();
++					if (typeof p === 'object' && p !== null && key in p) return p[key];
++				}
++			});
++
++			// The per-key derived is created lazily on first access. It must not be
++			// owned (and therefore destroyed) by whatever reaction happens to read it
++			// first, as that would cause it to be recreated whenever that reaction
++			// re-runs — losing its dependency tracking and leading to stale values.
++			// It is kept alive by the cache on the spread proxy instead.
++			if (
++				current_reaction !== null &&
++				(current_reaction.f & DERIVED) !== 0 &&
++				current_reaction.deriveds !== null
++			) {
++				var deriveds = current_reaction.deriveds;
++				var index = deriveds.indexOf(d);
++				if (index !== -1) deriveds.splice(index, 1);
++			}
++
++			cache.set(key, d);
++		}
++
++		return get(d);
+ 	},
+ 	getOwnPropertyDescriptor(target, key) {
+ 		let i = target.props.length;

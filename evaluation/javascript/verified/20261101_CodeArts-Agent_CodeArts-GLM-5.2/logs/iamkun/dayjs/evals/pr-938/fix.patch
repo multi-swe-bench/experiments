@@ -1,0 +1,51 @@
+diff --git a/src/plugin/localeData/index.js b/src/plugin/localeData/index.js
+index f478d5a..5830fa1 100644
+--- a/src/plugin/localeData/index.js
++++ b/src/plugin/localeData/index.js
+@@ -1,11 +1,16 @@
+ export default (o, c, dayjs) => { // locale needed later
+   const proto = c.prototype
+   const getLocalePart = part => (part && (part.indexOf ? part : part.s))
+-  const getShort = (ins, target, full, num) => {
++  const getShort = (ins, target, full, num, localeOrder) => {
+     const locale = ins.name ? ins : ins.$locale()
+     const targetLocale = getLocalePart(locale[target])
+     const fullLocale = getLocalePart(locale[full])
+-    return targetLocale || fullLocale.map(f => f.substr(0, num))
++    let arr = targetLocale || fullLocale.map(f => f.substr(0, num))
++    if (localeOrder) {
++      const weekStart = locale.weekStart || 0
++      arr = arr.slice(weekStart).concat(arr.slice(0, weekStart))
++    }
++    return arr
+   }
+   const getDayjsLocaleObject = () => dayjs.Ls[dayjs.locale()]
+   const localeData = function () {
+@@ -15,10 +20,12 @@ export default (o, c, dayjs) => { // locale needed later
+       monthsShort: instance =>
+         (instance ? instance.format('MMM') : getShort(this, 'monthsShort', 'months', 3)),
+       firstDayOfWeek: () => this.$locale().weekStart || 0,
++      weekdays: instance =>
++        (instance && instance.format ? instance.format('dddd') : getShort(this, 'weekdays', undefined, 0, instance)),
+       weekdaysMin: instance =>
+-        (instance ? instance.format('dd') : getShort(this, 'weekdaysMin', 'weekdays', 2)),
++        (instance && instance.format ? instance.format('dd') : getShort(this, 'weekdaysMin', 'weekdays', 2, instance)),
+       weekdaysShort: instance =>
+-        (instance ? instance.format('ddd') : getShort(this, 'weekdaysShort', 'weekdays', 3)),
++        (instance && instance.format ? instance.format('ddd') : getShort(this, 'weekdaysShort', 'weekdays', 3, instance)),
+       longDateFormat: format => this.$locale().formats[format]
+     }
+   }
+@@ -42,9 +49,9 @@ export default (o, c, dayjs) => { // locale needed later
+ 
+   dayjs.monthsShort = () => getShort(getDayjsLocaleObject(), 'monthsShort', 'months', 3)
+ 
+-  dayjs.weekdays = () => getDayjsLocaleObject().weekdays
++  dayjs.weekdays = (localeOrder = false) => getShort(getDayjsLocaleObject(), 'weekdays', undefined, 0, localeOrder)
+ 
+-  dayjs.weekdaysShort = () => getShort(getDayjsLocaleObject(), 'weekdaysShort', 'weekdays', 3)
++  dayjs.weekdaysShort = (localeOrder = false) => getShort(getDayjsLocaleObject(), 'weekdaysShort', 'weekdays', 3, localeOrder)
+ 
+-  dayjs.weekdaysMin = () => getShort(getDayjsLocaleObject(), 'weekdaysMin', 'weekdays', 2)
++  dayjs.weekdaysMin = (localeOrder = false) => getShort(getDayjsLocaleObject(), 'weekdaysMin', 'weekdays', 2, localeOrder)
+ }

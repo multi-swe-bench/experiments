@@ -1,0 +1,131 @@
+diff --git a/packages/mui-material/src/TabScrollButton/TabScrollButton.d.ts b/packages/mui-material/src/TabScrollButton/TabScrollButton.d.ts
+index adb2a62c..2fe0d43e 100644
+--- a/packages/mui-material/src/TabScrollButton/TabScrollButton.d.ts
++++ b/packages/mui-material/src/TabScrollButton/TabScrollButton.d.ts
+@@ -12,6 +12,18 @@ export interface TabScrollButtonProps extends StandardProps<React.HTMLAttributes
+    * Override or extend the styles applied to the component.
+    */
+   classes?: Partial<TabScrollButtonClasses>;
++  /**
++   * The components used for each slot inside.
++   *
++   * This prop is an alias for the `slots` prop.
++   * It's recommended to use the `slots` prop instead.
++   *
++   * @default {}
++   */
++  components?: {
++    StartScrollButtonIcon?: React.ElementType;
++    EndScrollButtonIcon?: React.ElementType;
++  };
+   /**
+    * The direction the button should indicate.
+    */
+@@ -25,6 +37,17 @@ export interface TabScrollButtonProps extends StandardProps<React.HTMLAttributes
+    * The component orientation (layout flow direction).
+    */
+   orientation: 'horizontal' | 'vertical';
++  /**
++   * The components used for each slot inside.
++   *
++   * This prop is an alias for the `components` prop, which will be deprecated in the future.
++   *
++   * @default {}
++   */
++  slots?: {
++    StartScrollButtonIcon?: React.ElementType;
++    EndScrollButtonIcon?: React.ElementType;
++  };
+   /**
+    * The system prop that allows defining system overrides as well as additional CSS styles.
+    */
+diff --git a/packages/mui-material/src/TabScrollButton/TabScrollButton.js b/packages/mui-material/src/TabScrollButton/TabScrollButton.js
+index d804bf95..45bab09d 100644
+--- a/packages/mui-material/src/TabScrollButton/TabScrollButton.js
++++ b/packages/mui-material/src/TabScrollButton/TabScrollButton.js
+@@ -47,15 +47,33 @@ const TabScrollButtonRoot = styled(ButtonBase, {
+ 
+ const TabScrollButton = React.forwardRef(function TabScrollButton(inProps, ref) {
+   const props = useThemeProps({ props: inProps, name: 'MuiTabScrollButton' });
+-  const { className, direction, orientation, disabled, ...other } = props;
++  const {
++    className,
++    components = {},
++    direction,
++    disabled,
++    orientation,
++    slots = {},
++    ...other
++  } = props;
+ 
+   const theme = useTheme();
+   const isRtl = theme.direction === 'rtl';
+ 
+-  const ownerState = { isRtl, ...props };
++  const ownerState = {
++    ...props,
++    direction,
++    disabled,
++    orientation,
++    isRtl,
++  };
+ 
+   const classes = useUtilityClasses(ownerState);
+ 
++  const StartIcon =
++    slots.StartScrollButtonIcon ?? components.StartScrollButtonIcon ?? KeyboardArrowLeft;
++  const EndIcon = slots.EndScrollButtonIcon ?? components.EndScrollButtonIcon ?? KeyboardArrowRight;
++
+   return (
+     <TabScrollButtonRoot
+       component="div"
+@@ -66,11 +84,7 @@ const TabScrollButton = React.forwardRef(function TabScrollButton(inProps, ref)
+       tabIndex={null}
+       {...other}
+     >
+-      {direction === 'left' ? (
+-        <KeyboardArrowLeft fontSize="small" />
+-      ) : (
+-        <KeyboardArrowRight fontSize="small" />
+-      )}
++      {direction === 'left' ? <StartIcon fontSize="small" /> : <EndIcon fontSize="small" />}
+     </TabScrollButtonRoot>
+   );
+ });
+@@ -92,6 +106,18 @@ TabScrollButton.propTypes /* remove-proptypes */ = {
+    * @ignore
+    */
+   className: PropTypes.string,
++  /**
++   * The components used for each slot inside.
++   *
++   * This prop is an alias for the `slots` prop.
++   * It's recommended to use the `slots` prop instead.
++   *
++   * @default {}
++   */
++  components: PropTypes.shape({
++    EndScrollButtonIcon: PropTypes.elementType,
++    StartScrollButtonIcon: PropTypes.elementType,
++  }),
+   /**
+    * The direction the button should indicate.
+    */
+@@ -105,6 +131,17 @@ TabScrollButton.propTypes /* remove-proptypes */ = {
+    * The component orientation (layout flow direction).
+    */
+   orientation: PropTypes.oneOf(['horizontal', 'vertical']).isRequired,
++  /**
++   * The components used for each slot inside.
++   *
++   * This prop is an alias for the `components` prop, which will be deprecated in the future.
++   *
++   * @default {}
++   */
++  slots: PropTypes.shape({
++    EndScrollButtonIcon: PropTypes.elementType,
++    StartScrollButtonIcon: PropTypes.elementType,
++  }),
+   /**
+    * The system prop that allows defining system overrides as well as additional CSS styles.
+    */

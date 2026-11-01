@@ -1,0 +1,15 @@
+diff --git a/packages/svelte/src/compiler/phases/scope.js b/packages/svelte/src/compiler/phases/scope.js
+index 3a7cc6c..d7967e0 100644
+--- a/packages/svelte/src/compiler/phases/scope.js
++++ b/packages/svelte/src/compiler/phases/scope.js
+@@ -309,6 +309,10 @@ export function create_scopes(ast, root, allow_reactive_declarations, parent) {
+ 			? context.state
+ 			: { scope: node.metadata.scopes.default };
+ 
++		if (node.type === 'SvelteComponent' && node.expression) {
++			context.visit(node.expression);
++		}
++
+ 		for (const attribute of node.attributes) {
+ 			if (attribute.type === 'LetDirective') {
+ 				context.visit(attribute, default_state);

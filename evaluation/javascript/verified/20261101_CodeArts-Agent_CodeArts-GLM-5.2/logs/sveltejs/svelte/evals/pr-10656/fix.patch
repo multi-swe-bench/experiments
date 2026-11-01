@@ -1,0 +1,163 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/tag.js b/packages/svelte/src/compiler/phases/1-parse/state/tag.js
+index 27c3b7e..8d246d7 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/tag.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/tag.js
+@@ -577,7 +577,25 @@ function special(parser) {
+ 
+ 		const expression = read_expression(parser);
+ 
+-		if (expression.type !== 'CallExpression' || expression.callee.type !== 'Identifier') {
++		/** @type {import('estree').Expression} */
++		let callee;
++		/** @type {import('estree').Node[]} */
++		let render_arguments;
++		/** Whether the snippet function can be `undefined` (e.g. `{@render foo?.()}`) */
++		let is_optional = false;
++
++		if (expression.type === 'ChainExpression') {
++			const call = expression.expression;
++			if (call.type !== 'CallExpression') {
++				error(expression, 'invalid-render-expression');
++			}
++			is_optional = true;
++			callee = /** @type {import('estree').Expression} */ (call.callee);
++			render_arguments = call.arguments;
++		} else if (expression.type === 'CallExpression') {
++			callee = /** @type {import('estree').Expression} */ (expression.callee);
++			render_arguments = expression.arguments;
++		} else {
+ 			error(expression, 'invalid-render-expression');
+ 		}
+ 
+@@ -589,8 +607,11 @@ function special(parser) {
+ 			type: 'RenderTag',
+ 			start,
+ 			end: parser.index,
+-			expression: expression.callee,
+-			arguments: expression.arguments
++			expression: callee,
++			arguments: render_arguments,
++			metadata: {
++				is_optional
++			}
+ 		});
+ 	}
+ }
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 1790e07..2f41e05 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -622,7 +622,7 @@ const validation = {
+ 				node,
+ 				'invalid-tag-placement',
+ 				'inside <textarea> or <svelte:element this="textarea">',
+-				node.expression.name
++				node.expression.type === 'Identifier' ? node.expression.name : 'render'
+ 			);
+ 		}
+ 	},
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 0bd8d92..389c90c 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -1864,7 +1864,11 @@ export const template_visitors = {
+ 	},
+ 	RenderTag(node, context) {
+ 		context.state.template.push('<!>');
+-		const binding = context.state.scope.get(node.expression.name);
++		const is_optional = node.metadata.is_optional;
++		const binding =
++			node.expression.type === 'Identifier'
++				? context.state.scope.get(node.expression.name)
++				: undefined;
+ 		const is_reactive = binding?.kind !== 'normal' || node.expression.type !== 'Identifier';
+ 
+ 		/** @type {import('estree').Expression[]} */
+@@ -1876,7 +1880,8 @@ export const template_visitors = {
+ 		let snippet_function = /** @type {import('estree').Expression} */ (
+ 			context.visit(node.expression)
+ 		);
+-		if (context.state.options.dev) {
++
++		if (context.state.options.dev && !is_optional) {
+ 			snippet_function = b.call('$.validate_snippet', snippet_function);
+ 		}
+ 
+@@ -1885,7 +1890,11 @@ export const template_visitors = {
+ 				b.stmt(b.call('$.snippet_effect', b.thunk(snippet_function), ...args))
+ 			);
+ 		} else {
+-			context.state.after_update.push(b.stmt(b.call(snippet_function, ...args)));
++			context.state.after_update.push(
++				b.stmt(
++					is_optional ? b.maybe_call(snippet_function, ...args) : b.call(snippet_function, ...args)
++				)
++			);
+ 		}
+ 	},
+ 	AnimateDirective(node, { state, visit }) {
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 26cccdd..d070cb6 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -1141,18 +1141,21 @@ const template_visitors = {
+ 		state.init.push(anchor);
+ 		state.template.push(t_expression(anchor_id));
+ 
++		const is_optional = node.metadata.is_optional;
++
+ 		const expression = /** @type {import('estree').Expression} */ (context.visit(node.expression));
+-		const snippet_function = state.options.dev
+-			? b.call('$.validate_snippet', expression)
+-			: expression;
++		const snippet_function =
++			state.options.dev && !is_optional ? b.call('$.validate_snippet', expression) : expression;
+ 
+ 		const snippet_args = node.arguments.map((arg) => {
+ 			return /** @type {import('estree').Expression} */ (context.visit(arg));
+ 		});
+ 
+-		state.template.push(
+-			t_statement(b.stmt(b.call(snippet_function, b.id('$$payload'), ...snippet_args)))
+-		);
++		const call = is_optional
++			? b.maybe_call(snippet_function, b.id('$$payload'), ...snippet_args)
++			: b.call(snippet_function, b.id('$$payload'), ...snippet_args);
++
++		state.template.push(t_statement(b.stmt(call)));
+ 
+ 		state.template.push(t_expression(anchor_id));
+ 	},
+diff --git a/packages/svelte/src/compiler/types/template.d.ts b/packages/svelte/src/compiler/types/template.d.ts
+index ec8319e..eb02d78 100644
+--- a/packages/svelte/src/compiler/types/template.d.ts
++++ b/packages/svelte/src/compiler/types/template.d.ts
+@@ -151,8 +151,12 @@ export interface DebugTag extends BaseNode {
+ /** A `{@render foo(...)} tag */
+ export interface RenderTag extends BaseNode {
+ 	type: 'RenderTag';
+-	expression: Identifier;
++	expression: Expression;
+ 	arguments: Array<Expression | SpreadElement>;
++	metadata: {
++		/** Whether or not the snippet function can be `undefined` (i.e. the expression uses optional chaining) */
++		is_optional: boolean;
++	};
+ }
+ 
+ type Tag = ExpressionTag | HtmlTag | ConstTag | DebugTag | RenderTag;
+diff --git a/packages/svelte/src/internal/client/render.js b/packages/svelte/src/internal/client/render.js
+index fe3db6c..8875198 100644
+--- a/packages/svelte/src/internal/client/render.js
++++ b/packages/svelte/src/internal/client/render.js
+@@ -2695,7 +2695,9 @@ export function snippet_effect(get_snippet, node, ...args) {
+ 		// Only rerender when the snippet function itself changes,
+ 		// not when an eagerly-read prop inside the snippet function changes
+ 		const snippet = get_snippet();
+-		untrack(() => snippet(node, ...args));
++		if (snippet) {
++			untrack(() => snippet(node, ...args));
++		}
+ 		return () => {
+ 			if (block.d !== null) {
+ 				remove(block.d);

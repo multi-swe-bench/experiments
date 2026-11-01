@@ -1,0 +1,35 @@
+diff --git a/packages/mui-material/src/Accordion/Accordion.js b/packages/mui-material/src/Accordion/Accordion.js
+index 50edbe4f..d93af7e0 100644
+--- a/packages/mui-material/src/Accordion/Accordion.js
++++ b/packages/mui-material/src/Accordion/Accordion.js
+@@ -115,7 +115,8 @@ const AccordionRoot = styled(Paper, {
+ );
+ 
+ const Accordion = React.forwardRef(function Accordion(inProps, ref) {
+-  const props = useThemeProps({ props: inProps, name: 'MuiAccordion' });
++  const { TransitionProps: TransitionPropsProp, ...propsWithoutTransitionProps } = inProps;
++  const props = useThemeProps({ props: propsWithoutTransitionProps, name: 'MuiAccordion' });
+   const {
+     children: childrenProp,
+     className,
+@@ -130,6 +131,11 @@ const Accordion = React.forwardRef(function Accordion(inProps, ref) {
+     ...other
+   } = props;
+ 
++  const mergedTransitionProps = {
++    ...TransitionProps,
++    ...TransitionPropsProp,
++  };
++
+   const [expanded, setExpandedState] = useControlled({
+     controlled: expandedProp,
+     default: defaultExpanded,
+@@ -173,7 +179,7 @@ const Accordion = React.forwardRef(function Accordion(inProps, ref) {
+       {...other}
+     >
+       <AccordionContext.Provider value={contextValue}>{summary}</AccordionContext.Provider>
+-      <TransitionComponent in={expanded} timeout="auto" {...TransitionProps}>
++      <TransitionComponent in={expanded} timeout="auto" {...mergedTransitionProps}>
+         <div
+           aria-labelledby={summary.props.id}
+           id={summary.props['aria-controls']}

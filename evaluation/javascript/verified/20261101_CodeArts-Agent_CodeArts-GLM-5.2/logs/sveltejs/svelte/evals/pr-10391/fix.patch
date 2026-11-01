@@ -1,0 +1,212 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 8863b61..81c1e78 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -497,7 +497,8 @@ const validation = {
+ 				parent.type !== 'SvelteElement' &&
+ 				parent.type !== 'SvelteComponent' &&
+ 				parent.type !== 'SvelteSelf' &&
+-				parent.type !== 'SvelteFragment')
++				parent.type !== 'SvelteFragment' &&
++				parent.type !== 'SlotElement')
+ 		) {
+ 			error(node, 'invalid-let-directive-placement');
+ 		}
+@@ -598,6 +599,14 @@ const validation = {
+ 		}
+ 	},
+ 	SlotElement(node) {
++		// `let:` directives are only allowed on forwarded slots, i.e. slots that
++		// are passed into a parent component via a `slot="..."` attribute. This
++		// mirrors Svelte 4 behavior where the `let:` directive is transferred from
++		// the `<slot>` element onto the surrounding slot template.
++		const has_slot_attribute = node.attributes.some(
++			(attribute) => attribute.type === 'Attribute' && attribute.name === 'slot'
++		);
++
+ 		for (const attribute of node.attributes) {
+ 			if (attribute.type === 'Attribute') {
+ 				if (attribute.name === 'name') {
+@@ -609,6 +618,10 @@ const validation = {
+ 						error(attribute, 'invalid-slot-name', true);
+ 					}
+ 				}
++			} else if (attribute.type === 'LetDirective') {
++				if (!has_slot_attribute) {
++					error(attribute, 'invalid-slot-element-attribute');
++				}
+ 			} else if (attribute.type !== 'SpreadAttribute') {
+ 				error(attribute, 'invalid-slot-element-attribute');
+ 			}
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 5297a40..75d6017 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -2916,6 +2916,9 @@ export const template_visitors = {
+ 		/** @type {import('estree').Expression[]} */
+ 		const spreads = [];
+ 
++		/** @type {import('estree').Statement[]} */
++		const lets = [];
++
+ 		let is_default = true;
+ 
+ 		/** @type {import('estree').Expression} */
+@@ -2938,6 +2941,10 @@ export const template_visitors = {
+ 						props.push(b.init(attribute.name, value));
+ 					}
+ 				}
++			} else if (attribute.type === 'LetDirective') {
++				lets.push(
++					/** @type {import('estree').Statement} */ (context.visit(attribute))
++				);
+ 			}
+ 		}
+ 
+@@ -2957,6 +2964,10 @@ export const template_visitors = {
+ 			? b.member(b.id('$$props'), b.id('children'))
+ 			: b.member(b.member(b.id('$$props'), b.id('$$slots')), name, true, true);
+ 
++		if (lets.length > 0) {
++			context.state.after_update.push(...lets);
++		}
++
+ 		const slot = b.call('$.slot', context.state.node, expression, props_expression, fallback);
+ 		context.state.after_update.push(b.stmt(slot));
+ 	},
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index accb610..b027e36 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -1576,6 +1576,9 @@ const template_visitors = {
+ 		/** @type {import('estree').Expression[]} */
+ 		const spreads = [];
+ 
++		/** @type {import('estree').Statement[]} */
++		const lets = [];
++
+ 		/** @type {import('estree').Expression} */
+ 		let expression = b.member_id('$$props.children');
+ 
+@@ -1593,6 +1596,10 @@ const template_visitors = {
+ 						props.push(b.init(attribute.name, value));
+ 					}
+ 				}
++			} else if (attribute.type === 'LetDirective') {
++				lets.push(
++					/** @type {import('estree').Statement} */ (context.visit(attribute))
++				);
+ 			}
+ 		}
+ 
+@@ -1606,6 +1613,10 @@ const template_visitors = {
+ 				: b.thunk(b.block(create_block(node, node.fragment.nodes, context)));
+ 		const slot = b.call('$.slot', b.id('$$payload'), expression, props_expression, fallback);
+ 
++		if (lets.length > 0) {
++			state.template.push(...lets.map(t_statement));
++		}
++
+ 		state.template.push(t_statement(b.stmt(slot)));
+ 		state.template.push(t_expression(id));
+ 	},
+diff --git a/packages/svelte/src/compiler/phases/scope.js b/packages/svelte/src/compiler/phases/scope.js
+index 24083fe..1c71067 100644
+--- a/packages/svelte/src/compiler/phases/scope.js
++++ b/packages/svelte/src/compiler/phases/scope.js
+@@ -287,6 +287,20 @@ export function create_scopes(ast, root, allow_reactive_declarations, parent) {
+ 		next({ scope });
+ 	};
+ 
++	/**
++	 * @type {import('zimmerframe').Visitor<import('#compiler').ElementLike, State, import('#compiler').SvelteNode>}
++	 */
++	const SlotElement = (node, { state, next }) => {
++		if (!node.attributes.some((attribute) => attribute.type === 'LetDirective')) {
++			next();
++			return;
++		}
++
++		const scope = analyze_let_directives(node, state.scope);
++		scopes.set(node, scope);
++		next({ scope });
++	};
++
+ 	/**
+ 	 * @param {import('#compiler').ElementLike} node
+ 	 * @param {Scope} parent
+@@ -359,6 +373,7 @@ export function create_scopes(ast, root, allow_reactive_declarations, parent) {
+ 		SvelteFragment,
+ 		SvelteElement: SvelteFragment,
+ 		RegularElement: SvelteFragment,
++		SlotElement,
+ 
+ 		Component(node, { state, visit, path }) {
+ 			state.scope.reference(b.id(node.name), path);
+diff --git a/packages/svelte/tests/runtime-legacy/samples/component-slot-let-forwarded/Inner.svelte b/packages/svelte/tests/runtime-legacy/samples/component-slot-let-forwarded/Inner.svelte
+new file mode 100644
+index 0000000..0b6d9c5
+--- /dev/null
++++ b/packages/svelte/tests/runtime-legacy/samples/component-slot-let-forwarded/Inner.svelte
+@@ -0,0 +1,5 @@
++<script>
++	export let value;
++</script>
++
++<slot name="a" {value} />
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-legacy/samples/component-slot-let-forwarded/Middle.svelte b/packages/svelte/tests/runtime-legacy/samples/component-slot-let-forwarded/Middle.svelte
+new file mode 100644
+index 0000000..b9a6a25
+--- /dev/null
++++ b/packages/svelte/tests/runtime-legacy/samples/component-slot-let-forwarded/Middle.svelte
+@@ -0,0 +1,9 @@
++<script>
++	import Inner from './Inner.svelte';
++
++	export let value;
++</script>
++
++<Inner {value}>
++	<slot name="a" slot="a" let:value value={value} />
++</Inner>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-legacy/samples/component-slot-let-forwarded/_config.js b/packages/svelte/tests/runtime-legacy/samples/component-slot-let-forwarded/_config.js
+new file mode 100644
+index 0000000..56e125c
+--- /dev/null
++++ b/packages/svelte/tests/runtime-legacy/samples/component-slot-let-forwarded/_config.js
+@@ -0,0 +1,14 @@
++import { test } from '../../test';
++
++export default test({
++	get props() {
++		return { value: 'hello' };
++	},
++
++	html: '<span>hello</span>',
++
++	test({ assert, component, target }) {
++		component.value = 'world';
++		assert.htmlEqual(target.innerHTML, '<span>world</span>');
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-legacy/samples/component-slot-let-forwarded/main.svelte b/packages/svelte/tests/runtime-legacy/samples/component-slot-let-forwarded/main.svelte
+new file mode 100644
+index 0000000..85deaf9
+--- /dev/null
++++ b/packages/svelte/tests/runtime-legacy/samples/component-slot-let-forwarded/main.svelte
+@@ -0,0 +1,11 @@
++<script>
++	import Middle from './Middle.svelte';
++
++	export let value;
++</script>
++
++<Middle {value}>
++	<svelte:fragment slot="a" let:value>
++		<span>{value}</span>
++	</svelte:fragment>
++</Middle>
+\ No newline at end of file

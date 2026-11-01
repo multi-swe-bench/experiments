@@ -1,0 +1,14 @@
+diff --git a/packages/reactivity/src/effect.ts b/packages/reactivity/src/effect.ts
+index 5ddf8e6..b304ccd 100644
+--- a/packages/reactivity/src/effect.ts
++++ b/packages/reactivity/src/effect.ts
+@@ -295,7 +295,8 @@ export function triggerEffects(
+     }
+     if (
+       effect._dirtyLevel < dirtyLevel &&
+-      (!effect._runnings || dirtyLevel !== DirtyLevels.ComputedValueDirty)
++      (dirtyLevel !== DirtyLevels.ComputedValueDirty ||
++        effect !== activeEffect)
+     ) {
+       const lastDirtyLevel = effect._dirtyLevel
+       effect._dirtyLevel = dirtyLevel

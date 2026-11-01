@@ -1,0 +1,51 @@
+diff --git a/packages/mui-codemod/src/util/propsToObject.js b/packages/mui-codemod/src/util/propsToObject.js
+index 88dded76..07dcb615 100644
+--- a/packages/mui-codemod/src/util/propsToObject.js
++++ b/packages/mui-codemod/src/util/propsToObject.js
+@@ -1,3 +1,5 @@
++const muiCorePackages = ['@material-ui/core', '@mui/material'];
++
+ export default function propsToObject({ j, root, componentName, propName, props }) {
+   function buildObject(node, value) {
+     const shorthand = node.value.expression && node.value.expression.name === node.name.name;
+@@ -11,7 +13,7 @@ export default function propsToObject({ j, root, componentName, propName, props
+     return value;
+   }
+ 
+-  return root.findJSXElements(componentName).forEach((path) => {
++  function transformElement(path) {
+     let propValue = [];
+     const attributes = path.node.openingElement.attributes;
+     attributes.forEach((node, index) => {
+@@ -36,5 +38,31 @@ export default function propsToObject({ j, root, componentName, propName, props
+         );
+       }
+     }
++  }
++
++  root.findJSXElements(componentName).forEach(transformElement);
++
++  // Also handle namespaced imports, e.g. `import * as UI from '@material-ui/core'` -> `<UI.Box />`
++  root.find(j.ImportDeclaration).forEach((importPath) => {
++    if (!muiCorePackages.includes(importPath.node.source.value)) {
++      return;
++    }
++    importPath.node.specifiers.forEach((specifier) => {
++      if (specifier.type !== 'ImportNamespaceSpecifier') {
++        return;
++      }
++      const alias = specifier.local.name;
++      root
++        .find(j.JSXElement)
++        .filter(
++          (path) =>
++            path.node.openingElement.name.type === 'JSXMemberExpression' &&
++            path.node.openingElement.name.object.name === alias &&
++            path.node.openingElement.name.property.name === componentName,
++        )
++        .forEach(transformElement);
++    });
+   });
++
++  return root;
+ }

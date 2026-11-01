@@ -1,0 +1,159 @@
+diff --git a/docs/src/pages/components/trap-focus/BasicTrapFocus.tsx b/docs/src/pages/components/trap-focus/BasicTrapFocus.tsx
+index 706c7cd..1a9c759 100644
+--- a/docs/src/pages/components/trap-focus/BasicTrapFocus.tsx
++++ b/docs/src/pages/components/trap-focus/BasicTrapFocus.tsx
+@@ -10,7 +10,7 @@ export default function BasicTrapFocus() {
+       </button>
+       <br />
+       {open && (
+-        <TrapFocus open isEnabled={() => true} getDoc={() => document}>
++        <TrapFocus open>
+           <div tabIndex={-1}>
+             <h3>Quick form</h3>
+             <label>
+diff --git a/docs/src/pages/components/trap-focus/DisableEnforceFocus.tsx b/docs/src/pages/components/trap-focus/DisableEnforceFocus.tsx
+index 0284eb2..3e7f735 100644
+--- a/docs/src/pages/components/trap-focus/DisableEnforceFocus.tsx
++++ b/docs/src/pages/components/trap-focus/DisableEnforceFocus.tsx
+@@ -10,12 +10,7 @@ export default function DisableEnforceFocus() {
+       </button>
+       <br />
+       {open && (
+-        <TrapFocus
+-          disableEnforceFocus
+-          open
+-          isEnabled={() => true}
+-          getDoc={() => document}
+-        >
++        <TrapFocus disableEnforceFocus open>
+           <div tabIndex={-1}>
+             <h3>Quick form</h3>
+             <label>
+diff --git a/docs/src/pages/components/trap-focus/LazyTrapFocus.tsx b/docs/src/pages/components/trap-focus/LazyTrapFocus.tsx
+index 2c1cc3a..d68851b 100644
+--- a/docs/src/pages/components/trap-focus/LazyTrapFocus.tsx
++++ b/docs/src/pages/components/trap-focus/LazyTrapFocus.tsx
+@@ -10,12 +10,7 @@ export default function LazyTrapFocus() {
+       </button>
+       <br />
+       {open && (
+-        <TrapFocus
+-          open
+-          isEnabled={() => true}
+-          getDoc={() => document}
+-          disableAutoFocus
+-        >
++        <TrapFocus open disableAutoFocus>
+           <div tabIndex={-1}>
+             <h3>Quick form</h3>
+             <label>
+diff --git a/docs/src/pages/components/trap-focus/PortalTrapFocus.tsx b/docs/src/pages/components/trap-focus/PortalTrapFocus.tsx
+index 4d3c238..014c48f 100644
+--- a/docs/src/pages/components/trap-focus/PortalTrapFocus.tsx
++++ b/docs/src/pages/components/trap-focus/PortalTrapFocus.tsx
+@@ -13,7 +13,7 @@ export default function PortalTrapFocus() {
+       </button>
+       <br />
+       {open && (
+-        <TrapFocus open isEnabled={() => true} getDoc={() => document}>
++        <TrapFocus open>
+           <div tabIndex={-1}>
+             <h3>Quick form</h3>
+             <label>
+diff --git a/packages/material-ui-unstyled/src/ModalUnstyled/ModalUnstyled.js b/packages/material-ui-unstyled/src/ModalUnstyled/ModalUnstyled.js
+index 172ab2f..74b68b4 100644
+--- a/packages/material-ui-unstyled/src/ModalUnstyled/ModalUnstyled.js
++++ b/packages/material-ui-unstyled/src/ModalUnstyled/ModalUnstyled.js
+@@ -274,7 +274,6 @@ const ModalUnstyled = React.forwardRef(function ModalUnstyled(props, ref) {
+           disableAutoFocus={disableAutoFocus}
+           disableRestoreFocus={disableRestoreFocus}
+           getDoc={getDoc}
+-          isEnabled={isTopModal}
+           open={open}
+         >
+           {React.cloneElement(children, childProps)}
+diff --git a/packages/material-ui-unstyled/src/Unstable_TrapFocus/Unstable_TrapFocus.d.ts b/packages/material-ui-unstyled/src/Unstable_TrapFocus/Unstable_TrapFocus.d.ts
+index 7f2a4af..c4d4180 100644
+--- a/packages/material-ui-unstyled/src/Unstable_TrapFocus/Unstable_TrapFocus.d.ts
++++ b/packages/material-ui-unstyled/src/Unstable_TrapFocus/Unstable_TrapFocus.d.ts
+@@ -9,8 +9,9 @@ export interface TrapFocusProps {
+   /**
+    * Return the document to consider.
+    * We use it to implement the restore focus between different browser documents.
++   * @default () => document
+    */
+-  getDoc: () => Document;
++  getDoc?: () => Document;
+   /**
+    * Returns an array of ordered tabbable nodes (i.e. in tab order) within the root.
+    * For instance, you can provide the "tabbable" npm dependency.
+@@ -19,9 +20,11 @@ export interface TrapFocusProps {
+   getTabbable?: (root: HTMLElement) => string[];
+   /**
+    * Do we still want to enforce the focus?
+-   * This prop helps nesting TrapFocus elements.
++   * The prop should be memoized.
++   * Use the prop to get the same outcome toggleing `open` without having to wait for a rerender.
++   * @default () => true
+    */
+-  isEnabled: () => boolean;
++  isEnabled?: () => boolean;
+   /**
+    * A single child content element.
+    */
+diff --git a/packages/material-ui-unstyled/src/Unstable_TrapFocus/Unstable_TrapFocus.js b/packages/material-ui-unstyled/src/Unstable_TrapFocus/Unstable_TrapFocus.js
+index 9583b55..56968d5 100644
+--- a/packages/material-ui-unstyled/src/Unstable_TrapFocus/Unstable_TrapFocus.js
++++ b/packages/material-ui-unstyled/src/Unstable_TrapFocus/Unstable_TrapFocus.js
+@@ -108,6 +108,14 @@ function defaultGetTabbable(root) {
+     .concat(regularTabNodes);
+ }
+ 
++function defaultGetDoc() {
++  return document;
++}
++
++function defaultIsEnabled() {
++  return true;
++}
++
+ /**
+  * Utility component that locks focus inside the component.
+  */
+@@ -117,9 +125,9 @@ function Unstable_TrapFocus(props) {
+     disableAutoFocus = false,
+     disableEnforceFocus = false,
+     disableRestoreFocus = false,
+-    getDoc,
++    getDoc = defaultGetDoc,
+     getTabbable = defaultGetTabbable,
+-    isEnabled,
++    isEnabled = defaultIsEnabled,
+     open,
+   } = props;
+   const ignoreNextEnforceFocus = React.useRef();
+@@ -386,8 +394,9 @@ Unstable_TrapFocus.propTypes /* remove-proptypes */ = {
+   /**
+    * Return the document to consider.
+    * We use it to implement the restore focus between different browser documents.
++   * @default () => document
+    */
+-  getDoc: PropTypes.func.isRequired,
++  getDoc: PropTypes.func,
+   /**
+    * Returns an array of ordered tabbable nodes (i.e. in tab order) within the root.
+    * For instance, you can provide the "tabbable" npm dependency.
+@@ -396,9 +405,11 @@ Unstable_TrapFocus.propTypes /* remove-proptypes */ = {
+   getTabbable: PropTypes.func,
+   /**
+    * Do we still want to enforce the focus?
+-   * This prop helps nesting TrapFocus elements.
++   * The prop should be memoized.
++   * Use the prop to get the same outcome toggleing `open` without having to wait for a rerender.
++   * @default () => true
+    */
+-  isEnabled: PropTypes.func.isRequired,
++  isEnabled: PropTypes.func,
+   /**
+    * If `true`, focus is locked.
+    */

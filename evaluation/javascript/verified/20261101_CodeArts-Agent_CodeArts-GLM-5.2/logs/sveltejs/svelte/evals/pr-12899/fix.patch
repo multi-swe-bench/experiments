@@ -1,0 +1,63 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/utils.js
+index bd43075..fb0f5b1 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/utils.js
+@@ -63,7 +63,7 @@ export function build_template_literal(values, visit, state) {
+ 						)
+ 					)
+ 				);
+-				expressions.push(b.call('$.get', id));
++				expressions.push(b.logical('??', b.call('$.get', id), b.literal('')));
+ 			} else if (values.length === 1) {
+ 				// If we have a single expression, then pass that in directly to possibly avoid doing
+ 				// extra work in the template_effect (instead we do the work in set_text).
+diff --git a/packages/svelte/tests/runtime-runes/samples/text-null-multiple-call-expression/_config.js b/packages/svelte/tests/runtime-runes/samples/text-null-multiple-call-expression/_config.js
+new file mode 100644
+index 0000000..5d51242
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/text-null-multiple-call-expression/_config.js
+@@ -0,0 +1,27 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++
++export default test({
++	html: `<p>!</p><p>!</p><button>toggle</button>`,
++
++	async test({ assert, target }) {
++		const [btn] = target.querySelectorAll('button');
++
++		// `null && fn()` and `val && fn()` (val is null) should render as empty,
++		// not the string "null"
++		assert.htmlEqual(target.innerHTML, `<p>!</p><p>!</p><button>toggle</button>`);
++
++		flushSync(() => {
++			btn.click();
++		});
++
++		// when val is 'x', `val && fn()` returns `fn()` = '!', so the second `<p>` renders `!!`
++		assert.htmlEqual(target.innerHTML, `<p>!</p><p>!!</p><button>toggle</button>`);
++
++		flushSync(() => {
++			btn.click();
++		});
++
++		assert.htmlEqual(target.innerHTML, `<p>!</p><p>!</p><button>toggle</button>`);
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/text-null-multiple-call-expression/main.svelte b/packages/svelte/tests/runtime-runes/samples/text-null-multiple-call-expression/main.svelte
+new file mode 100644
+index 0000000..592c759
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/text-null-multiple-call-expression/main.svelte
+@@ -0,0 +1,9 @@
++<script>
++	const fn = () => '!';
++	let val = $state(null);
++</script>
++
++<p>{fn()}{null && fn()}</p>
++<p>{fn()}{val && fn()}</p>
++
++<button onclick={() => (val = val ? null : 'x')}>toggle</button>
+\ No newline at end of file

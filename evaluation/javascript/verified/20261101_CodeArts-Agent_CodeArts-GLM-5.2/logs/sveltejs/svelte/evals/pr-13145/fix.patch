@@ -1,0 +1,151 @@
+diff --git a/packages/svelte/messages/compile-warnings/template.md b/packages/svelte/messages/compile-warnings/template.md
+index 194bd10..733ec62 100644
+--- a/packages/svelte/messages/compile-warnings/template.md
++++ b/packages/svelte/messages/compile-warnings/template.md
+@@ -30,6 +30,10 @@
+ 
+ > `<%name%>` will be treated as an HTML element unless it begins with a capital letter
+ 
++## directive_missing_declaration
++
++> `%name%` is not defined
++
+ ## element_invalid_self_closing_tag
+ 
+ > Self-closing HTML tags for non-void elements are ambiguous — use `<%name% ...></%name%>` rather than `<%name% ... />`
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 95a0989..694fdd5 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -63,9 +63,11 @@ import { SvelteWindow } from './visitors/SvelteWindow.js';
+ import { TaggedTemplateExpression } from './visitors/TaggedTemplateExpression.js';
+ import { Text } from './visitors/Text.js';
+ import { TitleElement } from './visitors/TitleElement.js';
++import { TransitionDirective } from './visitors/TransitionDirective.js';
+ import { UpdateExpression } from './visitors/UpdateExpression.js';
+ import { UseDirective } from './visitors/UseDirective.js';
+ import { VariableDeclarator } from './visitors/VariableDeclarator.js';
++import { AnimateDirective } from './visitors/AnimateDirective.js';
+ import is_reference from 'is-reference';
+ 
+ /**
+@@ -172,9 +174,11 @@ const visitors = {
+ 	TaggedTemplateExpression,
+ 	Text,
+ 	TitleElement,
++	TransitionDirective,
+ 	UpdateExpression,
+ 	UseDirective,
+-	VariableDeclarator
++	VariableDeclarator,
++	AnimateDirective
+ };
+ 
+ /**
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/AnimateDirective.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/AnimateDirective.js
+new file mode 100644
+index 0000000..057b550
+--- /dev/null
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/AnimateDirective.js
+@@ -0,0 +1,12 @@
++/** @import { AST } from '#compiler' */
++/** @import { Context } from '../types' */
++import { validate_directive_name } from './shared/utils.js';
++
++/**
++ * @param {AST.AnimateDirective} node
++ * @param {Context} context
++ */
++export function AnimateDirective(node, context) {
++	validate_directive_name(node, context.state.scope);
++	context.next();
++}
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/TransitionDirective.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/TransitionDirective.js
+new file mode 100644
+index 0000000..c2a4d34
+--- /dev/null
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/TransitionDirective.js
+@@ -0,0 +1,12 @@
++/** @import { AST } from '#compiler' */
++/** @import { Context } from '../types' */
++import { validate_directive_name } from './shared/utils.js';
++
++/**
++ * @param {AST.TransitionDirective} node
++ * @param {Context} context
++ */
++export function TransitionDirective(node, context) {
++	validate_directive_name(node, context.state.scope);
++	context.next();
++}
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/UseDirective.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/UseDirective.js
+index 76706ad..154a9de 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/visitors/UseDirective.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/UseDirective.js
+@@ -1,6 +1,7 @@
+ /** @import { AST } from '#compiler' */
+ /** @import { Context } from '../types' */
+ import { mark_subtree_dynamic } from './shared/fragment.js';
++import { validate_directive_name } from './shared/utils.js';
+ 
+ /**
+  * @param {AST.UseDirective} node
+@@ -8,5 +9,6 @@ import { mark_subtree_dynamic } from './shared/fragment.js';
+  */
+ export function UseDirective(node, context) {
+ 	mark_subtree_dynamic(context.path);
++	validate_directive_name(node, context.state.scope);
+ 	context.next();
+ }
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/shared/utils.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/shared/utils.js
+index dad55a1..770a781 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/visitors/shared/utils.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/shared/utils.js
+@@ -196,3 +196,19 @@ export function is_pure(node, context) {
+ 	// TODO add more cases (safe Svelte imports, etc)
+ 	return false;
+ }
++
++/**
++ * `use:`, `transition:` (and `in:`/`out:`) and `animate:` directives reference a
++ * value by name. If that name is not in scope, the directive is most likely a
++ * mistake (e.g. a forgotten import), so we warn. This mirrors Svelte 4's behavior.
++ * @param {AST.UseDirective | AST.TransitionDirective | AST.AnimateDirective} node
++ * @param {Scope} scope
++ */
++export function validate_directive_name(node, scope) {
++	const name = node.name.split('.')[0];
++	const binding = scope.get(name);
++
++	if (binding === null) {
++		w.directive_missing_declaration(node, name);
++	}
++}
+diff --git a/packages/svelte/src/compiler/warnings.js b/packages/svelte/src/compiler/warnings.js
+index 1ed5362..d106126 100644
+--- a/packages/svelte/src/compiler/warnings.js
++++ b/packages/svelte/src/compiler/warnings.js
+@@ -113,6 +113,7 @@ export const codes = [
+ 	"bind_invalid_each_rest",
+ 	"block_empty",
+ 	"component_name_lowercase",
++	"directive_missing_declaration",
+ 	"element_invalid_self_closing_tag",
+ 	"event_directive_deprecated",
+ 	"node_invalid_placement_ssr",
+@@ -734,6 +735,15 @@ export function component_name_lowercase(node, name) {
+ 	w(node, "component_name_lowercase", `\`<${name}>\` will be treated as an HTML element unless it begins with a capital letter`);
+ }
+ 
++/**
++ * `%name%` is not defined
++ * @param {null | NodeLike} node
++ * @param {string} name
++ */
++export function directive_missing_declaration(node, name) {
++	w(node, "directive_missing_declaration", `\`${name}\` is not defined`);
++}
++
+ /**
+  * Self-closing HTML tags for non-void elements are ambiguous — use `<%name% ...></%name%>` rather than `<%name% ... />`
+  * @param {null | NodeLike} node

@@ -1,0 +1,25 @@
+diff --git a/src/cards/wakatime-card.js b/src/cards/wakatime-card.js
+index 8b042fd..2c03b6a 100644
+--- a/src/cards/wakatime-card.js
++++ b/src/cards/wakatime-card.js
+@@ -208,12 +208,16 @@ const renderWakatimeCard = (stats = {}, options = { hide: [] }) => {
+       theme,
+     });
+ 
+-  const filteredLanguages = languages
+-    ? languages
+-        .filter((language) => language.hours || language.minutes)
+-        .slice(0, langsCount)
++  let filteredLanguages = languages
++    ? languages.filter((language) => language.hours || language.minutes)
+     : [];
+ 
++  const shouldRecalculate = filteredLanguages.length > langsCount;
++  filteredLanguages = filteredLanguages.slice(0, langsCount);
++  if (shouldRecalculate) {
++    recalculatePercentages(filteredLanguages);
++  }
++
+   // Calculate the card height depending on how many items there are
+   // but if rank circle is visible clamp the minimum height to `150`
+   let height = Math.max(45 + (filteredLanguages.length + 1) * lheight, 150);

@@ -1,0 +1,79 @@
+diff --git a/packages/svelte/src/internal/client/dom/elements/bindings/media.js b/packages/svelte/src/internal/client/dom/elements/bindings/media.js
+index 444a1b3..32009cc 100644
+--- a/packages/svelte/src/internal/client/dom/elements/bindings/media.js
++++ b/packages/svelte/src/internal/client/dom/elements/bindings/media.js
+@@ -42,7 +42,7 @@ export function bind_current_time(media, get, set = get) {
+ 	};
+ 
+ 	raf_id = requestAnimationFrame(callback);
+-	media.addEventListener('timeupdate', callback);
++	listen(media, ['timeupdate'], callback, false);
+ 
+ 	render_effect(() => {
+ 		var next_value = Number(get());
+diff --git a/packages/svelte/tests/runtime-runes/samples/bind-current-time-conditional/_config.js b/packages/svelte/tests/runtime-runes/samples/bind-current-time-conditional/_config.js
+new file mode 100644
+index 0000000..444f244
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/bind-current-time-conditional/_config.js
+@@ -0,0 +1,36 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++import { assert_ok } from '../../../suite';
++
++export default test({
++	html: `<audio src="test.mp3"></audio> <button>hide</button>`,
++
++	test({ assert, target, window }) {
++		// The test harness maps requestAnimationFrame -> setTimeout, but leaves
++		// cancelAnimationFrame as the native (ineffective) one. Make cancellation work
++		// so the raf scheduled by the binding is properly torn down.
++		const prev_cancel = globalThis.cancelAnimationFrame;
++		globalThis.cancelAnimationFrame = globalThis.clearTimeout;
++
++		try {
++			const audio = target.querySelector('audio');
++			assert_ok(audio);
++
++			const button = target.querySelector('button');
++
++			flushSync(() => {
++				button?.click();
++			});
++
++			// The audio is now detached, but Chrome keeps firing timeupdate on it.
++			// The binding must have removed its listener, so this should not throw.
++			audio.currentTime = 7;
++			audio.dispatchEvent(new window.Event('timeupdate'));
++			flushSync();
++
++			assert.htmlEqual(target.innerHTML, ` <button>hide</button>`);
++		} finally {
++			globalThis.cancelAnimationFrame = prev_cancel;
++		}
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/bind-current-time-conditional/main.svelte b/packages/svelte/tests/runtime-runes/samples/bind-current-time-conditional/main.svelte
+new file mode 100644
+index 0000000..2546f4d
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/bind-current-time-conditional/main.svelte
+@@ -0,0 +1,16 @@
++<script>
++	let player = $state({ playingAudio: { url: 'test.mp3', currentTime: 0 } });
++
++	function hide() {
++		player.playingAudio = null;
++	}
++</script>
++
++{#if player.playingAudio}
++	<audio
++		src={player.playingAudio.url}
++		bind:currentTime={player.playingAudio.currentTime}
++	></audio>
++{/if}
++
++<button onclick={hide}>hide</button>
+\ No newline at end of file

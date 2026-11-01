@@ -1,0 +1,22 @@
+diff --git a/packages/svelte/src/internal/client/dom/elements/transitions.js b/packages/svelte/src/internal/client/dom/elements/transitions.js
+index 202db6f..49aae26 100644
+--- a/packages/svelte/src/internal/client/dom/elements/transitions.js
++++ b/packages/svelte/src/internal/client/dom/elements/transitions.js
+@@ -250,6 +250,17 @@ export function transition(flags, element, get_fn, get_params) {
+ 		}
+ 
+ 		if (run) {
++			// Eagerly invoke the transition function. For deferred transitions (such as
++			// `crossfade`), the returned function is what actually performs the transition,
++			// while the call itself has the side effect of registering the node (e.g. in
++			// the crossfade's send/receive maps). By doing this synchronously here, we
++			// ensure the node is registered before any counterpart's deferred check runs
++			// — otherwise the counterpart could run its fallback before this node is
++			// registered, causing the fallback to play erroneously. The result is cached
++			// so that the subsequent `transition.in()` call reuses it rather than
++			// invoking the transition function a second time.
++			get_options();
++
+ 			effect(() => {
+ 				untrack(() => transition.in());
+ 			});

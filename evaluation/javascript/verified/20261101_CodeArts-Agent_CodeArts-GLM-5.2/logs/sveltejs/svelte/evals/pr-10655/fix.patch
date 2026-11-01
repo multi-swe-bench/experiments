@@ -1,0 +1,128 @@
+diff --git a/.changeset/uncalled-rune.md b/.changeset/uncalled-rune.md
+new file mode 100644
+index 0000000..25df411
+--- /dev/null
++++ b/.changeset/uncalled-rune.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: error when a rune (e.g. `$props`) is used without being called. Previously, `const { foo } = $props` would silently destructure from an undefined variable and fail at runtime; it now throws a clear compile-time error.
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/errors.js b/packages/svelte/src/compiler/errors.js
+index f2207c9..612096b 100644
+--- a/packages/svelte/src/compiler/errors.js
++++ b/packages/svelte/src/compiler/errors.js
+@@ -208,7 +208,9 @@ const runes = {
+ 	'duplicate-props-rune': () => `Cannot use $props() more than once`,
+ 	'invalid-each-assignment': () =>
+ 		`Cannot reassign or bind to each block argument in runes mode. Use the array and index variables instead (e.g. 'array[i] = value' instead of 'entry = value')`,
+-	'invalid-derived-call': () => `$derived.call(...) has been replaced with $derived.by(...)`
++	'invalid-derived-call': () => `$derived.call(...) has been replaced with $derived.by(...)`,
++	/** @param {string} name */
++	'invalid-uncalled-rune': (name) => `The '${name}' rune can only be used as a function call`
+ };
+ 
+ /** @satisfies {Errors} */
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index b43e5be..04bd907 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -10,7 +10,7 @@ import { warn } from '../../warnings.js';
+ import fuzzymatch from '../1-parse/utils/fuzzymatch.js';
+ import { disallowed_parapgraph_contents, interactive_elements } from '../1-parse/utils/html.js';
+ import { binding_properties } from '../bindings.js';
+-import { ContentEditableBindings, EventModifiers, SVGElements } from '../constants.js';
++import { ContentEditableBindings, EventModifiers, Runes, SVGElements } from '../constants.js';
+ import { is_custom_element_node } from '../nodes.js';
+ import {
+ 	regex_illegal_attribute_character,
+@@ -20,6 +20,7 @@ import {
+ import { Scope, get_rune } from '../scope.js';
+ import { merge } from '../visitors.js';
+ import { a11y_validators } from './a11y.js';
++import is_reference from 'is-reference';
+ 
+ /**
+  * @param {import('#compiler').Component | import('#compiler').SvelteComponent | import('#compiler').SvelteSelf} node
+@@ -761,6 +762,59 @@ function validate_export(node, scope, name) {
+ 	}
+ }
+ 
++/**
++ * Ensures that a rune (e.g. `$props`) is only used as a function call, not as a
++ * bare identifier reference. Without this, `const { foo } = $props` would
++ * silently destructure from an undefined variable.
++ * @param {import('estree').Identifier} node
++ * @param {import('./types.js').AnalysisState} state
++ * @param {import('#compiler').SvelteNode[]} path
++ * @returns {void}
++ */
++function validate_rune_reference(node, state, path) {
++	if (node.name[0] !== '$') return;
++
++	const parent = path.at(-1);
++	if (!is_reference(node, /** @type {import('estree').Node} */ (parent))) return;
++
++	// The user could have declared a variable/store with this name, in which
++	// case it's not a rune reference (e.g. a store subscription like `$state`).
++	if (state.scope.get(node.name) !== null) return;
++
++	// Compute the full rune name, accounting for member forms such as
++	// `$state.frozen` and `$derived.by`.
++	/** @type {string} */
++	let name = node.name;
++	/** @type {import('estree').Node} */
++	let target = node;
++
++	if (
++		parent?.type === 'MemberExpression' &&
++		!parent.computed &&
++		parent.object === node &&
++		parent.property.type === 'Identifier'
++	) {
++		name = node.name + '.' + parent.property.name;
++		target = parent;
++	}
++
++	if (!Runes.includes(/** @type {any} */ (name))) return;
++
++	// It's a rune — make sure it's actually being called.
++	const grandparent = path.at(-2);
++	if (parent?.type === 'CallExpression' && parent.callee === node) return;
++	if (
++		parent?.type === 'MemberExpression' &&
++		parent.object === node &&
++		grandparent?.type === 'CallExpression' &&
++		grandparent.callee === parent
++	) {
++		return;
++	}
++
++	error(target, 'invalid-uncalled-rune', name);
++}
++
+ /**
+  * @param {import('estree').CallExpression} node
+  * @param {Scope} scope
+@@ -841,6 +895,9 @@ export const validation_runes_js = {
+ 	CallExpression(node, { state, path }) {
+ 		validate_call_expression(node, state.scope, path);
+ 	},
++	Identifier(node, { state, path }) {
++		validate_rune_reference(node, state, path);
++	},
+ 	VariableDeclarator(node, { state }) {
+ 		const init = node.init;
+ 		const rune = get_rune(init, state.scope);
+@@ -988,6 +1045,9 @@ export const validation_runes = merge(validation, a11y_validators, {
+ 	CallExpression(node, { state, path }) {
+ 		validate_call_expression(node, state.scope, path);
+ 	},
++	Identifier(node, { state, path }) {
++		validate_rune_reference(node, state, path);
++	},
+ 	EachBlock(node, { next, state }) {
+ 		const context = node.context;
+ 		if (

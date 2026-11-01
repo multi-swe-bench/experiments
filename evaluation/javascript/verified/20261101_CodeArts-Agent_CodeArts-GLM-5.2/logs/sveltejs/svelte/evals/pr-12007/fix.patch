@@ -1,0 +1,19 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 2d172b0..92c41dd 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -1144,7 +1144,13 @@ const template_visitors = {
+ 	},
+ 	HtmlTag(node, context) {
+ 		const expression = /** @type {import('estree').Expression} */ (context.visit(node.expression));
+-		context.state.template.push(block_open, expression, block_close);
++		context.state.template.push(
++			block_open,
++			expression.type === 'Literal' && typeof expression.value === 'string'
++				? b.literal(sanitize_template_string(expression.value))
++				: expression,
++			block_close
++		);
+ 	},
+ 	ConstTag(node, { state, visit }) {
+ 		const declaration = node.declaration.declarations[0];

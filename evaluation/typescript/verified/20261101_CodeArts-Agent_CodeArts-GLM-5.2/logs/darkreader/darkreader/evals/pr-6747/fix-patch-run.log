@@ -1,0 +1,242 @@
+$ bash /home/test-run.sh
+
+
+> darkreader@4.9.34 test:ci
+> jest --config=tests/jest.config.js --runInBand --json --outputFile=test-results-unit.json
+
+PASS tests/config/config.tests.ts
+  ✓ Dark Sites list (14 ms)
+  ✓ Dynamic Theme Fixes config (34 ms)
+  ✓ Inversion Fixes config (5 ms)
+  ✓ Static Themes config (1 ms)
+
+PASS tests/config/locales.tests.ts
+  ✓ Locales (13 ms)
+
+PASS tests/utils/url.tests.ts
+  ✓ URL is enabled (10 ms)
+  ✓ Get URL host or protocol (3 ms)
+  ✓ Absolute URL (16 ms)
+  ✓ Fully qualified domain
+
+PASS tests/utils/time.tests.ts
+  ✓ Time interval (1 ms)
+  ✓ Time interval prediction (1 ms)
+  ✓ Time parse
+  ✓ Duration
+  ✓ Nigth check (3 ms)
+  ✓ Sunrise/sunset (5 ms)
+
+FAIL tests/generators/utils/parse.tests.ts
+  ✕ Index config (7 ms)
+  ✓ Empty config (1 ms)
+  ✕ Domain appearing in multiple records (2 ms)
+  ✕ Domain appearing multiple times within the same record (2 ms)
+  ✕ The generic fix appears first (1 ms)
+
+  ● Index config
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 8
+    + Received  + 8
+
+      Array [
+        Object {
+    -     "DIRECTIVE": "hi",
+    -     "MULTILINEDIRECTIVE": "hello
+    - world",
+    -     "url": Array [
+    -       "*",
+    -     ],
+    -   },
+    -   Object {
+          "CSS": "div {
+        color: green;
+      }",
+          "url": Array [
+            "example.com",
+    +     ],
+    +   },
+    +   Object {
+    +     "DIRECTIVE": "hi",
+    +     "MULTILINEDIRECTIVE": "hello
+    + world",
+    +     "url": Array [
+    +       "*",
+          ],
+        },
+      ]
+
+      31 |
+      32 |     const fixes = getSitesFixesFor('example.com', config, index, options);
+    > 33 |     expect(fixes).toEqual([
+         |                   ^
+      34 |         {
+      35 |             'url': ['*'],
+      36 |             'DIRECTIVE': 'hi',
+
+      at Object.<anonymous> (tests/generators/utils/parse.tests.ts:33:19)
+
+  ● Domain appearing in multiple records
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 6
+    + Received  + 6
+
+    @@ -1,13 +1,7 @@
+      Array [
+        Object {
+    -     "DIRECTIVE": "hello world",
+    -     "url": Array [
+    -       "*",
+    -     ],
+    -   },
+    -   Object {
+          "DIRECTIVE": "one",
+          "url": Array [
+            "example.com",
+            "*.example.net",
+          ],
+    @@ -22,8 +16,14 @@
+        Object {
+          "DIRECTIVE": "three",
+          "url": Array [
+            "example.com",
+            "*.example.net",
+    +     ],
+    +   },
+    +   Object {
+    +     "DIRECTIVE": "hello world",
+    +     "url": Array [
+    +       "*",
+          ],
+        },
+      ]
+
+      114 |     const fixesFQD = getSitesFixesFor('example.com', config, index, options);
+      115 |     const fixesWildcard = getSitesFixesFor('sub.example.net', config, index, options);
+    > 116 |     expect(fixesFQD).toEqual([
+          |                      ^
+      117 |         {
+      118 |             'url': ['*'],
+      119 |             'DIRECTIVE': 'hello world'
+
+      at Object.<anonymous> (tests/generators/utils/parse.tests.ts:116:22)
+
+  ● Domain appearing multiple times within the same record
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 6
+    + Received  + 6
+
+      Array [
+        Object {
+    -     "DIRECTIVE": "hello world",
+    -     "url": Array [
+    -       "*",
+    -     ],
+    -   },
+    -   Object {
+          "DIRECTIVE": "one",
+          "url": Array [
+            "example.com",
+            "*.example.net",
+            "example.com",
+            "*.example.net",
+    +     ],
+    +   },
+    +   Object {
+    +     "DIRECTIVE": "hello world",
+    +     "url": Array [
+    +       "*",
+          ],
+        },
+      ]
+
+      172 |     const fixesFQD = getSitesFixesFor('example.com', config, index, options);
+      173 |     const fixesWildcard = getSitesFixesFor('sub.example.net', config, index, options);
+    > 174 |     expect(fixesFQD).toEqual([
+          |                      ^
+      175 |         {
+      176 |             'url': ['*'],
+      177 |             'DIRECTIVE': 'hello world'
+
+      at Object.<anonymous> (tests/generators/utils/parse.tests.ts:174:22)
+
+  ● The generic fix appears first
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 6
+    + Received  + 6
+
+      Array [
+        Object {
+    -     "DIRECTIVE": "hello world",
+    +     "DIRECTIVE": "long",
+          "url": Array [
+    -       "*",
+    +       "long.sub.example.com",
+          ],
+        },
+        Object {
+    -     "DIRECTIVE": "wildcard",
+    +     "DIRECTIVE": "hello world",
+          "url": Array [
+    -       "*.example.com",
+    +       "*",
+          ],
+        },
+        Object {
+    -     "DIRECTIVE": "long",
+    +     "DIRECTIVE": "wildcard",
+          "url": Array [
+    -       "long.sub.example.com",
+    +       "*.example.com",
+          ],
+        },
+      ]
+
+      238 |
+      239 |     const fixesFQD = getSitesFixesFor('long.sub.example.com', config, index, options);
+    > 240 |     expect(fixesFQD).toEqual([
+          |                      ^
+      241 |         {
+      242 |             'url':['*'],
+      243 |             'DIRECTIVE':'hello world'
+
+      at Object.<anonymous> (tests/generators/utils/parse.tests.ts:240:22)
+
+PASS tests/utils/color.tests.ts
+  ✓ Color parsing (21 ms)
+  ✓ Stringify color (1 ms)
+  ✓ Color conversion (1 ms)
+
+PASS tests/utils/text.tests.ts
+  ✓ CSS formatting (2 ms)
+  ✓ Parenthesis Range (1 ms)
+
+PASS tests/utils/promise-barrier.tests.ts
+  ✓ Promise barrier utility (3 ms)
+  ✓ Promise barrier utility: awaiting for barrier after it was settled (2 ms)
+  ✓ Promise barrier utility: resolving multiple times (3 ms)
+
+PASS tests/utils/uid.tests.ts
+  ✓ Unique identifier generation (1 ms)
+
+PASS tests/utils/math.tests.ts
+  ✓ Scale (1 ms)
+  ✓ Clamp
+  ✓ Matrix multiplication (1 ms)
+
+Test Suites: 1 failed, 9 passed, 10 total
+Tests:       4 failed, 28 passed, 32 total
+Snapshots:   0 total
+Time:        4.103 s
+Ran all test suites in 3 projects.
+Test results written to: test-results-unit.json
+
+[exit code: 1]

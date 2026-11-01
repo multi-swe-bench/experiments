@@ -1,0 +1,30 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 95a0989..61d71bb 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -577,23 +577,12 @@ export function analyze_component(root, source, options) {
+ 							) {
+ 								continue inner;
+ 							}
+-							// bind:this doesn't need to be a state reference if it will never change
++							// bind:this doesn't need to be a state reference, as the binding
++							// is updated by Svelte's own mechanism regardless of `$state`
+ 							if (
+ 								type === 'BindDirective' &&
+ 								/** @type {AST.BindDirective} */ (path[i]).name === 'this'
+ 							) {
+-								for (let j = i - 1; j >= 0; j -= 1) {
+-									const type = path[j].type;
+-									if (
+-										type === 'IfBlock' ||
+-										type === 'EachBlock' ||
+-										type === 'AwaitBlock' ||
+-										type === 'KeyBlock'
+-									) {
+-										w.non_reactive_update(binding.node, name);
+-										continue outer;
+-									}
+-								}
+ 								continue inner;
+ 							}
+ 						}

@@ -1,0 +1,405 @@
+diff --git a/_tmp_ce.js b/_tmp_ce.js
+new file mode 100644
+index 0000000..e450440
+--- /dev/null
++++ b/_tmp_ce.js
+@@ -0,0 +1,39 @@
++// MyElement.svelte (Svelte v5.0.0-next.94)
++// Note: compiler output will change before 5.0 is released!
++import "svelte/internal/disclose-version";
++import * as $ from "svelte/internal/client";
++
++function fire() {
++	$$props.$$host.dispatchEvent(new CustomEvent('custom', { detail: 'foo' }));
++}
++
++var root = $.template(`<p> </p> <button>fire</button>`, 1);
++
++export default function MyElement($$anchor, $$props) {
++	$.push($$props, true);
++
++	let name = $.prop($$props, "name", 7);
++	var fragment = root();
++	var p = $.first_child(fragment);
++	var text = $.child(p);
++
++	$.render_effect(() => $.set_text(text, `${$.stringify($$props.$$host?.tagName)} ${$.stringify(name())}`));
++
++	var button = $.sibling($.sibling(p, true));
++
++	button.__click = [fire];
++	$.append($$anchor, fragment);
++
++	return $.pop({
++		get name() {
++			return name();
++		},
++		set name($$value) {
++			name($$value);
++			$.flush_sync();
++		}
++	});
++}
++
++$.delegate(["click"]);
++customElements.define("my-element", $.create_custom_element(MyElement, { name: {} }, [], [], true));
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/errors.js b/packages/svelte/src/compiler/errors.js
+index 318225b..26ad67e 100644
+--- a/packages/svelte/src/compiler/errors.js
++++ b/packages/svelte/src/compiler/errors.js
+@@ -212,7 +212,8 @@ const runes = {
+ 	'duplicate-props-rune': () => `Cannot use $props() more than once`,
+ 	'invalid-each-assignment': () =>
+ 		`Cannot reassign or bind to each block argument in runes mode. Use the array and index variables instead (e.g. 'array[i] = value' instead of 'entry = value')`,
+-	'invalid-derived-call': () => `$derived.call(...) has been replaced with $derived.by(...)`
++	'invalid-derived-call': () => `$derived.call(...) has been replaced with $derived.by(...)`,
++	'invalid-host-location': () => `$host() can only be used inside a custom element`
+ };
+ 
+ /** @satisfies {Errors} */
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 5773a56..ec62bc4 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -175,6 +175,10 @@ function get_delegated_event(event_name, handler, context) {
+ 		if (reference === 'arguments') {
+ 			return non_hoistable;
+ 		}
++		// `$host()`` transforms to `$$props.$$host`, which is component-scoped, so it can't be hoisted
++		if (reference === '$host' && scope.get('$host') === null) {
++			return non_hoistable;
++		}
+ 		const binding = scope.get(reference);
+ 		const local_binding = context.state.scope.get(reference);
+ 
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 69d879d..386c4ed 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -858,6 +858,12 @@ function validate_call_expression(node, scope, path) {
+ 			error(node, 'invalid-rune-args-length', rune, [1]);
+ 		}
+ 	}
++
++	if (rune === '$host') {
++		if (node.arguments.length !== 0) {
++			error(node, 'invalid-rune-args-length', rune, [0]);
++		}
++	}
+ }
+ 
+ /**
+@@ -897,6 +903,10 @@ export const validation_runes_js = {
+ 	},
+ 	CallExpression(node, { state, path }) {
+ 		validate_call_expression(node, state.scope, path);
++
++		if (get_rune(node, state.scope) === '$host') {
++			error(node, 'invalid-host-location');
++		}
+ 	},
+ 	VariableDeclarator(node, { state }) {
+ 		const init = node.init;
+@@ -1067,6 +1077,10 @@ export const validation_runes = merge(validation, a11y_validators, {
+ 			error(node, 'invalid-rune-args-length', '$bindable', [0, 1]);
+ 		}
+ 		validate_call_expression(node, state.scope, path);
++
++		if (get_rune(node, state.scope) === '$host' && !state.analysis.custom_element) {
++			error(node, 'invalid-host-location');
++		}
+ 	},
+ 	EachBlock(node, { next, state }) {
+ 		const context = node.context;
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+index 8c88a40..a83c682 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+@@ -407,7 +407,7 @@ export function client_component(source, analysis, options) {
+ 				b.call(
+ 					'$.rest_props',
+ 					b.id('$$props'),
+-					b.array([b.literal('children'), b.literal('$$slots'), b.literal('$$events')])
++					b.array([b.literal('children'), b.literal('$$slots'), b.literal('$$events'), b.literal('$$host')])
+ 				)
+ 			)
+ 		);
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
+index 25a2564..a54f271 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
+@@ -176,7 +176,7 @@ export const javascript_visitors_runes = {
+ 		for (const declarator of node.declarations) {
+ 			const init = declarator.init;
+ 			const rune = get_rune(init, state.scope);
+-			if (!rune || rune === '$effect.active' || rune === '$effect.root' || rune === '$inspect') {
++			if (!rune || rune === '$effect.active' || rune === '$effect.root' || rune === '$inspect' || rune === '$host') {
+ 				if (init != null && is_hoistable_function(init)) {
+ 					const hoistable_function = visit(init);
+ 					state.hoisted.push(
+@@ -392,6 +392,10 @@ export const javascript_visitors_runes = {
+ 			return b.call('$.effect_root', ...args);
+ 		}
+ 
++		if (rune === '$host') {
++			return b.member_id('$$props.$$host');
++		}
++
+ 		if (rune === '$inspect' || rune === '$inspect().with') {
+ 			return transform_inspect_rune(node, context);
+ 		}
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 19c626a..d2183e4 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -685,7 +685,7 @@ const javascript_visitors_runes = {
+ 		for (const declarator of node.declarations) {
+ 			const init = declarator.init;
+ 			const rune = get_rune(init, state.scope);
+-			if (!rune || rune === '$effect.active' || rune === '$inspect') {
++			if (!rune || rune === '$effect.active' || rune === '$inspect' || rune === '$host') {
+ 				declarations.push(/** @type {import('estree').VariableDeclarator} */ (visit(declarator)));
+ 				continue;
+ 			}
+@@ -771,6 +771,10 @@ const javascript_visitors_runes = {
+ 			return b.literal(false);
+ 		}
+ 
++		if (rune === '$host') {
++			return b.member_id('$$props.$$host');
++		}
++
+ 		if (rune === '$inspect' || rune === '$inspect().with') {
+ 			return transform_inspect_rune(node, context);
+ 		}
+diff --git a/packages/svelte/src/compiler/phases/constants.js b/packages/svelte/src/compiler/phases/constants.js
+index 822174d..c61015e 100644
+--- a/packages/svelte/src/compiler/phases/constants.js
++++ b/packages/svelte/src/compiler/phases/constants.js
+@@ -40,7 +40,8 @@ export const Runes = /** @type {const} */ ([
+ 	'$effect.active',
+ 	'$effect.root',
+ 	'$inspect',
+-	'$inspect().with'
++	'$inspect().with',
++	'$host'
+ ]);
+ 
+ /**
+diff --git a/packages/svelte/src/internal/client/dom/elements/custom-element.js b/packages/svelte/src/internal/client/dom/elements/custom-element.js
+index 5ea42a9..1ffc46e 100644
+--- a/packages/svelte/src/internal/client/dom/elements/custom-element.js
++++ b/packages/svelte/src/internal/client/dom/elements/custom-element.js
+@@ -133,14 +133,15 @@ if (typeof HTMLElement === 'function') {
+ 						delete this[key]; // remove the property that shadows the getter/setter
+ 					}
+ 				}
+-				this.$$c = createClassComponent({
+-					component: this.$$ctor,
+-					target: this.shadowRoot || this,
+-					props: {
+-						...this.$$d,
+-						$$slots
+-					}
+-				});
++this.$$c = createClassComponent({
++				component: this.$$ctor,
++				target: this.shadowRoot || this,
++				props: {
++					...this.$$d,
++					$$slots,
++					$$host: this
++				}
++			});
+ 
+ 				// Reflect component props as attributes
+ 				this.$$me = render_effect(() => {
+diff --git a/packages/svelte/src/internal/server/index.js b/packages/svelte/src/internal/server/index.js
+index b6d10cf..1673211 100644
+--- a/packages/svelte/src/internal/server/index.js
++++ b/packages/svelte/src/internal/server/index.js
+@@ -560,7 +560,7 @@ export function rest_props(props, rest) {
+  * @returns {Record<string, unknown>}
+  */
+ export function sanitize_props(props) {
+-	const { children, $$slots, ...sanitized } = props;
++	const { children, $$slots, $$host, ...sanitized } = props;
+ 	return sanitized;
+ }
+ 
+diff --git a/test_gen.mjs b/test_gen.mjs
+new file mode 100644
+index 0000000..151dae8
+--- /dev/null
++++ b/test_gen.mjs
+@@ -0,0 +1,14 @@
++import { compile } from '/workspace/svelte/packages/svelte/src/compiler/index.js';
++const source = `
++<svelte:options customElement="my-element" />
++<script>
++	let { name } = $props();
++	function fire() {
++		$host().dispatchEvent(new CustomEvent('custom', { detail: 'foo' }));
++	}
++</script>
++<p>{$host()?.tagName} {name}</p>
++<button onclick={fire}>fire</button>
++`;
++const compiled = compile(source, { generate: 'client', customElement: true, name: 'MyElement', filename: 'MyElement.svelte' });
++console.log(compiled.js.code);
+diff --git a/test_host_ce.mjs b/test_host_ce.mjs
+new file mode 100644
+index 0000000..0bea455
+--- /dev/null
++++ b/test_host_ce.mjs
+@@ -0,0 +1,59 @@
++import { JSDOM } from '/workspace/svelte/node_modules/.pnpm/jsdom@22.0.0/node_modules/jsdom/lib/api.js';
++import { build } from '/workspace/svelte/node_modules/.pnpm/esbuild@0.19.11/node_modules/esbuild/lib/main.js';
++import { compile } from '/workspace/svelte/packages/svelte/src/compiler/index.js';
++import * as fs from 'node:fs';
++
++const source = `
++<svelte:options customElement="my-element" />
++<script>
++	let { name } = $props();
++	const host = $host();
++</script>
++<p>{name} {host?.tagName}</p>
++`;
++
++const compiled = compile(source, { generate: 'client', customElement: true, name: 'MyElement', filename: 'MyElement.svelte' });
++
++// Write to a temp file and bundle with esbuild
++fs.writeFileSync('/workspace/svelte/_tmp_ce.js', compiled.js.code);
++
++const result = await build({
++	entryPoints: ['/workspace/svelte/_tmp_ce.js'],
++	bundle: true,
++	format: 'iife',
++	globalName: 'CE',
++	write: false,
++	alias: {
++		'svelte/internal/client': '/workspace/svelte/packages/svelte/src/internal/client/index.js',
++		'svelte/internal/disclose-version': '/workspace/svelte/packages/svelte/src/internal/disclose-version.js',
++		'svelte/legacy': '/workspace/svelte/packages/svelte/src/legacy/legacy-client.js'
++	},
++	platform: 'browser'
++});
++
++const code = result.outputFiles[0].text;
++
++const dom = new JSDOM('<!DOCTYPE html><html><body><div id="target"></div></body></html>', { runScripts: 'outside-only' });
++const { window } = dom;
++// polyfill globals the runtime expects
++global.window = window;
++global.document = window.document;
++
++// run the code in the jsdom window context
++window.eval(`
++	var module = { exports: {} };
++	var exports = module.exports;
++	${code}
++	window.__CE = CE;
++`);
++
++await new Promise((r) => setTimeout(r, 50));
++
++const target = window.document.getElementById('target');
++target.innerHTML = '<my-element name="world"></my-element>';
++await new Promise((r) => setTimeout(r, 50));
++await new Promise((r) => setTimeout(r, 50));
++
++const el = target.querySelector('my-element');
++console.log('shadowRoot:', el.shadowRoot ? el.shadowRoot.innerHTML : 'NONE');
++console.log('expected: <p>world MY-ELEMENT</p>');
+diff --git a/test_host_ce2.mjs b/test_host_ce2.mjs
+new file mode 100644
+index 0000000..21e202f
+--- /dev/null
++++ b/test_host_ce2.mjs
+@@ -0,0 +1,52 @@
++import { JSDOM } from '/workspace/svelte/node_modules/.pnpm/jsdom@22.0.0/node_modules/jsdom/lib/api.js';
++import { build } from '/workspace/svelte/node_modules/.pnpm/esbuild@0.19.11/node_modules/esbuild/lib/main.js';
++import { compile } from '/workspace/svelte/packages/svelte/src/compiler/index.js';
++import * as fs from 'node:fs';
++
++// $host() used in template directly + event dispatch via host
++const source = `
++<svelte:options customElement="my-element" />
++<script>
++	let { name } = $props();
++	function fire() {
++		$host().dispatchEvent(new CustomEvent('custom', { detail: 'foo' }));
++	}
++</script>
++<p>{$host()?.tagName} {name}</p>
++<button onclick={fire}>fire</button>
++`;
++
++const compiled = compile(source, { generate: 'client', customElement: true, name: 'MyElement', filename: 'MyElement.svelte' });
++fs.writeFileSync('/workspace/svelte/_tmp_ce.js', compiled.js.code);
++
++const result = await build({
++	entryPoints: ['/workspace/svelte/_tmp_ce.js'],
++	bundle: true, format: 'iife', globalName: 'CE', write: false,
++	alias: {
++		'svelte/internal/client': '/workspace/svelte/packages/svelte/src/internal/client/index.js',
++		'svelte/internal/disclose-version': '/workspace/svelte/packages/svelte/src/internal/disclose-version.js',
++		'svelte/legacy': '/workspace/svelte/packages/svelte/src/legacy/legacy-client.js'
++	},
++	platform: 'browser'
++});
++
++const dom = new JSDOM('<!DOCTYPE html><html><body><div id="target"></div></body></html>', { runScripts: 'outside-only' });
++const { window } = dom;
++global.window = window; global.document = window.document;
++
++window.eval(`var module = { exports: {} }; var exports = module.exports; ${result.outputFiles[0].text} window.__CE = CE;`);
++await new Promise((r) => setTimeout(r, 50));
++
++const target = window.document.getElementById('target');
++target.innerHTML = '<my-element name="world"></my-element>';
++await new Promise((r) => setTimeout(r, 50));
++await new Promise((r) => setTimeout(r, 50));
++
++const el = target.querySelector('my-element');
++console.log('shadowRoot:', el.shadowRoot.innerHTML.trim());
++
++let received = null;
++el.addEventListener('custom', (e) => { received = e.detail; });
++el.shadowRoot.querySelector('button').click();
++await new Promise((r) => setTimeout(r, 50));
++console.log('event detail received:', received);
+diff --git a/test_host_runtime.mjs b/test_host_runtime.mjs
+new file mode 100644
+index 0000000..e82e0cc
+--- /dev/null
++++ b/test_host_runtime.mjs
+@@ -0,0 +1,26 @@
++import { JSDOM } from 'jsdom';
++import { compile } from '/workspace/svelte/packages/svelte/src/compiler/index.js';
++import * as $ from '/workspace/svelte/packages/svelte/src/internal/client/index.js';
++import { createClassComponent } from '/workspace/svelte/packages/svelte/src/legacy/legacy-client.js';
++
++const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', { runScripts: 'outside-only' });
++const { window } = dom;
++global.window = window;
++global.document = window.document;
++global.customElements = window.customElements;
++global.HTMLElement = window.HTMLElement;
++global.Event = window.Event;
++global.CustomEvent = window.CustomEvent;
++global.MutationObserver = window.MutationObserver;
++
++// Compile a custom element using $host()
++const source = `
++<svelte:options customElement="my-element" />
++<script>
++	let { name } = $props();
++	const host = $host();
++</script>
++<p>{name} {host?.tagName}</p>
++`;
++const compiled = compile(source, { generate: 'client', customElement: true, name: 'MyElement' });
++console.log(compiled.js.code);

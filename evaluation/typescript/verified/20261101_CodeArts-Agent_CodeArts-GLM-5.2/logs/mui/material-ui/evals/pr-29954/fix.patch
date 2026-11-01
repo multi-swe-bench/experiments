@@ -1,0 +1,54 @@
+diff --git a/packages/mui-material/src/SvgIcon/SvgIcon.d.ts b/packages/mui-material/src/SvgIcon/SvgIcon.d.ts
+index ccd9a113..ac0c6057 100644
+--- a/packages/mui-material/src/SvgIcon/SvgIcon.d.ts
++++ b/packages/mui-material/src/SvgIcon/SvgIcon.d.ts
+@@ -69,6 +69,8 @@ export interface SvgIconTypeMap<P = {}, D extends React.ElementType = 'svg'> {
+      * and you pass viewBox="0 0 50 20",
+      * this means that the coordinates inside the SVG will go from the top left corner (0,0)
+      * to bottom right (50,20) and each unit will be worth 10px.
++     * If not provided, the viewBox is inherited from the `component` when a custom
++     * component is used, otherwise it defaults to `0 0 24 24`.
+      * @default '0 0 24 24'
+      */
+     viewBox?: string;
+diff --git a/packages/mui-material/src/SvgIcon/SvgIcon.js b/packages/mui-material/src/SvgIcon/SvgIcon.js
+index d27da182..9c024ef4 100644
+--- a/packages/mui-material/src/SvgIcon/SvgIcon.js
++++ b/packages/mui-material/src/SvgIcon/SvgIcon.js
+@@ -69,10 +69,17 @@ const SvgIcon = React.forwardRef(function SvgIcon(inProps, ref) {
+     fontSize = 'medium',
+     htmlColor,
+     titleAccess,
+-    viewBox = '0 0 24 24',
++    viewBox: viewBoxProp,
+     ...other
+   } = props;
+ 
++  let viewBox;
++  if (viewBoxProp !== undefined) {
++    viewBox = viewBoxProp;
++  } else if (typeof component === 'string') {
++    viewBox = '0 0 24 24';
++  }
++
+   const ownerState = {
+     ...props,
+     color,
+@@ -89,7 +96,7 @@ const SvgIcon = React.forwardRef(function SvgIcon(inProps, ref) {
+       className={clsx(classes.root, className)}
+       ownerState={ownerState}
+       focusable="false"
+-      viewBox={viewBox}
++      {...(viewBox !== undefined ? { viewBox } : {})}
+       color={htmlColor}
+       aria-hidden={titleAccess ? undefined : true}
+       role={titleAccess ? 'img' : undefined}
+@@ -180,6 +187,8 @@ SvgIcon.propTypes /* remove-proptypes */ = {
+    * and you pass viewBox="0 0 50 20",
+    * this means that the coordinates inside the SVG will go from the top left corner (0,0)
+    * to bottom right (50,20) and each unit will be worth 10px.
++   * If not provided, the viewBox is inherited from the `component` when a custom
++   * component is used, otherwise it defaults to `0 0 24 24`.
+    * @default '0 0 24 24'
+    */
+   viewBox: PropTypes.string,

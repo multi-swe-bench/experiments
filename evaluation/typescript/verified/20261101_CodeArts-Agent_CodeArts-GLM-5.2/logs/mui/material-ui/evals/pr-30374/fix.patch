@@ -1,0 +1,14 @@
+diff --git a/packages/mui-base/src/AutocompleteUnstyled/useAutocomplete.js b/packages/mui-base/src/AutocompleteUnstyled/useAutocomplete.js
+index 86c8eddd..c8e5b6e9 100644
+--- a/packages/mui-base/src/AutocompleteUnstyled/useAutocomplete.js
++++ b/packages/mui-base/src/AutocompleteUnstyled/useAutocomplete.js
+@@ -610,6 +610,9 @@ export default function useAutocomplete(props) {
+       } else if (origin !== 'freeSolo') {
+         newValue.splice(itemIndex, 1);
+         reason = 'removeOption';
++      } else {
++        // The value is already selected, there is nothing to do.
++        return;
+       }
+     }
+ 

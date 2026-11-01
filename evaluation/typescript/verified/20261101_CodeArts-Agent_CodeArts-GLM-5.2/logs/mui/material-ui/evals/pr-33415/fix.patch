@@ -1,0 +1,239 @@
+diff --git a/packages/mui-material/src/Grid/Grid.d.ts b/packages/mui-material/src/Grid/Grid.d.ts
+index b9914ac7..b504241c 100644
+--- a/packages/mui-material/src/Grid/Grid.d.ts
++++ b/packages/mui-material/src/Grid/Grid.d.ts
+@@ -30,6 +30,13 @@ interface RegularBreakpoints {
+    * @default false
+    */
+   lg?: boolean | GridSize;
++  /**
++   * If a number, it sets the margin-left equals to the number of columns the grid item uses.
++   * If 'auto', the margin-left is calculated based on the available space.
++   * The value is applied for the `lg` breakpoint and wider screens if not overridden.
++   * @default false
++   */
++  lgOffset?: number | 'auto';
+   /**
+    * If a number, it sets the number of columns the grid item uses.
+    * It can't be greater than the total number of columns of the container (12 by default).
+@@ -40,6 +47,13 @@ interface RegularBreakpoints {
+    * @default false
+    */
+   md?: boolean | GridSize;
++  /**
++   * If a number, it sets the margin-left equals to the number of columns the grid item uses.
++   * If 'auto', the margin-left is calculated based on the available space.
++   * The value is applied for the `md` breakpoint and wider screens if not overridden.
++   * @default false
++   */
++  mdOffset?: number | 'auto';
+   /**
+    * If a number, it sets the number of columns the grid item uses.
+    * It can't be greater than the total number of columns of the container (12 by default).
+@@ -50,6 +64,13 @@ interface RegularBreakpoints {
+    * @default false
+    */
+   sm?: boolean | GridSize;
++  /**
++   * If a number, it sets the margin-left equals to the number of columns the grid item uses.
++   * If 'auto', the margin-left is calculated based on the available space.
++   * The value is applied for the `sm` breakpoint and wider screens if not overridden.
++   * @default false
++   */
++  smOffset?: number | 'auto';
+   /**
+    * If a number, it sets the number of columns the grid item uses.
+    * It can't be greater than the total number of columns of the container (12 by default).
+@@ -60,6 +81,13 @@ interface RegularBreakpoints {
+    * @default false
+    */
+   xl?: boolean | GridSize;
++  /**
++   * If a number, it sets the margin-left equals to the number of columns the grid item uses.
++   * If 'auto', the margin-left is calculated based on the available space.
++   * The value is applied for the `xl` breakpoint and wider screens if not overridden.
++   * @default false
++   */
++  xlOffset?: number | 'auto';
+   /**
+    * If a number, it sets the number of columns the grid item uses.
+    * It can't be greater than the total number of columns of the container (12 by default).
+@@ -70,6 +98,13 @@ interface RegularBreakpoints {
+    * @default false
+    */
+   xs?: boolean | GridSize;
++  /**
++   * If a number, it sets the margin-left equals to the number of columns the grid item uses.
++   * If 'auto', the margin-left is calculated based on the available space.
++   * The value is applied for all the screen sizes with the lowest priority.
++   * @default false
++   */
++  xsOffset?: number | 'auto';
+ }
+ 
+ type CustomBreakpoints = Partial<Record<Breakpoint, boolean | GridSize>>;
+diff --git a/packages/mui-material/src/Grid/Grid.js b/packages/mui-material/src/Grid/Grid.js
+index 6224c9a4..4726f37f 100644
+--- a/packages/mui-material/src/Grid/Grid.js
++++ b/packages/mui-material/src/Grid/Grid.js
+@@ -105,6 +105,68 @@ export function generateGrid({ theme, ownerState }) {
+   }, {});
+ }
+ 
++export function generateOffset({ theme, ownerState }) {
++  let size;
++
++  return theme.breakpoints.keys.reduce((globalStyles, breakpoint) => {
++    let styles = {};
++    if (ownerState[`${breakpoint}Offset`]) {
++      size = ownerState[`${breakpoint}Offset`];
++    }
++    if (!size) {
++      return globalStyles;
++    }
++
++    if (size === 'auto') {
++      styles = {
++        marginLeft: 'auto',
++      };
++    } else {
++      const columnsBreakpointValues = resolveBreakpointValues({
++        values: ownerState.columns,
++        breakpoints: theme.breakpoints.values,
++      });
++
++      const columnValue =
++        typeof columnsBreakpointValues === 'object'
++          ? columnsBreakpointValues[breakpoint]
++          : columnsBreakpointValues;
++
++      if (columnValue === undefined || columnValue === null) {
++        return globalStyles;
++      }
++
++      // Keep 7 significant numbers.
++      const width = `${Math.round((size / columnValue) * 10e7) / 10e5}%`;
++
++      let more = {};
++
++      if (ownerState.container && ownerState.item && ownerState.columnSpacing !== 0) {
++        const themeSpacing = theme.spacing(ownerState.columnSpacing);
++        if (themeSpacing !== '0px') {
++          const fullWidth = `calc(${width} + ${getOffset(themeSpacing)})`;
++          more = {
++            marginLeft: fullWidth,
++          };
++        }
++      }
++
++      styles = {
++        marginLeft: width,
++        ...more,
++      };
++    }
++
++    // No need for a media query for the first size.
++    if (theme.breakpoints.values[breakpoint] === 0) {
++      Object.assign(globalStyles, styles);
++    } else {
++      globalStyles[theme.breakpoints.up(breakpoint)] = styles;
++    }
++    return globalStyles;
++  }, {});
++}
++
+ export function generateDirection({ theme, ownerState }) {
+   const directionValues = resolveBreakpointValues({
+     values: ownerState.direction,
+@@ -273,6 +335,7 @@ const GridRoot = styled('div', {
+   generateRowGap,
+   generateColumnGap,
+   generateGrid,
++  generateOffset,
+ );
+ 
+ export function resolveSpacingClasses(spacing, breakpoints) {
+@@ -378,6 +441,13 @@ const Grid = React.forwardRef(function Grid(inProps, ref) {
+     }
+   });
+ 
++  breakpoints.keys.forEach((breakpoint) => {
++    if (other[`${breakpoint}Offset`] != null) {
++      breakpointsValues[`${breakpoint}Offset`] = other[`${breakpoint}Offset`];
++      delete otherFiltered[`${breakpoint}Offset`];
++    }
++  });
++
+   const ownerState = {
+     ...props,
+     columns,
+@@ -481,6 +551,13 @@ Grid.propTypes /* remove-proptypes */ = {
+    * @default false
+    */
+   lg: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number, PropTypes.bool]),
++  /**
++   * If a number, it sets the margin-left equals to the number of columns the grid item uses.
++   * If 'auto', the margin-left is calculated based on the available space.
++   * The value is applied for the `lg` breakpoint and wider screens if not overridden.
++   * @default false
++   */
++  lgOffset: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number]),
+   /**
+    * If a number, it sets the number of columns the grid item uses.
+    * It can't be greater than the total number of columns of the container (12 by default).
+@@ -491,6 +568,13 @@ Grid.propTypes /* remove-proptypes */ = {
+    * @default false
+    */
+   md: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number, PropTypes.bool]),
++  /**
++   * If a number, it sets the margin-left equals to the number of columns the grid item uses.
++   * If 'auto', the margin-left is calculated based on the available space.
++   * The value is applied for the `md` breakpoint and wider screens if not overridden.
++   * @default false
++   */
++  mdOffset: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number]),
+   /**
+    * Defines the vertical space between the type `item` components.
+    * It overrides the value of the `spacing` prop.
+@@ -511,6 +595,13 @@ Grid.propTypes /* remove-proptypes */ = {
+    * @default false
+    */
+   sm: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number, PropTypes.bool]),
++  /**
++   * If a number, it sets the margin-left equals to the number of columns the grid item uses.
++   * If 'auto', the margin-left is calculated based on the available space.
++   * The value is applied for the `sm` breakpoint and wider screens if not overridden.
++   * @default false
++   */
++  smOffset: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number]),
+   /**
+    * Defines the space between the type `item` components.
+    * It can only be used on a type `container` component.
+@@ -546,6 +637,13 @@ Grid.propTypes /* remove-proptypes */ = {
+    * @default false
+    */
+   xl: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number, PropTypes.bool]),
++  /**
++   * If a number, it sets the margin-left equals to the number of columns the grid item uses.
++   * If 'auto', the margin-left is calculated based on the available space.
++   * The value is applied for the `xl` breakpoint and wider screens if not overridden.
++   * @default false
++   */
++  xlOffset: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number]),
+   /**
+    * If a number, it sets the number of columns the grid item uses.
+    * It can't be greater than the total number of columns of the container (12 by default).
+@@ -556,6 +654,13 @@ Grid.propTypes /* remove-proptypes */ = {
+    * @default false
+    */
+   xs: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number, PropTypes.bool]),
++  /**
++   * If a number, it sets the margin-left equals to the number of columns the grid item uses.
++   * If 'auto', the margin-left is calculated based on the available space.
++   * The value is applied for all the screen sizes with the lowest priority.
++   * @default false
++   */
++  xsOffset: PropTypes.oneOfType([PropTypes.oneOf(['auto']), PropTypes.number]),
+   /**
+    * If `true`, it sets `min-width: 0` on the item.
+    * Refer to the limitations section of the documentation to better understand the use case.

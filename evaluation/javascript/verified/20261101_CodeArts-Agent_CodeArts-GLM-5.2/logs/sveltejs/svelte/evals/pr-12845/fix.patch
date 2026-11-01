@@ -1,0 +1,21 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/Program.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/Program.js
+index c222d74..36a4fe9 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/Program.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/Program.js
+@@ -23,9 +23,13 @@ export function Program(_, context) {
+ 					mutate: (_, mutation) => b.call(id, mutation)
+ 				};
+ 
+-				context.state.legacy_reactive_imports.push(
+-					b.var(id, b.call('$.reactive_import', b.thunk(b.id(name))))
+-				);
++				const reactive_import = b.var(id, b.call('$.reactive_import', b.thunk(b.id(name))));
++
++				if (context.state.is_instance) {
++					context.state.legacy_reactive_imports.push(reactive_import);
++				} else {
++					context.state.hoisted.push(reactive_import);
++				}
+ 			}
+ 		}
+ 	}

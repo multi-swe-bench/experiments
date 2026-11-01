@@ -1,0 +1,119 @@
+diff --git a/documentation/docs/03-runes/01-state.md b/documentation/docs/03-runes/01-state.md
+index 241e6b7..f0a680e 100644
+--- a/documentation/docs/03-runes/01-state.md
++++ b/documentation/docs/03-runes/01-state.md
+@@ -110,7 +110,7 @@ To take a static snapshot of a deeply reactive `$state` proxy, use `$state.snaps
+ 
+ This is handy when you want to pass some state to an external library or API that doesn't expect a proxy, such as `structuredClone`.
+ 
+-> Note that `$state.snapshot` will clone the data when removing reactivity. If the value passed isn't a `$state` proxy, it will be returned as-is.
++> Note that `$state.snapshot` will clone the data when removing reactivity. If the value passed isn't a `$state` proxy, it will be returned as-is, unless it contains `$state` proxies in which case those are unwrapped and the containing object is cloned.
+ 
+ ## `$state.is`
+ 
+diff --git a/packages/svelte/src/internal/client/proxy.js b/packages/svelte/src/internal/client/proxy.js
+index f5900ba..2dd351a 100644
+--- a/packages/svelte/src/internal/client/proxy.js
++++ b/packages/svelte/src/internal/client/proxy.js
+@@ -101,39 +101,78 @@ export function proxy(value, parent = null, prev) {
+  * @returns {Record<string | symbol, any>}
+  */
+ function unwrap(value, already_unwrapped) {
+-	if (typeof value === 'object' && value != null && STATE_SYMBOL in value) {
++	if (typeof value === 'object' && value != null) {
+ 		const unwrapped = already_unwrapped.get(value);
+ 		if (unwrapped !== undefined) {
+ 			return unwrapped;
+ 		}
+ 
+-		if (is_array(value)) {
+-			/** @type {Record<string | symbol, any>} */
+-			const array = [];
+-			already_unwrapped.set(value, array);
+-			for (const element of value) {
+-				array.push(unwrap(element, already_unwrapped));
++		if (STATE_SYMBOL in value) {
++			if (is_array(value)) {
++				/** @type {Record<string | symbol, any>} */
++				const array = [];
++				already_unwrapped.set(value, array);
++				for (const element of value) {
++					array.push(unwrap(element, already_unwrapped));
++				}
++				return array;
++			} else {
++				/** @type {Record<string | symbol, any>} */
++				const obj = {};
++				const keys = Reflect.ownKeys(value);
++				const descriptors = get_descriptors(value);
++				already_unwrapped.set(value, obj);
++
++				for (const key of keys) {
++					if (key === STATE_SYMBOL) continue;
++					if (descriptors[key].get) {
++						define_property(obj, key, descriptors[key]);
++					} else {
++						/** @type {T} */
++						const property = value[key];
++						obj[key] = unwrap(property, already_unwrapped);
++					}
++				}
++
++				return obj;
+ 			}
+-			return array;
+-		} else {
++		}
++
++		// Even if the value itself isn't a `$state` proxy, it may contain nested
++		// proxies (for example a plain object spread from a `$state` proxy). In
++		// that case we need to traverse into it so that the nested proxies are
++		// unwrapped. If it doesn't contain any proxies, the original value is
++		// returned as-is.
++		/** @type {any} */
++		const v = value;
++		const prototype = get_prototype_of(v);
++
++		if (prototype === object_prototype || prototype === array_prototype) {
+ 			/** @type {Record<string | symbol, any>} */
+-			const obj = {};
+-			const keys = Reflect.ownKeys(value);
+-			const descriptors = get_descriptors(value);
+-			already_unwrapped.set(value, obj);
+-
+-			for (const key of keys) {
+-				if (key === STATE_SYMBOL) continue;
+-				if (descriptors[key].get) {
+-					define_property(obj, key, descriptors[key]);
+-				} else {
+-					/** @type {T} */
+-					const property = value[key];
+-					obj[key] = unwrap(property, already_unwrapped);
++			const clone = is_array(v) ? [] : {};
++			already_unwrapped.set(value, clone);
++			let contains_proxy = false;
++
++			if (is_array(v)) {
++				for (const element of v) {
++					const result = unwrap(element, already_unwrapped);
++					clone.push(result);
++					if (result !== element) contains_proxy = true;
+ 				}
++			} else {
++				for (const key in v) {
++					const property = v[key];
++					const result = unwrap(property, already_unwrapped);
++					clone[key] = result;
++					if (result !== property) contains_proxy = true;
++				}
++			}
++
++			if (contains_proxy) {
++				return clone;
+ 			}
+ 
+-			return obj;
++			already_unwrapped.set(value, value);
+ 		}
+ 	}
+ 

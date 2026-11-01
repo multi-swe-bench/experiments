@@ -1,0 +1,28 @@
+diff --git a/packages/svelte/src/internal/client/proxy.js b/packages/svelte/src/internal/client/proxy.js
+index 333cd20..5ba5b61 100644
+--- a/packages/svelte/src/internal/client/proxy.js
++++ b/packages/svelte/src/internal/client/proxy.js
+@@ -95,13 +95,22 @@ export function proxy(value, parent = null, prev) {
+ 
+ 			if (s !== undefined) {
+ 				set(s, UNINITIALIZED);
++			} else if (exists) {
++				// the property hasn't been accessed reactively yet, so there's no
++				// source for it. create one marked as uninitialized so that the
++				// property is hidden from `has`/`get`/`ownKeys` without mutating the
++				// (potentially shared) target object
++				sources.set(prop, source(UNINITIALIZED));
+ 			}
+ 
+ 			if (exists) {
+ 				update_version(version);
+ 			}
+ 
+-			return exists;
++			// `delete` on a non-existent property is a no-op in JavaScript and must
++			// return `true` — returning `false` throws a `TypeError` ("trap returned
++			// falsish") on the proxy. see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/deleteProperty#invariants
++			return true;
+ 		},
+ 
+ 		get(target, prop, receiver) {

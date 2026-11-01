@@ -1,0 +1,90 @@
+diff --git a/.changeset/a11y-img-alt-label.md b/.changeset/a11y-img-alt-label.md
+new file mode 100644
+index 0000000..899c6ce
+--- /dev/null
++++ b/.changeset/a11y-img-alt-label.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++Fix false positive `a11y_consider_explicit_label` warning for buttons and links that contain an `<img>` with a non-empty `alt` attribute
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/shared/a11y.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/shared/a11y.js
+index 4e919e8..44990bb 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/visitors/shared/a11y.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/shared/a11y.js
+@@ -1161,6 +1161,17 @@ function has_content(element) {
+ 		}
+ 
+ 		if (node.type === 'RegularElement' || node.type === 'SvelteElement') {
++			if (node.name === 'img') {
++				const alt_attribute = get_static_text_value(
++					/** @type {AST.Attribute | undefined} */ (
++						node.attributes.find((a) => a.type === 'Attribute' && a.name === 'alt')
++					)
++				);
++				if (alt_attribute) {
++					return true;
++				}
++			}
++
+ 			if (!has_content(node)) {
+ 				continue;
+ 			}
+diff --git a/packages/svelte/tests/validator/samples/a11y-consider-explicit-label-with-img-alt/input.svelte b/packages/svelte/tests/validator/samples/a11y-consider-explicit-label-with-img-alt/input.svelte
+new file mode 100644
+index 0000000..09ef47e
+--- /dev/null
++++ b/packages/svelte/tests/validator/samples/a11y-consider-explicit-label-with-img-alt/input.svelte
+@@ -0,0 +1,5 @@
++<button><img alt="Logo" src="logo.png" /></button>
++<a href="/"><img alt="Home" src="home.png" /></a>
++
++<button><img src="logo.png" /></button>
++<button><img alt="" src="logo.png" /></button>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/validator/samples/a11y-consider-explicit-label-with-img-alt/warnings.json b/packages/svelte/tests/validator/samples/a11y-consider-explicit-label-with-img-alt/warnings.json
+new file mode 100644
+index 0000000..86d11b4
+--- /dev/null
++++ b/packages/svelte/tests/validator/samples/a11y-consider-explicit-label-with-img-alt/warnings.json
+@@ -0,0 +1,38 @@
++[
++	{
++		"code": "a11y_consider_explicit_label",
++		"message": "Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute",
++		"start": {
++			"line": 4,
++			"column": 0
++		},
++		"end": {
++			"line": 4,
++			"column": 39
++		}
++	},
++	{
++		"code": "a11y_missing_attribute",
++		"message": "`<img>` element should have an alt attribute",
++		"start": {
++			"line": 4,
++			"column": 8
++		},
++		"end": {
++			"line": 4,
++			"column": 30
++		}
++	},
++	{
++		"code": "a11y_consider_explicit_label",
++		"message": "Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute",
++		"start": {
++			"line": 5,
++			"column": 0
++		},
++		"end": {
++			"line": 5,
++			"column": 46
++		}
++	}
++]

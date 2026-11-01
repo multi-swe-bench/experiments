@@ -1,0 +1,64 @@
+diff --git a/.changeset/css-global-nesting.md b/.changeset/css-global-nesting.md
+new file mode 100644
+index 0000000..8a6f289
+--- /dev/null
++++ b/.changeset/css-global-nesting.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++Fix `:global(...)` selectors not being usable inside nested CSS rules (e.g. `div { :global(.b) {} }`)
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-analyze.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-analyze.js
+index a832a65..402d336 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-analyze.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-analyze.js
+@@ -44,9 +44,13 @@ const analysis_visitors = {
+ 
+ 		node.metadata.rule = context.state.rule;
+ 
+-		node.metadata.used = node.children.every(
+-			({ metadata }) => metadata.is_global || metadata.is_global_like
+-		);
++		// a top-level selector that is entirely global (e.g. `:global(.foo)`)
++		// is always used. a nested one (e.g. `:global(.foo)` inside `div { ... }`)
++		// is only used if its parent context matches an element, which is
++		// determined during pruning — so default to `false` here.
++		node.metadata.used =
++			node.children.every(({ metadata }) => metadata.is_global || metadata.is_global_like) &&
++			!node.metadata.rule?.metadata.parent_rule;
+ 	},
+ 	RelativeSelector(node, context) {
+ 		node.metadata.is_global =
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+index 6dca7a0..d3d6d62 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+@@ -69,6 +69,26 @@ const visitors = {
+ 	},
+ 	ComplexSelector(node, context) {
+ 		const selectors = truncate(node);
++
++		if (selectors.length === 0) {
++			// The entire selector is global (e.g. `:global(.foo)`), so there is
++			// nothing to scope. If the rule is nested, the selector is only
++			// "used" if its parent context matches an element, or the parent
++			// context is itself global (and could match elements from outside
++			// the component); top-level global selectors are always considered
++			// used (set during analysis).
++			const rule = /** @type {Compiler.Css.Rule | null} */ (node.metadata.rule);
++			if (rule?.metadata.parent_rule) {
++				if (
++					is_global(nesting_selector, rule) ||
++					apply_selector([nesting_selector], rule, context.state.element, context.state.stylesheet)
++				) {
++					node.metadata.used = true;
++				}
++			}
++			return;
++		}
++
+ 		const inner = selectors[selectors.length - 1];
+ 
+ 		if (node.metadata.rule?.metadata.parent_rule) {

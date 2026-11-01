@@ -1,0 +1,155 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+index dad0840..a0772c6 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+@@ -7,7 +7,7 @@ import { global_visitors } from './visitors/global.js';
+ import { javascript_visitors } from './visitors/javascript.js';
+ import { javascript_visitors_runes } from './visitors/javascript-runes.js';
+ import { javascript_visitors_legacy } from './visitors/javascript-legacy.js';
+-import { serialize_get_binding } from './utils.js';
++import { is_exported, serialize_get_binding } from './utils.js';
+ import { remove_types } from '../typescript.js';
+ 
+ /**
+@@ -228,23 +228,28 @@ export function client_component(source, analysis, options) {
+ 	// Bind static exports to props so that people can access them with bind:x
+ 	const static_bindings = analysis.exports.map(({ name, alias }) => {
+ 		const binding = analysis.instance.scope.get(name);
++		// Exported state is not wrapped in a source, so it must not be unwrapped here either
++		const is_source =
++			(binding?.kind === 'state' || binding?.kind === 'frozen_state') &&
++			!(analysis.runes && is_exported(binding, analysis)) &&
++			(!state.analysis.immutable || state.analysis.accessors || binding.reassigned);
+ 		return b.stmt(
+ 			b.call(
+ 				'$.bind_prop',
+ 				b.id('$$props'),
+ 				b.literal(alias ?? name),
+-				binding?.kind === 'state' || binding?.kind === 'frozen_state'
+-					? b.call('$.get', b.id(name))
+-					: b.id(name)
++				is_source ? b.call('$.get', b.id(name)) : b.id(name)
+ 			)
+ 		);
+ 	});
+ 
+ 	const properties = analysis.exports.map(({ name, alias }) => {
+ 		const binding = analysis.instance.scope.get(name);
++		// Exported state is not wrapped in a source, so it must not be unwrapped here either
+ 		const is_source =
+ 			(binding?.kind === 'state' || binding?.kind === 'frozen_state') &&
+-			(!state.analysis.immutable || binding.reassigned);
++			!(analysis.runes && is_exported(binding, analysis)) &&
++			(!state.analysis.immutable || state.analysis.accessors || binding.reassigned);
+ 
+ 		// TODO This is always a getter because the `renamed-instance-exports` test wants it that way.
+ 		// Should we for code size reasons make it an init in runes mode and/or non-dev mode?
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+index 7b7076a..a4aa3a8 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+@@ -45,6 +45,19 @@ export function get_assignment_value(node, { state, visit }) {
+ 	}
+ }
+ 
++/**
++ * @param {import('#compiler').Binding} binding
++ * @param {import('../../types.js').Analysis} analysis
++ * @returns {boolean}
++ */
++export function is_exported(binding, analysis) {
++	return (
++		/** @type {import('../../types.js').ComponentAnalysis} */ (analysis).exports?.some(
++			(e) => e.name === binding.node.name
++		) ?? false
++	);
++}
++
+ /**
+  * @param {import('estree').Identifier} node
+  * @param {import('./types').ClientTransformState} state
+@@ -94,7 +107,8 @@ export function serialize_get_binding(node, state) {
+ 
+ 	if (
+ 		((binding.kind === 'state' || binding.kind === 'frozen_state') &&
+-			(!state.analysis.immutable || state.analysis.accessors || binding.reassigned)) ||
++			(!state.analysis.immutable || state.analysis.accessors || binding.reassigned) &&
++			!(state.analysis.runes && is_exported(binding, state.analysis))) ||
+ 		binding.kind === 'derived' ||
+ 		binding.kind === 'legacy_reactive'
+ 	) {
+@@ -496,8 +510,9 @@ export function get_prop_source(binding, state, name, initial) {
+  * @param {import('estree').VariableDeclarator} declarator
+  * @param {import('../../scope').Scope} scope
+  * @param {import('estree').Expression} value
++ * @param {import('./types').ClientTransformState} state
+  */
+-export function create_state_declarators(declarator, scope, value) {
++export function create_state_declarators(declarator, scope, value, state) {
+ 	// in the simple `let count = $state(0)` case, we rewrite `$state` as `$.source`
+ 	if (declarator.id.type === 'Identifier') {
+ 		return [b.declarator(declarator.id, b.call('$.mutable_source', value))];
+@@ -512,7 +527,9 @@ export function create_state_declarators(declarator, scope, value) {
+ 			const binding = scope.get(/** @type {import('estree').Identifier} */ (path.node).name);
+ 			return b.declarator(
+ 				path.node,
+-				binding?.kind === 'state' ? b.call('$.mutable_source', value) : value
++				binding?.kind === 'state' && !(state.analysis.runes && is_exported(binding, state.analysis))
++					? b.call('$.mutable_source', value)
++					: value
+ 			);
+ 		})
+ 	];
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-legacy.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-legacy.js
+index 7471fb8..bf19e90 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-legacy.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-legacy.js
+@@ -93,7 +93,8 @@ export const javascript_visitors_legacy = {
+ 				...create_state_declarators(
+ 					declarator,
+ 					state.scope,
+-					/** @type {import('estree').Expression} */ (declarator.init && visit(declarator.init))
++					/** @type {import('estree').Expression} */ (declarator.init && visit(declarator.init)),
++					state
+ 				)
+ 			);
+ 		}
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
+index 7f656dc..757a13e 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
+@@ -2,7 +2,12 @@ import { get_rune } from '../../../scope.js';
+ import { is_hoistable_function, transform_inspect_rune } from '../../utils.js';
+ import * as b from '../../../../utils/builders.js';
+ import * as assert from '../../../../utils/assert.js';
+-import { create_state_declarators, get_prop_source, should_proxy_or_freeze } from '../utils.js';
++import {
++	create_state_declarators,
++	get_prop_source,
++	is_exported,
++	should_proxy_or_freeze
++} from '../utils.js';
+ import { unwrap_ts_expression } from '../../../../utils/ast.js';
+ 
+ /** @type {import('../types.js').ComponentVisitors} */
+@@ -237,7 +242,10 @@ export const javascript_visitors_runes = {
+ 						value = b.call('$.proxy', value);
+ 					}
+ 
+-					if (!state.analysis.immutable || state.analysis.accessors || binding.reassigned) {
++					if (
++						(!state.analysis.immutable || state.analysis.accessors || binding.reassigned) &&
++						!is_exported(binding, state.analysis)
++					) {
+ 						value = b.call('$.source', value);
+ 					}
+ 				} else if (rune === '$state.frozen') {
+@@ -282,7 +290,7 @@ export const javascript_visitors_runes = {
+ 				continue;
+ 			}
+ 
+-			declarations.push(...create_state_declarators(declarator, state.scope, value));
++			declarations.push(...create_state_declarators(declarator, state.scope, value, state));
+ 		}
+ 
+ 		if (declarations.length === 0) {

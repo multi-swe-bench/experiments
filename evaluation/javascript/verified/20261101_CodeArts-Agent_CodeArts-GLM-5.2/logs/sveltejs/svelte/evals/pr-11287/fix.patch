@@ -1,0 +1,77 @@
+diff --git a/packages/svelte/src/reactivity/map.js b/packages/svelte/src/reactivity/map.js
+index b2b3ab6..b233a37 100644
+--- a/packages/svelte/src/reactivity/map.js
++++ b/packages/svelte/src/reactivity/map.js
+@@ -28,6 +28,7 @@ export class ReactiveMap extends Map {
+ 
+ 			for (var [key, v] of value) {
+ 				sources.set(key, source(v));
++				Map.prototype.set.call(this, key, v);
+ 			}
+ 
+ 			this.#size.v = sources.size;
+@@ -89,10 +90,12 @@ export class ReactiveMap extends Map {
+ 		var s = sources.get(key);
+ 
+ 		if (s === undefined) {
++			Map.prototype.set.call(this, key, value);
+ 			sources.set(key, source(value));
+ 			set(this.#size, sources.size);
+ 			this.#increment_version();
+ 		} else {
++			Map.prototype.set.call(this, key, value);
+ 			set(s, value);
+ 		}
+ 
+@@ -105,6 +108,7 @@ export class ReactiveMap extends Map {
+ 		var s = sources.get(key);
+ 
+ 		if (s !== undefined) {
++			Map.prototype.delete.call(this, key);
+ 			var removed = sources.delete(key);
+ 			set(this.#size, sources.size);
+ 			set(s, /** @type {V} */ (UNINITIALIZED));
+@@ -119,6 +123,7 @@ export class ReactiveMap extends Map {
+ 		var sources = this.#sources;
+ 
+ 		if (sources.size !== 0) {
++			Map.prototype.clear.call(this);
+ 			set(this.#size, 0);
+ 			for (var s of sources.values()) {
+ 				set(s, /** @type {V} */ (UNINITIALIZED));
+diff --git a/packages/svelte/src/reactivity/set.js b/packages/svelte/src/reactivity/set.js
+index 1855090..d332945 100644
+--- a/packages/svelte/src/reactivity/set.js
++++ b/packages/svelte/src/reactivity/set.js
+@@ -31,6 +31,7 @@ export class ReactiveSet extends Set {
+ 
+ 			for (var element of value) {
+ 				sources.set(element, source(true));
++				Set.prototype.add.call(this, element);
+ 			}
+ 
+ 			this.#size.v = sources.size;
+@@ -91,6 +92,7 @@ export class ReactiveSet extends Set {
+ 		var sources = this.#sources;
+ 
+ 		if (!sources.has(value)) {
++			Set.prototype.add.call(this, value);
+ 			sources.set(value, source(true));
+ 			set(this.#size, sources.size);
+ 			this.#increment_version();
+@@ -105,6 +107,7 @@ export class ReactiveSet extends Set {
+ 		var s = sources.get(value);
+ 
+ 		if (s !== undefined) {
++			Set.prototype.delete.call(this, value);
+ 			var removed = sources.delete(value);
+ 			set(this.#size, sources.size);
+ 			set(s, false);
+@@ -119,6 +122,7 @@ export class ReactiveSet extends Set {
+ 		var sources = this.#sources;
+ 
+ 		if (sources.size !== 0) {
++			Set.prototype.clear.call(this);
+ 			set(this.#size, 0);
+ 			for (var s of sources.values()) {
+ 				set(s, false);

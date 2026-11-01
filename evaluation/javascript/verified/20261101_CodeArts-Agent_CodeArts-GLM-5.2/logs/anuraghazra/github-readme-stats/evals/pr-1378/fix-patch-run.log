@@ -1,0 +1,277 @@
+$ bash /home/test-run.sh
+
+
+> github-readme-stats@1.0.0 test
+> jest --coverage --verbose --maxWorkers=4
+
+PASS tests/card.test.js
+  Card
+    ✓ should hide border (12 ms)
+    ✓ should not hide border (3 ms)
+    ✓ should have a custom title (46 ms)
+    ✓ should hide title (2 ms)
+    ✓ should not hide title (3 ms)
+    ✓ title should have prefix icon (3 ms)
+    ✓ title should not have prefix icon (3 ms)
+    ✓ should have proper height, width (2 ms)
+    ✓ should have less height after title is hidden (1 ms)
+    ✓ main-card-body should have proper when title is visible (2 ms)
+    ✓ main-card-body should have proper position after title is hidden (1 ms)
+    ✓ should render with correct colors (5 ms)
+    ✓ should render gradient backgrounds (6 ms)
+
+FAIL tests/renderRepoCard.test.js
+  Test renderRepoCard
+    ✓ should render correctly (20 ms)
+    ✓ should display username in title (full repo name) (8 ms)
+    ✕ should trim header (38 ms)
+    ✓ should trim description (9 ms)
+    ✓ should render emojis (5 ms)
+    ✓ should hide language if primaryLanguage is null & fallback to correct values (11 ms)
+    ✓ should render default colors properly (7 ms)
+    ✓ should render custom colors properly (5 ms)
+    ✓ should render with all the themes (374 ms)
+    ✓ should render custom colors with themes (2 ms)
+    ✓ should render custom colors with themes and fallback to default colors if invalid (2 ms)
+    ✓ should not render star count or fork count if either of the are zero (5 ms)
+    ✓ should render badges (6 ms)
+    ✓ should not render template (2 ms)
+    ✓ should render translated badges (5 ms)
+    ✓ should render without rounding (3 ms)
+    ✓ should fallback to default description (2 ms)
+
+  ● Test renderRepoCard › should trim header
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "some-really-long-repo-name-for-test..."
+    Received: "some-really-long-repo-name-for-test-..."
+
+      58 |     });
+      59 |
+    > 60 |     expect(document.getElementsByClassName("header")[0].textContent).toBe(
+         |                                                                      ^
+      61 |       "some-really-long-repo-name-for-test...",
+      62 |     );
+      63 |   });
+
+      at Object.<anonymous> (tests/renderRepoCard.test.js:60:70)
+
+PASS tests/renderTopLanguages.test.js
+  Test renderTopLanguages
+    ✓ should render correctly (64 ms)
+    ✓ should hide languages when hide is passed (11 ms)
+    ✓ should resize the height correctly depending on langs (9 ms)
+    ✓ should render with custom width set (11 ms)
+    ✓ should render default colors properly (6 ms)
+    ✓ should render custom colors properly (62 ms)
+    ✓ should render custom colors with themes (4 ms)
+    ✓ should render with all the themes (300 ms)
+    ✓ should render with layout compact (7 ms)
+    ✓ should render a translated title (3 ms)
+    ✓ should render without rounding (4 ms)
+    ✓ should render langs with specified langs_count (1 ms)
+    ✓ should render langs with specified langs_count even when hide is set (2 ms)
+
+FAIL tests/renderStatsCard.test.js
+  Test renderStatsCard
+    ✓ should render correctly (67 ms)
+    ✓ should have proper name apostrophe (12 ms)
+    ✓ should hide individual stats (5 ms)
+    ✓ should hide_rank (4 ms)
+    ✓ should render default colors properly (67 ms)
+    ✓ should render custom colors properly (5 ms)
+    ✓ should render custom colors with themes (4 ms)
+    ✓ should render with all the themes (335 ms)
+    ✓ should render custom colors with themes and fallback to default colors if invalid (3 ms)
+    ✓ should render icons correctly (4 ms)
+    ✓ should not have icons if show_icons is false (53 ms)
+    ✓ should auto resize if hide_rank is true (4 ms)
+    ✓ should auto resize if hide_rank is true & custom_title is set (4 ms)
+    ✕ should render translations (19 ms)
+    ✓ should render without rounding (6 ms)
+
+  ● Test renderStatsCard › should render translations
+
+    expect(received).toMatchInlineSnapshot(snapshot)
+
+    Snapshot name: `Test renderStatsCard should render translations 2`
+
+    Snapshot: "累计提交数（commit） (2021):"
+    Received: "累计提交数（commit） (2026):"
+
+      246 |         'g[transform="translate(0, 25)"]>.stagger>.stat.bold',
+      247 |       ).textContent,
+    > 248 |     ).toMatchInlineSnapshot(`"累计提交数（commit） (2021):"`);
+          |       ^
+      249 |     expect(
+      250 |       document.querySelector(
+      251 |         'g[transform="translate(0, 50)"]>.stagger>.stat.bold',
+
+      at Object.<anonymous> (tests/renderStatsCard.test.js:248:7)
+
+ › 1 snapshot failed.
+PASS tests/fetchWakatime.test.js
+  Wakatime fetcher
+    ✓ should fetch correct wakatime data (3 ms)
+    ✓ should throw error (2 ms)
+
+PASS tests/renderWakatimeCard.test.js
+  Wakatime fetcher
+    ✓ should fetch correct wakatime data (3 ms)
+    ✓ should throw error (2 ms)
+  Test Render Wakatime Card
+    ✓ should render correctly (2 ms)
+    ✓ should render correctly with compact layout
+    ✓ should hide languages when hide is passed (6 ms)
+    ✓ should render translations (4 ms)
+    ✓ should render without rounding (45 ms)
+
+FAIL tests/utils.test.js
+  Test utils.js
+    ✓ should test kFormatter (1 ms)
+    ✓ should test encodeHTML
+    ✓ should test renderError (20 ms)
+    ✓ getCardColors: should return expected values (1 ms)
+    ✓ getCardColors: should fallback to default colors if color is invalid
+    ✓ getCardColors: should fallback to specified theme colors if is not defined
+  wrapTextMultiline
+    ✓ should not wrap small texts (1 ms)
+    ✓ should wrap large texts
+    ✓ should wrap large texts and limit max lines
+    ✕ should wrap chinese by punctuation (2 ms)
+
+  ● wrapTextMultiline › should wrap chinese by punctuation
+
+    expect(received).toEqual(expected) // deep equality
+
+    Expected: 3
+    Received: 2
+
+      122 |       "专门为刚开始刷题的同学准备的算法基地，没有最细只有更细，立志用动画将晦涩难懂的算法说的通俗易懂！",
+      123 |     );
+    > 124 |     expect(multiLineText.length).toEqual(3);
+          |                                  ^
+      125 |     expect(multiLineText[0].length).toEqual(18 * 8); // &#xxxxx; x 8
+      126 |   });
+      127 | });
+
+      at Object.<anonymous> (tests/utils.test.js:124:34)
+
+PASS tests/top-langs.test.js
+  Test /api/top-langs
+    ✓ should test the request (4 ms)
+    ✓ should work with the query options (1 ms)
+    ✓ should render error card on error
+
+PASS tests/fetchStats.test.js
+  Test fetchStats
+    ✓ should fetch correct stats (1 ms)
+    ✓ should throw error (3 ms)
+    ✓ should fetch and add private contributions (1 ms)
+    ✓ should fetch total commits (1 ms)
+
+  console.warn
+    Warning: toBeEmpty has been deprecated and will be removed in future updates. Please use instead toBeEmptyDOMElement for finding empty nodes in the DOM.
+
+      33 |       queryByTestId(document.body, "message").children[0],
+      34 |     ).toHaveTextContent(/Something went wrong/gim);
+    > 35 |     expect(queryByTestId(document.body, "message").children[1]).toBeEmpty(2);
+         |                                                                 ^
+      36 |
+      37 |     // Secondary message
+      38 |     document.body.innerHTML = renderError(
+
+      at deprecate (node_modules/@testing-library/jest-dom/dist/utils.js:130:11)
+      at Object.toBeEmpty (node_modules/@testing-library/jest-dom/dist/to-be-empty.js:9:24)
+      at Object.<anonymous> (tests/utils.test.js:35:65)
+
+PASS tests/api.test.js
+  Test /api/
+    ✓ should test the request (4 ms)
+    ✓ should render error card on error (1 ms)
+    ✓ should get the query options (1 ms)
+    ✓ should have proper cache (1 ms)
+    ✓ should set proper cache (1 ms)
+    ✓ should set proper cache with clamped values (2 ms)
+    ✓ should add private contributions (50 ms)
+
+PASS tests/fetchRepo.test.js
+  Test fetchRepo
+    ✓ should fetch correct user repo (2 ms)
+    ✓ should fetch correct org repo (1 ms)
+    ✓ should throw error if user is found but repo is null (2 ms)
+    ✓ should throw error if org is found but repo is null (1 ms)
+    ✓ should throw error if both user & org data not found
+    ✓ should throw error if repository is private (1 ms)
+
+PASS tests/fetchTopLanguages.test.js
+  FetchTopLanguages
+    ✓ should fetch correct language data (1 ms)
+    ✓ should throw error (3 ms)
+
+PASS tests/pin.test.js
+  Test /api/pin
+    ✓ should test the request (3 ms)
+    ✓ should get the query options (1 ms)
+    ✓ should render error card if user repo not found (1 ms)
+    ✓ should render error card if org repo not found
+
+PASS tests/retryer.test.js
+  Test Retryer
+    ✓ retryer should return value and have zero retries on first try (1 ms)
+    ✓ retryer should return value and have 2 retries
+    ✓ retryer should throw error if maximum retries reached
+
+PASS tests/flexLayout.test.js
+  flexLayout
+    ✓ should work with row & col layouts (2 ms)
+    ✓ should work with sizes
+
+PASS tests/calculateRank.test.js
+  Test calculateRank
+    ✓ should calculate rank correctly (1 ms)
+
+---------------------------|---------|----------|---------|---------|--------------------
+File                       | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s  
+---------------------------|---------|----------|---------|---------|--------------------
+All files                  |   93.54 |    81.35 |   94.78 |   94.43 |                    
+ api                       |   88.88 |     64.1 |     100 |   88.88 |                    
+  index.js                 |   89.47 |       60 |     100 |   89.47 | 40,44              
+  pin.js                   |      88 |    68.42 |     100 |      88 | 33,37,59           
+  top-langs.js             |   89.47 |       60 |     100 |   89.47 | 37,41              
+ src                       |   78.78 |    57.14 |      50 |   81.25 |                    
+  calculateRank.js         |   90.24 |       65 |     100 |   90.24 | 69,75,81,87        
+  getStyles.js             |      40 |     37.5 |      25 |   46.15 | 5-11,20,33         
+  translations.js          |      90 |      100 |      50 |      90 | 302                
+ src/cards                 |   99.58 |    88.79 |     100 |     100 |                    
+  repo-card.js             |     100 |      100 |     100 |     100 |                    
+  stats-card.js            |    97.5 |    86.48 |     100 |     100 | 48,110-160,180,233 
+  top-languages-card.js    |     100 |       75 |     100 |     100 | 40,82-137          
+  wakatime-card.js         |     100 |    90.32 |     100 |     100 | 66-104             
+ src/common                |   93.68 |    85.48 |   97.61 |   94.47 |                    
+  Card.js                  |   96.87 |    92.59 |      90 |   96.77 | 79                 
+  I18n.js                  |   77.77 |       75 |     100 |   77.77 | 10,14              
+  blacklist.js             |     100 |      100 |     100 |     100 |                    
+  createProgressNode.js    |     100 |      100 |     100 |     100 |                    
+  icons.js                 |     100 |      100 |     100 |     100 |                    
+  retryer.js               |   72.22 |    63.63 |     100 |   72.22 | 32-38              
+  utils.js                 |   96.72 |    87.17 |     100 |   98.24 | 67,69              
+ src/fetchers              |   91.34 |    80.95 |   94.44 |   93.13 |                    
+  repo-fetcher.js          |   95.23 |    91.66 |     100 |   95.23 | 48                 
+  stats-fetcher.js         |   88.09 |    72.22 |     100 |   90.24 | 57-58,80-83        
+  top-languages-fetcher.js |   93.75 |    76.92 |      90 |   96.77 | 54                 
+  wakatime-fetcher.js      |   88.88 |       75 |     100 |   88.88 | 18                 
+ themes                    |     100 |      100 |     100 |     100 |                    
+  index.js                 |     100 |      100 |     100 |     100 |                    
+---------------------------|---------|----------|---------|---------|--------------------
+Snapshot Summary
+ › 1 snapshot failed from 1 test suite. Inspect your code changes or run `npm test -- -u` to update them.
+
+Test Suites: 3 failed, 13 passed, 16 total
+Tests:       3 failed, 106 passed, 109 total
+Snapshots:   1 failed, 8 passed, 9 total
+Time:        3.717 s
+Ran all test suites.
+
+[exit code: 1]

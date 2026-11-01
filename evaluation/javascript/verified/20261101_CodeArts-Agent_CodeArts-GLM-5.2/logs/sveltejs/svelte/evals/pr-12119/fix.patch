@@ -1,0 +1,12 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/a11y.js b/packages/svelte/src/compiler/phases/2-analyze/a11y.js
+index ff9ec63..2d0dccd 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/a11y.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/a11y.js
+@@ -1086,6 +1086,7 @@ function check_element(node, state) {
+ 						if (
+ 							node.type === 'SvelteElement' ||
+ 							node.type === 'SlotElement' ||
++							node.type === 'InlineComponent' ||
+ 							(node.type === 'RegularElement' &&
+ 								(a11y_labelable.includes(node.name) || node.name === 'slot'))
+ 						) {

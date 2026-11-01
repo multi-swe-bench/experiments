@@ -1,0 +1,14 @@
+diff --git a/packages/svelte/src/internal/shared/clone.js b/packages/svelte/src/internal/shared/clone.js
+index 715ec3d..3e36c16 100644
+--- a/packages/svelte/src/internal/shared/clone.js
++++ b/packages/svelte/src/internal/shared/clone.js
+@@ -50,5 +50,9 @@ function clone(value, cloned) {
+ 		}
+ 	}
+ 
++	if (typeof value === 'function') {
++		return value;
++	}
++
+ 	return /** @type {Snapshot<T>} */ (structuredClone(value));
+ }

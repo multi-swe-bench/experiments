@@ -1,0 +1,16 @@
+diff --git a/packages/svelte/src/internal/client/dom/elements/bindings/this.js b/packages/svelte/src/internal/client/dom/elements/bindings/this.js
+index de78858..84eaf93 100644
+--- a/packages/svelte/src/internal/client/dom/elements/bindings/this.js
++++ b/packages/svelte/src/internal/client/dom/elements/bindings/this.js
+@@ -11,7 +11,10 @@ import { queue_micro_task } from '../../task.js';
+ function is_bound_this(bound_value, element_or_component) {
+ 	// Find the original target if the value is proxied.
+ 	var proxy_target = bound_value && bound_value[STATE_SYMBOL]?.t;
+-	return bound_value === element_or_component || proxy_target === element_or_component;
++	return (
++		bound_value === element_or_component ||
++		(proxy_target !== undefined && proxy_target === element_or_component)
++	);
+ }
+ 
+ /**

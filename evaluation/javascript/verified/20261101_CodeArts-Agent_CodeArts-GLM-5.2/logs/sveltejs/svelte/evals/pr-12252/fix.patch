@@ -1,0 +1,88 @@
+diff --git a/packages/svelte/src/internal/client/dom/blocks/each.js b/packages/svelte/src/internal/client/dom/blocks/each.js
+index 7fdd2fc..4b506e2 100644
+--- a/packages/svelte/src/internal/client/dom/blocks/each.js
++++ b/packages/svelte/src/internal/client/dom/blocks/each.js
+@@ -294,7 +294,7 @@ function reconcile(array, state, anchor, render_fn, flags, get_key) {
+ 		item = items.get(key);
+ 
+ 		if (item === undefined) {
+-			var child_anchor = current ? get_first_node(current.e) : anchor;
++			var child_anchor = /** @type {Node} */ (current ? get_first_node(current.e) : anchor);
+ 
+ 			prev = create_item(
+ 				child_anchor,
+@@ -516,9 +516,9 @@ function create_item(anchor, state, prev, next, value, key, index, render_fn, fl
+  */
+ function move(item, next, anchor) {
+ 	var end = item.next ? get_first_node(item.next.e) : anchor;
+-	var dest = next ? get_first_node(next.e) : anchor;
++	var dest = /** @type {import('#client').TemplateNode} */ (next ? get_first_node(next.e) : anchor);
+ 
+-	var node = get_first_node(item.e);
++	var node = /** @type {import('#client').TemplateNode} */ (get_first_node(item.e));
+ 
+ 	while (node !== end) {
+ 		var next_node = /** @type {import('#client').TemplateNode} */ (node.nextSibling);
+diff --git a/packages/svelte/src/internal/client/reactivity/effects.js b/packages/svelte/src/internal/client/reactivity/effects.js
+index 3e2db12..701d69e 100644
+--- a/packages/svelte/src/internal/client/reactivity/effects.js
++++ b/packages/svelte/src/internal/client/reactivity/effects.js
+@@ -394,10 +394,31 @@ export function destroy_effect(effect, remove_dom = true) {
+ 
+ /**
+  * @param {import('#client').Effect} effect
+- * @returns {import('#client').TemplateNode}
++ * @returns {import('#client').TemplateNode | null}
+  */
+ export function get_first_node(effect) {
+-	var nodes = /** @type {NonNullable<typeof effect.nodes>} */ (effect.nodes);
++	var nodes = effect.nodes;
++
++	if (nodes === null) {
++		// This effect doesn't own any DOM directly — for example, the HMR wrapper
++		// block. Look for the first DOM node among its descendants instead.
++		var child = effect.first;
++
++		while (child !== null) {
++			if ((child.f & HEAD_EFFECT) === 0) {
++				var node = get_first_node(child);
++
++				if (node !== null) {
++					return node;
++				}
++			}
++
++			child = child.next;
++		}
++
++		return null;
++	}
++
+ 	var start = nodes.start;
+ 
+ 	if (start === undefined) {
+@@ -410,13 +431,18 @@ export function get_first_node(effect) {
+ 		return start;
+ 	}
+ 
+-	var child = effect.first;
+-	while (child && (child.nodes === null || (child.f & HEAD_EFFECT) !== 0)) {
+-		child = child.next;
+-	}
++	child = effect.first;
++
++	while (child !== null) {
++		if ((child.f & HEAD_EFFECT) === 0) {
++			node = get_first_node(child);
+ 
+-	if (child !== null && child.nodes !== null) {
+-		return get_first_node(child);
++			if (node !== null) {
++				return node;
++			}
++		}
++
++		child = child.next;
+ 	}
+ 
+ 	// in the case that there's no DOM, return the first anchor

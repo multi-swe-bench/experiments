@@ -1,0 +1,251 @@
+diff --git a/docs/data/base/components/select/UnstyledSelectControlled.js b/docs/data/base/components/select/UnstyledSelectControlled.js
+index 7b8d91cc..ce10cbeb 100644
+--- a/docs/data/base/components/select/UnstyledSelectControlled.js
++++ b/docs/data/base/components/select/UnstyledSelectControlled.js
+@@ -165,7 +165,7 @@ export default function UnstyledSelectsMultiple() {
+   const [value, setValue] = React.useState(10);
+   return (
+     <div>
+-      <CustomSelect value={value} onChange={setValue}>
++      <CustomSelect value={value} onChange={(_, newValue) => setValue(newValue)}>
+         <StyledOption value={10}>Ten</StyledOption>
+         <StyledOption value={20}>Twenty</StyledOption>
+         <StyledOption value={30}>Thirty</StyledOption>
+diff --git a/docs/data/base/components/select/UnstyledSelectControlled.tsx b/docs/data/base/components/select/UnstyledSelectControlled.tsx
+index eed5cc32..43bd6ea0 100644
+--- a/docs/data/base/components/select/UnstyledSelectControlled.tsx
++++ b/docs/data/base/components/select/UnstyledSelectControlled.tsx
+@@ -154,7 +154,7 @@ export default function UnstyledSelectsMultiple() {
+   const [value, setValue] = React.useState<number | null>(10);
+   return (
+     <div>
+-      <CustomSelect value={value} onChange={setValue}>
++      <CustomSelect value={value} onChange={(_, newValue) => setValue(newValue)}>
+         <StyledOption value={10}>Ten</StyledOption>
+         <StyledOption value={20}>Twenty</StyledOption>
+         <StyledOption value={30}>Thirty</StyledOption>
+diff --git a/docs/data/base/components/select/UnstyledSelectObjectValues.js b/docs/data/base/components/select/UnstyledSelectObjectValues.js
+index 3d00c3e7..3fe6d1a2 100644
+--- a/docs/data/base/components/select/UnstyledSelectObjectValues.js
++++ b/docs/data/base/components/select/UnstyledSelectObjectValues.js
+@@ -187,7 +187,7 @@ export default function UnstyledSelectObjectValues() {
+   const [character, setCharacter] = React.useState(characters[0]);
+   return (
+     <div>
+-      <CustomSelect value={character} onChange={setCharacter}>
++      <CustomSelect value={character} onChange={(_, newValue) => setCharacter(newValue)}>
+         {characters.map((c) => (
+           <StyledOption key={c.name} value={c}>
+             {c.name}
+diff --git a/docs/data/base/components/select/UnstyledSelectObjectValues.tsx b/docs/data/base/components/select/UnstyledSelectObjectValues.tsx
+index d50392f5..55008c87 100644
+--- a/docs/data/base/components/select/UnstyledSelectObjectValues.tsx
++++ b/docs/data/base/components/select/UnstyledSelectObjectValues.tsx
+@@ -181,7 +181,7 @@ export default function UnstyledSelectObjectValues() {
+   const [character, setCharacter] = React.useState<Character | null>(characters[0]);
+   return (
+     <div>
+-      <CustomSelect value={character} onChange={setCharacter}>
++      <CustomSelect value={character} onChange={(_, newValue) => setCharacter(newValue)}>
+         {characters.map((c) => (
+           <StyledOption key={c.name} value={c}>
+             {c.name}
+diff --git a/docs/data/base/components/select/UnstyledSelectObjectValuesForm.js b/docs/data/base/components/select/UnstyledSelectObjectValuesForm.js
+index e8c0b2cd..2c6d05ba 100644
+--- a/docs/data/base/components/select/UnstyledSelectObjectValuesForm.js
++++ b/docs/data/base/components/select/UnstyledSelectObjectValuesForm.js
+@@ -204,7 +204,7 @@ export default function UnstyledSelectObjectValues() {
+     <div>
+       <Header>Default behavior</Header>
+       <form onSubmit={handleSubmit}>
+-        <CustomSelect value={character} onChange={setCharacter} name="character">
++        <CustomSelect value={character} onChange={(_, newValue) => setCharacter(newValue)} name="character">
+           {characters.map((c) => (
+             <StyledOption key={c.name} value={c}>
+               {c.name}
+@@ -219,7 +219,7 @@ export default function UnstyledSelectObjectValues() {
+       <form onSubmit={handleSubmit}>
+         <CustomSelect
+           value={character}
+-          onChange={setCharacter}
++          onChange={(_, newValue) => setCharacter(newValue)}
+           getSerializedValue={getSerializedValue}
+           name="character"
+         >
+diff --git a/docs/data/base/components/select/UnstyledSelectObjectValuesForm.tsx b/docs/data/base/components/select/UnstyledSelectObjectValuesForm.tsx
+index 7b063743..717f79e5 100644
+--- a/docs/data/base/components/select/UnstyledSelectObjectValuesForm.tsx
++++ b/docs/data/base/components/select/UnstyledSelectObjectValuesForm.tsx
+@@ -199,7 +199,7 @@ export default function UnstyledSelectObjectValues() {
+     <div>
+       <Header>Default behavior</Header>
+       <form onSubmit={handleSubmit}>
+-        <CustomSelect value={character} onChange={setCharacter} name="character">
++        <CustomSelect value={character} onChange={(_, newValue) => setCharacter(newValue)} name="character">
+           {characters.map((c) => (
+             <StyledOption key={c.name} value={c}>
+               {c.name}
+@@ -214,7 +214,7 @@ export default function UnstyledSelectObjectValues() {
+       <form onSubmit={handleSubmit}>
+         <CustomSelect
+           value={character}
+-          onChange={setCharacter}
++          onChange={(_, newValue) => setCharacter(newValue)}
+           getSerializedValue={getSerializedValue}
+           name="character"
+         >
+diff --git a/packages/mui-base/src/MultiSelectUnstyled/MultiSelectUnstyled.types.ts b/packages/mui-base/src/MultiSelectUnstyled/MultiSelectUnstyled.types.ts
+index e03a97af..1b0dadd8 100644
+--- a/packages/mui-base/src/MultiSelectUnstyled/MultiSelectUnstyled.types.ts
++++ b/packages/mui-base/src/MultiSelectUnstyled/MultiSelectUnstyled.types.ts
+@@ -59,7 +59,10 @@ export interface MultiSelectUnstyledOwnProps<TValue extends {}> extends SelectUn
+   /**
+    * Callback fired when an option is selected.
+    */
+-  onChange?: (value: TValue[]) => void;
++  onChange?: (
++    event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>,
++    value: TValue[],
++  ) => void;
+   /**
+    * A function used to convert the option label to a string.
+    * It's useful when labels are elements and need to be converted to plain text
+diff --git a/packages/mui-base/src/SelectUnstyled/SelectUnstyled.types.ts b/packages/mui-base/src/SelectUnstyled/SelectUnstyled.types.ts
+index 26833cf6..9e09891c 100644
+--- a/packages/mui-base/src/SelectUnstyled/SelectUnstyled.types.ts
++++ b/packages/mui-base/src/SelectUnstyled/SelectUnstyled.types.ts
+@@ -97,7 +97,10 @@ export interface SelectUnstyledOwnProps<TValue extends {}> extends SelectUnstyle
+   /**
+    * Callback fired when an option is selected.
+    */
+-  onChange?: (value: TValue | null) => void;
++  onChange?: (
++    event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>,
++    value: TValue | null,
++  ) => void;
+   /**
+    * A function used to convert the option label to a string.
+    * It's useful when labels are elements and need to be converted to plain text
+diff --git a/packages/mui-base/src/SelectUnstyled/useSelect.ts b/packages/mui-base/src/SelectUnstyled/useSelect.ts
+index a87c4977..e4e06041 100644
+--- a/packages/mui-base/src/SelectUnstyled/useSelect.ts
++++ b/packages/mui-base/src/SelectUnstyled/useSelect.ts
+@@ -62,6 +62,10 @@ function useSelect<TValue>(props: UseSelectParameters<TValue>) {
+   // (listbox closes on lost focus, then immediately reopens on click)
+   const ignoreClick = React.useRef(false);
+ 
++  // store the last event that may cause a selection change so that it can be
++  // passed to the `onChange` callback (in line with native elements)
++  const lastSelectionEventRef = React.useRef<React.SyntheticEvent | null>(null);
++
+   // Ensure the listbox is focused after opening
+   const [listboxFocusRequested, requestListboxFocus] = React.useState(false);
+ 
+@@ -141,6 +145,7 @@ function useSelect<TValue>(props: UseSelectParameters<TValue>) {
+ 
+   const createHandleListboxItemClick =
+     (otherHandlers?: Record<string, React.EventHandler<any>>) => (event: React.MouseEvent) => {
++      lastSelectionEventRef.current = event;
+       otherHandlers?.onClick?.(event);
+       if (event.defaultPrevented) {
+         return;
+@@ -151,6 +156,13 @@ function useSelect<TValue>(props: UseSelectParameters<TValue>) {
+       }
+     };
+ 
++  const createHandleListboxKeyDown =
++    (otherHandlers?: Record<string, React.EventHandler<any>>) =>
++    (event: React.KeyboardEvent) => {
++      lastSelectionEventRef.current = event;
++      otherHandlers?.onKeyDown?.(event);
++    };
++
+   const createHandleListboxBlur =
+     (otherHandlers?: Record<string, React.EventHandler<any>>) => (event: React.FocusEvent) => {
+       otherHandlers?.onBlur?.(event);
+@@ -217,7 +229,17 @@ function useSelect<TValue>(props: UseSelectParameters<TValue>) {
+       onChange: (newOptions) => {
+         const newValues = newOptions.map((o) => o.value);
+         setValue(newValues);
+-        (onChange as (value: TValue[]) => void)?.(newValues);
++        (
++          onChange as (
++            event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>,
++            value: TValue[],
++          ) => void
++        )?.(
++          lastSelectionEventRef.current as
++            | React.MouseEvent<HTMLElement>
++            | React.KeyboardEvent<HTMLElement>,
++          newValues,
++        );
+       },
+       options,
+       optionStringifier,
+@@ -232,7 +254,17 @@ function useSelect<TValue>(props: UseSelectParameters<TValue>) {
+       multiple: false,
+       onChange: (option: SelectOption<TValue> | null) => {
+         setValue(option?.value ?? null);
+-        (onChange as (value: TValue | null) => void)?.(option?.value ?? null);
++        (
++          onChange as (
++            event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>,
++            value: TValue | null,
++          ) => void
++        )?.(
++          lastSelectionEventRef.current as
++            | React.MouseEvent<HTMLElement>
++            | React.KeyboardEvent<HTMLElement>,
++          option?.value ?? null,
++        );
+       },
+       options,
+       optionStringifier,
+@@ -270,6 +302,7 @@ function useSelect<TValue>(props: UseSelectParameters<TValue>) {
+     getListboxRootProps({
+       ...otherHandlers,
+       onBlur: createHandleListboxBlur(otherHandlers),
++      onKeyDown: createHandleListboxKeyDown(otherHandlers),
+       onKeyUp: createHandleListboxKeyUp(otherHandlers),
+     });
+ 
+diff --git a/packages/mui-base/src/SelectUnstyled/useSelect.types.ts b/packages/mui-base/src/SelectUnstyled/useSelect.types.ts
+index 93c1490c..ccb6768f 100644
+--- a/packages/mui-base/src/SelectUnstyled/useSelect.types.ts
++++ b/packages/mui-base/src/SelectUnstyled/useSelect.types.ts
+@@ -41,14 +41,20 @@ interface UseSelectCommonProps<TValue> {
+ export interface UseSelectSingleParameters<TValue> extends UseSelectCommonProps<TValue> {
+   defaultValue?: TValue | null;
+   multiple?: false;
+-  onChange?: (value: TValue | null) => void;
++  onChange?: (
++    event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>,
++    value: TValue | null,
++  ) => void;
+   value?: TValue | null;
+ }
+ 
+ export interface UseSelectMultiParameters<TValue> extends UseSelectCommonProps<TValue> {
+   defaultValue?: TValue[];
+   multiple: true;
+-  onChange?: (value: TValue[]) => void;
++  onChange?: (
++    event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>,
++    value: TValue[],
++  ) => void;
+   value?: TValue[];
+ }
+ 
+diff --git a/packages/mui-joy/src/Select/Select.tsx b/packages/mui-joy/src/Select/Select.tsx
+index 82e7a2e6..44018992 100644
+--- a/packages/mui-joy/src/Select/Select.tsx
++++ b/packages/mui-joy/src/Select/Select.tsx
+@@ -379,7 +379,7 @@ const Select = React.forwardRef(function Select<TValue extends {}>(
+     disabled: disabledProp,
+     listboxId,
+     multiple: false,
+-    onChange,
++    onChange: (event, newValue) => onChange?.(newValue),
+     onOpenChange: handleOpenChange,
+     open: listboxOpen,
+     options,

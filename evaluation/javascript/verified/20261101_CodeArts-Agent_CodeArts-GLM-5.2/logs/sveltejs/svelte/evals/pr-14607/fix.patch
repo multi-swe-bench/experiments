@@ -1,0 +1,122 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/types.d.ts b/packages/svelte/src/compiler/phases/3-transform/client/types.d.ts
+index 47af981..11901fd 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/types.d.ts
++++ b/packages/svelte/src/compiler/phases/3-transform/client/types.d.ts
+@@ -4,6 +4,7 @@ import type {
+ 	LabeledStatement,
+ 	Identifier,
+ 	PrivateIdentifier,
++	Literal,
+ 	Expression,
+ 	AssignmentExpression,
+ 	UpdateExpression,
+@@ -16,7 +17,7 @@ import type { SourceLocation } from '#shared';
+ 
+ export interface ClientTransformState extends TransformState {
+ 	readonly private_state: Map<string, StateField>;
+-	readonly public_state: Map<string, StateField>;
++	readonly public_state: Map<Identifier | PrivateIdentifier | Literal, StateField>;
+ 
+ 	/**
+ 	 * `true` if the current lexical scope belongs to a class constructor. this allows
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/ClassBody.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/ClassBody.js
+index 5e842a8..e4ff3f0 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/ClassBody.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/ClassBody.js
+@@ -17,7 +17,7 @@ export function ClassBody(node, context) {
+ 		return;
+ 	}
+ 
+-	/** @type {Map<string, StateField>} */
++	/** @type {Map<Identifier | PrivateIdentifier | Literal, StateField>} */
+ 	const public_state = new Map();
+ 
+ 	/** @type {Map<string, StateField>} */
+@@ -65,7 +65,7 @@ export function ClassBody(node, context) {
+ 					if (is_private) {
+ 						private_state.set(name, field);
+ 					} else {
+-						public_state.set(name, field);
++						public_state.set(definition.key, field);
+ 					}
+ 				}
+ 			}
+@@ -73,8 +73,8 @@ export function ClassBody(node, context) {
+ 	}
+ 
+ 	// each `foo = $state()` needs a backing `#foo` field
+-	for (const [name, field] of public_state) {
+-		let deconflicted = name;
++	for (const [key, field] of public_state) {
++		let deconflicted = get_name(key);
+ 		while (private_ids.includes(deconflicted)) {
+ 			deconflicted = '_' + deconflicted;
+ 		}
+@@ -100,7 +100,7 @@ export function ClassBody(node, context) {
+ 			if (!name) continue;
+ 
+ 			const is_private = definition.key.type === 'PrivateIdentifier';
+-			const field = (is_private ? private_state : public_state).get(name);
++			const field = is_private ? private_state.get(name) : public_state.get(definition.key);
+ 
+ 			if (definition.value?.type === 'CallExpression' && field !== undefined) {
+ 				let value = null;
+@@ -189,11 +189,11 @@ export function ClassBody(node, context) {
+ 					// Theoretically someone could create a `$state` while creating `$state.raw` or inside a `$derived.by`,
+ 					// but that feels so much of an edge case that it doesn't warrant a perf hit for the common case.
+ 					.filter(([_, { kind }]) => kind === 'state')
+-					.map(([name]) =>
++					.map(([, field]) =>
+ 						b.stmt(
+ 							b.call(
+ 								'$.add_owner',
+-								b.call('$.get', b.member(b.this, b.private_id(name))),
++								b.call('$.get', b.member(b.this, field.id)),
+ 								b.id('owner'),
+ 								b.literal(false),
+ 								is_ignored(node, 'ownership_invalid_binding') && b.true
+diff --git a/packages/svelte/tests/runtime-runes/samples/class-state-numeric-keys/_config.js b/packages/svelte/tests/runtime-runes/samples/class-state-numeric-keys/_config.js
+new file mode 100644
+index 0000000..3b06495
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/class-state-numeric-keys/_config.js
+@@ -0,0 +1,18 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++
++export default test({
++	html: `<button>1-2-10-20</button>`,
++
++	test({ assert, target }) {
++		const btn = target.querySelector('button');
++
++		btn?.click();
++		flushSync();
++		assert.htmlEqual(target.innerHTML, `<button>2-3-11-21</button>`);
++
++		btn?.click();
++		flushSync();
++		assert.htmlEqual(target.innerHTML, `<button>3-4-12-22</button>`);
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/class-state-numeric-keys/main.svelte b/packages/svelte/tests/runtime-runes/samples/class-state-numeric-keys/main.svelte
+new file mode 100644
+index 0000000..8ff7344
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/class-state-numeric-keys/main.svelte
+@@ -0,0 +1,13 @@
++<script>
++	class Mixed {
++		1 = $state(1);
++		2 = $state(2);
++		10 = $state(10);
++		20 = $state(20);
++	}
++	const mixed = new Mixed();
++</script>
++
++<button on:click={() => (mixed[1] += 1, mixed[2] += 1, mixed[10] += 1, mixed[20] += 1)}>
++	{mixed[1]}-{mixed[2]}-{mixed[10]}-{mixed[20]}
++</button>
+\ No newline at end of file

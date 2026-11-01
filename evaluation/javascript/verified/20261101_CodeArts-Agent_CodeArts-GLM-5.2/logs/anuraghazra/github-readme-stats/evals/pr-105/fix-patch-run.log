@@ -1,0 +1,356 @@
+$ bash /home/test-run.sh
+
+
+> github-readme-stats@1.0.0 test
+> jest --verbose --maxWorkers=4
+
+FAIL tests/renderStatsCard.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../themes' from 'tests/renderStatsCard.test.js'
+
+       8 |   queryAllByTestId,
+       9 | } = require("@testing-library/dom");
+    > 10 | const themes = require("../themes");
+         |                ^
+      11 |
+      12 | describe("Test renderStatsCard", () => {
+      13 |   const stats = {
+
+      at Resolver.resolveModule (node_modules/jest-resolve/build/index.js:306:11)
+      at Object.<anonymous> (tests/renderStatsCard.test.js:10:16)
+
+FAIL tests/renderRepoCard.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../themes' from 'tests/renderRepoCard.test.js'
+
+      4 |
+      5 | const { queryByTestId } = require("@testing-library/dom");
+    > 6 | const themes = require("../themes");
+        |                ^
+      7 |
+      8 | const data_repo = {
+      9 |   repository: {
+
+      at Resolver.resolveModule (node_modules/jest-resolve/build/index.js:306:11)
+      at Object.<anonymous> (tests/renderRepoCard.test.js:6:16)
+
+PASS tests/pin.test.js
+  Test /api/pin
+    ✓ should test the request (15 ms)
+    ✓ should get the query options (2 ms)
+    ✓ should render error card if user repo not found (4 ms)
+    ✓ should render error card if org repo not found (2 ms)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Error: User Repository Not found
+        at fetchRepo (/home/github-readme-stats/src/fetchRepo.js:63:13)
+        at processTicksAndRejections (node:internal/process/task_queues:95:5)
+        at Object.<anonymous>.module.exports (/home/github-readme-stats/api/pin.js:24:16)
+        at Object.<anonymous> (/home/github-readme-stats/tests/pin.test.js:97:5)
+
+      at Object.<anonymous>.module.exports (api/pin.js:26:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Error: Organization Repository Not found
+        at fetchRepo (/home/github-readme-stats/src/fetchRepo.js:73:13)
+        at processTicksAndRejections (node:internal/process/task_queues:95:5)
+        at Object.<anonymous>.module.exports (/home/github-readme-stats/api/pin.js:24:16)
+        at Object.<anonymous> (/home/github-readme-stats/tests/pin.test.js:118:5)
+
+      at Object.<anonymous>.module.exports (api/pin.js:26:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    [
+      {
+        type: 'NOT_FOUND',
+        path: [ 'user' ],
+        locations: [],
+        message: 'Could not fetch user'
+      }
+    ]
+
+      at fetchStats (src/fetchStats.js:64:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+PASS tests/api.test.js
+  Test /api/
+    ✓ should test the request (2 ms)
+    ✓ should render error card on error (2 ms)
+    ✓ should get the query options (2 ms)
+
+PASS tests/fetchRepo.test.js
+  Test fetchRepo
+    ✓ should fetch correct user repo (2 ms)
+    ✓ should fetch correct org repo (1 ms)
+    ✓ should throw error if user is found but repo is null (2 ms)
+    ✓ should throw error if org is found but repo is null (1 ms)
+    ✓ should throw error if both user & org data not found (1 ms)
+    ✓ should throw error if repository is private (1 ms)
+
+PASS tests/fetchStats.test.js
+  Test fetchStats
+    ✓ should fetch correct stats (2 ms)
+    ✓ should throw error (2 ms)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    [
+      {
+        type: 'NOT_FOUND',
+        path: [ 'user' ],
+        locations: [],
+        message: "Could not resolve to a User with the login of 'noname'."
+      }
+    ]
+
+      at fetchStats (src/fetchStats.js:64:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    {} undefined
+
+      at tests/retryer.test.js:5:11
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_1 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_2
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_1 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_2
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_2 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_3
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_3 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_4
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_4 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_5
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_5 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_6
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_6 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_7
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_7 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_8
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_8 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+PASS tests/retryer.test.js
+  Test Retryer
+    ✓ retryer should return value and have zero retries on first try (3 ms)
+    ✓ retryer should return value and have 2 retries (1 ms)
+    ✓ retryer should throw error if maximum retries reached (5 ms)
+
+PASS tests/calculateRank.test.js
+  Test calculateRank
+    ✓ should calculate rank correctly (1 ms)
+
+FAIL tests/utils.test.js
+  Test utils.js
+    ✓ should test kFormatter
+    ✓ should test encodeHTML
+    ✓ should test renderError (6 ms)
+    ✓ should test FlexLayout
+    ✕ getCardColors: should return expected values
+    ✕ getCardColors: should fallback to default colors if color is invalid (1 ms)
+    ✕ getCardColors: should fallback to specified theme colors if is not defined
+
+  ● Test utils.js › getCardColors: should return expected values
+
+    TypeError: getCardColors is not a function
+
+      53 |
+      54 |   it("getCardColors: should return expected values", () => {
+    > 55 |     let colors = getCardColors({
+         |                  ^
+      56 |       title_color: "f00",
+      57 |       text_color: "0f0",
+      58 |       icon_color: "00f",
+
+      at Object.<anonymous> (tests/utils.test.js:55:18)
+
+  ● Test utils.js › getCardColors: should fallback to default colors if color is invalid
+
+    TypeError: getCardColors is not a function
+
+      69 |
+      70 |   it("getCardColors: should fallback to default colors if color is invalid", () => {
+    > 71 |     let colors = getCardColors({
+         |                  ^
+      72 |       title_color: "invalidcolor",
+      73 |       text_color: "0f0",
+      74 |       icon_color: "00f",
+
+      at Object.<anonymous> (tests/utils.test.js:71:18)
+
+  ● Test utils.js › getCardColors: should fallback to specified theme colors if is not defined
+
+    TypeError: getCardColors is not a function
+
+      85 |   
+      86 |   it("getCardColors: should fallback to specified theme colors if is not defined", () => {
+    > 87 |     let colors = getCardColors({
+         |                  ^
+      88 |       theme: "dark",
+      89 |     });
+      90 |     expect(colors).toStrictEqual({
+
+      at Object.<anonymous> (tests/utils.test.js:87:18)
+
+Test Suites: 3 failed, 6 passed, 9 total
+Tests:       3 failed, 23 passed, 26 total
+Snapshots:   0 total
+Time:        1.747 s
+Ran all test suites.
+
+[exit code: 1]

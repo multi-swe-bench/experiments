@@ -1,0 +1,36 @@
+diff --git a/src/plugin/timezone/index.js b/src/plugin/timezone/index.js
+index 06dd27c..26a4db6 100644
+--- a/src/plugin/timezone/index.js
++++ b/src/plugin/timezone/index.js
+@@ -114,14 +114,17 @@ export default (o, c, d) => {
+     return result && result.value
+   }
+ 
+-  d.tz = function (input, timezone = defaultTimezone) {
++  d.tz = function (input, arg1, arg2) {
++    const timezone = arg2 || arg1 || defaultTimezone
++    const format = arg2 ? arg1 : undefined
+     const previousOffset = tzOffset(+d(), timezone)
+     let localTs
+     if (typeof input !== 'string') {
+       // timestamp number || js Date || Day.js
+       localTs = d(input) + (previousOffset * 60 * 1000)
++    } else {
++      localTs = d.utc(input, format).valueOf()
+     }
+-    localTs = localTs || d.utc(input).valueOf()
+     const [targetTs, targetOffset] = fixOffset(localTs, previousOffset, timezone)
+     const ins = d(targetTs).utcOffset(targetOffset)
+     ins.$x.$timezone = timezone
+diff --git a/types/plugin/timezone.d.ts b/types/plugin/timezone.d.ts
+index 491f874..f356a87 100644
+--- a/types/plugin/timezone.d.ts
++++ b/types/plugin/timezone.d.ts
+@@ -10,6 +10,7 @@ declare module 'dayjs' {
+ 
+   interface DayjsTimezone {
+     (date: ConfigType, timezone?: string): Dayjs
++    (date: ConfigType, format: string, timezone?: string): Dayjs
+     guess(): string
+     setDefault(timezone?: string): void
+   }

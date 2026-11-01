@@ -1,0 +1,25 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 7a769a2..6e427d6 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -674,12 +674,20 @@ const runes_scope_tweaker = {
+ 		}
+ 	},
+ 	ExportSpecifier(node, { state }) {
++		if (state.ast_type !== 'instance') {
++			return;
++		}
++
+ 		state.analysis.exports.push({
+ 			name: node.local.name,
+ 			alias: node.exported.name
+ 		});
+ 	},
+ 	ExportNamedDeclaration(node, { next, state }) {
++		if (state.ast_type !== 'instance') {
++			return next();
++		}
++
+ 		if (!node.declaration) {
+ 			return next();
+ 		}

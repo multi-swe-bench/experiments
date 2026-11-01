@@ -1,0 +1,73 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/read/style.js b/packages/svelte/src/compiler/phases/1-parse/read/style.js
+index 5197f10..78f9fda 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/read/style.js
++++ b/packages/svelte/src/compiler/phases/1-parse/read/style.js
+@@ -2,6 +2,7 @@ import { error } from '../../../errors.js';
+ 
+ const REGEX_MATCHER = /^[~^$*|]?=/;
+ const REGEX_CLOSING_BRACKET = /[\s\]]/;
++const REGEX_CLOSING_PARENTHESIS = /\)/;
+ const REGEX_ATTRIBUTE_FLAGS = /^[a-zA-Z]+/; // only `i` and `s` are valid today, but make it future-proof
+ const REGEX_COMBINATOR_WHITESPACE = /^\s*(\+|~|>|\|\|)\s*/;
+ const REGEX_COMBINATOR = /^(\+|~|>|\|\|)/;
+@@ -228,11 +229,28 @@ function read_selector(parser, inside_pseudo_class = false) {
+ 		} else if (parser.eat(':')) {
+ 			const name = read_identifier(parser);
+ 
+-			/** @type {null | import('#compiler').Css.SelectorList} */
++			/** @type {null | import('#compiler').Css.SelectorList | import('#compiler').Css.Nth} */
+ 			let args = null;
+ 
+ 			if (parser.eat('(')) {
+-				args = read_selector_list(parser, true);
++				if (
++					name === 'nth-child' ||
++					name === 'nth-last-child' ||
++					name === 'nth-of-type' ||
++					name === 'nth-last-of-type'
++				) {
++					const value_start = parser.index;
++					const value = parser.read_until(REGEX_CLOSING_PARENTHESIS);
++					args = {
++						type: 'Nth',
++						value,
++						start: value_start,
++						end: parser.index
++					};
++				} else {
++					args = read_selector_list(parser, true);
++				}
++
+ 				parser.eat(')', true);
+ 			}
+ 
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/Selector.js b/packages/svelte/src/compiler/phases/2-analyze/css/Selector.js
+index fcddaf2..94cca96 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/Selector.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/Selector.js
+@@ -157,6 +157,7 @@ export default class Selector {
+ 					selector.type === 'PseudoClassSelector' &&
+ 					selector.name === 'global' &&
+ 					selector.args !== null &&
++					selector.args.type === 'SelectorList' &&
+ 					selector.args.children.length > 1
+ 				) {
+ 					error(selector, 'invalid-css-global-selector');
+diff --git a/packages/svelte/src/compiler/types/css.d.ts b/packages/svelte/src/compiler/types/css.d.ts
+index 7d93620..d4b4c0d 100644
+--- a/packages/svelte/src/compiler/types/css.d.ts
++++ b/packages/svelte/src/compiler/types/css.d.ts
+@@ -59,7 +59,12 @@ export interface PseudoElementSelector extends BaseNode {
+ export interface PseudoClassSelector extends BaseNode {
+ 	type: 'PseudoClassSelector';
+ 	name: string;
+-	args: SelectorList | null;
++	args: SelectorList | Nth | null;
++}
++
++export interface Nth extends BaseNode {
++	type: 'Nth';
++	value: string;
+ }
+ 
+ export interface Percentage extends BaseNode {

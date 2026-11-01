@@ -1,0 +1,86 @@
+diff --git a/packages/mui-material/src/styles/overrides.d.ts b/packages/mui-material/src/styles/overrides.d.ts
+index dd5c574d..a41b3c48 100644
+--- a/packages/mui-material/src/styles/overrides.d.ts
++++ b/packages/mui-material/src/styles/overrides.d.ts
+@@ -1,4 +1,6 @@
+ import { CSSObject, CSSInterpolation } from '@mui/system';
++import { ComponentsPropsList } from './props';
++import { Theme } from './createTheme';
+ import { AccordionActionsClassKey } from '../AccordionActions';
+ import { AccordionClassKey } from '../Accordion';
+ import { AccordionDetailsClassKey } from '../AccordionDetails';
+@@ -111,14 +113,19 @@ import { TooltipClassKey } from '../Tooltip';
+ import { TouchRippleClassKey } from '../ButtonBase/TouchRipple';
+ import { TypographyClassKey } from '../Typography';
+ 
+-export type OverridesStyleRules<ClassKey extends string = string> = Record<
++export type OverridesStyleRules<
++  ClassKey extends string = string,
++  Props extends object = {},
++  Theme extends object = {},
++> = Record<
+   ClassKey,
+-  CSSInterpolation
++  | CSSInterpolation
++  | ((props: Props & { ownerState: Props; theme: Theme }) => CSSInterpolation)
+ >;
+ 
+ export type ComponentsOverrides = {
+   [Name in keyof ComponentNameToClassKey]?: Partial<
+-    OverridesStyleRules<ComponentNameToClassKey[Name]>
++    OverridesStyleRules<ComponentNameToClassKey[Name], ComponentsPropsList[Name], Theme>
+   >;
+ } & {
+   MuiCssBaseline?: CSSObject | string;
+diff --git a/packages/mui-system/src/createStyled.d.ts b/packages/mui-system/src/createStyled.d.ts
+index 25586888..972ea3f4 100644
+--- a/packages/mui-system/src/createStyled.d.ts
++++ b/packages/mui-system/src/createStyled.d.ts
+@@ -18,7 +18,6 @@ export interface MuiStyledOptions {
+   name?: string;
+   slot?: string;
+   // The difference between Interpolation and CSSInterpolation is that the former supports functions based on props
+-  // If we want to support props in the overrides, we will need to change the CSSInterpolation to Interpolation<Props>
+   overridesResolver?: (props: any, styles: Record<string, CSSInterpolation>) => CSSInterpolation;
+   skipVariantsResolver?: boolean;
+   skipSx?: boolean;
+diff --git a/packages/mui-system/src/createStyled.js b/packages/mui-system/src/createStyled.js
+index 74c86293..f5305375 100644
+--- a/packages/mui-system/src/createStyled.js
++++ b/packages/mui-system/src/createStyled.js
+@@ -16,6 +16,23 @@ const getStyleOverrides = (name, theme) => {
+   return null;
+ };
+ 
++// Resolve any callbacks defined in the theme's `styleOverrides`. This allows
++// developers to provide overrides based on the props of the component, instead
++// of always applying them on top of the base styles.
++const resolveStyleOverrides = (styleOverrides, props) => {
++  const resolvedStyleOverrides = {};
++
++  Object.keys(styleOverrides).forEach((slotName) => {
++    const slotStyleOverrides = styleOverrides[slotName];
++    resolvedStyleOverrides[slotName] =
++      typeof slotStyleOverrides === 'function'
++        ? slotStyleOverrides(props)
++        : slotStyleOverrides;
++  });
++
++  return resolvedStyleOverrides;
++};
++
+ const getVariantStyles = (name, theme) => {
+   let variants = [];
+   if (theme && theme.components && theme.components[name] && theme.components[name].variants) {
+@@ -135,7 +152,10 @@ export default function createStyled(input = {}) {
+           const styleOverrides = getStyleOverrides(componentName, theme);
+ 
+           if (styleOverrides) {
+-            return overridesResolver(props, styleOverrides);
++            return overridesResolver(
++              props,
++              resolveStyleOverrides(styleOverrides, { ...props, theme }),
++            );
+           }
+ 
+           return null;

@@ -1,0 +1,39 @@
+diff --git a/.changeset/spread-delegated-event-removal.md b/.changeset/spread-delegated-event-removal.md
+new file mode 100644
+index 0000000..6290eb1
+--- /dev/null
++++ b/.changeset/spread-delegated-event-removal.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++Fix delegated event handlers not being removed when set to `null` via spread props
+\ No newline at end of file
+diff --git a/packages/svelte/src/internal/client/dom/elements/attributes.js b/packages/svelte/src/internal/client/dom/elements/attributes.js
+index d927af5..de07da0 100644
+--- a/packages/svelte/src/internal/client/dom/elements/attributes.js
++++ b/packages/svelte/src/internal/client/dom/elements/attributes.js
+@@ -263,6 +263,9 @@ export function set_attributes(
+ 
+ 				element.removeEventListener(event_name, current[event_handle_key], opts);
+ 				current[event_handle_key] = null;
++			} else if (delegated && prev_value && value == null) {
++				// @ts-ignore
++				element[`__${event_name}`] = null;
+ 			}
+ 
+ 			if (value != null) {
+diff --git a/packages/svelte/src/internal/client/dom/elements/events.js b/packages/svelte/src/internal/client/dom/elements/events.js
+index f2038f9..dda5928 100644
+--- a/packages/svelte/src/internal/client/dom/elements/events.js
++++ b/packages/svelte/src/internal/client/dom/elements/events.js
+@@ -237,7 +237,7 @@ export function handle_event_propagation(event) {
+ 				// @ts-expect-error
+ 				var delegated = current_target['__' + event_name];
+ 
+-				if (delegated !== undefined && !(/** @type {any} */ (current_target).disabled)) {
++				if (delegated != null && !(/** @type {any} */ (current_target).disabled)) {
+ 					if (is_array(delegated)) {
+ 						var [fn, ...data] = delegated;
+ 						fn.apply(current_target, [event, ...data]);

@@ -1,0 +1,19 @@
+diff --git a/packages/svelte/src/internal/client/dom/elements/transitions.js b/packages/svelte/src/internal/client/dom/elements/transitions.js
+index cc98aa3..83572a7 100644
+--- a/packages/svelte/src/internal/client/dom/elements/transitions.js
++++ b/packages/svelte/src/internal/client/dom/elements/transitions.js
+@@ -323,6 +323,14 @@ function animate(element, options, counterpart, t2, callback) {
+ 		// WAAPI
+ 		var keyframes = [];
+ 		var n = duration / (1000 / 60);
++		var n_rounded = Math.round(n);
++
++		// correct for floating-point imprecision (e.g. `500 / (1000 / 60)` is
++		// `29.999999999999996` rather than `30`), so that the final keyframe at
++		// `t = t2` is included
++		if (n_rounded > 0 && Math.abs(n - n_rounded) < 1e-6) {
++			n = n_rounded;
++		}
+ 
+ 		for (var i = 0; i <= n; i += 1) {
+ 			var t = t1 + delta * easing(i / n);

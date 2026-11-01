@@ -1,0 +1,26 @@
+diff --git a/.changeset/svelte-element-namespace-options.md b/.changeset/svelte-element-namespace-options.md
+new file mode 100644
+index 0000000..299a57f
+--- /dev/null
++++ b/.changeset/svelte-element-namespace-options.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++Fix `<svelte:element>` not rendering in SVG/MathML namespace when `<svelte:options namespace="...">` is set at the top level of a component
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/SvelteElement.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/SvelteElement.js
+index 02717bd..cbeaaec 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/visitors/SvelteElement.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/SvelteElement.js
+@@ -27,6 +27,9 @@ export function SvelteElement(node, context) {
+ 		node.metadata.svg = xmlns.value[0].data === NAMESPACE_SVG;
+ 		node.metadata.mathml = xmlns.value[0].data === NAMESPACE_MATHML;
+ 	} else {
++		node.metadata.svg = context.state.options.namespace === 'svg';
++		node.metadata.mathml = context.state.options.namespace === 'mathml';
++
+ 		let i = context.path.length;
+ 		while (i--) {
+ 			const ancestor = context.path[i];

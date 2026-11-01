@@ -1,0 +1,101 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+index f238e3e..cf45f9a 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+@@ -117,6 +117,28 @@ function truncate(node) {
+ 	return node.children.slice(0, i + 1);
+ }
+ 
++/**
++ * A `:is(...)`/`:where(...)` selector that doesn't match any element in this
++ * component may still reference an external/global context (for example
++ * Tailwind's `:is(.dark *)` dark mode variant). Such selectors are kept rather
++ * than pruned. We consider a selector to be potentially external if it contains
++ * a class or id selector, since those are commonly applied from outside the
++ * component, as opposed to type selectors which are structural.
++ * @param {Compiler.Css.ComplexSelector} complex_selector
++ * @returns {boolean}
++ */
++function complex_selector_might_be_external(complex_selector) {
++	for (const relative_selector of complex_selector.children) {
++		for (const selector of relative_selector.selectors) {
++			if (selector.type === 'ClassSelector' || selector.type === 'IdSelector') {
++				return true;
++			}
++		}
++	}
++
++	return false;
++}
++
+ /**
+  * @param {Compiler.Css.RelativeSelector[]} relative_selectors
+  * @param {Compiler.Css.Rule} rule
+@@ -312,7 +334,18 @@ function relative_selector_might_apply_to_node(relative_selector, rule, element,
+ 					}
+ 
+ 					if (!matched) {
+-						return false;
++						let has_external_selector = false;
++
++						for (const complex_selector of selector.args.children) {
++							if (complex_selector_might_be_external(complex_selector)) {
++								complex_selector.metadata.used = true;
++								has_external_selector = true;
++							}
++						}
++
++						if (!has_external_selector) {
++							return false;
++						}
+ 					}
+ 				}
+ 
+diff --git a/packages/svelte/tests/css/samples/is-where-external/_config.js b/packages/svelte/tests/css/samples/is-where-external/_config.js
+new file mode 100644
+index 0000000..f47bee7
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/is-where-external/_config.js
+@@ -0,0 +1,3 @@
++import { test } from '../../test';
++
++export default test({});
+diff --git a/packages/svelte/tests/css/samples/is-where-external/expected.css b/packages/svelte/tests/css/samples/is-where-external/expected.css
+new file mode 100644
+index 0000000..45cc23f
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/is-where-external/expected.css
+@@ -0,0 +1,11 @@
++.btn.svelte-xyz {
++		color: black;
++
++		&:is(.dark *) {
++			color: red;
++		}
++
++		&:where(.dark *) {
++			color: blue;
++		}
++	}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/is-where-external/input.svelte b/packages/svelte/tests/css/samples/is-where-external/input.svelte
+new file mode 100644
+index 0000000..03260bb
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/is-where-external/input.svelte
+@@ -0,0 +1,15 @@
++<div class="btn">hello</div>
++
++<style>
++	.btn {
++		color: black;
++
++		&:is(.dark *) {
++			color: red;
++		}
++
++		&:where(.dark *) {
++			color: blue;
++		}
++	}
++</style>

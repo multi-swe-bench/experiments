@@ -1,0 +1,50 @@
+diff --git a/packages/mui-system/src/Unstable_Grid/gridGenerator.ts b/packages/mui-system/src/Unstable_Grid/gridGenerator.ts
+index a67518bc..5590e6f8 100644
+--- a/packages/mui-system/src/Unstable_Grid/gridGenerator.ts
++++ b/packages/mui-system/src/Unstable_Grid/gridGenerator.ts
+@@ -163,6 +163,15 @@ export const generateGridOffsetStyles = ({ theme, ownerState }: Props) => {
+ 
+ export const generateGridColumnsStyles = ({ theme, ownerState }: Props) => {
+   if (!ownerState.container) {
++    // A nested item does not define its own columns, but it has to forward the
++    // parent's columns to its own level so that a nested container (deeper in
++    // the tree) can access the value. Without this, a container placed inside
++    // an item would reference a non-existent CSS variable.
++    if (ownerState.unstable_level > 0) {
++      return {
++        [`--Grid-columns${appendLevel(ownerState.unstable_level)}`]: getParentColumns(ownerState),
++      };
++    }
+     return {};
+   }
+   const styles = isNestedContainer(ownerState)
+@@ -176,6 +185,14 @@ export const generateGridColumnsStyles = ({ theme, ownerState }: Props) => {
+ 
+ export const generateGridRowSpacingStyles = ({ theme, ownerState }: Props) => {
+   if (!ownerState.container) {
++    // Forward the parent's row spacing to the current level so that a nested
++    // container placed inside an item can access the value.
++    if (ownerState.unstable_level > 0) {
++      const getParentSpacing = createGetParentSpacing(ownerState);
++      return {
++        [`--Grid-rowSpacing${appendLevel(ownerState.unstable_level)}`]: getParentSpacing('row'),
++      };
++    }
+     return {};
+   }
+   const getParentSpacing = createGetParentSpacing(ownerState);
+@@ -201,6 +218,14 @@ export const generateGridRowSpacingStyles = ({ theme, ownerState }: Props) => {
+ 
+ export const generateGridColumnSpacingStyles = ({ theme, ownerState }: Props) => {
+   if (!ownerState.container) {
++    // Forward the parent's column spacing to the current level so that a nested
++    // container placed inside an item can access the value.
++    if (ownerState.unstable_level > 0) {
++      const getParentSpacing = createGetParentSpacing(ownerState);
++      return {
++        [`--Grid-columnSpacing${appendLevel(ownerState.unstable_level)}`]: getParentSpacing('column'),
++      };
++    }
+     return {};
+   }
+   const getParentSpacing = createGetParentSpacing(ownerState);

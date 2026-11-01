@@ -1,0 +1,175 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/declarations.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/declarations.js
+index 5db639c..face0df 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/declarations.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/shared/declarations.js
+@@ -16,45 +16,56 @@ export function get_value(node) {
+  * @param {Context | ComponentContext} context
+  */
+ export function add_state_transformers(context) {
+-	for (const [name, binding] of context.state.scope.declarations) {
+-		if (
+-			is_state_source(binding, context.state.analysis) ||
+-			binding.kind === 'derived' ||
+-			binding.kind === 'legacy_reactive'
+-		) {
+-			context.state.transform[name] = {
+-				read: get_value,
+-				assign: (node, value) => {
+-					let call = b.call('$.set', node, value);
++	// `var` declarations are hoisted to the nearest non-porous (function) scope,
++	// so we need to walk up through porous scopes to ensure they get transformers
++	let scope = context.state.scope;
++	while (scope) {
++		for (const [name, binding] of scope.declarations) {
++			if (
++				is_state_source(binding, context.state.analysis) ||
++				binding.kind === 'derived' ||
++				binding.kind === 'legacy_reactive'
++			) {
++				context.state.transform[name] = {
++					read: get_value,
++					assign: (node, value) => {
++						let call = b.call('$.set', node, value);
+ 
+-					if (context.state.scope.get(`$${node.name}`)?.kind === 'store_sub') {
+-						call = b.call('$.store_unsub', call, b.literal(`$${node.name}`), b.id('$$stores'));
+-					}
++						if (context.state.scope.get(`$${node.name}`)?.kind === 'store_sub') {
++							call = b.call('$.store_unsub', call, b.literal(`$${node.name}`), b.id('$$stores'));
++						}
++
++						return call;
++					},
++					mutate: (node, mutation) => {
++						if (context.state.analysis.runes) {
++							return mutation;
++						}
+ 
+-					return call;
+-				},
+-				mutate: (node, mutation) => {
+-					if (context.state.analysis.runes) {
+-						return mutation;
++						return b.call('$.mutate', node, mutation);
++					},
++					update: (node) => {
++						return b.call(
++							node.prefix ? '$.update_pre' : '$.update',
++							node.argument,
++							node.operator === '--' && b.literal(-1)
++						);
+ 					}
++				};
++			}
+ 
+-					return b.call('$.mutate', node, mutation);
+-				},
+-				update: (node) => {
+-					return b.call(
+-						node.prefix ? '$.update_pre' : '$.update',
+-						node.argument,
+-						node.operator === '--' && b.literal(-1)
+-					);
+-				}
+-			};
++			if (binding.kind === 'linked_state') {
++				context.state.transform[name] = {
++					read: b.call,
++					assign: b.call
++				};
++			}
+ 		}
+ 
+-		if (binding.kind === 'linked_state') {
+-			context.state.transform[name] = {
+-				read: b.call,
+-				assign: b.call
+-			};
++		if (scope.porous && scope.parent) {
++			scope = scope.parent;
++		} else {
++			break;
+ 		}
+ 	}
+ }
+diff --git a/packages/svelte/src/compiler/phases/scope.js b/packages/svelte/src/compiler/phases/scope.js
+index 66a49f8..a71936f 100644
+--- a/packages/svelte/src/compiler/phases/scope.js
++++ b/packages/svelte/src/compiler/phases/scope.js
+@@ -31,6 +31,14 @@ export class Scope {
+ 	 */
+ 	#porous;
+ 
++	/**
++	 * Whether or not `var` declarations are contained by this scope
++	 * @type {boolean}
++	 */
++	get porous() {
++		return this.#porous;
++	}
++
+ 	/**
+ 	 * A map of every identifier declared by this scope, and all the
+ 	 * identifiers that reference it
+diff --git a/packages/svelte/tests/runtime-runes/samples/state-var-in-svelte-js/_config.js b/packages/svelte/tests/runtime-runes/samples/state-var-in-svelte-js/_config.js
+new file mode 100644
+index 0000000..31ebf65
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/state-var-in-svelte-js/_config.js
+@@ -0,0 +1,18 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++
++export default test({
++	// `var`-declared state should read as the value, not the source object.
++	// If it read the source object, this would render as `[object Object]`.
++	html: `<p>false</p><button>set true</button>`,
++
++	test({ assert, target, window }) {
++		assert.htmlEqual(target.innerHTML, `<p>false</p><button>set true</button>`);
++
++		const btn = target.querySelector('button');
++		btn?.dispatchEvent(new window.Event('click', { bubbles: true }));
++		flushSync();
++
++		assert.htmlEqual(target.innerHTML, `<p>true</p><button>set true</button>`);
++	}
++});
+diff --git a/packages/svelte/tests/runtime-runes/samples/state-var-in-svelte-js/main.svelte b/packages/svelte/tests/runtime-runes/samples/state-var-in-svelte-js/main.svelte
+new file mode 100644
+index 0000000..f082981
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/state-var-in-svelte-js/main.svelte
+@@ -0,0 +1,11 @@
++<script>
++	import { simpleStore } from './store.svelte.js';
++
++	const store = simpleStore(false);
++</script>
++
++<!-- `var`-declared state should read as the value, not the source object.
++     If it read the source object, this would render as `[object Object]`. -->
++<p>{store.get()}</p>
++
++<button onclick={() => store.set(true)}>set true</button>
+diff --git a/packages/svelte/tests/runtime-runes/samples/state-var-in-svelte-js/store.svelte.js b/packages/svelte/tests/runtime-runes/samples/state-var-in-svelte-js/store.svelte.js
+new file mode 100644
+index 0000000..e98204d
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/state-var-in-svelte-js/store.svelte.js
+@@ -0,0 +1,15 @@
++function simpleStore(initial) {
++	var _value = $state(initial);
++
++	return {
++		get(snapshot = false) {
++			if (snapshot) return $state.snapshot(_value);
++			return _value;
++		},
++		set(state) {
++			_value = state;
++		}
++	};
++}
++
++export { simpleStore };

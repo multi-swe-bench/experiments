@@ -1,0 +1,87 @@
+diff --git a/src/plugin/localeData/index.js b/src/plugin/localeData/index.js
+index c8008a2..7fab8af 100644
+--- a/src/plugin/localeData/index.js
++++ b/src/plugin/localeData/index.js
+@@ -7,17 +7,37 @@ export default (o, c, dayjs) => { // locale needed later
+     }
+     return locale[target]
+   }
++  const englishFormats = {
++    LTS: 'h:mm:ss A',
++    LT: 'h:mm A',
++    L: 'MM/DD/YYYY',
++    LL: 'MMMM D, YYYY',
++    LLL: 'MMMM D, YYYY h:mm A',
++    LLLL: 'dddd, MMMM D, YYYY h:mm A'
++  }
++  const getLongDateFormat = (locale, key) => {
++    const formats = locale.formats || englishFormats
++    const format = formats[key]
++    const formatUpper = formats[key.toUpperCase()]
++    if (format || !formatUpper) {
++      return format
++    }
++    return formatUpper
++      .replace(/(\[[^\]]+])|(MMMM|MM|DD|dddd)/g, (_, a, b) => a || b.slice(1))
++  }
+   const localeData = function () {
++    const locale = this.$locale()
+     return {
+       months: instance =>
+         (instance ? instance.format('MMMM') : getShort(this, 'months')),
+       monthsShort: instance =>
+         (instance ? instance.format('MMM') : getShort(this, 'monthsShort', 'months', 3)),
+-      firstDayOfWeek: () => this.$locale().weekStart || 0,
++      firstDayOfWeek: () => locale.weekStart || 0,
+       weekdaysMin: instance =>
+         (instance ? instance.format('dd') : getShort(this, 'weekdaysMin', 'weekdays', 2)),
+       weekdaysShort: instance =>
+-        (instance ? instance.format('ddd') : getShort(this, 'weekdaysShort', 'weekdays', 3))
++        (instance ? instance.format('ddd') : getShort(this, 'weekdaysShort', 'weekdays', 3)),
++      longDateFormat: key => getLongDateFormat(locale, key)
+     }
+   }
+   proto.localeData = function () {
+@@ -27,7 +47,8 @@ export default (o, c, dayjs) => { // locale needed later
+   dayjs.localeData = () => {
+     const localeObject = dayjs.Ls[dayjs.locale()]
+     return {
+-      firstDayOfWeek: () => localeObject.weekStart || 0
++      firstDayOfWeek: () => localeObject.weekStart || 0,
++      longDateFormat: key => getLongDateFormat(localeObject, key)
+     }
+   }
+ }
+diff --git a/tmp_test/longdate.test.js b/tmp_test/longdate.test.js
+new file mode 100644
+index 0000000..6dc69b3
+--- /dev/null
++++ b/tmp_test/longdate.test.js
+@@ -0,0 +1,27 @@
++import moment from 'moment'
++import dayjs from '../../src'
++import localeData from '../../src/plugin/localeData'
++import localizedFormat from '../../src/plugin/localizedFormat'
++import '../../src/locale/af'
++
++dayjs.extend(localizedFormat)
++dayjs.extend(localeData)
++
++it('longDateFormat instance', () => {
++  const d = dayjs()
++  const m = moment()
++  expect(d.localeData().longDateFormat('L')).toBe(m.localeData().longDateFormat('L'))
++  expect(d.localeData().longDateFormat('LT')).toBe(m.localeData().longDateFormat('LT'))
++  expect(d.localeData().longDateFormat('l')).toBe(m.localeData().longDateFormat('l'))
++  expect(d.localeData().longDateFormat('LL')).toBe(m.localeData().longDateFormat('LL'))
++})
++
++it('longDateFormat af global', () => {
++  dayjs.locale('af')
++  moment.locale('af')
++  expect(dayjs.localeData().longDateFormat('L')).toBe(moment.localeData().longDateFormat('L'))
++  expect(dayjs.localeData().longDateFormat('LT')).toBe(moment.localeData().longDateFormat('LT'))
++  expect(dayjs.localeData().longDateFormat('l')).toBe(moment.localeData().longDateFormat('l'))
++  dayjs.locale('en')
++  moment.locale('en')
++})

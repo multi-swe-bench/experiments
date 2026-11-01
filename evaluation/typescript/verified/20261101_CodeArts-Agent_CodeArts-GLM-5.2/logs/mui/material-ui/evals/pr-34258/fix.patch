@@ -1,0 +1,15 @@
+diff --git a/packages/mui-material/src/ButtonBase/TouchRipple.js b/packages/mui-material/src/ButtonBase/TouchRipple.js
+index 2e299b19..51e69625 100644
+--- a/packages/mui-material/src/ButtonBase/TouchRipple.js
++++ b/packages/mui-material/src/ButtonBase/TouchRipple.js
+@@ -225,7 +225,9 @@ const TouchRipple = React.forwardRef(function TouchRipple(inProps, ref) {
+       }
+ 
+       if (center) {
+-        rippleSize = Math.sqrt((2 * rect.width ** 2 + rect.height ** 2) / 3);
++        rippleSize = pulsate
++          ? Math.sqrt(rect.width ** 2 + rect.height ** 2)
++          : Math.sqrt((2 * rect.width ** 2 + rect.height ** 2) / 3);
+ 
+         // For some reason the animation is broken on Mobile Chrome if the size is even.
+         if (rippleSize % 2 === 0) {

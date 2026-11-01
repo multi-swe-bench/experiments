@@ -1,0 +1,26 @@
+diff --git a/packages/mui-base/src/useSelect/useSelect.ts b/packages/mui-base/src/useSelect/useSelect.ts
+index 066e3302..f35423a2 100644
+--- a/packages/mui-base/src/useSelect/useSelect.ts
++++ b/packages/mui-base/src/useSelect/useSelect.ts
+@@ -16,7 +16,7 @@ import {
+   UseSelectParameters,
+   UseSelectReturnValue,
+ } from './useSelect.types';
+-import useList, { UseListParameters } from '../useList';
++import useList, { ListActionTypes, UseListParameters } from '../useList';
+ import { EventHandlers } from '../utils/types';
+ import defaultOptionStringifier from './defaultOptionStringifier';
+ import { SelectProviderValue } from './SelectProvider';
+@@ -173,7 +173,12 @@ function useSelect<OptionValue, Multiple extends boolean = false>(
+         | React.FocusEvent<Element, Element>
+         | null,
+       newValues: OptionValue[],
++      reason?: string,
+     ) => {
++      if (reason === ListActionTypes.itemsChange) {
++        return;
++      }
++
+       if (multiple) {
+         onChange?.(event, newValues as SelectValue<OptionValue, Multiple>);
+       } else {

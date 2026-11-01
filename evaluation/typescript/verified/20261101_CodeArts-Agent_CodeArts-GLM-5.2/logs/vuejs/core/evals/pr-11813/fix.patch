@@ -1,0 +1,16 @@
+diff --git a/packages/reactivity/src/effect.ts b/packages/reactivity/src/effect.ts
+index a22990f..e47bd85 100644
+--- a/packages/reactivity/src/effect.ts
++++ b/packages/reactivity/src/effect.ts
+@@ -381,8 +381,9 @@ export function refreshComputed(computed: ComputedRefImpl): false | undefined {
+ 
+   try {
+     prepareDeps(computed)
+-    const value = computed.fn()
+-    if (dep.version === 0 || hasChanged(value, computed._value)) {
++    const oldValue = computed._value
++    const value = computed.fn(oldValue)
++    if (dep.version === 0 || hasChanged(value, oldValue)) {
+       computed._value = value
+       dep.version++
+     }

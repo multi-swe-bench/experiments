@@ -1,0 +1,34 @@
+diff --git a/packages/mui-material/src/Autocomplete/Autocomplete.d.ts b/packages/mui-material/src/Autocomplete/Autocomplete.d.ts
+index e4ecb8a6..d2dde182 100644
+--- a/packages/mui-material/src/Autocomplete/Autocomplete.d.ts
++++ b/packages/mui-material/src/Autocomplete/Autocomplete.d.ts
+@@ -120,6 +120,7 @@ export interface AutocompleteProps<
+   componentsProps?: {
+     clearIndicator?: Partial<IconButtonProps>;
+     paper?: PaperProps;
++    popper?: PopperProps;
+   };
+   /**
+    * If `true`, the component is disabled.
+diff --git a/packages/mui-material/src/Autocomplete/Autocomplete.js b/packages/mui-material/src/Autocomplete/Autocomplete.js
+index 79d2f227..340d7f62 100644
+--- a/packages/mui-material/src/Autocomplete/Autocomplete.js
++++ b/packages/mui-material/src/Autocomplete/Autocomplete.js
+@@ -591,7 +591,8 @@ const Autocomplete = React.forwardRef(function Autocomplete(inProps, ref) {
+       {popupOpen && anchorEl ? (
+         <AutocompletePopper
+           as={PopperComponent}
+-          className={clsx(classes.popper)}
++          {...componentsProps.popper}
++          className={clsx(classes.popper, componentsProps.popper?.className)}
+           disablePortal={disablePortal}
+           style={{
+             width: anchorEl ? anchorEl.clientWidth : null,
+@@ -739,6 +740,7 @@ Autocomplete.propTypes /* remove-proptypes */ = {
+   componentsProps: PropTypes.shape({
+     clearIndicator: PropTypes.object,
+     paper: PropTypes.object,
++    popper: PropTypes.object,
+   }),
+   /**
+    * The default value. Use when the component is not controlled.

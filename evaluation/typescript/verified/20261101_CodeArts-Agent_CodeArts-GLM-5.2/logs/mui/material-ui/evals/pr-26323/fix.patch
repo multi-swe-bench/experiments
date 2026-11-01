@@ -1,0 +1,120 @@
+diff --git a/packages/material-ui/src/DialogTitle/DialogTitle.d.ts b/packages/material-ui/src/DialogTitle/DialogTitle.d.ts
+index a298a03b..b7e6fcd2 100644
+--- a/packages/material-ui/src/DialogTitle/DialogTitle.d.ts
++++ b/packages/material-ui/src/DialogTitle/DialogTitle.d.ts
+@@ -1,9 +1,10 @@
+ import * as React from 'react';
+ import { SxProps } from '@material-ui/system';
+ import { InternalStandardProps as StandardProps, Theme } from '..';
++import { TypographyProps } from '../Typography';
+ import { DialogTitleClasses } from './dialogTitleClasses';
+ 
+-export interface DialogTitleProps extends StandardProps<React.HTMLAttributes<HTMLDivElement>> {
++export interface DialogTitleProps extends StandardProps<TypographyProps> {
+   /**
+    * The content of the component.
+    */
+@@ -12,16 +13,20 @@ export interface DialogTitleProps extends StandardProps<React.HTMLAttributes<HTM
+    * Override or extend the styles applied to the component.
+    */
+   classes?: Partial<DialogTitleClasses>;
+-  /**
+-   * The system prop that allows defining system overrides as well as additional CSS styles.
+-   */
+-  sx?: SxProps<Theme>;
+   /**
+    * If `true`, the children won't be wrapped by a typography component.
+-   * For instance, this can be useful to render an h4 instead of the default h2.
++   *
++   * This prop is deprecated. The component is now rendered as a `Typography`
++   * (a heading element) which can be customized with the `component` and
++   * `variant` props.
+    * @default false
++   * @deprecated Use the `component` prop instead.
+    */
+   disableTypography?: boolean;
++  /**
++   * The system prop that allows defining system overrides as well as additional CSS styles.
++   */
++  sx?: SxProps<Theme>;
+ }
+ 
+ /**
+@@ -33,5 +38,6 @@ export interface DialogTitleProps extends StandardProps<React.HTMLAttributes<HTM
+  * API:
+  *
+  * - [DialogTitle API](https://material-ui.com/api/dialog-title/)
++ * - inherits [Typography API](https://material-ui.com/api/typography/)
+  */
+ export default function DialogTitle(props: DialogTitleProps): JSX.Element;
+diff --git a/packages/material-ui/src/DialogTitle/DialogTitle.js b/packages/material-ui/src/DialogTitle/DialogTitle.js
+index 8837d98d..4f0a7925 100644
+--- a/packages/material-ui/src/DialogTitle/DialogTitle.js
++++ b/packages/material-ui/src/DialogTitle/DialogTitle.js
+@@ -17,17 +17,14 @@ const useUtilityClasses = (styleProps) => {
+   return composeClasses(slots, getDialogTitleUtilityClass, classes);
+ };
+ 
+-const DialogTitleRoot = experimentalStyled('div', {
++const DialogTitleRoot = experimentalStyled(Typography, {
+   name: 'MuiDialogTitle',
+   slot: 'Root',
+   overridesResolver: (props, styles) => styles.root,
+-})(() => {
+-  return {
+-    /* Styles applied to the root element. */
+-    margin: 0,
+-    padding: '16px 24px',
+-    flex: '0 0 auto',
+-  };
++})({
++  /* Styles applied to the root element. */
++  padding: '16px 24px',
++  flex: '0 0 auto',
+ });
+ 
+ const DialogTitle = React.forwardRef(function DialogTitle(inProps, ref) {
+@@ -36,25 +33,19 @@ const DialogTitle = React.forwardRef(function DialogTitle(inProps, ref) {
+     name: 'MuiDialogTitle',
+   });
+ 
+-  const { children, className, disableTypography = false, ...other } = props;
++  const { className, disableTypography, ...other } = props;
+   const styleProps = { ...props, disableTypography };
+   const classes = useUtilityClasses(styleProps);
+ 
+   return (
+     <DialogTitleRoot
++      component="h2"
++      variant="h6"
+       className={clsx(classes.root, className)}
+       styleProps={styleProps}
+       ref={ref}
+       {...other}
+-    >
+-      {disableTypography ? (
+-        children
+-      ) : (
+-        <Typography component="h2" variant="h6">
+-          {children}
+-        </Typography>
+-      )}
+-    </DialogTitleRoot>
++    />
+   );
+ });
+ 
+@@ -77,8 +68,12 @@ DialogTitle.propTypes /* remove-proptypes */ = {
+   className: PropTypes.string,
+   /**
+    * If `true`, the children won't be wrapped by a typography component.
+-   * For instance, this can be useful to render an h4 instead of the default h2.
++   *
++   * This prop is deprecated. The component is now rendered as a `Typography`
++   * (a heading element) which can be customized with the `component` and
++   * `variant` props.
+    * @default false
++   * @deprecated Use the `component` prop instead.
+    */
+   disableTypography: PropTypes.bool,
+   /**

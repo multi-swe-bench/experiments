@@ -1,0 +1,657 @@
+diff --git a/packages/svelte/package.json b/packages/svelte/package.json
+index b6087b6..813b3bf 100644
+--- a/packages/svelte/package.json
++++ b/packages/svelte/package.json
+@@ -8,11 +8,15 @@
+   "engines": {
+     "node": ">=18"
+   },
++  "bin": {
++    "svelte-migrate": "./scripts/migrate/index.js"
++  },
+   "files": [
+     "src",
+     "!src/**/*.test.*",
+     "types",
+     "compiler",
++    "scripts/migrate",
+     "*.d.ts",
+     "README.md"
+   ],
+@@ -106,7 +110,8 @@
+     "generate:version": "node ./scripts/generate-version.js",
+     "generate:types": "node ./scripts/generate-types.js && tsc -p tsconfig.generated.json",
+     "prepublishOnly": "pnpm build",
+-    "knip": "knip"
++    "knip": "knip",
++    "migrate": "node ./scripts/migrate/index.js"
+   },
+   "devDependencies": {
+     "@jridgewell/trace-mapping": "^0.3.22",
+diff --git a/packages/svelte/scripts/migrate/index.js b/packages/svelte/scripts/migrate/index.js
+new file mode 100755
+index 0000000..2e8483f
+--- /dev/null
++++ b/packages/svelte/scripts/migrate/index.js
+@@ -0,0 +1,110 @@
++#!/usr/bin/env node
++/* eslint-disable no-console */
++import * as fs from 'node:fs';
++import * as path from 'node:path';
++import { migrate } from './migrate.js';
++
++/**
++ * Recursively collects all `.svelte` files in a directory.
++ * @param {string} dir
++ * @returns {string[]}
++ */
++function collect_svelte_files(dir) {
++	/** @type {string[]} */
++	const result = [];
++	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
++		const full = path.join(dir, entry.name);
++		if (entry.isDirectory()) {
++			if (entry.name === 'node_modules' || entry.name === '.git') continue;
++			result.push(...collect_svelte_files(full));
++		} else if (entry.name.endsWith('.svelte')) {
++			result.push(full);
++		}
++	}
++	return result;
++}
++
++const args = process.argv.slice(2);
++
++if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
++	console.log(`svelte-migrate — migrate Svelte 4 components to Svelte 5
++
++Usage:
++  node ./scripts/migrate/index.js [paths...]
++
++Arguments:
++  paths   One or more files or directories to migrate. Defaults to the current directory.
++
++Options:
++  -h, --help     Show this help message
++  -d, --dry-run  Print the changes that would be made without writing files
++`);
++	process.exit(0);
++}
++
++const dry_run = args.includes('-d') || args.includes('--dry-run');
++const targets = args.filter((a) => !a.startsWith('-'));
++
++/** @type {string[]} */
++let files = [];
++
++for (const target of targets) {
++	const stat = fs.statSync(target);
++	if (stat.isDirectory()) {
++		files.push(...collect_svelte_files(target));
++	} else if (target.endsWith('.svelte')) {
++		files.push(target);
++	}
++}
++
++files = [...new Set(files)];
++
++if (files.length === 0) {
++	console.log('No .svelte files found to migrate.');
++	process.exit(0);
++}
++
++/** @type {Array<{ file: string, report: any[] }>} */
++const results = [];
++let changed = 0;
++
++for (const file of files) {
++	const source = fs.readFileSync(file, 'utf-8');
++
++	/** @type {{ code: string, report: any[] }} */
++	let result;
++	try {
++		result = migrate(source, { filename: file });
++	} catch (e) {
++		console.error(`Failed to migrate ${file}: ${e.message}`);
++		continue;
++	}
++
++	if (result.code !== source) {
++		changed++;
++		if (!dry_run) {
++			fs.writeFileSync(file, result.code);
++		}
++	}
++
++	results.push({ file, report: result.report });
++}
++
++for (const { file, report } of results) {
++	if (report.length === 0) continue;
++	console.log(`\n${file}`);
++	for (const entry of report) {
++		console.log(`  [${entry.type}] ${entry.message}`);
++	}
++}
++
++const manual = results.reduce(
++	(sum, r) => sum + r.report.filter((e) => /manual|review/i.test(e.message)).length,
++	0
++);
++
++console.log(
++	`\nMigrated ${changed} of ${files.length} file(s)` +
++		(dry_run ? ' (dry run, no files written)' : '') +
++		(manual > 0 ? `. ${manual} change(s) require manual intervention.` : '.')
++);
+diff --git a/packages/svelte/scripts/migrate/machines/events.js b/packages/svelte/scripts/migrate/machines/events.js
+new file mode 100644
+index 0000000..aad120b
+--- /dev/null
++++ b/packages/svelte/scripts/migrate/machines/events.js
+@@ -0,0 +1,84 @@
++import { walk } from 'zimmerframe';
++
++const INLINEABLE_MODIFIERS = new Set([
++	'preventDefault',
++	'stopPropagation',
++	'stopImmediatePropagation'
++]);
++const UNSUPPORTED_MODIFIERS = new Set(['self', 'once', 'passive', 'nonpassive', 'trusted']);
++
++const COMPONENT_TYPES = new Set(['Component', 'SvelteComponent']);
++
++/**
++ * Migrates `on:` event directives to Svelte 5 event handler properties.
++ * @param {import('#compiler').Root} ast
++ * @param {import('magic-string').default} code
++ * @param {string} source
++ * @param {Array<{ type: string, message: string }>} report
++ */
++export function migrate_events(ast, code, source, report) {
++	walk(ast.fragment, null, {
++		OnDirective(node, { path }) {
++			const parent = path.at(-1);
++			const is_component = parent != null && COMPONENT_TYPES.has(parent.type);
++
++			const modifiers = node.modifiers;
++			const unsupported = modifiers.filter((m) => UNSUPPORTED_MODIFIERS.has(m));
++
++			if (unsupported.length > 0) {
++				report.push({
++					type: 'events',
++					message: `Could not migrate \`on:${node.name}\` with modifier${
++						unsupported.length > 1 ? 's' : ''
++					} ${unsupported.join(', ')} — this needs to be migrated manually`
++				});
++				return;
++			}
++
++			const has_capture = modifiers.includes('capture');
++			const inline_modifiers = modifiers.filter((m) => INLINEABLE_MODIFIERS.has(m));
++
++			const prop_name = is_component ? node.name : `on${node.name}${has_capture ? 'capture' : ''}`;
++			const expr_text = node.expression
++				? source.slice(node.expression.start, node.expression.end)
++				: null;
++
++			/** @type {string} */
++			let replacement;
++
++			if (inline_modifiers.length === 0) {
++				if (expr_text != null) {
++					replacement = `${prop_name}={${expr_text}}`;
++				} else if (is_component) {
++					// Event forwarding on a component requires turning the event into a callback prop.
++					report.push({
++						type: 'events',
++						message: `\`on:${node.name}\` on a component forwards the event — turn \`${node.name}\` into a callback prop and add it to \`$props()\` manually`
++					});
++					return;
++				} else {
++					// Shorthand `on:click` -> `onclick={click}`
++					replacement = `${prop_name}={${node.name}}`;
++				}
++			} else {
++				const handler = expr_text ?? node.name;
++				// Wrap function-expression handlers in parens so the call is parsed correctly
++				// (e.g. `() => foo` must become `(() => foo)(e)`, not `() => foo(e)`).
++				const needs_parens =
++					node.expression != null &&
++					(node.expression.type === 'ArrowFunctionExpression' ||
++						node.expression.type === 'FunctionExpression' ||
++						node.expression.type === 'AssignmentExpression');
++				const callable = needs_parens ? `(${handler})` : handler;
++				const calls = inline_modifiers.map((m) => `e.${m}();`).join(' ');
++				replacement = `${prop_name}={(e) => { ${calls} ${callable}(e); }}`;
++			}
++
++			code.overwrite(node.start, node.end, replacement);
++			report.push({
++				type: 'events',
++				message: `Replaced \`on:${node.name}\` with \`${prop_name}\``
++			});
++		}
++	});
++}
+diff --git a/packages/svelte/scripts/migrate/machines/runes.js b/packages/svelte/scripts/migrate/machines/runes.js
+new file mode 100644
+index 0000000..0860dd9
+--- /dev/null
++++ b/packages/svelte/scripts/migrate/machines/runes.js
+@@ -0,0 +1,334 @@
++import { walk } from 'zimmerframe';
++
++const RUNES = new Set([
++	'$state',
++	'$derived',
++	'$effect',
++	'$props',
++	'$bindable',
++	'$inspect',
++	'$host'
++]);
++
++/**
++ * @param {import('#compiler').Root} ast
++ * @returns {boolean}
++ */
++function uses_runes(ast) {
++	if (ast.options?.runes) {
++		return true;
++	}
++
++	let found = false;
++
++	const check = (/** @type {any} */ program) => {
++		if (!program) return;
++		walk(program, null, {
++			CallExpression(node) {
++				if (
++					node.callee.type === 'Identifier' &&
++					RUNES.has(node.callee.name) &&
++					// make sure it's not a method call like `foo.$state()`
++					!('object' in node.callee)
++				) {
++					found = true;
++				}
++			}
++		});
++	};
++
++	check(ast.instance?.content);
++	check(ast.module?.content);
++
++	return found;
++}
++
++/**
++ * Finds top-level `let` variables in the instance script that are reassigned
++ * or mutated (including from within the template), and counts how many times
++ * each is reassigned (identifier reassignment, not member mutation).
++ * @param {import('#compiler').Root} ast
++ * @param {string} source
++ * @returns {{
++ *   reactive: Set<string>,
++ *   reassigned: Map<string, number>,
++ *   exported: Set<string>,
++ *   let_declarators: Map<string, any>
++ * }}
++ */
++function analyze_reactivity(ast, source) {
++	/** @type {Set<string>} */
++	const top_level_lets = new Set();
++	/** @type {Map<string, any>} */
++	const let_declarators = new Map();
++	/** @type {Set<string>} */
++	const exported = new Set();
++
++	const instance = ast.instance?.content;
++	if (instance) {
++		for (const stmt of instance.body) {
++			if (
++				stmt.type === 'ExportNamedDeclaration' &&
++				stmt.declaration?.type === 'VariableDeclaration' &&
++				stmt.declaration.kind === 'let'
++			) {
++				for (const d of stmt.declaration.declarations) {
++					if (d.id.type === 'Identifier') {
++						exported.add(d.id.name);
++					}
++				}
++			}
++		}
++
++		for (const stmt of instance.body) {
++			if (stmt.type === 'VariableDeclaration' && stmt.kind === 'let') {
++				for (const d of stmt.declarations) {
++					if (d.id.type === 'Identifier' && !exported.has(d.id.name)) {
++						top_level_lets.add(d.id.name);
++						let_declarators.set(d.id.name, d);
++					}
++				}
++			}
++		}
++	}
++
++	/** @type {Set<string>} */
++	const reactive = new Set();
++	/** @type {Map<string, number>} */
++	const reassigned = new Map();
++
++	const visit_assignments = (/** @type {any} */ program) => {
++		if (!program) return;
++		walk(program, null, {
++			AssignmentExpression(node) {
++				if (node.left.type === 'Identifier' && top_level_lets.has(node.left.name)) {
++					reactive.add(node.left.name);
++					reassigned.set(node.left.name, (reassigned.get(node.left.name) ?? 0) + 1);
++				} else if (
++					node.left.type === 'MemberExpression' &&
++					node.left.object.type === 'Identifier' &&
++					top_level_lets.has(node.left.object.name)
++				) {
++					reactive.add(node.left.object.name);
++				}
++			},
++			UpdateExpression(node) {
++				if (node.argument.type === 'Identifier' && top_level_lets.has(node.argument.name)) {
++					reactive.add(node.argument.name);
++					reassigned.set(node.argument.name, (reassigned.get(node.argument.name) ?? 0) + 1);
++				} else if (
++					node.argument.type === 'MemberExpression' &&
++					node.argument.object.type === 'Identifier' &&
++					top_level_lets.has(node.argument.object.name)
++				) {
++					reactive.add(node.argument.object.name);
++				}
++			}
++		});
++	};
++
++	visit_assignments(instance);
++	visit_assignments(ast.fragment);
++
++	return { reactive, reassigned, exported, let_declarators };
++}
++
++/**
++ * Migrates legacy Svelte 4 reactivity to Svelte 5 runes.
++ * @param {import('#compiler').Root} ast
++ * @param {import('magic-string').default} code
++ * @param {string} source
++ * @param {Array<{ type: string, message: string }>} report
++ */
++export function migrate_runes(ast, code, source, report) {
++	const instance = ast.instance?.content;
++
++	if (!instance) {
++		return;
++	}
++
++	if (uses_runes(ast)) {
++		report.push({
++			type: 'runes',
++			message: 'Component already uses runes — skipping runes migration'
++		});
++		return;
++	}
++
++	const { reactive, reassigned, exported, let_declarators } = analyze_reactivity(ast, source);
++
++	/** Names that have been turned into `$derived` and must not become `$state`. */
++	const derived = new Set();
++
++	/** @type {Array<{ statement: any, declarators: any[] }>} */
++	const export_lets = [];
++
++	for (const stmt of instance.body) {
++		if (
++			stmt.type === 'ExportNamedDeclaration' &&
++			stmt.declaration &&
++			stmt.declaration.type === 'VariableDeclaration' &&
++			stmt.declaration.kind === 'let'
++		) {
++			const declarators = stmt.declaration.declarations.map((/** @type {any} */ d) => ({
++				node: d,
++				id_text: source.slice(d.id.start, d.id.end),
++				init_text: d.init ? source.slice(d.init.start, d.init.end) : null
++			}));
++			export_lets.push({ statement: stmt, declarators });
++		}
++	}
++
++	// `export let` -> `let { ... } = $props()`
++	if (export_lets.length > 0) {
++		const all = export_lets.flatMap((e) => e.declarators);
++		const props = all
++			.map((d) => (d.init_text ? `${d.id_text} = ${d.init_text}` : d.id_text))
++			.join(', ');
++
++		const first = export_lets[0].statement;
++		code.overwrite(first.start, first.end, `let { ${props} } = $props();`);
++
++		for (let i = 1; i < export_lets.length; i++) {
++			const stmt = export_lets[i].statement;
++			code.remove(stmt.start, stmt.end);
++		}
++
++		// Props that are reassigned can't be migrated automatically.
++		for (const d of all) {
++			if (d.node.id.type === 'Identifier' && reactive.has(d.node.id.name)) {
++				report.push({
++					type: 'runes',
++					message: `Prop \`${d.node.id.name}\` is reassigned — props cannot be reassigned in Svelte 5, this needs manual intervention`
++				});
++			}
++		}
++
++		report.push({
++			type: 'runes',
++			message: `Replaced \`export let\` with \`$props()\``
++		});
++	}
++
++	// `$:` reactive declarations
++	for (const stmt of instance.body) {
++		if (stmt.type !== 'LabeledStatement' || stmt.label.name !== '$') {
++			continue;
++		}
++
++		const body = stmt.body;
++
++		if (
++			body.type === 'ExpressionStatement' &&
++			body.expression.type === 'AssignmentExpression' &&
++			body.expression.left.type === 'Identifier'
++		) {
++			const name = body.expression.left.name;
++			const right_text = source.slice(body.expression.right.start, body.expression.right.end);
++
++			// Reassigning a prop inside `$:` can't be expressed with `$derived`.
++			if (exported.has(name)) {
++				code.overwrite(stmt.start, stmt.end, `$effect(() => { ${name} = ${right_text}; });`);
++				report.push({
++					type: 'runes',
++					message: `\`$: ${name} = ...\` reassigns a prop — converted to \`$effect\`, please review`
++				});
++				continue;
++			}
++
++			const declarator = let_declarators.get(name);
++
++			if (declarator) {
++				// `let x = ...; $: x = expr;` -> `let x = $derived(expr);`
++				// Only safe if `x` isn't reassigned anywhere else.
++				if ((reassigned.get(name) ?? 0) > 1) {
++					code.overwrite(stmt.start, stmt.end, `$effect(() => { ${name} = ${right_text}; });`);
++					report.push({
++						type: 'runes',
++						message: `\`$: ${name} = ...\` reassigns a variable that is also reassigned elsewhere — converted to \`$effect\`, please review`
++					});
++					continue;
++				}
++
++				if (declarator.init) {
++					code.overwrite(declarator.init.start, declarator.init.end, `$derived(${right_text})`);
++				} else {
++					code.overwrite(
++						declarator.start,
++						declarator.end,
++						`${source.slice(declarator.id.start, declarator.id.end)} = $derived(${right_text})`
++					);
++				}
++
++				code.remove(stmt.start, stmt.end);
++				derived.add(name);
++				report.push({
++					type: 'runes',
++					message: `Merged \`let ${name}\` and \`$: ${name} = ...\` into \`$derived\``
++				});
++			} else {
++				code.overwrite(stmt.start, stmt.end, `let ${name} = $derived(${right_text});`);
++				derived.add(name);
++				report.push({
++					type: 'runes',
++					message: `Replaced \`$: ${name} = ...\` with \`$derived\``
++				});
++			}
++		} else if (body.type === 'BlockStatement') {
++			const block_text = source.slice(body.start, body.end);
++			code.overwrite(stmt.start, stmt.end, `$effect(() => ${block_text});`);
++			report.push({
++				type: 'runes',
++				message: `Replaced \`$: { ... }\` with \`$effect\``
++			});
++		} else if (body.type === 'ExpressionStatement') {
++			const expr_text = source.slice(body.expression.start, body.expression.end);
++			code.overwrite(stmt.start, stmt.end, `$effect(() => { ${expr_text}; });`);
++			report.push({
++				type: 'runes',
++				message: `Replaced \`$:\` statement with \`$effect\``
++			});
++		} else {
++			const body_text = source.slice(body.start, body.end);
++			code.overwrite(stmt.start, stmt.end, `$effect(() => { ${body_text} });`);
++			report.push({
++				type: 'runes',
++				message: `\`$:\` statement converted to \`$effect\` — please review`
++			});
++		}
++	}
++
++	// reactive `let` -> `$state`
++	for (const stmt of instance.body) {
++		if (stmt.type !== 'VariableDeclaration' || stmt.kind !== 'let') {
++			continue;
++		}
++
++		// Skip export statements (handled above).
++		if (export_lets.some((e) => e.statement === stmt)) {
++			continue;
++		}
++
++		for (const d of stmt.declarations) {
++			if (d.id.type !== 'Identifier' || !reactive.has(d.id.name)) {
++				continue;
++			}
++
++			// Already turned into a `$derived` via a `$:` declaration.
++			if (derived.has(d.id.name)) {
++				continue;
++			}
++
++			const id_text = source.slice(d.id.start, d.id.end);
++			const replacement = d.init
++				? `${id_text} = $state(${source.slice(d.init.start, d.init.end)})`
++				: `${id_text} = $state()`;
++
++			code.overwrite(d.start, d.end, replacement);
++			report.push({
++				type: 'runes',
++				message: `Replaced reactive \`let ${d.id.name}\` with \`$state\``
++			});
++		}
++	}
++}
+diff --git a/packages/svelte/scripts/migrate/machines/slots.js b/packages/svelte/scripts/migrate/machines/slots.js
+new file mode 100644
+index 0000000..28e329b
+--- /dev/null
++++ b/packages/svelte/scripts/migrate/machines/slots.js
+@@ -0,0 +1,35 @@
++import { walk } from 'zimmerframe';
++
++/**
++ * Detects `<slot>` elements and `slot="..."` attributes, which are deprecated
++ * in Svelte 5 in favour of snippets. These usually require manual intervention
++ * because both the slot declaration and its consumers need to be migrated together.
++ * @param {import('#compiler').Root} ast
++ * @param {import('magic-string').default} _code
++ * @param {string} _source
++ * @param {Array<{ type: string, message: string }>} report
++ */
++export function migrate_slots(ast, _code, _source, report) {
++	walk(ast.fragment, null, {
++		SlotElement(node) {
++			const name = node.attributes.find(
++				/** @param {any} a */ (a) => a.type === 'Attribute' && a.name === 'name'
++			);
++			report.push({
++				type: 'slots',
++				message: `\`<slot${
++					name ? ` name="${name.value?.[0]?.data}"` : ''
++				} />\` is deprecated — migrate this to a snippet (\`{@render ...}\`) manually`
++			});
++		},
++		Attribute(node, { path }) {
++			if (node.name !== 'slot') return;
++			const parent = path.at(-1);
++			if (parent?.type === 'SlotElement') return;
++			report.push({
++				type: 'slots',
++				message: `\`slot="..."\` attribute is deprecated — wrap this content in a \`{#snippet ...}\` block manually`
++			});
++		}
++	});
++}
+diff --git a/packages/svelte/scripts/migrate/migrate.js b/packages/svelte/scripts/migrate/migrate.js
+new file mode 100644
+index 0000000..e2fe0d2
+--- /dev/null
++++ b/packages/svelte/scripts/migrate/migrate.js
+@@ -0,0 +1,34 @@
++import { parse } from '../../src/compiler/index.js';
++import MagicString from 'magic-string';
++import { migrate_events } from './machines/events.js';
++import { migrate_runes } from './machines/runes.js';
++import { migrate_slots } from './machines/slots.js';
++
++/**
++ * Migrates a Svelte 4 component's source code to be compatible with Svelte 5.
++ *
++ * @param {string} source The component source code
++ * @param {{ filename?: string }} [options]
++ * @returns {{
++ *   code: string,
++ *   map: import('magic-string').SourceMap,
++ *   report: Array<{ type: string, message: string }>
++ * }}
++ */
++export function migrate(source, options = {}) {
++	const ast = parse(source, { filename: options.filename, modern: true });
++	const code = new MagicString(source);
++
++	/** @type {Array<{ type: string, message: string }>} */
++	const report = [];
++
++	migrate_events(ast, code, source, report);
++	migrate_runes(ast, code, source, report);
++	migrate_slots(ast, code, source, report);
++
++	return {
++		code: code.toString(),
++		map: code.generateMap({ source: options.filename, hires: true }),
++		report
++	};
++}

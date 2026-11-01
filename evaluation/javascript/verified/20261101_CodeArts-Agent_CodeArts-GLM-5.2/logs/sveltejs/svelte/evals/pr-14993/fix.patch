@@ -1,0 +1,12 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/ConstTag.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/ConstTag.js
+index 214b4bc..3f5e047 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/visitors/ConstTag.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/ConstTag.js
+@@ -24,6 +24,7 @@ export function ConstTag(node, context) {
+ 			grand_parent?.type !== 'EachBlock' &&
+ 			grand_parent?.type !== 'AwaitBlock' &&
+ 			grand_parent?.type !== 'SnippetBlock' &&
++			grand_parent?.type !== 'SvelteBoundary' &&
+ 			((grand_parent?.type !== 'RegularElement' && grand_parent?.type !== 'SvelteElement') ||
+ 				!grand_parent.attributes.some((a) => a.type === 'Attribute' && a.name === 'slot')))
+ 	) {

@@ -1,0 +1,19 @@
+diff --git a/lib/response.js b/lib/response.js
+index f7c94d1..6b333d1 100644
+--- a/lib/response.js
++++ b/lib/response.js
+@@ -905,11 +905,13 @@ res.cookie = function (name, value, options) {
+  */
+ 
+ res.location = function location(url) {
+-  var loc = url;
++  var loc;
+ 
+   // "back" is an alias for the referrer
+   if (url === 'back') {
+     loc = this.req.get('Referrer') || '/';
++  } else {
++    loc = String(url);
+   }
+ 
+   var lowerLoc = loc.toLowerCase();

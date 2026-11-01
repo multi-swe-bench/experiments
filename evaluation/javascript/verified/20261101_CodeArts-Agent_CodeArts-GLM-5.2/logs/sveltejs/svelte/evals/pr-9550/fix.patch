@@ -1,0 +1,30 @@
+diff --git a/packages/svelte/src/internal/client/render.js b/packages/svelte/src/internal/client/render.js
+index d992199..87bb172 100644
+--- a/packages/svelte/src/internal/client/render.js
++++ b/packages/svelte/src/internal/client/render.js
+@@ -906,10 +906,22 @@ export function selected(dom) {
+ 			dom.selected = selected;
+ 			dom.value = option_value;
+ 			// Handle the edge case of new options being added to a select when its state is "nothing selected"
+-			// and keeping the selection state in sync (the DOM auto-selects the first option on insert)
++			// and keeping the selection state in sync (the DOM auto-selects the first option on insert).
++			// We only want to reset the selection when no option matches the bound `null` value, otherwise
++			// we would deselect an option that legitimately matches it.
+ 			// @ts-ignore
+-			if (select.__value === null) {
+-				/** @type {HTMLSelectElement} */ (select).value = '';
++			if (select.__value === null && !selected) {
++				let has_null_option = false;
++				const options = select.options;
++				for (let i = 0; i < options.length; i += 1) {
++					if (get_option_value(options[i]) === select_value) {
++						has_null_option = true;
++						break;
++					}
++				}
++				if (!has_null_option) {
++					/** @type {HTMLSelectElement} */ (select).value = '';
++				}
+ 			}
+ 		}
+ 	});

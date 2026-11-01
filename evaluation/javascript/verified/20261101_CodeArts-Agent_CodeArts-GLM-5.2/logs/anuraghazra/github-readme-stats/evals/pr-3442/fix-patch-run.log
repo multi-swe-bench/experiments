@@ -1,0 +1,793 @@
+$ bash /home/test-run.sh
+
+
+> github-readme-stats@1.0.0 test
+> node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage --verbose --maxWorkers=4
+
+(node:10908) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS tests/renderGistCard.test.js
+  test renderGistCard
+    ✓ should render correctly (28 ms)
+    ✓ should display username in title if show_owner is true (8 ms)
+    ✓ should trim header if name is too long (49 ms)
+    ✓ should trim description if description os too long (6 ms)
+    ✓ should not trim description if it is short (5 ms)
+    ✓ should render emojis in description (5 ms)
+    ✓ should render custom colors properly (6 ms)
+    ✓ should render with all the themes (490 ms)
+    ✓ should render custom colors with themes (2 ms)
+    ✓ should render custom colors with themes and fallback to default colors if invalid (2 ms)
+    ✓ should not render star count or fork count if either of the are zero (5 ms)
+    ✓ should render without rounding (3 ms)
+    ✓ should fallback to default description (1 ms)
+
+(node:10909) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS tests/renderRepoCard.test.js
+  Test renderRepoCard
+    ✓ should render correctly (33 ms)
+    ✓ should display username in title (full repo name) (8 ms)
+    ✓ should trim header (4 ms)
+    ✓ should trim description (12 ms)
+    ✓ should render emojis (6 ms)
+    ✓ should hide language if primaryLanguage is null & fallback to correct values (9 ms)
+    ✓ should render default colors properly (66 ms)
+    ✓ should render custom colors properly (6 ms)
+    ✓ should render with all the themes (430 ms)
+    ✓ should render custom colors with themes (2 ms)
+    ✓ should render custom colors with themes and fallback to default colors if invalid (2 ms)
+    ✓ should not render star count or fork count if either of the are zero (5 ms)
+    ✓ should render badges (3 ms)
+    ✓ should not render template (47 ms)
+    ✓ should render translated badges (4 ms)
+    ✓ should render without rounding (3 ms)
+    ✓ should fallback to default description (2 ms)
+
+(node:10907) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS tests/renderTopLanguagesCard.test.js
+  Test renderTopLanguages helper functions
+    ✓ getLongestLang (49 ms)
+    ✓ degreesToRadians
+    ✓ radiansToDegrees (1 ms)
+    ✓ polarToCartesian (2 ms)
+    ✓ cartesianToPolar (1 ms)
+    ✓ calculateCompactLayoutHeight (1 ms)
+    ✓ calculateNormalLayoutHeight (1 ms)
+    ✓ calculateDonutLayoutHeight (1 ms)
+    ✓ calculateDonutVerticalLayoutHeight (1 ms)
+    ✓ calculatePieLayoutHeight (1 ms)
+    ✓ donutCenterTranslation
+    ✓ getCircleLength (1 ms)
+    ✓ trimTopLanguages (3 ms)
+    ✓ getDefaultLanguagesCountByLayout (1 ms)
+  Test renderTopLanguages
+    ✓ should render correctly (27 ms)
+    ✓ should hide languages when hide is passed (66 ms)
+    ✓ should resize the height correctly depending on langs (11 ms)
+    ✓ should render with custom width set (9 ms)
+    ✓ should render with min width (8 ms)
+    ✓ should render default colors properly (5 ms)
+    ✓ should render custom colors properly (61 ms)
+    ✓ should render custom colors with themes (5 ms)
+    ✓ should render with all the themes (490 ms)
+    ✓ should render with layout compact (3 ms)
+    ✓ should render with layout donut (8 ms)
+    ✓ should render with layout donut vertical (6 ms)
+    ✓ should render with layout donut vertical full donut circle of one language is 100% (2 ms)
+    ✓ should render with layout pie (8 ms)
+    ✓ should render a translated title (4 ms)
+    ✓ should render without rounding (7 ms)
+    ✓ should render langs with specified langs_count (1 ms)
+    ✓ should render langs with specified langs_count even when hide is set (2 ms)
+    ✓ should show "No languages data." message instead of empty card when nothing to show (2 ms)
+
+(node:10906) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+FAIL tests/renderStatsCard.test.js
+  Test renderStatsCard
+    ✓ should render correctly (83 ms)
+    ✓ should have proper name apostrophe (19 ms)
+    ✓ should hide individual stats (7 ms)
+    ✓ should show additional stats (71 ms)
+    ✓ should hide_rank (6 ms)
+    ✓ should render with custom width set (14 ms)
+    ✓ should render with custom width set and limit minimum width (82 ms)
+    ✓ should render default colors properly (7 ms)
+    ✓ should render custom colors properly (6 ms)
+    ✓ should render custom colors with themes (9 ms)
+    ✓ should render with all the themes (525 ms)
+    ✓ should render custom colors with themes and fallback to default colors if invalid (5 ms)
+    ✓ should render custom ring_color properly (3 ms)
+    ✓ should render icons correctly (3 ms)
+    ✓ should not have icons if show_icons is false (2 ms)
+    ✓ should auto resize if hide_rank is true (2 ms)
+    ✓ should auto resize if hide_rank is true & custom_title is set (34 ms)
+    ✕ should render translations (11 ms)
+    ✓ should render without rounding (6 ms)
+    ✓ should shorten values (6 ms)
+    ✓ should render default rank icon with level A+ (3 ms)
+    ✓ should render github rank icon (2 ms)
+    ✓ should show the rank percentile (3 ms)
+    ✓ should throw error if all stats and rank icon are hidden (1 ms)
+
+  ● Test renderStatsCard › should render translations
+
+    expect(received).toMatchInlineSnapshot(snapshot)
+
+    Snapshot name: `Test renderStatsCard should render translations 2`
+
+    Snapshot: "累计提交数（commit） (2023):"
+    Received: "累计提交数（commit） (2026):"
+
+      388 |         'g[transform="translate(0, 25)"]>.stagger>.stat.bold',
+      389 |       ).textContent,
+    > 390 |     ).toMatchInlineSnapshot(`"累计提交数（commit） (2023):"`);
+          |       ^
+      391 |     expect(
+      392 |       document.querySelector(
+      393 |         'g[transform="translate(0, 50)"]>.stagger>.stat.bold',
+
+      at Object.<anonymous> (tests/renderStatsCard.test.js:390:7)
+
+ › 1 snapshot failed.
+PASS tests/renderWakatimeCard.test.js
+  WakaTime fetcher
+    ✓ should fetch correct wakatime data (5 ms)
+    ✓ should throw error if username param missing (2 ms)
+    ✓ should throw error if username is not found (2 ms)
+  Test Render WakaTime Card
+    ✓ should render correctly (1 ms)
+    ✓ should render correctly with compact layout (2 ms)
+    ✓ should render correctly with compact layout when langs_count is set
+    ✓ should hide languages when hide is passed (12 ms)
+    ✓ should render translations (50 ms)
+    ✓ should render without rounding (9 ms)
+    ✓ should show "no coding activity this week" message when there has not been activity (3 ms)
+    ✓ should show "no coding activity this week" message when using compact layout and there has not been activity (2 ms)
+
+PASS tests/fetchRepo.test.js
+  Test fetchRepo
+    ✓ should fetch correct user repo (6 ms)
+    ✓ should fetch correct org repo (1 ms)
+    ✓ should throw error if user is found but repo is null (36 ms)
+    ✓ should throw error if org is found but repo is null (1 ms)
+    ✓ should throw error if both user & org data not found (1 ms)
+    ✓ should throw error if repository is private
+
+PASS tests/utils.test.js
+  Test utils.js
+    ✓ should test kFormatter (3 ms)
+    ✓ should test parseBoolean (34 ms)
+    ✓ should test encodeHTML
+    ✓ should test renderError (10 ms)
+    ✓ getCardColors: should return expected values (1 ms)
+    ✓ getCardColors: should fallback to default colors if color is invalid (1 ms)
+    ✓ getCardColors: should fallback to specified theme colors if is not defined
+    ✓ getCardColors: should return ring color equal to title color if not ring color is defined
+  wrapTextMultiline
+    ✓ should not wrap small texts (1 ms)
+    ✓ should wrap large texts
+    ✓ should wrap large texts and limit max lines (1 ms)
+    ✓ should wrap chinese by punctuation
+
+FAIL tests/fetchTopLanguages.test.js
+  FetchTopLanguages
+    ✕ should fetch correct language data while using the new calculation (3 ms)
+    ✕ should fetch correct language data while excluding the 'test-repo-1' repository
+    ✕ should fetch correct language data while using the old calculation
+    ✕ should rank languages by the number of repositories they appear in (1 ms)
+    ✓ should throw specific error when user not found (1 ms)
+    ✓ should throw other errors with their message (1 ms)
+    ✓ should throw error with specific message when error does not contain message property (1 ms)
+
+  ● FetchTopLanguages › should fetch correct language data while using the new calculation
+
+    TypeError: exclude_repo.forEach is not a function
+
+      104 |   // while filtering out
+      105 |   if (exclude_repo) {
+    > 106 |     exclude_repo.forEach((repoName) => {
+          |                  ^
+      107 |       repoToHide[repoName] = true;
+      108 |     });
+      109 |   }
+
+      at fetchTopLanguages (src/fetchers/top-languages-fetcher.js:106:18)
+      at Object.<anonymous> (tests/fetchTopLanguages.test.js:67:16)
+
+  ● FetchTopLanguages › should fetch correct language data while excluding the 'test-repo-1' repository
+
+    TypeError: exclude_repo.forEach is not a function
+
+      104 |   // while filtering out
+      105 |   if (exclude_repo) {
+    > 106 |     exclude_repo.forEach((repoName) => {
+          |                  ^
+      107 |       repoToHide[repoName] = true;
+      108 |     });
+      109 |   }
+
+      at fetchTopLanguages (src/fetchers/top-languages-fetcher.js:106:18)
+      at Object.<anonymous> (tests/fetchTopLanguages.test.js:93:16)
+
+  ● FetchTopLanguages › should fetch correct language data while using the old calculation
+
+    TypeError: exclude_repo.forEach is not a function
+
+      104 |   // while filtering out
+      105 |   if (exclude_repo) {
+    > 106 |     exclude_repo.forEach((repoName) => {
+          |                  ^
+      107 |       repoToHide[repoName] = true;
+      108 |     });
+      109 |   }
+
+      at fetchTopLanguages (src/fetchers/top-languages-fetcher.js:106:18)
+      at Object.<anonymous> (tests/fetchTopLanguages.test.js:115:16)
+
+  ● FetchTopLanguages › should rank languages by the number of repositories they appear in
+
+    TypeError: exclude_repo.forEach is not a function
+
+      104 |   // while filtering out
+      105 |   if (exclude_repo) {
+    > 106 |     exclude_repo.forEach((repoName) => {
+          |                  ^
+      107 |       repoToHide[repoName] = true;
+      108 |     });
+      109 |   }
+
+      at fetchTopLanguages (src/fetchers/top-languages-fetcher.js:106:18)
+      at Object.<anonymous> (tests/fetchTopLanguages.test.js:135:16)
+
+FAIL tests/retryer.test.js
+  ● Test suite failed to run
+
+    SyntaxError: The requested module '../src/common/retryer.js' does not provide an export named 'getMaxRetries'
+
+      at Runtime.linkAndEvaluateModule (node_modules/jest-runtime/build/index.js:708:5)
+
+FAIL tests/fetchGist.test.js
+  Test fetchGist
+    ✓ should fetch gist correctly (5 ms)
+    ✓ should throw correct error if gist not found (2 ms)
+    ✓ should throw error if reaponse contains them
+    ✕ should throw error if id is not provided (13 ms)
+
+  ● Test fetchGist › should throw error if id is not provided
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Missing params \"id\" make sure you pass the parameters in URL"
+    Received message:   "Cannot read properties of undefined (reading 'errors')"
+
+          92 |   }
+          93 |   const res = await retryer(fetcher, { gistName: id });
+        > 94 |   if (res.data.errors) {
+             |                ^
+          95 |     throw new Error(res.data.errors[0].message);
+          96 |   }
+          97 |   if (!res.data.data.viewer.gist) {
+
+      at fetchGist (src/fetchers/gist-fetcher.js:94:16)
+      at Object.<anonymous> (tests/fetchGist.test.js:113:5)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.<anonymous> (tests/fetchGist.test.js:113:50)
+
+PASS tests/card.test.js
+  Card
+    ✓ should hide border (7 ms)
+    ✓ should not hide border (3 ms)
+    ✓ should have a custom title (3 ms)
+    ✓ should set custom title (3 ms)
+    ✓ should hide title (3 ms)
+    ✓ should not hide title (3 ms)
+    ✓ title should have prefix icon (4 ms)
+    ✓ title should not have prefix icon (2 ms)
+    ✓ should have proper height, width (2 ms)
+    ✓ should have less height after title is hidden (2 ms)
+    ✓ main-card-body should have proper when title is visible (2 ms)
+    ✓ main-card-body should have proper position after title is hidden (2 ms)
+    ✓ should render with correct colors (49 ms)
+    ✓ should render gradient backgrounds (6 ms)
+
+PASS tests/fetchWakatime.test.js
+  WakaTime fetcher
+    ✓ should fetch correct wakatime data (5 ms)
+    ✓ should throw error if username param missing (2 ms)
+    ✓ should throw error if username is not found (2 ms)
+
+PASS tests/i18n.test.js
+  I18n
+    ✓ should return translated string (2 ms)
+    ✓ should throw error if translation string not found (2 ms)
+    ✓ should throw error if translation not found for locale
+
+PASS tests/flexLayout.test.js
+  flexLayout
+    ✓ should work with row & col layouts (47 ms)
+    ✓ should work with sizes
+
+PASS tests/calculateRank.test.js
+  Test calculateRank
+    ✓ new user gets C rank (3 ms)
+    ✓ beginner user gets B- rank (1 ms)
+    ✓ median user gets B+ rank
+    ✓ average user gets B+ rank (include_all_commits)
+    ✓ advanced user gets A rank (1 ms)
+    ✓ expert user gets A+ rank
+    ✓ sindresorhus gets S rank (1 ms)
+
+PASS tests/top-langs.test.js
+  Test /api/top-langs
+    ✓ should test the request (7 ms)
+    ✓ should work with the query options
+    ✓ should render error card on user data fetch error (40 ms)
+    ✓ should render error card on incorrect layout input (1 ms)
+    ✓ should render error card if username in blacklist
+    ✓ should render error card if wrong locale provided (1 ms)
+    ✓ should have proper cache (1 ms)
+
+PASS tests/pin.test.js
+  Test /api/pin
+    ✓ should test the request (8 ms)
+    ✓ should get the query options (1 ms)
+    ✓ should render error card if user repo not found (1 ms)
+    ✓ should render error card if org repo not found (1 ms)
+    ✓ should render error card if username in blacklist
+    ✓ should render error card if wrong locale provided (1 ms)
+    ✓ should render error card if missing required parameters
+    ✓ should have proper cache (1 ms)
+
+/home/github-readme-stats/node_modules/expect/build/index.js:218
+    const innerErr = new JestAssertionError();
+                     ^
+
+JestAssertionError: expect(received).rejects.toThrow(expected)
+
+Expected message: "Could not fetch total commits."
+Received message: "Invalid username provided."
+
+      171 |   if (!githubUsernameRegex.test(username)) {
+      172 |     logger.log("Invalid username provided.");
+    > 173 |     throw new Error("Invalid username provided.");
+          |           ^
+      174 |   }
+      175 |
+      176 |   // https://developer.github.com/v3/search/#search-commits
+
+      at totalCommitsFetcher (src/fetchers/stats-fetcher.js:173:11)
+      at fetchStats (src/fetchers/stats-fetcher.js:283:32)
+    at Object.toThrow (/home/github-readme-stats/node_modules/expect/build/index.js:218:22)
+    at Object.<anonymous> (/home/github-readme-stats/tests/fetchStats.test.js:224:66)
+    at Promise.then.completed (/home/github-readme-stats/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (/home/github-readme-stats/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusTest (/home/github-readme-stats/node_modules/jest-circus/build/run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at _runTest (/home/github-readme-stats/node_modules/jest-circus/build/run.js:252:3)
+    at _runTestsForDescribeBlock (/home/github-readme-stats/node_modules/jest-circus/build/run.js:126:9)
+    at _runTestsForDescribeBlock (/home/github-readme-stats/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/github-readme-stats/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/github-readme-stats/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/github-readme-stats/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/github-readme-stats/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/github-readme-stats/node_modules/jest-runner/build/runTest.js:444:34)
+    at Object.worker (/home/github-readme-stats/node_modules/jest-runner/build/testWorker.js:106:12) {
+  matcherResult: {
+    message: 'expect(received).rejects.toThrow(expected)\n' +
+      '\n' +
+      'Expected message: "Could not fetch total commits."\n' +
+      'Received message: "Invalid username provided."\n' +
+      '\n' +
+      '      171 |   if (!githubUsernameRegex.test(username)) {\n' +
+      '      172 |     logger.log("Invalid username provided.");\n' +
+      '    > 173 |     throw new Error("Invalid username provided.");\n' +
+      '          |           ^\n' +
+      '      174 |   }\n' +
+      '      175 |\n' +
+      '      176 |   // https://developer.github.com/v3/search/#search-commits\n' +
+      '\n' +
+      '      at totalCommitsFetcher (src/fetchers/stats-fetcher.js:173:11)\n' +
+      '      at fetchStats (src/fetchers/stats-fetcher.js:283:32)',
+    pass: false
+  }
+}
+
+Node.js v20.19.0
+PASS tests/gist.test.js
+  Test /api/gist
+    ✓ should test the request (9 ms)
+    ✓ should get the query options (1 ms)
+    ✓ should render error if id is not provided (1 ms)
+    ✓ should render error if gist is not found
+    ✓ should render error if wrong locale is provided (1 ms)
+    ✓ should have proper cache (1 ms)
+
+PASS tests/pat-info.test.js
+  Test /api/status/pat-info
+    ✓ should return only 'validPATs' if all PATs are valid (9 ms)
+    ✓ should return `errorPATs` if a PAT causes an error to be thrown (2 ms)
+    ✓ should return `expiredPaths` if a PAT returns a 'Bad credentials' error (5 ms)
+    ✓ should throw an error if something goes wrong (2 ms)
+    ✓ should have proper cache when no error is thrown (1 ms)
+    ✓ should have proper cache when error is thrown (1 ms)
+
+PASS tests/status.up.test.js
+  Test /api/status/up
+    ✓ should return `true` if request was successful (5 ms)
+    ✓ should return `false` if all PATs are rate limited (2 ms)
+    ✓ should return JSON `true` if request was successful and type='json' (1 ms)
+    ✓ should return JSON `false` if all PATs are rate limited and type='json' (1 ms)
+    ✓ should return UP shields.io config if request was successful and type='shields' (1 ms)
+    ✓ should return DOWN shields.io config if all PATs are rate limited and type='shields' (2 ms)
+    ✓ should return `true` if the first PAT is rate limited but the second PATs works (1 ms)
+    ✓ should return `true` if the first PAT has 'Bad credentials' but the second PAT works (3 ms)
+    ✓ should return `false` if all pats have 'Bad credentials' (4 ms)
+    ✓ should throw an error if the request fails (1 ms)
+    ✓ should have proper cache when no error is thrown (5 ms)
+    ✓ should have proper cache when error is thrown (1 ms)
+
+PASS tests/api.test.js
+  Test /api/
+    ✓ should test the request (7 ms)
+    ✓ should render error card on error (1 ms)
+    ✓ should get the query options (1 ms)
+    ✓ should have proper cache (4 ms)
+    ✓ should set proper cache (1 ms)
+    ✓ should set shorter cache when error (1 ms)
+    ✓ should set proper cache with clamped values (1 ms)
+    ✓ should allow changing ring_color (1 ms)
+    ✓ should render error card if username in blacklist (1 ms)
+    ✓ should render error card when wrong locale is provided
+    ✓ should render error card when include_all_commits true and upstream API fails (2 ms)
+
+(node:10934) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+/home/github-readme-stats/node_modules/expect/build/index.js:218
+    const innerErr = new JestAssertionError();
+                     ^
+
+JestAssertionError: expect(received).rejects.toThrow(expected)
+
+Expected message: "Could not fetch total commits."
+Received message: "Invalid username provided."
+
+      171 |   if (!githubUsernameRegex.test(username)) {
+      172 |     logger.log("Invalid username provided.");
+    > 173 |     throw new Error("Invalid username provided.");
+          |           ^
+      174 |   }
+      175 |
+      176 |   // https://developer.github.com/v3/search/#search-commits
+
+      at totalCommitsFetcher (src/fetchers/stats-fetcher.js:173:11)
+      at fetchStats (src/fetchers/stats-fetcher.js:283:32)
+    at Object.toThrow (/home/github-readme-stats/node_modules/expect/build/index.js:218:22)
+    at Object.<anonymous> (/home/github-readme-stats/tests/fetchStats.test.js:224:66)
+    at Promise.then.completed (/home/github-readme-stats/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (/home/github-readme-stats/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusTest (/home/github-readme-stats/node_modules/jest-circus/build/run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at _runTest (/home/github-readme-stats/node_modules/jest-circus/build/run.js:252:3)
+    at _runTestsForDescribeBlock (/home/github-readme-stats/node_modules/jest-circus/build/run.js:126:9)
+    at _runTestsForDescribeBlock (/home/github-readme-stats/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/github-readme-stats/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/github-readme-stats/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/github-readme-stats/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/github-readme-stats/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/github-readme-stats/node_modules/jest-runner/build/runTest.js:444:34)
+    at Object.worker (/home/github-readme-stats/node_modules/jest-runner/build/testWorker.js:106:12) {
+  matcherResult: {
+    message: 'expect(received).rejects.toThrow(expected)\n' +
+      '\n' +
+      'Expected message: "Could not fetch total commits."\n' +
+      'Received message: "Invalid username provided."\n' +
+      '\n' +
+      '      171 |   if (!githubUsernameRegex.test(username)) {\n' +
+      '      172 |     logger.log("Invalid username provided.");\n' +
+      '    > 173 |     throw new Error("Invalid username provided.");\n' +
+      '          |           ^\n' +
+      '      174 |   }\n' +
+      '      175 |\n' +
+      '      176 |   // https://developer.github.com/v3/search/#search-commits\n' +
+      '\n' +
+      '      at totalCommitsFetcher (src/fetchers/stats-fetcher.js:173:11)\n' +
+      '      at fetchStats (src/fetchers/stats-fetcher.js:283:32)',
+    pass: false
+  }
+}
+
+Node.js v20.19.0
+(node:10941) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+/home/github-readme-stats/node_modules/expect/build/index.js:218
+    const innerErr = new JestAssertionError();
+                     ^
+
+JestAssertionError: expect(received).rejects.toThrow(expected)
+
+Expected message: "Could not fetch total commits."
+Received message: "Invalid username provided."
+
+      171 |   if (!githubUsernameRegex.test(username)) {
+      172 |     logger.log("Invalid username provided.");
+    > 173 |     throw new Error("Invalid username provided.");
+          |           ^
+      174 |   }
+      175 |
+      176 |   // https://developer.github.com/v3/search/#search-commits
+
+      at totalCommitsFetcher (src/fetchers/stats-fetcher.js:173:11)
+      at fetchStats (src/fetchers/stats-fetcher.js:283:32)
+    at Object.toThrow (/home/github-readme-stats/node_modules/expect/build/index.js:218:22)
+    at Object.<anonymous> (/home/github-readme-stats/tests/fetchStats.test.js:224:66)
+    at Promise.then.completed (/home/github-readme-stats/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (/home/github-readme-stats/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusTest (/home/github-readme-stats/node_modules/jest-circus/build/run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at _runTest (/home/github-readme-stats/node_modules/jest-circus/build/run.js:252:3)
+    at _runTestsForDescribeBlock (/home/github-readme-stats/node_modules/jest-circus/build/run.js:126:9)
+    at _runTestsForDescribeBlock (/home/github-readme-stats/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/github-readme-stats/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/github-readme-stats/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/github-readme-stats/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/github-readme-stats/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/github-readme-stats/node_modules/jest-runner/build/runTest.js:444:34)
+    at Object.worker (/home/github-readme-stats/node_modules/jest-runner/build/testWorker.js:106:12) {
+  matcherResult: {
+    message: 'expect(received).rejects.toThrow(expected)\n' +
+      '\n' +
+      'Expected message: "Could not fetch total commits."\n' +
+      'Received message: "Invalid username provided."\n' +
+      '\n' +
+      '      171 |   if (!githubUsernameRegex.test(username)) {\n' +
+      '      172 |     logger.log("Invalid username provided.");\n' +
+      '    > 173 |     throw new Error("Invalid username provided.");\n' +
+      '          |           ^\n' +
+      '      174 |   }\n' +
+      '      175 |\n' +
+      '      176 |   // https://developer.github.com/v3/search/#search-commits\n' +
+      '\n' +
+      '      at totalCommitsFetcher (src/fetchers/stats-fetcher.js:173:11)\n' +
+      '      at fetchStats (src/fetchers/stats-fetcher.js:283:32)',
+    pass: false
+  }
+}
+
+Node.js v20.19.0
+(node:10948) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+/home/github-readme-stats/node_modules/expect/build/index.js:218
+    const innerErr = new JestAssertionError();
+                     ^
+
+JestAssertionError: expect(received).rejects.toThrow(expected)
+
+Expected message: "Could not fetch total commits."
+Received message: "Invalid username provided."
+
+      171 |   if (!githubUsernameRegex.test(username)) {
+      172 |     logger.log("Invalid username provided.");
+    > 173 |     throw new Error("Invalid username provided.");
+          |           ^
+      174 |   }
+      175 |
+      176 |   // https://developer.github.com/v3/search/#search-commits
+
+      at totalCommitsFetcher (src/fetchers/stats-fetcher.js:173:11)
+      at fetchStats (src/fetchers/stats-fetcher.js:283:32)
+    at Object.toThrow (/home/github-readme-stats/node_modules/expect/build/index.js:218:22)
+    at Object.<anonymous> (/home/github-readme-stats/tests/fetchStats.test.js:224:66)
+    at Promise.then.completed (/home/github-readme-stats/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (/home/github-readme-stats/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusTest (/home/github-readme-stats/node_modules/jest-circus/build/run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at _runTest (/home/github-readme-stats/node_modules/jest-circus/build/run.js:252:3)
+    at _runTestsForDescribeBlock (/home/github-readme-stats/node_modules/jest-circus/build/run.js:126:9)
+    at _runTestsForDescribeBlock (/home/github-readme-stats/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/github-readme-stats/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/github-readme-stats/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/github-readme-stats/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/github-readme-stats/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/github-readme-stats/node_modules/jest-runner/build/runTest.js:444:34)
+    at Object.worker (/home/github-readme-stats/node_modules/jest-runner/build/testWorker.js:106:12) {
+  matcherResult: {
+    message: 'expect(received).rejects.toThrow(expected)\n' +
+      '\n' +
+      'Expected message: "Could not fetch total commits."\n' +
+      'Received message: "Invalid username provided."\n' +
+      '\n' +
+      '      171 |   if (!githubUsernameRegex.test(username)) {\n' +
+      '      172 |     logger.log("Invalid username provided.");\n' +
+      '    > 173 |     throw new Error("Invalid username provided.");\n' +
+      '          |           ^\n' +
+      '      174 |   }\n' +
+      '      175 |\n' +
+      '      176 |   // https://developer.github.com/v3/search/#search-commits\n' +
+      '\n' +
+      '      at totalCommitsFetcher (src/fetchers/stats-fetcher.js:173:11)\n' +
+      '      at fetchStats (src/fetchers/stats-fetcher.js:283:32)',
+    pass: false
+  }
+}
+
+Node.js v20.19.0
+FAIL tests/fetchStats.test.js
+  ● Test suite failed to run
+
+    Jest worker encountered 4 child process exceptions, exceeding retry limit
+
+      at ChildProcessWorker.initialize (node_modules/jest-worker/build/workers/ChildProcessWorker.js:181:21)
+
+---------------------------|---------|----------|---------|---------|-----------------------------------------------------------------
+File                       | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                               
+---------------------------|---------|----------|---------|---------|-----------------------------------------------------------------
+All files                  |   98.21 |    86.51 |   97.39 |   98.21 |                                                                 
+ api                       |   99.18 |    78.46 |     100 |   99.18 |                                                                 
+  gist.js                  |   98.07 |    68.75 |     100 |   98.07 | 63-64                                                           
+  index.js                 |     100 |    85.71 |     100 |     100 | 86,117                                                          
+  pin.js                   |    98.3 |    77.77 |     100 |    98.3 | 77-78                                                           
+  top-langs.js             |     100 |    82.35 |     100 |     100 | 57,79,104                                                       
+ api/status                |   97.15 |    95.45 |     100 |   97.15 |                                                                 
+  pat-info.js              |    98.1 |    96.42 |     100 |    98.1 | 103-105                                                         
+  up.js                    |   95.93 |    93.75 |     100 |   95.93 | 118-122                                                         
+ src                       |     100 |      100 |     100 |     100 |                                                                 
+  calculateRank.js         |     100 |      100 |     100 |     100 |                                                                 
+  translations.js          |     100 |      100 |     100 |     100 |                                                                 
+ src/cards                 |   98.67 |    85.65 |   95.45 |   98.67 |                                                                 
+  gist-card.js             |     100 |    85.71 |     100 |     100 | 98-99                                                           
+  repo-card.js             |     100 |      100 |     100 |     100 |                                                                 
+  stats-card.js            |   95.41 |    81.69 |   71.42 |   95.41 | 85-95,106-115,473-474,496-497                                   
+  top-languages-card.js    |   99.77 |    86.31 |     100 |   99.77 | 814-815                                                         
+  wakatime-card.js         |   99.52 |    83.33 |     100 |   99.52 | 366-367                                                         
+ src/common                |   97.56 |    93.79 |   97.56 |   97.56 |                                                                 
+  Card.js                  |   93.04 |    93.54 |   91.66 |   93.04 | 181-199                                                         
+  I18n.js                  |     100 |      100 |     100 |     100 |                                                                 
+  blacklist.js             |     100 |      100 |     100 |     100 |                                                                 
+  createProgressNode.js    |     100 |      100 |     100 |     100 |                                                                 
+  icons.js                 |     100 |      100 |     100 |     100 |                                                                 
+  retryer.js               |   97.36 |    88.23 |     100 |   97.36 | 26-27                                                           
+  utils.js                 |   99.02 |    93.75 |     100 |   99.02 | 320-323,571-572                                                 
+ src/fetchers              |   94.66 |     78.3 |     100 |   94.66 |                                                                 
+  gist-fetcher.js          |     100 |      100 |     100 |     100 |                                                                 
+  repo-fetcher.js          |   95.04 |     87.5 |     100 |   95.04 | 77-78,80-81,116-117                                             
+  stats-fetcher.js         |   90.96 |    55.55 |     100 |   90.96 | 142,172-174,193-195,204,231-232,265-275,290-293,298-299,301-303 
+  top-languages-fetcher.js |   98.19 |     91.3 |     100 |   98.19 | 75-76,107                                                       
+  wakatime-fetcher.js      |   94.28 |       75 |     100 |   94.28 | 30-31                                                           
+ themes                    |     100 |      100 |     100 |     100 |                                                                 
+  index.js                 |     100 |      100 |     100 |     100 |                                                                 
+---------------------------|---------|----------|---------|---------|-----------------------------------------------------------------
+Summary of all failing tests
+FAIL tests/renderStatsCard.test.js
+  ● Test renderStatsCard › should render translations
+
+    expect(received).toMatchInlineSnapshot(snapshot)
+
+    Snapshot name: `Test renderStatsCard should render translations 2`
+
+    Snapshot: "累计提交数（commit） (2023):"
+    Received: "累计提交数（commit） (2026):"
+
+      388 |         'g[transform="translate(0, 25)"]>.stagger>.stat.bold',
+      389 |       ).textContent,
+    > 390 |     ).toMatchInlineSnapshot(`"累计提交数（commit） (2023):"`);
+          |       ^
+      391 |     expect(
+      392 |       document.querySelector(
+      393 |         'g[transform="translate(0, 50)"]>.stagger>.stat.bold',
+
+      at Object.<anonymous> (tests/renderStatsCard.test.js:390:7)
+
+FAIL tests/fetchTopLanguages.test.js
+  ● FetchTopLanguages › should fetch correct language data while using the new calculation
+
+    TypeError: exclude_repo.forEach is not a function
+
+      104 |   // while filtering out
+      105 |   if (exclude_repo) {
+    > 106 |     exclude_repo.forEach((repoName) => {
+          |                  ^
+      107 |       repoToHide[repoName] = true;
+      108 |     });
+      109 |   }
+
+      at fetchTopLanguages (src/fetchers/top-languages-fetcher.js:106:18)
+      at Object.<anonymous> (tests/fetchTopLanguages.test.js:67:16)
+
+  ● FetchTopLanguages › should fetch correct language data while excluding the 'test-repo-1' repository
+
+    TypeError: exclude_repo.forEach is not a function
+
+      104 |   // while filtering out
+      105 |   if (exclude_repo) {
+    > 106 |     exclude_repo.forEach((repoName) => {
+          |                  ^
+      107 |       repoToHide[repoName] = true;
+      108 |     });
+      109 |   }
+
+      at fetchTopLanguages (src/fetchers/top-languages-fetcher.js:106:18)
+      at Object.<anonymous> (tests/fetchTopLanguages.test.js:93:16)
+
+  ● FetchTopLanguages › should fetch correct language data while using the old calculation
+
+    TypeError: exclude_repo.forEach is not a function
+
+      104 |   // while filtering out
+      105 |   if (exclude_repo) {
+    > 106 |     exclude_repo.forEach((repoName) => {
+          |                  ^
+      107 |       repoToHide[repoName] = true;
+      108 |     });
+      109 |   }
+
+      at fetchTopLanguages (src/fetchers/top-languages-fetcher.js:106:18)
+      at Object.<anonymous> (tests/fetchTopLanguages.test.js:115:16)
+
+  ● FetchTopLanguages › should rank languages by the number of repositories they appear in
+
+    TypeError: exclude_repo.forEach is not a function
+
+      104 |   // while filtering out
+      105 |   if (exclude_repo) {
+    > 106 |     exclude_repo.forEach((repoName) => {
+          |                  ^
+      107 |       repoToHide[repoName] = true;
+      108 |     });
+      109 |   }
+
+      at fetchTopLanguages (src/fetchers/top-languages-fetcher.js:106:18)
+      at Object.<anonymous> (tests/fetchTopLanguages.test.js:135:16)
+
+FAIL tests/retryer.test.js
+  ● Test suite failed to run
+
+    SyntaxError: The requested module '../src/common/retryer.js' does not provide an export named 'getMaxRetries'
+
+      at Runtime.linkAndEvaluateModule (node_modules/jest-runtime/build/index.js:708:5)
+
+FAIL tests/fetchGist.test.js
+  ● Test fetchGist › should throw error if id is not provided
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Missing params \"id\" make sure you pass the parameters in URL"
+    Received message:   "Cannot read properties of undefined (reading 'errors')"
+
+          92 |   }
+          93 |   const res = await retryer(fetcher, { gistName: id });
+        > 94 |   if (res.data.errors) {
+             |                ^
+          95 |     throw new Error(res.data.errors[0].message);
+          96 |   }
+          97 |   if (!res.data.data.viewer.gist) {
+
+      at fetchGist (src/fetchers/gist-fetcher.js:94:16)
+      at Object.<anonymous> (tests/fetchGist.test.js:113:5)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.<anonymous> (tests/fetchGist.test.js:113:50)
+
+FAIL tests/fetchStats.test.js
+  ● Test suite failed to run
+
+    Jest worker encountered 4 child process exceptions, exceeding retry limit
+
+      at ChildProcessWorker.initialize (node_modules/jest-worker/build/workers/ChildProcessWorker.js:181:21)
+
+
+Snapshot Summary
+ › 1 snapshot failed from 1 test suite. Inspect your code changes or run `npm test -- -u` to update them.
+
+Test Suites: 5 failed, 17 passed, 22 total
+Tests:       6 failed, 200 passed, 206 total
+Snapshots:   1 failed, 7 passed, 8 total
+Time:        7.569 s, estimated 15 s
+Ran all test suites.
+
+[exit code: 1]

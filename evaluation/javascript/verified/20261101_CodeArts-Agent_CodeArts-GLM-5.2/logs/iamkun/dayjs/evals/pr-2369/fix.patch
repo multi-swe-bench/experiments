@@ -1,0 +1,13 @@
+diff --git a/src/plugin/duration/index.js b/src/plugin/duration/index.js
+index 0000470..ada9ba3 100644
+--- a/src/plugin/duration/index.js
++++ b/src/plugin/duration/index.js
+@@ -196,7 +196,7 @@ class Duration {
+     } else if (pUnit === 'weeks') {
+       base = roundNumber(base / unitToMS[pUnit])
+     } else {
+-      base = this.$d[pUnit]
++      base = this.$d[pUnit] || 0
+     }
+     return base === 0 ? 0 : base // a === 0 will be true on both 0 and -0
+   }

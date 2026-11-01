@@ -1,0 +1,27 @@
+diff --git a/packages/mui-material/src/Badge/Badge.js b/packages/mui-material/src/Badge/Badge.js
+index 964312b2..47d17345 100644
+--- a/packages/mui-material/src/Badge/Badge.js
++++ b/packages/mui-material/src/Badge/Badge.js
+@@ -21,14 +21,22 @@ const extendUtilityClasses = (ownerState) => {
+       classes.badge,
+       getBadgeUtilityClass('badge'),
+       getBadgeUtilityClass(variant),
++      classes[variant],
+       invisible && getBadgeUtilityClass('invisible'),
++      invisible && classes.invisible,
+       `anchorOrigin${capitalize(anchorOrigin.vertical)}${capitalize(anchorOrigin.horizontal)}`,
+       getBadgeUtilityClass(
+         `anchorOrigin${capitalize(anchorOrigin.vertical)}${capitalize(
+           anchorOrigin.horizontal,
+         )}${capitalize(overlap)}`,
+       ),
++      classes[
++        `anchorOrigin${capitalize(anchorOrigin.vertical)}${capitalize(
++          anchorOrigin.horizontal,
++        )}${capitalize(overlap)}`
++      ],
+       getBadgeUtilityClass(`overlap${capitalize(overlap)}`),
++      classes[`overlap${capitalize(overlap)}`],
+       {
+         [getBadgeUtilityClass(`color${capitalize(color)}`)]: color !== 'default',
+         [classes[`color${capitalize(color)}`]]: color !== 'default',

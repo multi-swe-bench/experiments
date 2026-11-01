@@ -1,0 +1,97 @@
+diff --git a/src/locale/ar-ly.js b/src/locale/ar-ly.js
+index 3166270..d1a7111 100644
+--- a/src/locale/ar-ly.js
++++ b/src/locale/ar-ly.js
+@@ -18,6 +18,21 @@ const locale = {
+     LL: 'D MMMM YYYY',
+     LLL: 'D MMMM YYYY HH:mm',
+     LLLL: 'dddd D MMMM YYYY HH:mm'
++  },
++  relativeTime: {
++    future: 'في %s',
++    past: 'منذ %s',
++    s: 'ثوان',
++    m: 'دقيقة',
++    mm: '%d دقائق',
++    h: 'ساعة',
++    hh: '%d ساعات',
++    d: 'يوم',
++    dd: '%d أيام',
++    M: 'شهر',
++    MM: '%d أشهر',
++    y: 'سنة',
++    yy: '%d سنوات'
+   }
+ }
+ 
+diff --git a/src/locale/mr.js b/src/locale/mr.js
+index 01537e8..46c563e 100644
+--- a/src/locale/mr.js
++++ b/src/locale/mr.js
+@@ -1,6 +1,44 @@
+ // Marathi [mr]
+ import dayjs from 'dayjs'
+ 
++function relativeTimeMr(number, withoutSuffix, string) {
++  let output
++  if (withoutSuffix) {
++    switch (string) {
++      case 's': output = 'काही सेकंद'; break
++      case 'ss': output = '%d सेकंद'; break
++      case 'm': output = 'एक मिनिट'; break
++      case 'mm': output = '%d मिनिटे'; break
++      case 'h': output = 'एक तास'; break
++      case 'hh': output = '%d तास'; break
++      case 'd': output = 'एक दिवस'; break
++      case 'dd': output = '%d दिवस'; break
++      case 'M': output = 'एक महिना'; break
++      case 'MM': output = '%d महिने'; break
++      case 'y': output = 'एक वर्ष'; break
++      case 'yy': output = '%d वर्षे'; break
++      default: output = ''
++    }
++  } else {
++    switch (string) {
++      case 's': output = 'काही सेकंदां'; break
++      case 'ss': output = '%d सेकंदां'; break
++      case 'm': output = 'एका मिनिटा'; break
++      case 'mm': output = '%d मिनिटां'; break
++      case 'h': output = 'एका तासा'; break
++      case 'hh': output = '%d तासां'; break
++      case 'd': output = 'एका दिवसा'; break
++      case 'dd': output = '%d दिवसां'; break
++      case 'M': output = 'एका महिन्या'; break
++      case 'MM': output = '%d महिन्यां'; break
++      case 'y': output = 'एका वर्षा'; break
++      case 'yy': output = '%d वर्षां'; break
++      default: output = ''
++    }
++  }
++  return output.replace(/%d/i, number)
++}
++
+ const locale = {
+   name: 'mr',
+   weekdays: 'रविवार_सोमवार_मंगळवार_बुधवार_गुरूवार_शुक्रवार_शनिवार'.split('_'),
+@@ -16,6 +54,21 @@ const locale = {
+     LL: 'D MMMM YYYY',
+     LLL: 'D MMMM YYYY, A h:mm वाजता',
+     LLLL: 'dddd, D MMMM YYYY, A h:mm वाजता'
++  },
++  relativeTime: {
++    future: '%sमध्ये',
++    past: '%sपूर्वी',
++    s: relativeTimeMr,
++    m: relativeTimeMr,
++    mm: relativeTimeMr,
++    h: relativeTimeMr,
++    hh: relativeTimeMr,
++    d: relativeTimeMr,
++    dd: relativeTimeMr,
++    M: relativeTimeMr,
++    MM: relativeTimeMr,
++    y: relativeTimeMr,
++    yy: relativeTimeMr
+   }
+ }
+ 

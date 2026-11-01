@@ -1,0 +1,142 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 89f03cc..7932dbf 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -703,6 +703,20 @@ function handle_events(element, state) {
+ 				? last.expression.params[0].name
+ 				: generate_event_name(last, state);
+ 		let prepend = '';
++		// whether the generated event payload name is referenced anywhere
++		// (modifiers, forwarded handlers, non-arrow last expression, or
++		// a non-identifier destructure pattern on the last expression)
++		let needs_payload = false;
++
++		if (last.expression && last.expression.type !== 'ArrowFunctionExpression') {
++			needs_payload = true;
++		} else if (
++			last.expression?.type === 'ArrowFunctionExpression' &&
++			last.expression.params.length > 0 &&
++			last.expression.params[0].type !== 'Identifier'
++		) {
++			needs_payload = true;
++		}
+ 
+ 		for (let i = 0; i < nodes.length - 1; i += 1) {
+ 			const node = nodes[i];
+@@ -724,12 +738,16 @@ function handle_events(element, state) {
+ 				for (const modifier of node.modifiers) {
+ 					if (modifier === 'stopPropagation') {
+ 						body = `\n${indent}${payload_name}.stopPropagation();\n${body}`;
++						needs_payload = true;
+ 					} else if (modifier === 'preventDefault') {
+ 						body = `\n${indent}${payload_name}.preventDefault();\n${body}`;
++						needs_payload = true;
+ 					} else if (modifier === 'stopImmediatePropagation') {
+ 						body = `\n${indent}${payload_name}.stopImmediatePropagation();\n${body}`;
++						needs_payload = true;
+ 					} else {
+ 						body = `\n${indent}// @migration-task: incorporate ${modifier} modifier\n${body}`;
++						needs_payload = true;
+ 					}
+ 				}
+ 
+@@ -747,9 +765,10 @@ function handle_events(element, state) {
+ 					});
+ 				}
+ 				prepend += `\n${indent}${local}?.(${payload_name});\n`;
++				needs_payload = true;
+ 			}
+ 
+-			state.str.remove(node.start, node.end);
++			remove_handler(state, node);
+ 		}
+ 
+ 		if (last.expression) {
+@@ -771,12 +790,16 @@ function handle_events(element, state) {
+ 			for (const modifier of last.modifiers) {
+ 				if (modifier === 'stopPropagation') {
+ 					prepend += `\n${indent}${payload_name}.stopPropagation();\n`;
++					needs_payload = true;
+ 				} else if (modifier === 'preventDefault') {
+ 					prepend += `\n${indent}${payload_name}.preventDefault();\n`;
++					needs_payload = true;
+ 				} else if (modifier === 'stopImmediatePropagation') {
+ 					prepend += `\n${indent}${payload_name}.stopImmediatePropagation();\n`;
++					needs_payload = true;
+ 				} else if (modifier !== 'capture') {
+ 					prepend += `\n${indent}// @migration-task: incorporate ${modifier} modifier\n`;
++					needs_payload = true;
+ 				}
+ 			}
+ 
+@@ -797,7 +820,7 @@ function handle_events(element, state) {
+ 							start,
+ 							end
+ 						)} = ${payload_name};\n${prepend}`;
+-					} else if (last.expression.params.length === 0) {
++					} else if (last.expression.params.length === 0 && needs_payload) {
+ 						// add generated payload param to arrow function
+ 						const pos = state.str.original.lastIndexOf(')', last.expression.body.start);
+ 						state.str.prependLeft(pos, payload_name);
+@@ -906,6 +929,61 @@ function get_node_range(source, node) {
+ 	return { start, end };
+ }
+ 
++/**
++ * Removes a `on:` event handler directive from the source. If the handler is
++ * on its own line, the surrounding whitespace is removed as well so that no
++ * empty line is left behind.
++ * @param {State} state
++ * @param {AST.OnDirective} node
++ */
++function remove_handler(state, node) {
++	const source = state.str.original;
++
++	let start = node.start;
++	let end = node.end;
++
++	// extend the start backwards over preceding whitespace on the same line
++	let line_start = start;
++	while (
++		line_start > 0 &&
++		source[line_start - 1] !== '\n' &&
++		source[line_start - 1] !== '\r' &&
++		(source[line_start - 1] === ' ' || source[line_start - 1] === '\t')
++	) {
++		line_start--;
++	}
++
++	const only_whitespace_before = line_start === 0 || source[line_start - 1] === '\n' || source[line_start - 1] === '\r';
++
++	// extend the end forwards over following whitespace on the same line
++	let line_end = end;
++	while (
++		line_end < source.length &&
++		source[line_end] !== '\n' &&
++		source[line_end] !== '\r' &&
++		(source[line_end] === ' ' || source[line_end] === '\t')
++	) {
++		line_end++;
++	}
++
++	const only_whitespace_after =
++		line_end === source.length || source[line_end] === '\n' || source[line_end] === '\r';
++
++	if (only_whitespace_before && only_whitespace_after) {
++		// the handler is alone on its line; remove the whole line including the
++		// trailing newline so no blank line remains
++		start = line_start;
++		end = line_end;
++		if (source[end] === '\r' && source[end + 1] === '\n') {
++			end += 2;
++		} else if (source[end] === '\n' || source[end] === '\r') {
++			end += 1;
++		}
++	}
++
++	state.str.remove(start, end);
++}
++
+ /**
+  * @param {AST.OnDirective} last
+  * @param {State} state

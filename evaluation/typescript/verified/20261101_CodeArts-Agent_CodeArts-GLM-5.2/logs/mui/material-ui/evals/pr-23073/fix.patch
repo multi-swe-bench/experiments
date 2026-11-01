@@ -1,0 +1,54 @@
+diff --git a/packages/material-ui/src/Menu/Menu.js b/packages/material-ui/src/Menu/Menu.js
+index 00590f8..4ac2025 100644
+--- a/packages/material-ui/src/Menu/Menu.js
++++ b/packages/material-ui/src/Menu/Menu.js
+@@ -6,6 +6,8 @@ import { HTMLElementType } from '@material-ui/utils';
+ import withStyles from '../styles/withStyles';
+ import Popover from '../Popover';
+ import MenuList from '../MenuList';
++import ListSubheader from '../ListSubheader';
++import Divider from '../Divider';
+ import setRef from '../utils/setRef';
+ import useTheme from '../styles/useTheme';
+ 
+@@ -106,6 +108,13 @@ const Menu = React.forwardRef(function Menu(props, ref) {
+       }
+     }
+ 
++    // Non-menuitem elements such as dividers and section titles (ListSubheader)
++    // are not focusable and must not be considered as the active item, otherwise
++    // keyboard navigation would land on them.
++    if (child.type === ListSubheader || child.type === Divider) {
++      return;
++    }
++
+     if (!child.props.disabled) {
+       if (variant === 'selectedMenu' && child.props.selected) {
+         activeItemIndex = index;
+diff --git a/packages/material-ui/src/MenuList/MenuList.js b/packages/material-ui/src/MenuList/MenuList.js
+index 07e6dc8..e747c3c 100644
+--- a/packages/material-ui/src/MenuList/MenuList.js
++++ b/packages/material-ui/src/MenuList/MenuList.js
+@@ -3,6 +3,8 @@ import { isFragment } from 'react-is';
+ import PropTypes from 'prop-types';
+ import ownerDocument from '../utils/ownerDocument';
+ import List from '../List';
++import ListSubheader from '../ListSubheader';
++import Divider from '../Divider';
+ import getScrollbarSize from '../utils/getScrollbarSize';
+ import useForkRef from '../utils/useForkRef';
+ import useEnhancedEffect from '../utils/useEnhancedEffect';
+@@ -225,6 +227,13 @@ const MenuList = React.forwardRef(function MenuList(props, ref) {
+       }
+     }
+ 
++    // Non-menuitem elements such as dividers and section titles (ListSubheader)
++    // are not focusable and must not be considered as the active item, otherwise
++    // keyboard navigation would land on them.
++    if (child.type === ListSubheader || child.type === Divider) {
++      return;
++    }
++
+     if (!child.props.disabled) {
+       if (variant === 'selectedMenu' && child.props.selected) {
+         activeItemIndex = index;

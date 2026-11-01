@@ -1,0 +1,89 @@
+diff --git a/.changeset/imported-state-reactivity.md b/.changeset/imported-state-reactivity.md
+new file mode 100644
+index 0000000..e1a8542
+--- /dev/null
++++ b/.changeset/imported-state-reactivity.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: treat references to imported bindings as potentially reactive when computing prop/attribute reactivity, so that e.g. `Object.values(importedState)` passed as a prop stays reactive
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/Identifier.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/Identifier.js
+index 79dccd5..1f428a1 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/visitors/Identifier.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/Identifier.js
+@@ -90,7 +90,8 @@ export function Identifier(node, context) {
+ 	if (binding) {
+ 		if (context.state.expression) {
+ 			context.state.expression.dependencies.add(binding);
+-			context.state.expression.has_state ||= binding.kind !== 'normal';
++			context.state.expression.has_state ||=
++				binding.kind !== 'normal' || binding.declaration_kind === 'import';
+ 		}
+ 
+ 		if (
+diff --git a/packages/svelte/tests/runtime-runes/samples/imported-state-object-values/Child.svelte b/packages/svelte/tests/runtime-runes/samples/imported-state-object-values/Child.svelte
+new file mode 100644
+index 0000000..a81f977
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/imported-state-object-values/Child.svelte
+@@ -0,0 +1,5 @@
++<script>
++	let { lst } = $props();
++</script>
++
++<p>{lst.join(',')}</p>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/imported-state-object-values/_config.js b/packages/svelte/tests/runtime-runes/samples/imported-state-object-values/_config.js
+new file mode 100644
+index 0000000..b8c70ad
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/imported-state-object-values/_config.js
+@@ -0,0 +1,18 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++
++export default test({
++	html: `<p>1,2</p><button>update</button>`,
++
++	compileOptions: { dev: true },
++
++	async test({ assert, target }) {
++		const btn = target.querySelector('button');
++
++		flushSync(() => {
++			btn?.click();
++		});
++
++		assert.htmlEqual(target.innerHTML, `<p>10,2</p><button>update</button>`);
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/imported-state-object-values/data.svelte.js b/packages/svelte/tests/runtime-runes/samples/imported-state-object-values/data.svelte.js
+new file mode 100644
+index 0000000..c98e378
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/imported-state-object-values/data.svelte.js
+@@ -0,0 +1 @@
++export const obj = $state({ a: 1, b: 2 });
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/imported-state-object-values/main.svelte b/packages/svelte/tests/runtime-runes/samples/imported-state-object-values/main.svelte
+new file mode 100644
+index 0000000..9a7a102
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/imported-state-object-values/main.svelte
+@@ -0,0 +1,11 @@
++<script>
++	import Child from './Child.svelte';
++	import { obj } from './data.svelte.js';
++
++	obj.a = 1;
++	obj.b = 2;
++</script>
++
++<Child lst={Object.values(obj)} />
++
++<button onclick={() => (obj.a = 10)}>update</button>
+\ No newline at end of file

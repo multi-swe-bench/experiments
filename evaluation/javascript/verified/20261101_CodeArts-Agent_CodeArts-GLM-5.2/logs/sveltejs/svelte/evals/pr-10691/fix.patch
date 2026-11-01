@@ -1,0 +1,36 @@
+diff --git a/.changeset/snippet-slot-whitespace.md b/.changeset/snippet-slot-whitespace.md
+new file mode 100644
+index 0000000..cbb6c5c
+--- /dev/null
++++ b/.changeset/snippet-slot-whitespace.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: preserve whitespace inside snippets and slots so that content retains its formatting when rendered in a whitespace-preserving context such as `<pre>`
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/3-transform/utils.js b/packages/svelte/src/compiler/phases/3-transform/utils.js
+index ceb8838..6f7f493 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/utils.js
+@@ -144,6 +144,19 @@ export function clean_nodes(
+ 		last.data = last.data.replace(regex_ends_with_whitespaces, '');
+ 	}
+ 
++	// Whitespace inside snippets and slots is significant, as the content might be
++	// rendered in a whitespace-preserving context (e.g. inside a `<pre>` element), so
++	// we don't collapse it. The leading and trailing whitespace has already been
++	// trimmed above.
++	if (
++		parent.type === 'Component' ||
++		parent.type === 'SvelteComponent' ||
++		parent.type === 'SvelteSelf' ||
++		(parent.type === 'Fragment' && path.at(-1)?.type === 'SnippetBlock')
++	) {
++		return { hoisted, trimmed: regular };
++	}
++
+ 	const can_remove_entirely =
+ 		(namespace === 'svg' &&
+ 			(parent.type !== 'RegularElement' || parent.name !== 'text') &&

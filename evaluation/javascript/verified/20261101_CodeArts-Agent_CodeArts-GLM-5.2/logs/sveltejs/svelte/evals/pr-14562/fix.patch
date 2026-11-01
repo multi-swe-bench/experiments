@@ -1,0 +1,29 @@
+diff --git a/packages/svelte/src/internal/client/dom/elements/attributes.js b/packages/svelte/src/internal/client/dom/elements/attributes.js
+index 2229c1a..1f405b4 100644
+--- a/packages/svelte/src/internal/client/dom/elements/attributes.js
++++ b/packages/svelte/src/internal/client/dom/elements/attributes.js
+@@ -60,8 +60,11 @@ export function remove_input_defaults(input) {
+ export function set_value(element, value) {
+ 	// @ts-expect-error
+ 	var attributes = (element.__attributes ??= {});
++	// @ts-expect-error
++	var previous = attributes.value;
+ 	if (
+-		attributes.value === (attributes.value = value) ||
++		previous === (attributes.value = value) ||
++		(previous == null && value == null) ||
+ 		// @ts-expect-error
+ 		// `progress` elements always need their value set when its `0`
+ 		(element.value === value && (value !== 0 || element.nodeName !== 'PROGRESS'))
+@@ -78,8 +81,10 @@ export function set_value(element, value) {
+ export function set_checked(element, checked) {
+ 	// @ts-expect-error
+ 	var attributes = (element.__attributes ??= {});
++	// @ts-expect-error
++	var previous = attributes.checked;
+ 
+-	if (attributes.checked === (attributes.checked = checked)) return;
++	if (previous === (attributes.checked = checked) || (previous == null && checked == null)) return;
+ 	// @ts-expect-error
+ 	element.checked = checked;
+ }

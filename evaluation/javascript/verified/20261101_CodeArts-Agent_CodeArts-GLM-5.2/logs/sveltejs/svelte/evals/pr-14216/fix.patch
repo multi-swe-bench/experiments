@@ -1,0 +1,83 @@
+diff --git a/packages/svelte/src/compiler/migrate/index.js b/packages/svelte/src/compiler/migrate/index.js
+index 387b6a5..b2975f7 100644
+--- a/packages/svelte/src/compiler/migrate/index.js
++++ b/packages/svelte/src/compiler/migrate/index.js
+@@ -17,7 +17,7 @@ import {
+ } from '../utils/ast.js';
+ import { migrate_svelte_ignore } from '../utils/extract_svelte_ignore.js';
+ import { validate_component_options } from '../validate-options.js';
+-import { is_svg, is_void } from '../../utils.js';
++import { is_svg, is_void, is_rune } from '../../utils.js';
+ import { regex_is_valid_identifier } from '../phases/patterns.js';
+ 
+ const regex_style_tags = /(<style[^>]+>)([\S\s]*?)(<\/style>)/g;
+@@ -653,6 +653,17 @@ const instance_script = {
+ 			}
+ 
+ 			// state
++			for (const binding of bindings) {
++				if (binding.kind !== 'state') continue;
++				const name = binding.node.name;
++				const store_sub = state.scope.get(`$${name}`);
++				if (store_sub?.kind === 'store_sub' && is_rune(`$${name}`)) {
++					throw new MigrationError(
++						`Cannot migrate \`$${name}\` store subscription as it conflicts with the \`$${name}\` rune. Please rename the store and migrate by hand.`
++					);
++				}
++			}
++
+ 			if (declarator.init) {
+ 				let { start, end } = /** @type {{ start: number, end: number }} */ (declarator.init);
+ 
+diff --git a/packages/svelte/tests/migrate/samples/impossible-migrate-store-subscription-rune-conflict/_config.js b/packages/svelte/tests/migrate/samples/impossible-migrate-store-subscription-rune-conflict/_config.js
+new file mode 100644
+index 0000000..af54a60
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/impossible-migrate-store-subscription-rune-conflict/_config.js
+@@ -0,0 +1,8 @@
++import { test } from '../../test';
++
++export default test({
++	logs: [
++		'One or more `@migration-task` comments were added to `output.svelte`, please check them and complete the migration manually.'
++	],
++	errors: []
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/migrate/samples/impossible-migrate-store-subscription-rune-conflict/input.svelte b/packages/svelte/tests/migrate/samples/impossible-migrate-store-subscription-rune-conflict/input.svelte
+new file mode 100644
+index 0000000..1a8fa97
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/impossible-migrate-store-subscription-rune-conflict/input.svelte
+@@ -0,0 +1,11 @@
++<script>
++	import { writable } from 'svelte/store';
++	let state = writable(0);
++	let count = 0;
++	function reset() {
++		state = writable(0);
++		count = 0;
++	}
++</script>
++
++<button on:click={reset}>{$state} {count}</button>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/migrate/samples/impossible-migrate-store-subscription-rune-conflict/output.svelte b/packages/svelte/tests/migrate/samples/impossible-migrate-store-subscription-rune-conflict/output.svelte
+new file mode 100644
+index 0000000..fdacfe1
+--- /dev/null
++++ b/packages/svelte/tests/migrate/samples/impossible-migrate-store-subscription-rune-conflict/output.svelte
+@@ -0,0 +1,12 @@
++<!-- @migration-task Error while migrating Svelte code: Cannot migrate `$state` store subscription as it conflicts with the `$state` rune. Please rename the store and migrate by hand. -->
++<script>
++	import { writable } from 'svelte/store';
++	let state = writable(0);
++	let count = 0;
++	function reset() {
++		state = writable(0);
++		count = 0;
++	}
++</script>
++
++<button on:click={reset}>{$state} {count}</button>
+\ No newline at end of file

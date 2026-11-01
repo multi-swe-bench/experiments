@@ -1,0 +1,60 @@
+diff --git a/packages/mui-material/src/Autocomplete/Autocomplete.d.ts b/packages/mui-material/src/Autocomplete/Autocomplete.d.ts
+index 831b1331..8abd03a5 100644
+--- a/packages/mui-material/src/Autocomplete/Autocomplete.d.ts
++++ b/packages/mui-material/src/Autocomplete/Autocomplete.d.ts
+@@ -1,6 +1,7 @@
+ import * as React from 'react';
+ import { IconButtonProps, InternalStandardProps as StandardProps, Theme } from '@mui/material';
+ import { ChipProps, ChipTypeMap } from '@mui/material/Chip';
++import { PaperProps } from '@mui/material/Paper';
+ import { PopperProps } from '@mui/material/Popper';
+ import { SxProps } from '@mui/system';
+ import { OverridableStringUnion } from '@mui/types';
+@@ -177,6 +178,10 @@ export interface AutocompleteProps<
+    * @default Paper
+    */
+   PaperComponent?: React.JSXElementConstructor<React.HTMLAttributes<HTMLElement>>;
++  /**
++   * Props applied to the [`Paper`](/api/paper/) element.
++   */
++  PaperProps?: Partial<PaperProps>;
+   /**
+    * The component used to position the popup.
+    * @default Popper
+diff --git a/packages/mui-material/src/Autocomplete/Autocomplete.js b/packages/mui-material/src/Autocomplete/Autocomplete.js
+index 23a8503a..22c2d275 100644
+--- a/packages/mui-material/src/Autocomplete/Autocomplete.js
++++ b/packages/mui-material/src/Autocomplete/Autocomplete.js
+@@ -405,6 +405,7 @@ const Autocomplete = React.forwardRef(function Autocomplete(inProps, ref) {
+     openText = 'Open',
+     options,
+     PaperComponent = Paper,
++    PaperProps = {},
+     PopperComponent = Popper,
+     popupIcon = <ArrowDropDownIcon />,
+     renderGroup: renderGroupProp,
+@@ -590,7 +591,12 @@ const Autocomplete = React.forwardRef(function Autocomplete(inProps, ref) {
+           anchorEl={anchorEl}
+           open
+         >
+-          <AutocompletePaper as={PaperComponent} className={classes.paper} ownerState={ownerState}>
++          <AutocompletePaper
++            as={PaperComponent}
++            ownerState={ownerState}
++            {...PaperProps}
++            className={clsx(classes.paper, PaperProps.className)}
++          >
+             {loading && groupedOptions.length === 0 ? (
+               <AutocompleteLoading className={classes.loading} ownerState={ownerState}>
+                 {loadingText}
+@@ -963,6 +969,10 @@ Autocomplete.propTypes /* remove-proptypes */ = {
+    * @default Paper
+    */
+   PaperComponent: PropTypes.elementType,
++  /**
++   * Props applied to the [`Paper`](/api/paper/) element.
++   */
++  PaperProps: PropTypes.object,
+   /**
+    * The component used to position the popup.
+    * @default Popper

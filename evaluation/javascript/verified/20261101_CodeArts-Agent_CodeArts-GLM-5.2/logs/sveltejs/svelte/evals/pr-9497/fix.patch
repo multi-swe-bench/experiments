@@ -1,0 +1,12 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 34be462..d471932 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -247,6 +247,7 @@ export const validation = {
+ 	},
+ 	BindDirective(node, context) {
+ 		validate_no_const_assignment(node, node.expression, context.state.scope, true);
++		validate_assignment(node, node.expression, context.state);
+ 
+ 		let left = node.expression;
+ 		while (left.type === 'MemberExpression') {

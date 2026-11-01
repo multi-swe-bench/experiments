@@ -1,0 +1,177 @@
+diff --git a/packages/material-ui-unstyled/src/SliderUnstyled/SliderUnstyled.d.ts b/packages/material-ui-unstyled/src/SliderUnstyled/SliderUnstyled.d.ts
+index 97dfb86..270fc43 100644
+--- a/packages/material-ui-unstyled/src/SliderUnstyled/SliderUnstyled.d.ts
++++ b/packages/material-ui-unstyled/src/SliderUnstyled/SliderUnstyled.d.ts
+@@ -14,6 +14,14 @@ export interface ValueLabelProps extends React.HTMLAttributes<HTMLSpanElement> {
+ 
+ export interface SliderUnstyledTypeMap<P = {}, D extends React.ElementType = 'span'> {
+   props: P & {
++    /**
++     * If `true`, the thumb and track are positioned with `transform` instead of
++     * `left`/`right`/`bottom`/`width`/`height`. This is much cheaper to animate
++     * (the work is composited on the GPU) which is useful when a transition is
++     * added to the thumb position and track width.
++     * @default false
++     */
++    animatableThumb?: boolean;
+     /**
+      * The label of the slider.
+      */
+diff --git a/packages/material-ui-unstyled/src/SliderUnstyled/SliderUnstyled.js b/packages/material-ui-unstyled/src/SliderUnstyled/SliderUnstyled.js
+index c2f3e72..ba2cce9 100644
+--- a/packages/material-ui-unstyled/src/SliderUnstyled/SliderUnstyled.js
++++ b/packages/material-ui-unstyled/src/SliderUnstyled/SliderUnstyled.js
+@@ -130,6 +130,48 @@ const axisProps = {
+   },
+ };
+ 
++// `transform`-based equivalents of `axisProps`. They position the thumb and
++// track using `transform` instead of `left`/`right`/`bottom`/`width`/`height`
++// which is much cheaper to animate (composited on the GPU). They require the
++// slider dimensions (in pixels) which is measured with `getBoundingClientRect`.
++const transformOffset = (axis, percent, size) => {
++  switch (axis) {
++    case 'horizontal':
++      return { left: 0, transform: `translateX(${(percent * size.width) / 100}px)` };
++    case 'horizontal-reverse':
++      return { right: 0, transform: `translateX(${(-percent * size.width) / 100}px)` };
++    case 'vertical':
++      return { bottom: 0, transform: `translateY(${(-percent * size.height) / 100}px)` };
++    default:
++      return {};
++  }
++};
++
++const transformTrack = (axis, offset, leap, size) => {
++  switch (axis) {
++    case 'horizontal':
++      return {
++        width: '100%',
++        transformOrigin: 'left',
++        transform: `translateX(${(offset * size.width) / 100}px) scaleX(${leap / 100})`,
++      };
++    case 'horizontal-reverse':
++      return {
++        width: '100%',
++        transformOrigin: 'right',
++        transform: `translateX(${(-offset * size.width) / 100}px) scaleX(${leap / 100})`,
++      };
++    case 'vertical':
++      return {
++        height: '100%',
++        transformOrigin: 'bottom',
++        transform: `translateY(${(-offset * size.height) / 100}px) scaleY(${leap / 100})`,
++      };
++    default:
++      return {};
++  }
++};
++
+ const Identity = (x) => x;
+ 
+ // TODO: remove support for Safari < 13.
+@@ -209,6 +251,7 @@ const SliderUnstyled = React.forwardRef(function SliderUnstyled(props, ref) {
+     isRtl = false,
+     components = {},
+     componentsProps = {},
++    animatableThumb = false,
+     /* eslint-disable-next-line react/prop-types */
+     theme,
+     ...other
+@@ -267,6 +310,11 @@ const SliderUnstyled = React.forwardRef(function SliderUnstyled(props, ref) {
+   const handleFocusRef = useForkRef(focusVisibleRef, sliderRef);
+   const handleRef = useForkRef(ref, handleFocusRef);
+ 
++  // When `animatableThumb` is enabled the thumb and track are positioned with
++  // `transform`. This requires the slider dimensions (in pixels) which we
++  // measure here and keep in sync on resize.
++  const [sliderSize, setSliderSize] = React.useState({ width: 0, height: 0 });
++
+   const handleFocus = useEventCallback((event) => {
+     const index = Number(event.currentTarget.getAttribute('data-index'));
+     handleFocusVisible(event);
+@@ -516,6 +564,41 @@ const SliderUnstyled = React.forwardRef(function SliderUnstyled(props, ref) {
+     }
+   }, [disabled, stopListening]);
+ 
++  useEnhancedEffect(() => {
++    if (!animatableThumb || !sliderRef.current) {
++      return undefined;
++    }
++
++    const measure = () => {
++      const { width, height } = sliderRef.current.getBoundingClientRect();
++      setSliderSize((prev) => {
++        if (prev.width === width && prev.height === height) {
++          return prev;
++        }
++        return { width, height };
++      });
++    };
++
++    measure();
++
++    if (typeof ResizeObserver !== 'undefined') {
++      const resizeObserver = new ResizeObserver(measure);
++      resizeObserver.observe(sliderRef.current);
++      return () => {
++        resizeObserver.disconnect();
++      };
++    }
++
++    if (typeof window !== 'undefined') {
++      window.addEventListener('resize', measure);
++      return () => {
++        window.removeEventListener('resize', measure);
++      };
++    }
++
++    return undefined;
++  }, [animatableThumb]);
++
+   const handleMouseDown = useEventCallback((event) => {
+     if (onMouseDown) {
+       onMouseDown(event);
+@@ -545,10 +628,12 @@ const SliderUnstyled = React.forwardRef(function SliderUnstyled(props, ref) {
+ 
+   const trackOffset = valueToPercent(range ? values[0] : min, min, max);
+   const trackLeap = valueToPercent(values[values.length - 1], min, max) - trackOffset;
+-  const trackStyle = {
+-    ...axisProps[axis].offset(trackOffset),
+-    ...axisProps[axis].leap(trackLeap),
+-  };
++  const trackStyle = animatableThumb
++    ? transformTrack(axis, trackOffset, trackLeap, sliderSize)
++    : {
++        ...axisProps[axis].offset(trackOffset),
++        ...axisProps[axis].leap(trackLeap),
++      };
+ 
+   const Root = components.Root || component;
+   const rootProps = componentsProps.root || {};
+@@ -680,7 +765,9 @@ const SliderUnstyled = React.forwardRef(function SliderUnstyled(props, ref) {
+       })}
+       {values.map((value, index) => {
+         const percent = valueToPercent(value, min, max);
+-        const style = axisProps[axis].offset(percent);
++        const style = animatableThumb
++          ? transformOffset(axis, percent, sliderSize)
++          : axisProps[axis].offset(percent);
+ 
+         const ValueLabelComponent = valueLabelDisplay === 'off' ? Forward : ValueLabel;
+ 
+@@ -762,6 +849,14 @@ SliderUnstyled.propTypes = {
+   // | These PropTypes are generated from the TypeScript type definitions |
+   // |     To update them edit the d.ts file and run "yarn proptypes"     |
+   // ----------------------------------------------------------------------
++  /**
++   * If `true`, the thumb and track are positioned with `transform` instead of
++   * `left`/`right`/`bottom`/`width`/`height`. This is much cheaper to animate
++   * (the work is composited on the GPU) which is useful when a transition is
++   * added to the thumb position and track width.
++   * @default false
++   */
++  animatableThumb: PropTypes.bool,
+   /**
+    * The label of the slider.
+    */

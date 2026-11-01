@@ -1,0 +1,19 @@
+diff --git a/src/plugin/duration/index.js b/src/plugin/duration/index.js
+index 28031b1..97f1782 100644
+--- a/src/plugin/duration/index.js
++++ b/src/plugin/duration/index.js
+@@ -47,9 +47,11 @@ class Duration {
+     if (typeof input === 'string') {
+       const d = input.match(durationRegex)
+       if (d) {
+-        [,,
+-          this.$d.years, this.$d.months,,
+-          this.$d.days, this.$d.hours, this.$d.minutes, this.$d.seconds] = d
++        const properties = d.slice(2)
++        ;[
++          this.$d.years, this.$d.months, this.$d.weeks,
++          this.$d.days, this.$d.hours, this.$d.minutes, this.$d.seconds
++        ] = properties.map(n => (Number(n) || 0))
+         this.calMilliseconds()
+         return this
+       }

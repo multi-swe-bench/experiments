@@ -1,0 +1,143 @@
+diff --git a/packages/svelte/src/internal/client/dom/blocks/each.js b/packages/svelte/src/internal/client/dom/blocks/each.js
+index e6146b2..9e91385 100644
+--- a/packages/svelte/src/internal/client/dom/blocks/each.js
++++ b/packages/svelte/src/internal/client/dom/blocks/each.js
+@@ -21,6 +21,7 @@ import {
+ 	block,
+ 	branch,
+ 	destroy_effect,
++	get_first_node,
+ 	run_out_transitions,
+ 	pause_children,
+ 	pause_effect,
+@@ -293,9 +294,7 @@ function reconcile(array, state, anchor, render_fn, flags, get_key) {
+ 		item = items.get(key);
+ 
+ 		if (item === undefined) {
+-			var child_anchor = current
+-				? /** @type {import('#client').EffectNodes} */ (current.e.nodes).start
+-				: anchor;
++			var child_anchor = current ? get_first_node(current.e) ?? anchor : anchor;
+ 
+ 			prev = create_item(
+ 				child_anchor,
+@@ -516,12 +515,12 @@ function create_item(anchor, state, prev, next, value, key, index, render_fn, fl
+  * @param {Text | Element | Comment} anchor
+  */
+ function move(item, next, anchor) {
+-	var end = item.next
+-		? /** @type {import('#client').EffectNodes} */ (item.next.e.nodes).start
+-		: anchor;
++	var end = item.next ? get_first_node(item.next.e) ?? anchor : anchor;
+ 
+-	var dest = next ? /** @type {import('#client').EffectNodes} */ (next.e.nodes).start : anchor;
+-	var node = /** @type {import('#client').EffectNodes} */ (item.e.nodes).start;
++	var dest = next ? get_first_node(next.e) ?? anchor : anchor;
++	var node = get_first_node(item.e);
++
++	if (node === null) return;
+ 
+ 	while (node !== end) {
+ 		var next_node = /** @type {import('#client').TemplateNode} */ (node.nextSibling);
+diff --git a/packages/svelte/src/internal/client/reactivity/effects.js b/packages/svelte/src/internal/client/reactivity/effects.js
+index c0cb219..01cc6c7 100644
+--- a/packages/svelte/src/internal/client/reactivity/effects.js
++++ b/packages/svelte/src/internal/client/reactivity/effects.js
+@@ -390,6 +390,36 @@ export function destroy_effect(effect, remove_dom = true) {
+ 			null;
+ }
+ 
++/**
++ * Returns the first DOM node associated with an effect. This is used by `{#each}` blocks
++ * to find the anchor before which a new item should be inserted, or the range of nodes
++ * that should be moved when items are reordered. An effect may not have any DOM nodes of
++ * its own — for example when it renders a component or snippet — in which case we descend
++ * into its children to find the first node. If the effect (and its descendants) produce no
++ * DOM at all, `null` is returned and callers fall back to their own anchor.
++ * @param {import('#client').Effect} effect
++ * @returns {import('#client').TemplateNode | null}
++ */
++export function get_first_node(effect) {
++	var nodes = effect.nodes;
++	if (nodes !== null) {
++		return nodes.start;
++	}
++
++	var child = effect.first;
++	while (child !== null) {
++		if ((child.f & HEAD_EFFECT) === 0) {
++			var node = get_first_node(child);
++			if (node !== null) {
++				return node;
++			}
++		}
++		child = child.next;
++	}
++
++	return null;
++}
++
+ /**
+  * Detach an effect from the effect tree, freeing up memory and
+  * reducing the amount of work that happens on subsequent traversals
+diff --git a/packages/svelte/tests/runtime-runes/samples/each-keyed-item-boundary/Child.svelte b/packages/svelte/tests/runtime-runes/samples/each-keyed-item-boundary/Child.svelte
+new file mode 100644
+index 0000000..c7ae3ca
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/each-keyed-item-boundary/Child.svelte
+@@ -0,0 +1,5 @@
++<script>
++	let { item } = $props();
++</script>
++
++<p>item {item.id}</p>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/each-keyed-item-boundary/_config.js b/packages/svelte/tests/runtime-runes/samples/each-keyed-item-boundary/_config.js
+new file mode 100644
+index 0000000..73eef84
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/each-keyed-item-boundary/_config.js
+@@ -0,0 +1,22 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++
++export default test({
++	html: `<p>item 1</p><p>item 2</p><p>item 3</p><button>copy</button><button>reverse</button>`,
++
++	test({ assert, target }) {
++		const [copy, reverse] = target.querySelectorAll('button');
++
++		flushSync(() => copy.click());
++		assert.htmlEqual(
++			target.innerHTML,
++			`<p>item 1</p><p>item 2</p><p>item 3</p><button>copy</button><button>reverse</button>`
++		);
++
++		flushSync(() => reverse.click());
++		assert.htmlEqual(
++			target.innerHTML,
++			`<p>item 3</p><p>item 2</p><p>item 1</p><button>copy</button><button>reverse</button>`
++		);
++	}
++});
+diff --git a/packages/svelte/tests/runtime-runes/samples/each-keyed-item-boundary/main.svelte b/packages/svelte/tests/runtime-runes/samples/each-keyed-item-boundary/main.svelte
+new file mode 100644
+index 0000000..4fa9540
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/each-keyed-item-boundary/main.svelte
+@@ -0,0 +1,14 @@
++<script>
++	import Child from './Child.svelte';
++
++	let { Comp = Child } = $props();
++
++	let items = $state([{ id: 1 }, { id: 2 }, { id: 3 }]);
++</script>
++
++{#each items as item, i (item)}
++	<Comp {item} />
++{/each}
++
++<button onclick={() => (items = items.map((x) => ({ ...x })))}>copy</button>
++<button onclick={() => items.reverse()}>reverse</button>
+\ No newline at end of file

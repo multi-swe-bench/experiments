@@ -1,0 +1,369 @@
+$ bash /home/test-run.sh
+
+
+> github-readme-stats@1.0.0 test
+> jest --verbose --maxWorkers=4
+
+PASS tests/pin.test.js
+  Test /api/pin
+    ✓ should test the request (21 ms)
+    ✓ should get the query options (2 ms)
+    ✓ should render error card if user repo not found (4 ms)
+    ✓ should render error card if org repo not found (3 ms)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Error: User Repository Not found
+        at fetchRepo (/home/github-readme-stats/src/fetchRepo.js:63:13)
+        at processTicksAndRejections (node:internal/process/task_queues:95:5)
+        at Object.<anonymous>.module.exports (/home/github-readme-stats/api/pin.js:23:16)
+        at Object.<anonymous> (/home/github-readme-stats/tests/pin.test.js:97:5)
+
+      at Object.<anonymous>.module.exports (api/pin.js:25:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Error: Organization Repository Not found
+        at fetchRepo (/home/github-readme-stats/src/fetchRepo.js:73:13)
+        at processTicksAndRejections (node:internal/process/task_queues:95:5)
+        at Object.<anonymous>.module.exports (/home/github-readme-stats/api/pin.js:23:16)
+        at Object.<anonymous> (/home/github-readme-stats/tests/pin.test.js:118:5)
+
+      at Object.<anonymous>.module.exports (api/pin.js:25:13)
+
+PASS tests/api.test.js
+  Test /api/
+    ✓ should test the request (61 ms)
+    ✓ should render error card on error (4 ms)
+    ✓ should get the query options (2 ms)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    [
+      {
+        type: 'NOT_FOUND',
+        path: [ 'user' ],
+        locations: [],
+        message: 'Could not fetch user'
+      }
+    ]
+
+      at fetchStats (src/fetchStats.js:64:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+PASS tests/utils.test.js
+  Test utils.js
+    ✓ should test kFormatter (1 ms)
+    ✓ should test encodeHTML
+    ✓ should test renderError (6 ms)
+
+PASS tests/fetchStats.test.js
+  Test fetchStats
+    ✓ should fetch correct stats (3 ms)
+    ✓ should throw error (4 ms)
+
+PASS tests/fetchRepo.test.js
+  Test fetchRepo
+    ✓ should fetch correct user repo (2 ms)
+    ✓ should fetch correct org repo (1 ms)
+    ✓ should throw error if user is found but repo is null (3 ms)
+    ✓ should throw error if org is found but repo is null (1 ms)
+    ✓ should throw error if both user & org data not found (1 ms)
+    ✓ should throw error if repository is private (1 ms)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    [
+      {
+        type: 'NOT_FOUND',
+        path: [ 'user' ],
+        locations: [],
+        message: "Could not resolve to a User with the login of 'noname'."
+      }
+    ]
+
+      at fetchStats (src/fetchStats.js:64:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+PASS tests/calculateRank.test.js
+  Test calculateRank
+    ✓ should calculate rank correctly
+
+PASS tests/retryer.test.js
+  Test Retryer
+    ✓ retryer should return value and have zero retries on first try (2 ms)
+    ✓ retryer should return value and have 2 retries (6 ms)
+    ✓ retryer should throw error if maximum retries reached (6 ms)
+
+PASS tests/renderStatsCard.test.js
+  Test renderStatsCard
+    ✓ should render correctly (20 ms)
+    ✓ should hide individual stats (6 ms)
+    ✓ should hide_border (5 ms)
+    ✓ should hide_rank (37 ms)
+    ✓ should render default colors properly (26 ms)
+    ✓ should render custom colors properly (4 ms)
+    ✓ should hide the title (4 ms)
+    ✓ should not hide the title (4 ms)
+    ✓ should render icons correctly (4 ms)
+    ✓ should not have icons if show_icons is false (5 ms)
+
+  console.log
+    
+            
+        .header {
+          font: 600 18px 'Segoe UI', Ubuntu, Sans-Serif; fill: #2f80ed; 
+          animation: fadeIn 0.8s ease-in-out forwards;
+        }
+        .stat { 
+          font: 600 14px 'Segoe UI', Ubuntu, Sans-Serif; fill: #333;
+        }
+        .stagger { 
+          opacity: 0;
+          animation: fadeIn 0.3s ease-in-out forwards;
+        }
+        .rank-text { 
+          font: 800 24px 'Segoe UI', Ubuntu, Sans-Serif; fill: #333; 
+          animation: scaleIn 0.3s ease-in-out forwards;
+        }
+        
+        .bold { font-weight: 700 }
+        .icon {
+          fill: #4c71f2;
+          display: none;
+        }
+        
+        .rank-circle-rim {
+          stroke: #2f80ed;
+          fill: none;
+          stroke-width: 6;
+          opacity: 0.2;
+        }
+        .rank-circle {
+          stroke: #2f80ed;
+          stroke-dasharray: 250;
+          fill: none;
+          stroke-width: 6;
+          stroke-linecap: round;
+          opacity: 0.8;
+          transform-origin: -10px 8px;
+          transform: rotate(-90deg);
+          animation: rankAnimation 1s forwards ease-in-out;
+        }
+
+      at Object.<anonymous> (tests/renderStatsCard.test.js:73:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    {} undefined
+
+      at tests/retryer.test.js:5:11
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_1 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_2
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    Trying PAT_1
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_1 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_2
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_2 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_3
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_3 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_4
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_4 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_5
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_5 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_6
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_6 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_7
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_7 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    Trying PAT_8
+
+      at retryer (src/retryer.js:6:13)
+
+  console.log
+    PAT_8 Failed
+
+      at retryer (src/retryer.js:21:15)
+
+  console.log
+    []
+
+      at Object.<anonymous> (tests/renderStatsCard.test.js:160:13)
+
+FAIL tests/renderRepoCard.test.js
+  Test renderRepoCard
+    ✓ should render correctly (16 ms)
+    ✓ should display username in title (full repo name) (7 ms)
+    ✓ should trim description (6 ms)
+    ✓ should shift the text position depending on language length (6 ms)
+    ✓ should render default colors properly (7 ms)
+    ✓ should render custom colors properly (3 ms)
+    ✕ should render archive badge if repo is archived (6 ms)
+
+  ● Test renderRepoCard › should render archive badge if repo is archived
+
+    expect(received).toHaveTextContent()
+
+    received value must be a Node.
+    Received has value: null
+
+      155 |     });
+      156 |
+    > 157 |     expect(queryByTestId(document.body, "archive-badge")).toHaveTextContent(
+          |                                                           ^
+      158 |       "Archived"
+      159 |     );
+      160 |   });
+
+      at __EXTERNAL_MATCHER_TRAP__ (node_modules/jest-jasmine2/node_modules/expect/build/index.js:342:30)
+      at Object.<anonymous> (tests/renderRepoCard.test.js:157:59)
+
+Test Suites: 1 failed, 8 passed, 9 total
+Tests:       1 failed, 38 passed, 39 total
+Snapshots:   0 total
+Time:        1.722 s, estimated 2 s
+Ran all test suites.
+
+[exit code: 1]

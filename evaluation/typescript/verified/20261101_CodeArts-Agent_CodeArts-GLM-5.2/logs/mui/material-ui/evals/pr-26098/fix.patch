@@ -1,0 +1,26 @@
+diff --git a/packages/material-ui/src/styles/experimentalStyled.js b/packages/material-ui/src/styles/experimentalStyled.js
+index a240d42..5dcd066 100644
+--- a/packages/material-ui/src/styles/experimentalStyled.js
++++ b/packages/material-ui/src/styles/experimentalStyled.js
+@@ -145,12 +145,17 @@ const experimentalStyled = (tag, options, muiOptions = {}) => {
+ 
+     const numOfCustomFnsApplied = expressionsWithDefaultTheme.length - expressions.length;
+ 
+-    if (Array.isArray(styleArg) && numOfCustomFnsApplied > 0) {
++    if (transformedStyleArg === undefined) {
++      transformedStyleArg = {};
++    }
++
++    if (Array.isArray(transformedStyleArg) && numOfCustomFnsApplied > 0) {
+       const placeholders = new Array(numOfCustomFnsApplied).fill('');
+       // If the type is array, than we need to add placeholders in the template for the overrides, variants and the sx styles
+-      transformedStyleArg = [...styleArg, ...placeholders];
+-      transformedStyleArg.raw = [...styleArg.raw, ...placeholders];
+-    } else if (typeof styleArg === 'function') {
++      const raw = transformedStyleArg.raw;
++      transformedStyleArg = [...transformedStyleArg, ...placeholders];
++      transformedStyleArg.raw = [...raw, ...placeholders];
++    } else if (typeof transformedStyleArg === 'function') {
+       // If the type is function, we need to define the default theme
+       transformedStyleArg = ({ theme: themeInput, ...other }) =>
+         styleArg({ theme: isEmpty(themeInput) ? defaultTheme : themeInput, ...other });

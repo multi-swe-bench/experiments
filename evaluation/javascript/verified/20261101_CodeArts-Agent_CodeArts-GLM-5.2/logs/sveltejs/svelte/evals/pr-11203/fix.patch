@@ -1,0 +1,165 @@
+diff --git a/.changeset/strict-mode.md b/.changeset/strict-mode.md
+new file mode 100644
+index 0000000..3f31847
+--- /dev/null
++++ b/.changeset/strict-mode.md
+@@ -0,0 +1,5 @@
++---
++'svelte': minor
++---
++
++feat: add `strict` compiler option option to warn when using features superseded in Svelte 5 (stores, `accessors`, `<slot>` and `on:` event directives), encouraging the use of runes, classes, snippets/{@render} and event attributes instead. The option is opt-in and off by default.
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index c1ed378..7a0002c 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -354,6 +354,12 @@ export function analyze_component(root, source, options) {
+ 			binding.references = references;
+ 			instance.scope.references.set(name, references);
+ 			module.scope.references.delete(name);
++
++			if (options.strict) {
++				for (const { node } of references) {
++					warn(warnings, node, [], 'legacy-store');
++				}
++			}
+ 		}
+ 	}
+ 
+@@ -409,6 +415,10 @@ export function analyze_component(root, source, options) {
+ 		warn(analysis.warnings, root.options, [], 'missing-custom-element-compile-option');
+ 	}
+ 
++	if (options.strict && (options.accessors || root.options?.accessors)) {
++		warn(analysis.warnings, root.options, [], 'legacy-accessors');
++	}
++
+ 	if (analysis.runes) {
+ 		const props_refs = module.scope.references.get('$$props');
+ 		if (props_refs) {
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 60e0ef4..133585f 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -683,7 +683,11 @@ const validation = {
+ 			}
+ 		}
+ 	},
+-	SlotElement(node) {
++	SlotElement(node, context) {
++		if (context.state.options.strict) {
++			warn(context.state.analysis.warnings, node, context.path, 'legacy-slot');
++		}
++
+ 		for (const attribute of node.attributes) {
+ 			if (attribute.type === 'Attribute') {
+ 				if (attribute.name === 'name') {
+@@ -700,6 +704,11 @@ const validation = {
+ 			}
+ 		}
+ 	},
++	OnDirective(node, context) {
++		if (context.state.options.strict) {
++			warn(context.state.analysis.warnings, node, context.path, 'legacy-event-handler');
++		}
++	},
+ 	Component: validate_component,
+ 	SvelteComponent: validate_component,
+ 	SvelteSelf: validate_component,
+diff --git a/packages/svelte/src/compiler/types/index.d.ts b/packages/svelte/src/compiler/types/index.d.ts
+index d94a80a..be5d8ec 100644
+--- a/packages/svelte/src/compiler/types/index.d.ts
++++ b/packages/svelte/src/compiler/types/index.d.ts
+@@ -143,6 +143,15 @@ export interface CompileOptions extends ModuleCompileOptions {
+ 	 * @default undefined
+ 	 */
+ 	runes?: boolean | undefined;
++	/**
++	 * If `true`, warns when using features that have been superseded in Svelte 5
++	 * (stores, accessors, slots and `on:` event directives), encouraging the use
++	 * of their modern equivalents (runes, classes, snippets/{@render} and event
++	 * attributes) instead.
++	 *
++	 * @default false
++	 */
++	strict?: boolean;
+ 	/**
+ 	 *  If `true`, exposes the Svelte major version in the browser by adding it to a `Set` stored in the global `window.__svelte.v`.
+ 	 *
+diff --git a/packages/svelte/src/compiler/validate-options.js b/packages/svelte/src/compiler/validate-options.js
+index 6c12a43..91cb472 100644
+--- a/packages/svelte/src/compiler/validate-options.js
++++ b/packages/svelte/src/compiler/validate-options.js
+@@ -11,6 +11,8 @@ const common = {
+ 
+ 	dev: boolean(false),
+ 
++	strict: boolean(false),
++
+ 	generate: validator('client', (input, keypath) => {
+ 		if (input === 'dom' || input === 'ssr') {
+ 			warn(
+diff --git a/packages/svelte/src/compiler/warnings.js b/packages/svelte/src/compiler/warnings.js
+index 3e36df1..daaaffc 100644
+--- a/packages/svelte/src/compiler/warnings.js
++++ b/packages/svelte/src/compiler/warnings.js
+@@ -240,6 +240,14 @@ const block = {
+ 	'empty-block': () => 'Empty block'
+ };
+ 
++/** @satisfies {Warnings} */
++const strict = {
++	'legacy-store': () => `Use runes ($state, $derived, etc.) instead of stores`,
++	'legacy-accessors': () => `Use classes with $state and $props instead of \`accessors\``,
++	'legacy-slot': () => `Use snippets and {@render} instead of <slot>`,
++	'legacy-event-handler': () => `Use event attributes (e.g. onclick) instead of on: directives`
++};
++
+ const options = {
+ 	'missing-custom-element-compile-option': () =>
+ 		"The 'customElement' option is used when generating a custom element. Did you forget the 'customElement: true' compile option?"
+@@ -256,6 +264,7 @@ const warnings = {
+ 	...components,
+ 	...legacy,
+ 	...block,
++	...strict,
+ 	...options
+ };
+ 
+diff --git a/packages/svelte/types/index.d.ts b/packages/svelte/types/index.d.ts
+index a47745a..9416573 100644
+--- a/packages/svelte/types/index.d.ts
++++ b/packages/svelte/types/index.d.ts
+@@ -634,6 +634,15 @@ declare module 'svelte/compiler' {
+ 		 * @default undefined
+ 		 */
+ 		runes?: boolean | undefined;
++		/**
++		 * If `true`, warns when using features that have been superseded in Svelte 5
++		 * (stores, accessors, slots and `on:` event directives), encouraging the use
++		 * of their modern equivalents (runes, classes, snippets/{@render} and event
++		 * attributes) instead.
++		 *
++		 * @default false
++		 */
++		strict?: boolean;
+ 		/**
+ 		 *  If `true`, exposes the Svelte major version in the browser by adding it to a `Set` stored in the global `window.__svelte.v`.
+ 		 *
+@@ -2442,6 +2451,15 @@ declare module 'svelte/types/compiler/interfaces' {
+ 		 * @default undefined
+ 		 */
+ 		runes?: boolean | undefined;
++		/**
++		 * If `true`, warns when using features that have been superseded in Svelte 5
++		 * (stores, accessors, slots and `on:` event directives), encouraging the use
++		 * of their modern equivalents (runes, classes, snippets/{@render} and event
++		 * attributes) instead.
++		 *
++		 * @default false
++		 */
++		strict?: boolean;
+ 		/**
+ 		 *  If `true`, exposes the Svelte major version in the browser by adding it to a `Set` stored in the global `window.__svelte.v`.
+ 		 *

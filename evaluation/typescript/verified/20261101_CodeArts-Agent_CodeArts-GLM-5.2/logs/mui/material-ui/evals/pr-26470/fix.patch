@@ -1,0 +1,42 @@
+diff --git a/packages/material-ui/src/Tabs/Tabs.js b/packages/material-ui/src/Tabs/Tabs.js
+index 68273478..b9cb9d00 100644
+--- a/packages/material-ui/src/Tabs/Tabs.js
++++ b/packages/material-ui/src/Tabs/Tabs.js
+@@ -356,6 +356,7 @@ const Tabs = React.forwardRef(function Tabs(inProps, ref) {
+   const updateIndicatorState = useEventCallback(() => {
+     const { tabsMeta, tabMeta } = getTabsMeta();
+     let startValue = 0;
++    let startSide = start;
+ 
+     if (tabMeta && tabsMeta) {
+       if (vertical) {
+@@ -365,21 +366,26 @@ const Tabs = React.forwardRef(function Tabs(inProps, ref) {
+           ? tabsMeta.scrollLeftNormalized + tabsMeta.clientWidth - tabsMeta.scrollWidth
+           : tabsMeta.scrollLeft;
+         startValue = tabMeta.left - tabsMeta.left + correction;
++
++        if (isRtl) {
++          startSide = end;
++          startValue = tabsMeta.scrollWidth - startValue - tabMeta[size];
++        }
+       }
+     }
+ 
+     const newIndicatorStyle = {
+-      [start]: startValue,
++      [startSide]: startValue,
+       // May be wrong until the font is loaded.
+       [size]: tabMeta ? tabMeta[size] : 0,
+     };
+ 
+     // IE11 support, replace with Number.isNaN
+     // eslint-disable-next-line no-restricted-globals
+-    if (isNaN(indicatorStyle[start]) || isNaN(indicatorStyle[size])) {
++    if (isNaN(indicatorStyle[startSide]) || isNaN(indicatorStyle[size])) {
+       setIndicatorStyle(newIndicatorStyle);
+     } else {
+-      const dStart = Math.abs(indicatorStyle[start] - newIndicatorStyle[start]);
++      const dStart = Math.abs(indicatorStyle[startSide] - newIndicatorStyle[startSide]);
+       const dSize = Math.abs(indicatorStyle[size] - newIndicatorStyle[size]);
+ 
+       if (dStart >= 1 || dSize >= 1) {

@@ -1,0 +1,240 @@
+diff --git a/readme.md b/readme.md
+index a010eca..001fc84 100644
+--- a/readme.md
++++ b/readme.md
+@@ -116,6 +116,7 @@ Please visit [this link](https://give.do/fundraisers/stand-beside-the-victims-of
+ - [Deploy on your own](#deploy-on-your-own)
+   - [On Vercel](#on-vercel)
+     - [:film\_projector: Check Out Step By Step Video Tutorial By @codeSTACKr](#film_projector-check-out-step-by-step-video-tutorial-by-codestackr)
++  - [On Cloudflare Workers](#on-cloudflare-workers)
+   - [On other platforms](#on-other-platforms)
+   - [Disable rate limit protections](#disable-rate-limit-protections)
+   - [Keep your fork up to date](#keep-your-fork-up-to-date)
+@@ -779,6 +780,25 @@ Since the GitHub API only allows 5k requests per hour, my `https://github-readme
+ 
+ </details>
+ 
++## On Cloudflare Workers
++
++> [!NOTE]\
++> Cloudflare Workers do not suffer from the cold start issues that Vercel serverless functions have, so they are a good alternative if you want your cards to always respond quickly.
++
++<details>
++<summary><b>:hammer_and_wrench: Step-by-step guide for deploying on Cloudflare Workers</b></summary>
++
++1. Fork or clone this repo as per your needs.
++2. Install the [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) by running `npm install -g wrangler` (or use `npx wrangler`).
++3. Authenticate with `wrangler login`.
++4. Create a personal access token (PAT) [here](https://github.com/settings/tokens/new) and enable the `repo` and `user` permissions.
++5. Add the PAT as a secret by running `wrangler secret put PAT_1` and pasting the token when prompted. Repeat for `PAT_2`, `PAT_3`, etc. if you have multiple tokens.
++6. (Optional) Set the `CACHE_SECONDS` environment variable under `[vars]` in [`wrangler.toml`](https://github.com/anuraghazra/github-readme-stats/blob/master/wrangler.toml) if you want to override the default cache duration.
++7. Deploy the worker by running `wrangler deploy`.
++8. You're done 🎉 Your API will be available at the worker's URL (e.g. `https://github-readme-stats.<your-subdomain>.workers.dev/api?username=anuraghazra`).
++
++</details>
++
+ ## On other platforms
+ 
+ > [!WARNING]\
+diff --git a/src/worker.js b/src/worker.js
+new file mode 100644
+index 0000000..3fdae54
+--- /dev/null
++++ b/src/worker.js
+@@ -0,0 +1,180 @@
++/**
++ * @file Cloudflare Workers entry point for github-readme-stats.
++ *
++ * @description This module exposes a `fetch` handler that adapts the existing
++ * Vercel-style API handlers (which expect a `req`/`res` object) to the
++ * Cloudflare Workers `Request`/`Response` model, allowing the project to be
++ * deployed on Cloudflare Workers in addition to Vercel.
++ */
++
++import statsCard from "../api/index.js";
++import repoCard from "../api/pin.js";
++import langCard from "../api/top-langs.js";
++import wakatimeCard from "../api/wakatime.js";
++import gistCard from "../api/gist.js";
++import upStatus from "../api/status/up.js";
++import patInfo from "../api/status/pat-info.js";
++
++const REPO_URL = "https://github.com/anuraghazra/github-readme-stats";
++
++const ROUTES = {
++  "/api": statsCard,
++  "/api/": statsCard,
++  "/api/pin": repoCard,
++  "/api/top-langs": langCard,
++  "/api/wakatime": wakatimeCard,
++  "/api/gist": gistCard,
++  "/api/status/up": upStatus,
++  "/api/status/pat-info": patInfo,
++};
++
++/**
++ * @typedef {{status: number, headers: Record<string, string>, body: unknown}} ResponseDescriptor A serializable description of an HTTP response.
++ */
++
++/**
++ * Copies Cloudflare Workers environment bindings into `process.env` so that the
++ * existing API handlers (which read tokens and configuration from `process.env`)
++ * keep working when deployed on Cloudflare Workers.
++ *
++ * @param {Record<string, unknown>} env The environment bindings passed to the worker.
++ * @returns {void} Nothing.
++ */
++const applyEnv = (env) => {
++  if (!env || typeof env !== "object") {
++    return;
++  }
++  for (const [key, value] of Object.entries(env)) {
++    try {
++      process.env[key] = value;
++    } catch {
++      // Ignore bindings that cannot be written to process.env.
++    }
++  }
++};
++
++/**
++ * Creates a Vercel-like `res` object that captures the headers and body set by
++ * the API handlers.
++ *
++ * @returns {object} The response adapter.
++ */
++const createResponseAdapter = () => {
++  const headers = {};
++  let body;
++  const setHeader = (name, value) => {
++    headers[name] = value;
++  };
++  const send = (value) => {
++    body = value;
++  };
++  return {
++    headers,
++    get body() {
++      return body;
++    },
++    setHeader,
++    send,
++  };
++};
++
++/**
++ * Converts the captured response adapter body into a string suitable for the
++ * `Response` constructor.
++ *
++ * @param {unknown} body The captured response body.
++ * @returns {string} The serialized response body.
++ */
++const serializeBody = (body) => {
++  if (typeof body === "string") {
++    return body;
++  }
++  if (body === undefined || body === null) {
++    return "";
++  }
++  return JSON.stringify(body);
++};
++
++/**
++ * Handles an incoming Cloudflare Workers `Request` by routing it to the matching
++ * API handler and returns a plain response descriptor.
++ *
++ * @param {Request} request The incoming request.
++ * @param {Record<string, unknown>} env The environment bindings passed to the worker.
++ * @returns {Promise<ResponseDescriptor>} The response descriptor.
++ */
++const handleRequest = async (request, env) => {
++  applyEnv(env);
++
++  const url = new URL(request.url);
++  const path = url.pathname;
++
++  if (path === "/" || path === "") {
++    return {
++      status: 302,
++      headers: { Location: REPO_URL },
++      body: "",
++    };
++  }
++
++  const handler = ROUTES[path];
++  if (!handler) {
++    return {
++      status: 404,
++      headers: { "Content-Type": "text/plain" },
++      body: "Not found",
++    };
++  }
++
++  const req = {
++    query: Object.fromEntries(url.searchParams.entries()),
++  };
++  const res = createResponseAdapter();
++
++  try {
++    await handler(req, res);
++    return {
++      status: 200,
++      headers: res.headers,
++      body: res.body,
++    };
++  } catch (err) {
++    return {
++      status: 500,
++      headers: { "Content-Type": "text/plain" },
++      body: `Something went wrong: ${err.message}`,
++    };
++  }
++};
++
++/**
++ * Builds a Cloudflare Workers `Response` from a response descriptor.
++ *
++ * @param {ResponseDescriptor} descriptor The response descriptor.
++ * @returns {Response} The Cloudflare Workers response.
++ */
++const toResponse = (descriptor) => {
++  const headers = new Headers();
++  for (const [name, value] of Object.entries(descriptor.headers)) {
++    headers.set(name, value);
++  }
++  return new Response(serializeBody(descriptor.body), {
++    status: descriptor.status,
++    headers,
++  });
++};
++
++/**
++ * Cloudflare Workers fetch handler.
++ *
++ * @param {Request} request The incoming request.
++ * @param {Record<string, unknown>} env The environment bindings passed to the worker.
++ * @returns {Promise<Response>} The Cloudflare Workers response.
++ */
++const fetch = async (request, env) => {
++  const descriptor = await handleRequest(request, env);
++  return toResponse(descriptor);
++};
++
++export default { fetch };
++export { handleRequest, fetch, toResponse, applyEnv, ROUTES };
+diff --git a/wrangler.toml b/wrangler.toml
+new file mode 100644
+index 0000000..33b9e4c
+--- /dev/null
++++ b/wrangler.toml
+@@ -0,0 +1,9 @@
++name = "github-readme-stats"
++main = "src/worker.js"
++compatibility_date = "2024-09-25"
++compatibility_flags = ["nodejs"]
++
++# Environment variables (non-secret) can be added under [vars].
++# Secrets such as PAT_1 should be set with `wrangler secret put PAT_1`.
++[vars]
++# CACHE_SECONDS = "21600"
+\ No newline at end of file

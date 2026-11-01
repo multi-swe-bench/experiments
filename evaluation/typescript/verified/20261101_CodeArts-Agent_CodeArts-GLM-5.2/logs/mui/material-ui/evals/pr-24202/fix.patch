@@ -1,0 +1,25 @@
+diff --git a/packages/material-ui/src/useAutocomplete/useAutocomplete.js b/packages/material-ui/src/useAutocomplete/useAutocomplete.js
+index a47295e..e999c20 100644
+--- a/packages/material-ui/src/useAutocomplete/useAutocomplete.js
++++ b/packages/material-ui/src/useAutocomplete/useAutocomplete.js
+@@ -130,11 +130,19 @@ export default function useAutocomplete(props) {
+   const defaultHighlighted = autoHighlight ? 0 : -1;
+   const highlightedIndexRef = React.useRef(defaultHighlighted);
+ 
+-  const [value, setValueState] = useControlled({
++  const [valueState, setValueState] = useControlled({
+     controlled: valueProp,
+     default: defaultValue,
+     name: componentName,
+   });
++
++  const value = React.useMemo(() => {
++    if (multiple && valueState == null) {
++      return [];
++    }
++    return valueState;
++  }, [multiple, valueState]);
++
+   const [inputValue, setInputValueState] = useControlled({
+     controlled: inputValueProp,
+     default: '',

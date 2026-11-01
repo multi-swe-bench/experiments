@@ -1,0 +1,25 @@
+diff --git a/packages/mui-system/src/cssVars/createCssVarsProvider.js b/packages/mui-system/src/cssVars/createCssVarsProvider.js
+index c60162b3..4b80508d 100644
+--- a/packages/mui-system/src/cssVars/createCssVarsProvider.js
++++ b/packages/mui-system/src/cssVars/createCssVarsProvider.js
+@@ -184,13 +184,17 @@ export default function createCssVarsProvider(options) {
+       if (key === resolvedDefaultColorScheme) {
+         if (excludeVariablesFromRoot) {
+           const excludedVariables = {};
+-          excludeVariablesFromRoot(cssVarPrefix).forEach((cssVar) => {
++          const excludedKeys = new Set(excludeVariablesFromRoot(cssVarPrefix));
++          excludedKeys.forEach((cssVar) => {
+             excludedVariables[cssVar] = css[cssVar];
+-            delete css[cssVar];
+           });
+           defaultColorSchemeStyleSheet[`[${attribute}="${key}"]`] = excludedVariables;
++          defaultColorSchemeStyleSheet[`${colorSchemeSelector}, [${attribute}="${key}"]`] = Object.fromEntries(
++            Object.entries(css).filter(([cssVar]) => !excludedKeys.has(cssVar)),
++          );
++        } else {
++          defaultColorSchemeStyleSheet[`${colorSchemeSelector}, [${attribute}="${key}"]`] = css;
+         }
+-        defaultColorSchemeStyleSheet[`${colorSchemeSelector}, [${attribute}="${key}"]`] = css;
+       } else {
+         otherColorSchemesStyleSheet[
+           `${colorSchemeSelector === ':root' ? '' : colorSchemeSelector}[${attribute}="${key}"]`

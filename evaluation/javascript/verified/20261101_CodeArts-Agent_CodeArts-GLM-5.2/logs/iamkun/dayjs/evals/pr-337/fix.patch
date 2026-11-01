@@ -1,0 +1,22 @@
+diff --git a/src/index.js b/src/index.js
+index c3b7530..b563b2e 100644
+--- a/src/index.js
++++ b/src/index.js
+@@ -27,7 +27,7 @@ const parseLocale = (preset, object, isLocal) => {
+   return l
+ }
+ 
+-const dayjs = (date, c) => {
++const dayjs = function (date, c) {
+   if (isDayjs(date)) {
+     return date.clone()
+   }
+@@ -384,6 +384,8 @@ class Dayjs {
+   }
+ }
+ 
++dayjs.prototype = Dayjs.prototype
++
+ dayjs.extend = (plugin, option) => {
+   plugin(option, Dayjs, dayjs)
+   return dayjs

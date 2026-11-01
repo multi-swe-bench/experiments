@@ -1,0 +1,26 @@
+diff --git a/packages/svelte/src/internal/client/render.js b/packages/svelte/src/internal/client/render.js
+index aa2c0b4..499283d 100644
+--- a/packages/svelte/src/internal/client/render.js
++++ b/packages/svelte/src/internal/client/render.js
+@@ -132,7 +132,20 @@ export function hydrate(component, options) {
+ 		return flush_sync(() => {
+ 			set_hydrating(true);
+ 
+-			const anchor = hydrate_anchor(first_child);
++			// If the user has added whitespace around the `%sveltekit.body%` placeholder in
++			// their `app.html`, the first child of the target will be a whitespace text node
++			// rather than the opening hydration marker. Skip such nodes so that `hydrate_anchor`
++			// can find the marker and populate `hydrate_nodes`.
++			let node = first_child;
++			while (
++				node !== null &&
++				node.nodeType === 3 &&
++				/** @type {Text} */ (node).nodeValue.trim() === ''
++			) {
++				node = node.nextSibling;
++			}
++
++			const anchor = hydrate_anchor(/** @type {ChildNode} */ (node));
+ 			const instance = _mount(component, { ...options, anchor });
+ 
+ 			// flush_sync will run this callback and then synchronously run any pending effects,

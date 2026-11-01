@@ -1,0 +1,42 @@
+diff --git a/packages/mui-system/src/createTheme/createBreakpoints.d.ts b/packages/mui-system/src/createTheme/createBreakpoints.d.ts
+index aad9b18c..23e833df 100644
+--- a/packages/mui-system/src/createTheme/createBreakpoints.d.ts
++++ b/packages/mui-system/src/createTheme/createBreakpoints.d.ts
+@@ -55,6 +55,14 @@ export interface Breakpoints {
+    * @see [API documentation](https://mui.com/customization/breakpoints/#theme-breakpoints-only-key-media-query)
+    */
+   only: (key: Breakpoint) => string;
++  /**
++   * @param key - A breakpoint key (`xs`, `sm`, etc.) or a screen width number in px.
++   * @returns A media query string ready to be used with most styling solutions, which matches screen widths starting
++   *          from the breakpoint key of `0` and stopping at the breakpoint key of the first argument (exclusive) and
++   *          starting at the breakpoint key of the first argument (inclusive) and stopping at the screen size given by the next breakpoint key (exclusive).
++   * @see [API documentation](https://mui.com/customization/breakpoints/#theme-breakpoints-only-key-media-query)
++   */
++  not: (key: Breakpoint) => string;
+ }
+ 
+ export interface BreakpointsOptions extends Partial<Breakpoints> {
+diff --git a/packages/mui-system/src/createTheme/createBreakpoints.js b/packages/mui-system/src/createTheme/createBreakpoints.js
+index 83db3cc1..5677895b 100644
+--- a/packages/mui-system/src/createTheme/createBreakpoints.js
++++ b/packages/mui-system/src/createTheme/createBreakpoints.js
+@@ -55,6 +55,10 @@ export default function createBreakpoints(breakpoints) {
+     return up(key);
+   }
+ 
++  function not(key) {
++    return `@media not all and ${only(key).slice('@media '.length)}`;
++  }
++
+   return {
+     keys,
+     values,
+@@ -62,6 +66,7 @@ export default function createBreakpoints(breakpoints) {
+     down,
+     between,
+     only,
++    not,
+     unit,
+     ...other,
+   };

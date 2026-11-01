@@ -1,0 +1,160 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+index f65d1c2..16c68be 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/css-prune.js
+@@ -344,6 +344,37 @@ function mark(relative_selector, element) {
+ 	element.metadata.scoped = true;
+ }
+ 
++/**
++ * Collect all descendant elements of the given element, descending into
++ * fragments and control-flow blocks. Used to match the inner selector of
++ * `:has(...)` when the anchor element is reached directly (e.g. via a
++ * combinator such as `x:has(.y) + z`) rather than the prune walk reaching
++ * the descendant first.
++ * @param {Compiler.AST.RegularElement | Compiler.AST.SvelteElement} element
++ * @returns {Array<Compiler.AST.RegularElement | Compiler.AST.SvelteElement>}
++ */
++function get_descendant_elements(element) {
++	/** @type {Array<Compiler.AST.RegularElement | Compiler.AST.SvelteElement>} */
++	const descendants = [];
++
++	walk(
++		element.fragment,
++		{},
++		{
++			RegularElement(node, context) {
++				descendants.push(node);
++				context.next();
++			},
++			SvelteElement(node, context) {
++				descendants.push(node);
++				context.next();
++			}
++		}
++	);
++
++	return descendants;
++}
++
+ /**
+  * Returns `true` if the relative selector is global, meaning
+  * it's a `:global(...)` or unscopeable selector, or
+@@ -443,10 +474,7 @@ function relative_selector_might_apply_to_node(
+ 					};
+ 				}
+ 
+-				if (
+-					selectors.length === 0 /* is :global(...) */ ||
+-					apply_selector(selectors, rule, element, stylesheet, check_has)
+-				) {
++				if (selectors.length === 0 /* is :global(...) */) {
+ 					// Treat e.g. `.x:has(.y)` as `.x .y` with the .y part already being matched,
+ 					// and now looking upwards for the .x part.
+ 					if (
+@@ -463,6 +491,34 @@ function relative_selector_might_apply_to_node(
+ 						complex_selector.metadata.used = true;
+ 						matched = true;
+ 					}
++				} else {
++					// The inner selector of `:has(...)` could match the element itself (when the
++					// prune walk reaches the descendant first) or a descendant of the element
++					// (when the anchor is reached directly, e.g. via a combinator like `x:has(.y) + z`).
++					// In the latter case we need to search the descendants of the anchor element.
++					const candidates = [element, ...get_descendant_elements(element)];
++
++					for (const candidate of candidates) {
++						if (apply_selector(selectors, rule, candidate, stylesheet, check_has)) {
++							// Treat e.g. `.x:has(.y)` as `.x .y` with the .y part already being matched,
++							// and now looking upwards for the .x part.
++							if (
++								apply_combinator(
++									left_most_combinator,
++									selectors[0] ?? [],
++									[...parent_selectors, relative_selector],
++									rule,
++									candidate,
++									stylesheet,
++									false
++								)
++							) {
++								complex_selector.metadata.used = true;
++								matched = true;
++								break;
++							}
++						}
++					}
+ 				}
+ 			}
+ 
+diff --git a/packages/svelte/tests/css/samples/has-with-combinator/_config.js b/packages/svelte/tests/css/samples/has-with-combinator/_config.js
+new file mode 100644
+index 0000000..f1d268c
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/has-with-combinator/_config.js
+@@ -0,0 +1,20 @@
++import { test } from '../../test';
++
++export default test({
++	warnings: [
++		{
++			code: 'css_unused_selector',
++			message: 'Unused CSS selector ".unused:has(.copied) + span"',
++			start: {
++				character: 425,
++				column: 1,
++				line: 20
++			},
++			end: {
++				character: 452,
++				column: 28,
++				line: 20
++			}
++		}
++	]
++});
+diff --git a/packages/svelte/tests/css/samples/has-with-combinator/expected.css b/packages/svelte/tests/css/samples/has-with-combinator/expected.css
+new file mode 100644
+index 0000000..76b282d
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/has-with-combinator/expected.css
+@@ -0,0 +1,8 @@
++pre.svelte-xyz:hover + span:where(.svelte-xyz),
++	pre.svelte-xyz:has(.copied:where(.svelte-xyz)) + span:where(.svelte-xyz) {
++		opacity: 1;
++	}
++
++	/* (unused) .unused:has(.copied) + span {
++		opacity: 0;
++	}*/
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/has-with-combinator/input.svelte b/packages/svelte/tests/css/samples/has-with-combinator/input.svelte
+new file mode 100644
+index 0000000..967e74c
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/has-with-combinator/input.svelte
+@@ -0,0 +1,23 @@
++<pre>{output}<button class:copied type="button" aria-label="Copy"></button></pre>
++<span>{copied ? 'Copied!' : 'Click to Copy'}</span>
++
++<script>
++	const output = 'Lorem ipsum';
++	let timeout = $state(null);
++	const copied = $derived(!!timeout);
++	function copy() {
++		clearTimeout(timeout);
++		timeout = setTimeout(() => (timeout = null), 700);
++	}
++</script>
++
++<style>
++	pre:hover + span,
++	pre:has(.copied) + span {
++		opacity: 1;
++	}
++
++	.unused:has(.copied) + span {
++		opacity: 0;
++	}
++</style>
+\ No newline at end of file

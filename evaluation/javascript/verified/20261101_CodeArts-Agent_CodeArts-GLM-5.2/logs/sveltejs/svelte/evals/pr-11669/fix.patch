@@ -1,0 +1,89 @@
+diff --git a/packages/svelte/src/compiler/utils/extract_svelte_ignore.js b/packages/svelte/src/compiler/utils/extract_svelte_ignore.js
+index 1f5d29d..23cc373 100644
+--- a/packages/svelte/src/compiler/utils/extract_svelte_ignore.js
++++ b/packages/svelte/src/compiler/utils/extract_svelte_ignore.js
+@@ -31,20 +31,30 @@ export function extract_svelte_ignore(offset, text, runes) {
+ 	/** @type {string[]} */
+ 	const ignores = [];
+ 
+-	// Warnings have to be separated by commas, everything after is interpreted as prose
+-	for (const match of text.slice(length).matchAll(/([\w$-]+)(,)?/gm)) {
+-		const code = match[1];
++	// Warnings can be separated by commas or whitespace. Anything after a
++	// whitespace-separated token that isn't a recognised code is interpreted as prose.
++	let first = true;
++
++	for (const match of text.slice(length).matchAll(/([\s,]*)([\w$-]+)/g)) {
++		const separator = match[1];
++		const code = match[2];
++		const replacement = replacements[code] ?? code.replace(/-/g, '_');
++
++		if (!first && !separator.includes(',')) {
++			if (!w.codes.includes(code) && !w.codes.includes(replacement)) {
++				break;
++			}
++		}
++		first = false;
+ 
+ 		ignores.push(code);
+ 
+ 		if (!w.codes.includes(code)) {
+-			const replacement = replacements[code] ?? code.replace(/-/g, '_');
++			// The type cast is for some reason necessary to pass the type check in CI
++			const start = offset + /** @type {number} */ (match.index) + separator.length;
++			const end = start + code.length;
+ 
+ 			if (runes) {
+-				// The type cast is for some reason necessary to pass the type check in CI
+-				const start = offset + /** @type {number} */ (match.index);
+-				const end = start + code.length;
+-
+ 				if (w.codes.includes(replacement)) {
+ 					w.legacy_code({ start, end }, code, replacement);
+ 				} else {
+@@ -55,10 +65,6 @@ export function extract_svelte_ignore(offset, text, runes) {
+ 				ignores.push(replacement);
+ 			}
+ 		}
+-
+-		if (!match[2]) {
+-			break;
+-		}
+ 	}
+ 
+ 	return ignores;
+diff --git a/packages/svelte/tests/validator/samples/ignore-warnings-spaces/input.svelte b/packages/svelte/tests/validator/samples/ignore-warnings-spaces/input.svelte
+new file mode 100644
+index 0000000..44d8a14
+--- /dev/null
++++ b/packages/svelte/tests/validator/samples/ignore-warnings-spaces/input.svelte
+@@ -0,0 +1,7 @@
++<!-- svelte-ignore a11y_missing_attribute a11y_distracting_elements -->
++<div>
++	<img src="this-is-fine.jpg">
++	<marquee>but this is still discouraged</marquee>
++</div>
++
++<img src="potato.jpg">
+\ No newline at end of file
+diff --git a/packages/svelte/tests/validator/samples/ignore-warnings-spaces/warnings.json b/packages/svelte/tests/validator/samples/ignore-warnings-spaces/warnings.json
+new file mode 100644
+index 0000000..d27d7af
+--- /dev/null
++++ b/packages/svelte/tests/validator/samples/ignore-warnings-spaces/warnings.json
+@@ -0,0 +1,14 @@
++[
++	{
++		"code": "a11y_missing_attribute",
++		"end": {
++			"column": 22,
++			"line": 7
++		},
++		"message": "`<img>` element should have an alt attribute",
++		"start": {
++			"column": 0,
++			"line": 7
++		}
++	}
++]
+\ No newline at end of file

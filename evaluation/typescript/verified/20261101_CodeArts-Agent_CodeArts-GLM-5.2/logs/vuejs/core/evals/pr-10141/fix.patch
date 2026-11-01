@@ -1,0 +1,30 @@
+diff --git a/packages/runtime-core/src/hydration.ts b/packages/runtime-core/src/hydration.ts
+index 4970aee..8d2d9a1 100644
+--- a/packages/runtime-core/src/hydration.ts
++++ b/packages/runtime-core/src/hydration.ts
+@@ -764,13 +764,23 @@ function propHasMismatch(
+     } else {
+       if (el.hasAttribute(key)) {
+         actual = el.getAttribute(key)
+-      } else {
+-        // #10000 some attrs such as textarea.value can't be retrieved by `hasAttribute`
++      } else if (!isObject(clientValue)) {
++        // #10000 some attrs such as textarea.value can't be retrieved by
++        // `hasAttribute`, so we fall back to the property value. This only
++        // applies to primitive values that the server would have rendered as
++        // an attribute. For non-primitive values (e.g. arrays/objects bound
++        // to <option :value>), the server renders no attribute and the value
++        // is applied as a DOM property on the client, so there is no
++        // attribute mismatch to compare against. Reading the property in that
++        // case (e.g. an <option>'s `value` falls back to its text content)
++        // would produce a false positive.
+         const serverValue = el[key as keyof typeof el]
+         actual =
+           isObject(serverValue) || serverValue == null
+             ? ''
+             : String(serverValue)
++      } else {
++        actual = ''
+       }
+       expected =
+         isObject(clientValue) || clientValue == null ? '' : String(clientValue)

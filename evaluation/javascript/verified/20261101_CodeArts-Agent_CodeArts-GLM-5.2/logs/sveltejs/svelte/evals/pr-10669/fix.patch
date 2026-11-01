@@ -1,0 +1,61 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index f541133..a363488 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -2668,7 +2668,7 @@ export const template_visitors = {
+ 		const params = [b.id('$$node')];
+ 
+ 		if (node.expression) {
+-			params.push(b.id('$$props'));
++			params.push(b.id('$$arg'));
+ 		}
+ 
+ 		/** @type {import('estree').Expression[]} */
+diff --git a/packages/svelte/tests/runtime-runes/samples/action-prop-conflict/Component.svelte b/packages/svelte/tests/runtime-runes/samples/action-prop-conflict/Component.svelte
+new file mode 100644
+index 0000000..30d4f30
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/action-prop-conflict/Component.svelte
+@@ -0,0 +1,5 @@
++<script>
++	let { action, state } = $props();
++</script>
++
++<div use:action={state}></div>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/action-prop-conflict/_config.js b/packages/svelte/tests/runtime-runes/samples/action-prop-conflict/_config.js
+new file mode 100644
+index 0000000..4644629
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/action-prop-conflict/_config.js
+@@ -0,0 +1,9 @@
++import { test } from '../../test';
++
++export default test({
++	accessors: false,
++
++	html: `<input><div>svelte</div><div>svelte</div>`,
++
++	ssrHtml: `<input value="svelte"><div></div><div></div>`
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/action-prop-conflict/main.svelte b/packages/svelte/tests/runtime-runes/samples/action-prop-conflict/main.svelte
+new file mode 100644
+index 0000000..9bc1336
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/action-prop-conflict/main.svelte
+@@ -0,0 +1,13 @@
++<script>
++	import Component from './Component.svelte';
++
++	let state = $state({ name: 'svelte' });
++
++	function action(node, param) {
++		node.textContent = param.name;
++	}
++</script>
++
++<input bind:value={state.name} />
++<div use:action={state}></div>
++<Component {action} {state}></Component>
+\ No newline at end of file

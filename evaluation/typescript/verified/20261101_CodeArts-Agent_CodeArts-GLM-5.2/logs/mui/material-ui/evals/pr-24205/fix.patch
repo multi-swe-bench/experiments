@@ -1,0 +1,43 @@
+diff --git a/packages/material-ui-lab/src/DayPicker/PickersCalendarHeader.tsx b/packages/material-ui-lab/src/DayPicker/PickersCalendarHeader.tsx
+index 19afa11..11d0ab1 100644
+--- a/packages/material-ui-lab/src/DayPicker/PickersCalendarHeader.tsx
++++ b/packages/material-ui-lab/src/DayPicker/PickersCalendarHeader.tsx
+@@ -7,7 +7,7 @@ import IconButton from '@material-ui/core/IconButton';
+ import { SlideDirection } from './PickersSlideTransition';
+ import { useUtils } from '../internal/pickers/hooks/useUtils';
+ import FadeTransitionGroup from './PickersFadeTransitionGroup';
+-import { DateValidationProps } from '../internal/pickers/date-utils';
++import { DateValidationProps, isYearOnlyView } from '../internal/pickers/date-utils';
+ // tslint:disable-next-line no-relative-import-in-test
+ import ArrowDropDownIcon from '../internal/svg-icons/ArrowDropDown';
+ import PickersArrowSwitcher, {
+@@ -157,17 +157,21 @@ function PickersCalendarHeader<TDate>(
+     }
+   };
+ 
++  const showMonth = !isYearOnlyView(views);
++
+   return (
+     <div className={classes.root}>
+       <div role="presentation" className={classes.label} onClick={handleToggleView}>
+-        <FadeTransitionGroup
+-          reduceAnimations={reduceAnimations}
+-          transKey={utils.format(month, 'month')}
+-        >
+-          <div aria-live="polite" data-mui-test="calendar-month-text" className={classes.labelItem}>
+-            {utils.format(month, 'month')}
+-          </div>
+-        </FadeTransitionGroup>
++        {showMonth && (
++          <FadeTransitionGroup
++            reduceAnimations={reduceAnimations}
++            transKey={utils.format(month, 'month')}
++          >
++            <div aria-live="polite" data-mui-test="calendar-month-text" className={classes.labelItem}>
++              {utils.format(month, 'month')}
++            </div>
++          </FadeTransitionGroup>
++        )}
+         <FadeTransitionGroup
+           reduceAnimations={reduceAnimations}
+           transKey={utils.format(month, 'year')}

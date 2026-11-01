@@ -1,0 +1,138 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/css/index.js b/packages/svelte/src/compiler/phases/3-transform/css/index.js
+index c1175e4..1dfc1f4 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/css/index.js
++++ b/packages/svelte/src/compiler/phases/3-transform/css/index.js
+@@ -17,6 +17,7 @@ import { dev } from '../../../state.js';
+  *   specificity: {
+  *     bumped: boolean
+  *   }
++ *   in_global_block: boolean;
+  * }} State
+  */
+ 
+@@ -38,7 +39,8 @@ export function render_stylesheet(source, analysis, options) {
+ 		keyframes: analysis.css.keyframes,
+ 		specificity: {
+ 			bumped: false
+-		}
++		},
++		in_global_block: false
+ 	};
+ 
+ 	const ast = /** @type {Css.StyleSheet} */ (analysis.css.ast);
+@@ -142,7 +144,7 @@ const visitors = {
+ 
+ 		// keep empty rules in dev, because it's convenient to
+ 		// see them in devtools
+-		if (!dev && is_empty(node)) {
++		if (!state.in_global_block && !dev && is_empty(node)) {
+ 			if (state.minify) {
+ 				state.code.remove(node.start, node.end);
+ 			} else {
+@@ -154,7 +156,7 @@ const visitors = {
+ 			return;
+ 		}
+ 
+-		if (!is_used(node)) {
++		if (!state.in_global_block && !is_used(node)) {
+ 			if (state.minify) {
+ 				state.code.remove(node.start, node.end);
+ 			} else {
+@@ -182,12 +184,16 @@ const visitors = {
+ 					state.code.appendLeft(node.block.end, '*/');
+ 				}
+ 
+-				// don't recurse into selector or body
++				// don't recurse into selector, but do recurse into body so that
++				// e.g. animation names are transformed
++				visit(node.block, { ...state, in_global_block: true });
+ 				return;
+ 			}
+ 
+-			// don't recurse into body
++			// don't recurse into selector, but do recurse into body so that
++			// e.g. animation names are transformed
+ 			visit(node.prelude);
++			visit(node.block, { ...state, in_global_block: true });
+ 			return;
+ 		}
+ 
+@@ -195,7 +201,11 @@ const visitors = {
+ 	},
+ 	SelectorList(node, { state, next, path }) {
+ 		// Only add comments if we're not inside a complex selector that itself is unused
+-		if (!path.find((n) => n.type === 'ComplexSelector' && !n.metadata.used)) {
++		// or inside a :global { ... } block, where selectors are left untouched
++		if (
++			!state.in_global_block &&
++			!path.find((n) => n.type === 'ComplexSelector' && !n.metadata.used)
++		) {
+ 			const children = node.children;
+ 			let pruning = false;
+ 			let prune_start = children[0].start;
+diff --git a/packages/svelte/tests/css/samples/global-block-keyframes/expected.css b/packages/svelte/tests/css/samples/global-block-keyframes/expected.css
+new file mode 100644
+index 0000000..3e5fcbc
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-block-keyframes/expected.css
+@@ -0,0 +1,23 @@
++.loading.svelte-xyz {
++		/* :global {*/
++			svg {
++				animation: svelte-xyz-spinner 1s linear infinite;
++			}
++		/*}*/
++
++		p:where(.svelte-xyz) {
++			svg {
++				animation: svelte-xyz-fade 2s;
++			}
++		}
++	}
++
++	@keyframes svelte-xyz-spinner {
++		0% { transform: rotate(0deg); }
++		100% { transform: rotate(360deg); }
++	}
++
++	@keyframes svelte-xyz-fade {
++		0% { opacity: 0; }
++		100% { opacity: 1; }
++	}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/global-block-keyframes/input.svelte b/packages/svelte/tests/css/samples/global-block-keyframes/input.svelte
+new file mode 100644
+index 0000000..2300917
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/global-block-keyframes/input.svelte
+@@ -0,0 +1,29 @@
++<div class="loading">
++	<p>Load</p>
++</div>
++
++<style>
++	.loading {
++		:global {
++			svg {
++				animation: spinner 1s linear infinite;
++			}
++		}
++
++		p :global {
++			svg {
++				animation: fade 2s;
++			}
++		}
++	}
++
++	@keyframes spinner {
++		0% { transform: rotate(0deg); }
++		100% { transform: rotate(360deg); }
++	}
++
++	@keyframes fade {
++		0% { opacity: 0; }
++		100% { opacity: 1; }
++	}
++</style>
+\ No newline at end of file

@@ -1,0 +1,152 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+index ca65280..4c1e59b 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+@@ -1,5 +1,5 @@
+ import * as b from '../../../utils/builders.js';
+-import { extract_paths, is_simple_expression } from '../../../utils/ast.js';
++import { contains_await_expression, extract_paths, is_simple_expression } from '../../../utils/ast.js';
+ import { error } from '../../../errors.js';
+ import {
+ 	PROPS_IS_LAZY_INITIAL,
+@@ -153,17 +153,25 @@ export function serialize_set_binding(node, context, fallback) {
+ 			return fallback();
+ 		}
+ 
+-		return b.call(
+-			b.thunk(
+-				b.block([
+-					b.const(tmp_id, /** @type {import('estree').Expression} */ (visit(node.right))),
+-					b.stmt(b.sequence(assignments)),
+-					// return because it could be used in a nested expression where the value is needed.
+-					// example: { foo: ({ bar } = { bar: 1 })}
+-					b.return(b.id(tmp_id))
+-				])
+-			)
++		const thunk = b.thunk(
++			b.block([
++				b.const(tmp_id, /** @type {import('estree').Expression} */ (visit(node.right))),
++				b.stmt(b.sequence(assignments)),
++				// return because it could be used in a nested expression where the value is needed.
++				// example: { foo: ({ bar } = { bar: 1 })}
++				b.return(b.id(tmp_id))
++			])
+ 		);
++
++		// `await` can appear on the right-hand side of a destructuring assignment,
++		// e.g. `[user] = await fetch_user()`. In that case the IIFE needs to be async
++		// so that the `await` is valid.
++		if (contains_await_expression(node.right)) {
++			// @ts-expect-error
++			thunk.async = true;
++		}
++
++		return b.call(thunk);
+ 	}
+ 
+ 	if (node.left.type !== 'Identifier' && node.left.type !== 'MemberExpression') {
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index f00091a..f8ad8fb 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -3,6 +3,7 @@ import { set_scope, get_rune } from '../../scope.js';
+ import {
+ 	extract_identifiers,
+ 	extract_paths,
++	contains_await_expression,
+ 	is_event_attribute,
+ 	unwrap_ts_expression
+ } from '../../../utils/ast.js';
+@@ -403,15 +404,23 @@ function serialize_set_binding(node, context, fallback) {
+ 			return fallback();
+ 		}
+ 
+-		return b.call(
+-			b.thunk(
+-				b.block([
+-					b.const(tmp_id, /** @type {import('estree').Expression} */ (visit(node.right))),
+-					b.stmt(b.sequence(assignments)),
+-					b.return(b.id(tmp_id))
+-				])
+-			)
++		const thunk = b.thunk(
++			b.block([
++				b.const(tmp_id, /** @type {import('estree').Expression} */ (visit(node.right))),
++				b.stmt(b.sequence(assignments)),
++				b.return(b.id(tmp_id))
++			])
+ 		);
++
++		// `await` can appear on the right-hand side of a destructuring assignment,
++		// e.g. `[user] = await fetch_user()`. In that case the IIFE needs to be async
++		// so that the `await` is valid.
++		if (contains_await_expression(node.right)) {
++			// @ts-expect-error
++			thunk.async = true;
++		}
++
++		return b.call(thunk);
+ 	}
+ 
+ 	if (node.left.type !== 'Identifier' && node.left.type !== 'MemberExpression') {
+diff --git a/packages/svelte/src/compiler/utils/ast.js b/packages/svelte/src/compiler/utils/ast.js
+index dd9bbfc..640477e 100644
+--- a/packages/svelte/src/compiler/utils/ast.js
++++ b/packages/svelte/src/compiler/utils/ast.js
+@@ -305,6 +305,56 @@ export function get_parent(path, at) {
+ 	return /** @type {T} */ (node);
+ }
+ 
++/**
++ * Returns `true` if the expression contains an `await` expression that is not
++ * nested inside another function, so that it would need to be evaluated in an
++ * `async` context.
++ * @param {import('estree').Node} node
++ * @returns {boolean}
++ */
++export function contains_await_expression(node) {
++	return !!_contains_await_expression(node);
++}
++
++/**
++ * @param {import('estree').Node} node
++ * @returns {boolean | undefined}
++ */
++function _contains_await_expression(node) {
++	if (!node || typeof node.type !== 'string') return false;
++
++	if (node.type === 'AwaitExpression') {
++		return true;
++	}
++
++	// don't descend into nested functions, they have their own async context
++	if (
++		node.type === 'ArrowFunctionExpression' ||
++		node.type === 'FunctionExpression' ||
++		node.type === 'FunctionDeclaration'
++	) {
++		return false;
++	}
++
++	for (const key in node) {
++		if (key === 'type' || key === 'start' || key === 'end' || key === 'metadata') continue;
++		const value = /** @type {any} */ (node)[key];
++		if (Array.isArray(value)) {
++			for (const child of value) {
++				if (child && typeof child.type === 'string' && _contains_await_expression(child)) {
++					return true;
++				}
++			}
++		} else if (value && typeof value.type === 'string') {
++			if (_contains_await_expression(value)) {
++				return true;
++			}
++		}
++	}
++
++	return false;
++}
++
+ /**
+  * Returns `true` if the expression is an identifier, a literal, a function expression,
+  * or a logical expression that only contains simple expressions. Used to determine whether

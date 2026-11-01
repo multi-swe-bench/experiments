@@ -1,0 +1,20 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 51bb4d8..9dca968 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -590,6 +590,15 @@ const validation = {
+ 			}
+ 		}
+ 
++		if (node.name === 'form') {
++			const path = context.path;
++			for (let parent of path) {
++				if (parent.type === 'RegularElement' && parent.name === 'form') {
++					e.node_invalid_placement(node, `<${node.name}>`, parent.name);
++				}
++			}
++		}
++
+ 		if (
+ 			context.state.analysis.source[node.end - 2] === '/' &&
+ 			context.state.options.namespace !== 'foreign' &&

@@ -1,0 +1,198 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index 40e8719..01dc125 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -219,6 +219,38 @@ export function analyze_module(ast, options) {
+ 		if (name === '$' || name[1] === '$') {
+ 			e.global_reference_invalid(references[0].node, name);
+ 		}
++
++		const store_name = name.slice(1);
++		const declaration = scope.get(store_name);
++
++		// Modules are always in runes mode, so assume the user is referencing a
++		// rune and not a global store, unless the name references a declared store.
++		if (
++			!is_rune(name) ||
++			(declaration !== null &&
++				// const state = $state(0) is valid
++				get_rune(declaration.initial, scope) === null &&
++				// allow `import { derived } from 'svelte/store'` in the same file as `const x = $derived(..)` because one is not a subscription to the other
++				!(
++					name === '$derived' &&
++					declaration.initial?.type === 'ImportDeclaration' &&
++					declaration.initial.source.value === 'svelte/store'
++				))
++		) {
++			if (declaration === null && /[a-z]/.test(store_name[0])) {
++				e.global_reference_invalid(references[0].node, name);
++			} else if (declaration !== null && is_rune(name)) {
++				for (const { node, path } of references) {
++					if (path.at(-1)?.type === 'CallExpression') {
++						w.store_rune_conflict(node, store_name);
++					}
++				}
++			}
++
++			const binding = scope.declare(b.id(name), 'store_sub', 'synthetic');
++			binding.references = references;
++			scope.references.set(name, references);
++		}
+ 	}
+ 
+ 	walk(
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+index 15c0de5..b39dd24 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/transform-client.js
+@@ -648,6 +648,46 @@ export function client_module(analysis, options) {
+ 		walk(/** @type {SvelteNode} */ (analysis.module.ast), state, visitors)
+ 	);
+ 
++	/** @type {ESTree.Statement[]} */
++	const store_setup = [];
++
++	for (const [name, binding] of analysis.module.scope.declarations) {
++		if (binding.kind === 'store_sub') {
++			if (store_setup.length === 0) {
++				store_setup.push(b.const('$$stores', b.object([])));
++			}
++
++			// We're creating an arrow function that gets the store value which minifies better for two or more references
++			const store_reference = build_getter(b.id(name.slice(1)), state);
++			const store_get = b.call('$.store_get', store_reference, b.literal(name), b.id('$$stores'));
++			store_setup.push(
++				b.const(
++					binding.node,
++					dev
++						? b.thunk(
++								b.sequence([
++									b.call('$.validate_store', store_reference, b.literal(name.slice(1))),
++									store_get
++								])
++							)
++						: b.thunk(store_get)
++				)
++			);
++		}
++	}
++
++	// Insert the store setup after any import declarations, so that referenced
++	// stores (which may be imported) are in scope. Imports are hoisted, but this
++	// keeps the output clean.
++	let insert_index = 0;
++	while (
++		insert_index < module.body.length &&
++		module.body[insert_index].type === 'ImportDeclaration'
++	) {
++		insert_index++;
++	}
++	module.body.splice(insert_index, 0, ...store_setup);
++
+ 	return {
+ 		type: 'Program',
+ 		sourceType: 'module',
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 0c600b3..509c0b0 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -399,6 +399,24 @@ export function server_module(analysis, options) {
+ 		walk(/** @type {SvelteNode} */ (analysis.module.ast), state, global_visitors)
+ 	);
+ 
++	const has_store_sub = [...analysis.module.scope.declarations.values()].some(
++		(binding) => binding.kind === 'store_sub'
++	);
++
++	if (has_store_sub) {
++		let insert_index = 0;
++		while (
++			insert_index < module.body.length &&
++			module.body[insert_index].type === 'ImportDeclaration'
++		) {
++			insert_index++;
++		}
++		// `$$store_subs` is used to track store subscriptions. We don't unsubscribe
++		// at the end of the module because exported functions may be called later
++		// (e.g. during server-side rendering) and need the subscriptions to stay alive.
++		module.body.splice(insert_index, 0, b.var('$$store_subs'));
++	}
++
+ 	return {
+ 		type: 'Program',
+ 		sourceType: 'module',
+diff --git a/packages/svelte/tests/runtime-runes/samples/store-auto-subscription-module/_config.js b/packages/svelte/tests/runtime-runes/samples/store-auto-subscription-module/_config.js
+new file mode 100644
+index 0000000..d950556
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/store-auto-subscription-module/_config.js
+@@ -0,0 +1,20 @@
++import { flushSync } from 'svelte';
++import { test } from '../../test';
++
++export default test({
++	mode: ['client'],
++
++	get html() {
++		return `<p>0 0 0</p> <button>increment</button>`;
++	},
++
++	async test({ assert, target }) {
++		const btn = target.querySelector('button');
++
++		flushSync(() => btn?.click());
++		assert.htmlEqual(target.querySelector('p')?.textContent ?? '', '1 1 1');
++
++		flushSync(() => btn?.click());
++		assert.htmlEqual(target.querySelector('p')?.textContent ?? '', '2 2 2');
++	}
++});
+diff --git a/packages/svelte/tests/runtime-runes/samples/store-auto-subscription-module/main.svelte b/packages/svelte/tests/runtime-runes/samples/store-auto-subscription-module/main.svelte
+new file mode 100644
+index 0000000..55dba2f
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/store-auto-subscription-module/main.svelte
+@@ -0,0 +1,17 @@
++<script>
++	import { onMount } from 'svelte';
++	import { store, Counter, get_value, reset } from './store.svelte.js';
++
++	const counter = new Counter();
++
++	let log = $state('');
++
++	$effect(() => {
++		log = `${$store} ${counter.current} ${get_value()}`;
++	});
++
++	onMount(reset);
++</script>
++
++<p>{log}</p>
++<button onclick={() => counter.increment()}>increment</button>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/store-auto-subscription-module/store.svelte.js b/packages/svelte/tests/runtime-runes/samples/store-auto-subscription-module/store.svelte.js
+new file mode 100644
+index 0000000..c99b66a
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/store-auto-subscription-module/store.svelte.js
+@@ -0,0 +1,19 @@
++import { writable } from 'svelte/store';
++
++export const store = writable(0);
++
++export function reset() {
++	store.set(0);
++}
++
++export class Counter {
++	current = $derived($store);
++
++	increment() {
++		$store++;
++	}
++}
++
++export function get_value() {
++	return $store;
++}

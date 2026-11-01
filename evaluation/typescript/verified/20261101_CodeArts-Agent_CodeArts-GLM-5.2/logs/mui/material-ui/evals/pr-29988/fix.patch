@@ -1,0 +1,40 @@
+diff --git a/packages/mui-system/package.json b/packages/mui-system/package.json
+index 3ff532ff..ce417737 100644
+--- a/packages/mui-system/package.json
++++ b/packages/mui-system/package.json
+@@ -57,6 +57,7 @@
+   },
+   "dependencies": {
+     "@babel/runtime": "^7.16.3",
++    "@emotion/is-prop-valid": "^1.1.1",
+     "@mui/private-theming": "^5.2.2",
+     "@mui/styled-engine": "^5.2.0",
+     "@mui/types": "^7.1.0",
+diff --git a/packages/mui-system/src/createStyled.js b/packages/mui-system/src/createStyled.js
+index 42ae0c4c..e37f65c1 100644
+--- a/packages/mui-system/src/createStyled.js
++++ b/packages/mui-system/src/createStyled.js
+@@ -1,5 +1,6 @@
+ import styledEngineStyled from '@mui/styled-engine';
+ import { getDisplayName } from '@mui/utils';
++import isPropValid from '@emotion/is-prop-valid';
+ import createTheme from './createTheme';
+ import styleFunctionSx from './styleFunctionSx';
+ import propsToClassKey from './propsToClassKey';
+@@ -104,6 +105,16 @@ export default function createStyled(input = {}) {
+       shouldForwardPropOption = slotShouldForwardProp;
+     }
+ 
++    // For string tags without a slot (i.e. the user-facing `styled('a')` API),
++    // only forward props that are valid HTML attributes, matching the behavior
++    // of Emotion's `styled`. Slotted roots are left untouched since MUI components
++    // rely on forwarding non-DOM props (e.g. `component`) through them via `as`.
++    // A user-provided `shouldForwardProp` (passed via `options`) takes precedence.
++    if (typeof tag === 'string' && !componentSlot) {
++      const defaultShouldForwardProp = shouldForwardPropOption;
++      shouldForwardPropOption = (prop) => defaultShouldForwardProp(prop) && isPropValid(prop);
++    }
++
+     const defaultStyledResolver = styledEngineStyled(tag, {
+       shouldForwardProp: shouldForwardPropOption,
+       label,

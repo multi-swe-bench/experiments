@@ -1,0 +1,190 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 6e3e570..83c4d7d 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -214,6 +214,18 @@ function setup_select_synchronization(value_binding, context) {
+ 		);
+ 	}
+ 
++	// If the select is inside an each block, invalidating the array that is being iterated over
++	// would cause the each block to re-run and re-dirty the (object) item signals, which in turn
++	// re-runs this effect and invalidates the array again — leading to an infinite loop. We
++	// therefore exclude the arrays of all parent each blocks from the set of signals to invalidate.
++	/** @type {Set<string>} */
++	const parent_each_array_names = new Set();
++	for (const block of collect_parent_each_blocks(context)) {
++		for (const binding of block.metadata.references) {
++			parent_each_array_names.add(binding.node.name);
++		}
++	}
++
+ 	/** @type {string[]} */
+ 	const names = [];
+ 
+@@ -221,7 +233,8 @@ function setup_select_synchronization(value_binding, context) {
+ 		if (
+ 			refs.length > 0 &&
+ 			// prevent infinite loop
+-			name !== bound.name
++			name !== bound.name &&
++			!parent_each_array_names.has(name)
+ 		) {
+ 			names.push(name);
+ 		}
+diff --git a/packages/svelte/src/internal/client/runtime.js b/packages/svelte/src/internal/client/runtime.js
+index f075d2d..88856d1 100644
+--- a/packages/svelte/src/internal/client/runtime.js
++++ b/packages/svelte/src/internal/client/runtime.js
+@@ -869,22 +869,24 @@ export function invalidate_inner_signals(fn) {
+ 	const previous_is_signals_recorded = is_signals_recorded;
+ 	const previous_captured_signals = captured_signals;
+ 	is_signals_recorded = true;
+-	captured_signals = new Set();
++	/** @type {Set<import('./types.js').Signal>} */
++	const captured = new Set();
++	captured_signals = captured;
+ 	try {
+ 		untrack(fn);
+ 	} finally {
+ 		is_signals_recorded = previous_is_signals_recorded;
+ 		let signal;
+-		for (signal of captured_signals) {
++		for (signal of captured) {
+ 			previous_captured_signals.add(signal);
+ 		}
+ 		captured_signals = previous_captured_signals;
+ 	}
+ 	let signal;
+-	for (signal of captured_signals) {
++	for (signal of captured) {
+ 		mutate(signal, null /* doesnt matter */);
+ 	}
+-	return captured_signals;
++	return captured;
+ }
+ 
+ /**
+diff --git a/packages/svelte/tests/runtime-legacy/samples/binding-select-each/_config.js b/packages/svelte/tests/runtime-legacy/samples/binding-select-each/_config.js
+new file mode 100644
+index 0000000..323cc00
+--- /dev/null
++++ b/packages/svelte/tests/runtime-legacy/samples/binding-select-each/_config.js
+@@ -0,0 +1,36 @@
++import * as $ from 'svelte/internal';
++import { ok, test } from '../../test';
++
++export default test({
++	html: `
++		<select><option value="a">A</option><option value="b">B</option></select>
++		value:
++		a
++		<br>
++	`,
++
++	async test({ assert, target, window }) {
++		const select = target.querySelector('select');
++		ok(select);
++
++		const options = [...target.querySelectorAll('option')];
++
++		const change = new window.Event('change');
++
++		options[1].selected = true;
++		select.dispatchEvent(change);
++
++		// Forcing a synchronous flush must not throw ERR_SVELTE_TOO_MANY_UPDATES.
++		$.flushSync();
++
++		assert.htmlEqual(
++			target.innerHTML,
++			`
++			<select><option value="a">A</option><option value="b">B</option></select>
++			value:
++			b
++			<br>
++			`
++		);
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-legacy/samples/binding-select-each/main.svelte b/packages/svelte/tests/runtime-legacy/samples/binding-select-each/main.svelte
+new file mode 100644
+index 0000000..22ce6db
+--- /dev/null
++++ b/packages/svelte/tests/runtime-legacy/samples/binding-select-each/main.svelte
+@@ -0,0 +1,12 @@
++<script>
++	let entries = [{ selected: 'a' }];
++</script>
++
++{#each entries as entry}
++	<select bind:value={entry.selected}>
++		<option value="a">A</option>
++		<option value="b">B</option>
++	</select>
++	value: {entry.selected}
++	<br/>
++{/each}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/bind-select-each/_config.js b/packages/svelte/tests/runtime-runes/samples/bind-select-each/_config.js
+new file mode 100644
+index 0000000..323cc00
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/bind-select-each/_config.js
+@@ -0,0 +1,36 @@
++import * as $ from 'svelte/internal';
++import { ok, test } from '../../test';
++
++export default test({
++	html: `
++		<select><option value="a">A</option><option value="b">B</option></select>
++		value:
++		a
++		<br>
++	`,
++
++	async test({ assert, target, window }) {
++		const select = target.querySelector('select');
++		ok(select);
++
++		const options = [...target.querySelectorAll('option')];
++
++		const change = new window.Event('change');
++
++		options[1].selected = true;
++		select.dispatchEvent(change);
++
++		// Forcing a synchronous flush must not throw ERR_SVELTE_TOO_MANY_UPDATES.
++		$.flushSync();
++
++		assert.htmlEqual(
++			target.innerHTML,
++			`
++			<select><option value="a">A</option><option value="b">B</option></select>
++			value:
++			b
++			<br>
++			`
++		);
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/bind-select-each/main.svelte b/packages/svelte/tests/runtime-runes/samples/bind-select-each/main.svelte
+new file mode 100644
+index 0000000..323ea43
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/bind-select-each/main.svelte
+@@ -0,0 +1,12 @@
++<script>
++	let entries = $state([{ selected: 'a' }]);
++</script>
++
++{#each entries as entry}
++	<select bind:value={entry.selected}>
++		<option value="a">A</option>
++		<option value="b">B</option>
++	</select>
++	value: {entry.selected}
++	<br/>
++{/each}
+\ No newline at end of file

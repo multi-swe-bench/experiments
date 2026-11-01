@@ -1,0 +1,94 @@
+diff --git a/.changeset/backticks-break-template.md b/.changeset/backticks-break-template.md
+new file mode 100644
+index 0000000..a61ac26
+--- /dev/null
++++ b/.changeset/backticks-break-template.md
+@@ -0,0 +1,5 @@
++---
++'svelte': patch
++---
++
++fix: escape backticks and `${` in template literals when generating code for text containing them
+\ No newline at end of file
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 6ad1026..95f3333 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -3,7 +3,8 @@ import {
+ 	extract_paths,
+ 	is_event_attribute,
+ 	is_text_attribute,
+-	object
++	object,
++	sanitize_template_string
+ } from '../../../../utils/ast.js';
+ import { binding_properties } from '../../../bindings.js';
+ import {
+@@ -1636,7 +1637,7 @@ function serialize_template_literal(values, visit, state) {
+ 		const node = values[i];
+ 		if (node.type === 'Text') {
+ 			const last = /** @type {import('estree').TemplateElement} */ (quasis.at(-1));
+-			last.value.raw += node.data;
++			last.value.raw += sanitize_template_string(node.data);
+ 		} else {
+ 			if (node.type === 'ExpressionTag' && node.metadata.contains_call_expression) {
+ 				contains_call_expression = true;
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 79c62e3..6ad59cc 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -4,6 +4,7 @@ import {
+ 	extract_identifiers,
+ 	extract_paths,
+ 	is_event_attribute,
++	sanitize_template_string,
+ 	unwrap_ts_expression
+ } from '../../../utils/ast.js';
+ import * as b from '../../../utils/builders.js';
+@@ -117,14 +118,6 @@ function serialize_template(template, out = b.id('out')) {
+ 	return statements;
+ }
+ 
+-/**
+- * @param {string} str
+- * @returns {string}
+- */
+-function sanitize_template_string(str) {
+-	return str.replace(/(`|\${|\\)/g, '\\$1');
+-}
+-
+ /**
+  * Processes an array of template nodes, joining sibling text/expression nodes and
+  * recursing into child nodes.
+@@ -194,7 +187,9 @@ function process_children(nodes, parent, { visit, state }) {
+ 			const node = sequence[i];
+ 			if (node.type === 'Text' || node.type === 'Comment') {
+ 				let last = /** @type {import('estree').TemplateElement} */ (quasis.at(-1));
+-				last.value.raw += node.type === 'Comment' ? `<!--${node.data}-->` : escape_html(node.data);
++				last.value.raw += sanitize_template_string(
++					node.type === 'Comment' ? `<!--${node.data}-->` : escape_html(node.data)
++				);
+ 			} else if (node.type === 'Anchor') {
+ 				expressions.push(node.id);
+ 				quasis.push(b.quasi('', i + 1 === sequence.length));
+diff --git a/packages/svelte/src/compiler/utils/ast.js b/packages/svelte/src/compiler/utils/ast.js
+index dd9bbfc..2eccc6e 100644
+--- a/packages/svelte/src/compiler/utils/ast.js
++++ b/packages/svelte/src/compiler/utils/ast.js
+@@ -1,6 +1,16 @@
+ import { error } from '../errors.js';
+ import * as b from '../utils/builders.js';
+ 
++/**
++ * Escapes characters that have special meaning in a template literal, so that
++ * the resulting string can safely be used as the raw value of a `TemplateElement`.
++ * @param {string} str
++ * @returns {string}
++ */
++export function sanitize_template_string(str) {
++	return str.replace(/(`|\${|\\)/g, '\\$1');
++}
++
+ /**
+  * Gets the left-most identifier of a member expression or identifier.
+  * @param {import('estree').MemberExpression | import('estree').Identifier} expression

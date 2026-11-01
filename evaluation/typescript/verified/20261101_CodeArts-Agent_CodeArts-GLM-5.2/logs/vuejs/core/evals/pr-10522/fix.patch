@@ -1,0 +1,106 @@
+diff --git a/packages/compiler-sfc/__tests__/compileStyle.spec.ts b/packages/compiler-sfc/__tests__/compileStyle.spec.ts
+index 1f9ae67..a34f5c3 100644
+--- a/packages/compiler-sfc/__tests__/compileStyle.spec.ts
++++ b/packages/compiler-sfc/__tests__/compileStyle.spec.ts
+@@ -161,6 +161,39 @@ describe('SFC scoped CSS', () => {
+     `)
+   })
+ 
++  test(':is() and :where() should not downgrade specificity', () => {
++    // when a real selector node precedes a trailing `:is()`/`:where()`, the
++    // scoped attribute must be injected on that node (outside the pseudo) so
++    // that the specificity is not downgraded by `:where()` (#10591).
++    expect(compileScoped(`.foo:where(:hover) { color: red; }`))
++      .toMatchInlineSnapshot(`
++      ".foo[data-v-test]:where(:hover) { color: red;
++      }"
++    `)
++    expect(compileScoped(`.foo:is(:hover) { color: red; }`))
++      .toMatchInlineSnapshot(`
++      ".foo[data-v-test]:is(:hover) { color: red;
++      }"
++    `)
++    expect(compileScoped(`.foo:where(:hover, :focus) { color: red; }`))
++      .toMatchInlineSnapshot(`
++      ".foo[data-v-test]:where(:hover,:focus) { color: red;
++      }"
++    `)
++    expect(compileScoped(`.a .b:where(:hover) { color: red; }`))
++      .toMatchInlineSnapshot(`
++      ".a .b[data-v-test]:where(:hover) { color: red;
++      }"
++    `)
++    // a combinator before `:where()` starts a new compound, so the attribute
++    // is still injected inside the pseudo (subject is inside `:where()`).
++    expect(compileScoped(`.foo :where(:hover) { color: red; }`))
++      .toMatchInlineSnapshot(`
++      ".foo :where([data-v-test]:hover) { color: red;
++      }"
++    `)
++  })
++
+   test('media query', () => {
+     expect(compileScoped(`@media print { .foo { color: red }}`))
+       .toMatchInlineSnapshot(`
+diff --git a/packages/compiler-sfc/src/style/pluginScoped.ts b/packages/compiler-sfc/src/style/pluginScoped.ts
+index c5e0189..50eb8ba 100644
+--- a/packages/compiler-sfc/src/style/pluginScoped.ts
++++ b/packages/compiler-sfc/src/style/pluginScoped.ts
+@@ -83,9 +83,14 @@ function rewriteSelector(
+   selector: selectorParser.Selector,
+   selectorRoot: selectorParser.Root,
+   slotted = false,
++  injectAttr = true,
+ ) {
+   let node: selectorParser.Node | null = null
+-  let shouldInject = true
++  // the last "real" (non-pseudo, non-combinator) node, used to inject the
++  // scoped attribute *outside* of a trailing `:is()`/`:where()` so that the
++  // specificity is not downgraded (e.g. `.foo:where(:hover)`).
++  let lastRealNode: selectorParser.Node | null = null
++  let shouldInject = injectAttr
+   // find the last child node to insert attribute selector
+   selector.each(n => {
+     // DEPRECATED ">>>" and "/deep/" combinator
+@@ -176,15 +181,37 @@ function rewriteSelector(
+     ) {
+       node = n
+     }
++
++    if (n.type === 'combinator') {
++      // a combinator starts a new compound selector, so the trailing
++      // `:is()`/`:where()` is no longer in the same compound as any previous
++      // real node.
++      lastRealNode = null
++    } else if (n.type !== 'pseudo') {
++      lastRealNode = n
++    }
+   })
+ 
+   if (node) {
+     const { type, value } = node as selectorParser.Node
+     if (type === 'pseudo' && (value === ':is' || value === ':where')) {
+-      ;(node as selectorParser.Pseudo).nodes.forEach(value =>
+-        rewriteSelector(id, value, selectorRoot, slotted),
+-      )
+-      shouldInject = false
++      if (lastRealNode) {
++        // There is a real selector node before the trailing `:is()`/`:where()`
++        // (e.g. `.foo:where(:hover)`). Inject the scoped attribute on that
++        // node so the specificity is preserved instead of being downgraded by
++        // `:where()`. The inner selectors are still rewritten (to handle
++        // `:deep()`, `:slotted()`, `:global()`, ...) but without injecting the
++        // scoped attribute inside the `:is()`/`:where()`.
++        ;(node as selectorParser.Pseudo).nodes.forEach(inner =>
++          rewriteSelector(id, inner, selectorRoot, slotted, false),
++        )
++        node = lastRealNode
++      } else {
++        ;(node as selectorParser.Pseudo).nodes.forEach(value =>
++          rewriteSelector(id, value, selectorRoot, slotted),
++        )
++        shouldInject = false
++      }
+     }
+   }
+ 

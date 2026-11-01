@@ -1,0 +1,106 @@
+$ bash /home/test-run.sh
+
+
+> svelte-monorepo@0.0.1 test /home/svelte
+> pnpm test -r --filter=./packages/* "--reporter" "verbose"
+
+
+> svelte@4.2.1 test /home/svelte/packages/svelte
+> vitest run && echo "manually check that there are no type errors in test/types by opening the files in there"
+
+
+ RUN  v0.33.0 /home/svelte/packages/svelte
+
+ ✓ test/store/store.test.js  (28 tests) 10ms
+ ✓ test/motion/motion.test.js  (3 tests) 5ms
+ ✓ test/utils/utils.test.js  (21 tests) 14ms
+ ✓ test/version/version.test.js  (1 test) 5ms
+ ✓ test/compiler-errors/compiler-errors.test.js  (14 tests) 174ms
+ ❯ test/runtime-browser/browser.test.js  (61 tests | 2 skipped) 7ms
+ ✓ test/parser/parser.test.js  (119 tests) 339ms
+ ✓ test/stats/stats.test.js  (2 tests) 120ms
+ ✓ test/preprocess/preprocess.test.js  (18 tests) 108ms
+ ✓ test/runtime/runtime_base.test.js  (2 tests) 8ms
+ ✓ test/validator/validator.test.js  (245 tests | 2 skipped) 1393ms
+stdout | test/server-side-rendering/ssr-2.test.js > ssr: runtime > action-update-before-destroy
+onDestroy
+
+ ✓ test/vars/vars.test.js  (75 tests) 1927ms
+ ✓ test/server-side-rendering/ssr-1.test.js  (57 tests) 2007ms
+ ✓ test/hydration/hydration.test.js  (38 tests) 2505ms
+ ✓ test/js/js-output.test.js  (104 tests) 3028ms
+ ✓ test/sourcemaps/sourcemaps.test.js  (30 tests | 1 skipped) 835ms
+stdout | test/runtime/shards/runtime_1.test.js > runtime_1 > action-update-before-destroy hydrate: false, from_ssr: false
+afterUpdate
+
+stdout | test/runtime/shards/runtime_1.test.js > runtime_1 > action-update-before-destroy hydrate: true, from_ssr: false
+afterUpdate
+
+stdout | test/runtime/shards/runtime_1.test.js > runtime_1 > action-update-before-destroy hydrate: true, from_ssr: true
+onDestroy
+afterUpdate
+
+stderr | test/server-side-rendering/ssr-2.test.js > ssr: runtime > css-false
+compilerOptions.css as a boolean is deprecated. Use 'external' instead of false.
+
+stderr | test/server-side-rendering/ssr-2.test.js > ssr: runtime > dynamic-element-void-with-content-1
+<svelte:element this="br"> is self-closing and cannot have content.
+
+stderr | test/server-side-rendering/ssr-2.test.js > ssr: runtime > dynamic-element-void-with-content-2
+<svelte:element this="br"> is self-closing and cannot have content.
+
+stderr | test/server-side-rendering/ssr-2.test.js > ssr: runtime > dynamic-element-void-with-content-3
+<svelte:element this="br"> is self-closing and cannot have content.
+
+stderr | test/server-side-rendering/ssr-2.test.js > ssr: runtime > dynamic-element-void-with-content-5
+<svelte:element this="input"> is self-closing and cannot have content.
+
+stdout | test/server-side-rendering/ssr-2.test.js > ssr: runtime > empty-component-destroy
+destroy
+
+ ✓ test/css/css.test.js  (125 tests) 5219ms
+ ✓ test/server-side-rendering/ssr-2.test.js  (1077 tests | 10 skipped) 5159ms
+stdout | test/runtime/shards/runtime_1.test.js > runtime_1 > binding-input-checkbox-with-event-in-each hydrate: false, from_ssr: false
+Check
+
+stdout | test/runtime/shards/runtime_1.test.js > runtime_1 > binding-input-checkbox-with-event-in-each hydrate: true, from_ssr: false
+Check
+
+stdout | test/runtime/shards/runtime_1.test.js > runtime_1 > binding-input-checkbox-with-event-in-each hydrate: true, from_ssr: true
+Check
+
+stdout | test/runtime/shards/runtime_1.test.js > runtime_1 > empty-component-destroy hydrate: true, from_ssr: true
+destroy
+
+ ✓ test/runtime/shards/runtime_1.test.js  (3348 tests | 33 skipped) 32508ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/runtime-browser/browser.test.js [ test/runtime-browser/browser.test.js ]
+Error: browserType.launch: Executable doesn't exist at /root/.cache/ms-playwright/chromium-1067/chrome-linux/chrome
+╔═════════════════════════════════════════════════════════════════════════╗
+║ Looks like Playwright Test or Playwright was just installed or updated. ║
+║ Please run the following command to download new browsers:              ║
+║                                                                         ║
+║     npx playwright install                                              ║
+║                                                                         ║
+║ <3 Playwright Team                                                      ║
+╚═════════════════════════════════════════════════════════════════════════╝
+ ❯ test/runtime-browser/browser.test.js:22:49
+     23| describe.concurrent(
+     24|  'runtime (browser)',
+     25|  async () => {
+       |     ^
+     26|   await Promise.all(
+     27|    fs.readdirSync(`${__dirname}/samples`).map(async (dir) => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 18 passed (19)
+      Tests  5261 passed | 48 skipped (5368)
+   Start at  07:02:26
+   Duration  43.28s (transform 18.87s, setup 6ms, collect 70.14s, tests 55.37s, environment 5.97s, prepare 39.01s)
+
+ ELIFECYCLE  Test failed. See above for more details.
+
+[exit code: 1]

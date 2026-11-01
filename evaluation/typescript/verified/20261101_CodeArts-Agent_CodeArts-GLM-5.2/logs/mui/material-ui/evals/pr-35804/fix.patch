@@ -1,0 +1,72 @@
+diff --git a/packages/mui-system/src/colorManipulator.js b/packages/mui-system/src/colorManipulator.js
+index e6699ffc..1e8c7078 100644
+--- a/packages/mui-system/src/colorManipulator.js
++++ b/packages/mui-system/src/colorManipulator.js
+@@ -116,7 +116,11 @@ export const private_safeColorChannel = (color, warning) => {
+   try {
+     return colorChannel(color);
+   } catch (error) {
+-    if (warning && process.env.NODE_ENV !== 'production') {
++    if (
++      warning &&
++      process.env.NODE_ENV !== 'production' &&
++      !(typeof color === 'string' && color.includes('var('))
++    ) {
+       console.warn(warning);
+     }
+     return color;
+@@ -255,7 +259,11 @@ export function private_safeAlpha(color, value, warning) {
+   try {
+     return alpha(color, value);
+   } catch (error) {
+-    if (warning && process.env.NODE_ENV !== 'production') {
++    if (
++      warning &&
++      process.env.NODE_ENV !== 'production' &&
++      !(typeof color === 'string' && color.includes('var('))
++    ) {
+       console.warn(warning);
+     }
+     return color;
+@@ -285,7 +293,11 @@ export function private_safeDarken(color, coefficient, warning) {
+   try {
+     return darken(color, coefficient);
+   } catch (error) {
+-    if (warning && process.env.NODE_ENV !== 'production') {
++    if (
++      warning &&
++      process.env.NODE_ENV !== 'production' &&
++      !(typeof color === 'string' && color.includes('var('))
++    ) {
+       console.warn(warning);
+     }
+     return color;
+@@ -320,7 +332,11 @@ export function private_safeLighten(color, coefficient, warning) {
+   try {
+     return lighten(color, coefficient);
+   } catch (error) {
+-    if (warning && process.env.NODE_ENV !== 'production') {
++    if (
++      warning &&
++      process.env.NODE_ENV !== 'production' &&
++      !(typeof color === 'string' && color.includes('var('))
++    ) {
+       console.warn(warning);
+     }
+     return color;
+@@ -339,9 +355,13 @@ export function emphasize(color, coefficient = 0.15) {
+ }
+ export function private_safeEmphasize(color, coefficient, warning) {
+   try {
+-    return private_safeEmphasize(color, coefficient);
++    return emphasize(color, coefficient);
+   } catch (error) {
+-    if (warning && process.env.NODE_ENV !== 'production') {
++    if (
++      warning &&
++      process.env.NODE_ENV !== 'production' &&
++      !(typeof color === 'string' && color.includes('var('))
++    ) {
+       console.warn(warning);
+     }
+     return color;

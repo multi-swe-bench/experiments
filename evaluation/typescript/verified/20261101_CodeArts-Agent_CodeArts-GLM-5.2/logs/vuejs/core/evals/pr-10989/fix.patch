@@ -1,0 +1,35 @@
+diff --git a/packages/runtime-core/src/renderer.ts b/packages/runtime-core/src/renderer.ts
+index 8a64baa..9393f76 100644
+--- a/packages/runtime-core/src/renderer.ts
++++ b/packages/runtime-core/src/renderer.ts
+@@ -1024,8 +1024,12 @@ function baseCreateRenderer(
+         if (isReservedProp(key)) continue
+         const next = newProps[key]
+         const prev = oldProps[key]
+-        // defer patching value
+-        if (next !== prev && key !== 'value') {
++        // defer patching value & checked
++        // value: order-sensitive & needs to be forced (#1471, #2353)
++        // checked: needs to be forced so that the DOM stays in sync with the
++        // bound value, e.g. when a user toggles a radio/checkbox but the bound
++        // value does not change, the DOM `checked` must be re-synced
++        if (next !== prev && key !== 'value' && key !== 'checked') {
+           hostPatchProp(
+             el,
+             key,
+@@ -1042,6 +1046,15 @@ function baseCreateRenderer(
+       if ('value' in newProps) {
+         hostPatchProp(el, 'value', oldProps.value, newProps.value, namespace)
+       }
++      if ('checked' in newProps) {
++        hostPatchProp(
++          el,
++          'checked',
++          oldProps.checked,
++          newProps.checked,
++          namespace,
++        )
++      }
+     }
+   }
+ 

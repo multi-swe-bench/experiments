@@ -1,0 +1,16 @@
+diff --git a/packages/svelte/src/compiler/compile/render_dom/wrappers/Element/Attribute.js b/packages/svelte/src/compiler/compile/render_dom/wrappers/Element/Attribute.js
+index 8d0199f..b13e435 100644
+--- a/packages/svelte/src/compiler/compile/render_dom/wrappers/Element/Attribute.js
++++ b/packages/svelte/src/compiler/compile/render_dom/wrappers/Element/Attribute.js
+@@ -112,7 +112,10 @@ export default class AttributeWrapper extends BaseAttributeWrapper {
+ 			this.is_select_value_attribute = false;
+ 			this.is_input_value = false;
+ 		} else {
+-			this.name = fix_attribute_casing(this.node.name);
++			// leave attribute case alone for custom elements, as their properties may be camelCased
++			this.name = regex_minus_sign.test(this.parent.node.name)
++				? this.node.name
++				: fix_attribute_casing(this.node.name);
+ 			this.metadata = this.get_metadata();
+ 			this.is_indirectly_bound_value = is_indirectly_bound_value(this);
+ 			this.property_name = this.is_indirectly_bound_value

@@ -1,0 +1,76 @@
+diff --git a/lib/application.js b/lib/application.js
+index 91f77d2..9650f2b 100644
+--- a/lib/application.js
++++ b/lib/application.js
+@@ -516,17 +516,22 @@ app.del = deprecate.function(app.delete, 'app.del: Use app.delete instead');
+  * and a callback accepting an error and the
+  * rendered template string.
+  *
+- * Example:
+- *
+- *    app.render('email', { name: 'Tobi' }, function(err, html){
+- *      // ...
+- *    })
+- *
+- * @param {String} name
+- * @param {Object|Function} options or fn
+- * @param {Function} callback
+- * @public
+- */
++* Example:
++  *
++  *    app.render('email', { name: 'Tobi' }, function(err, html){
++  *      // ...
++  *    })
++  *
++  * Options:
++  *
++  *   - `cache`     boolean hinting to the engine it should cache
++  *   - `cacheKey`  key used to cache the view, defaults to `name`
++  *
++  * @param {String} name
++  * @param {Object|Function} options or fn
++  * @param {Function} callback
++  * @public
++  */
+ 
+ app.render = function render(name, options, callback) {
+   var cache = this.cache;
+@@ -560,7 +565,7 @@ app.render = function render(name, options, callback) {
+ 
+   // primed cache
+   if (renderOptions.cache) {
+-    view = cache[name];
++    view = cache[renderOptions.cacheKey || name];
+   }
+ 
+   // view
+@@ -584,7 +589,7 @@ app.render = function render(name, options, callback) {
+ 
+     // prime the cache
+     if (renderOptions.cache) {
+-      cache[name] = view;
++      cache[renderOptions.cacheKey || name] = view;
+     }
+   }
+ 
+diff --git a/lib/response.js b/lib/response.js
+index 2e445ac..9e7a7b0 100644
+--- a/lib/response.js
++++ b/lib/response.js
+@@ -974,10 +974,11 @@ res.vary = function(field){
+  * When a callback function is given a response will _not_ be made
+  * automatically, otherwise a response of _200_ and _text/html_ is given.
+  *
+- * Options:
+- *
+- *  - `cache`     boolean hinting to the engine it should cache
+- *  - `filename`  filename of the view being rendered
++* Options:
++  *
++  *  - `cache`     boolean hinting to the engine it should cache
++  *  - `filename`  filename of the view being rendered
++  *  - `cacheKey`  key used to cache the view, defaults to `view`
+  *
+  * @public
+  */

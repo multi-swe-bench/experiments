@@ -1,0 +1,50 @@
+diff --git a/packages/material-ui-system/src/grid.js b/packages/material-ui-system/src/grid.js
+index 160556c..fe5b076 100644
+--- a/packages/material-ui-system/src/grid.js
++++ b/packages/material-ui-system/src/grid.js
+@@ -1,17 +1,36 @@
+ import style from './style';
+ import compose from './compose';
++import responsivePropType from './responsivePropType';
++import { handleBreakpoints } from './breakpoints';
++import { createUnarySpacing, getStyleFromPropValue } from './spacing';
+ 
+-export const gap = style({
+-  prop: 'gap',
+-});
++function getGapStyle(prop) {
++  const fn = (props) => {
++    if (props[prop] == null) {
++      return null;
++    }
+ 
+-export const columnGap = style({
+-  prop: 'columnGap',
+-});
++    const transformer = createUnarySpacing(props.theme);
++    const styleFromPropValue = getStyleFromPropValue([prop], transformer);
+ 
+-export const rowGap = style({
+-  prop: 'rowGap',
+-});
++    return handleBreakpoints(props, props[prop], styleFromPropValue);
++  };
++
++  fn.propTypes =
++    process.env.NODE_ENV !== 'production'
++      ? {
++          [prop]: responsivePropType,
++        }
++      : {};
++
++  fn.filterProps = [prop];
++
++  return fn;
++}
++
++export const gap = getGapStyle('gap');
++export const columnGap = getGapStyle('columnGap');
++export const rowGap = getGapStyle('rowGap');
+ 
+ export const gridColumn = style({
+   prop: 'gridColumn',

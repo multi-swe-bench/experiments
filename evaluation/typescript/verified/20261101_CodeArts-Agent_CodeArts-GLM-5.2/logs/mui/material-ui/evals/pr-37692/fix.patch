@@ -1,0 +1,27 @@
+diff --git a/packages/mui-joy/src/ButtonGroup/ButtonGroup.tsx b/packages/mui-joy/src/ButtonGroup/ButtonGroup.tsx
+index 3c9109e8..8092709b 100644
+--- a/packages/mui-joy/src/ButtonGroup/ButtonGroup.tsx
++++ b/packages/mui-joy/src/ButtonGroup/ButtonGroup.tsx
+@@ -95,7 +95,7 @@ const ButtonGroupRoot = styled('div', {
+         }),
+       },
+       // middle Buttons or IconButtons
+-      [`& > :not([data-first-child]):not([data-last-child])`]: {
++      [`& > :not([data-first-child]):not([data-last-child]):not(:only-child)`]: {
+         '--Button-radius': 'var(--unstable_childRadius)',
+         '--IconButton-radius': 'var(--unstable_childRadius)',
+         borderRadius: 'var(--unstable_childRadius)',
+@@ -119,7 +119,12 @@ const ButtonGroupRoot = styled('div', {
+           borderTop: 'var(--ButtonGroup-separatorSize) solid var(--ButtonGroup-separatorColor)',
+         }),
+       },
+-      [`& > :not([data-first-child])`]: {
++      // single Button or IconButton (the only child or both first and last)
++      [`& > [data-first-child][data-last-child], & > :only-child`]: {
++        '--Button-radius': 'var(--ButtonGroup-radius)',
++        '--IconButton-radius': 'var(--ButtonGroup-radius)',
++      },
++      [`& > :not([data-first-child]):not(:only-child)`]: {
+         '--Button-margin': margin,
+         '--IconButton-margin': margin,
+       },

@@ -1,0 +1,285 @@
+$ bash /home/test-run.sh
+
+
+> axios@1.3.0 test
+> npm run test:eslint && npm run test:mocha && npm run test:karma && npm run test:dtslint && npm run test:exports --reporter console
+
+[axios-test-env] offline gateway active; cleared ambient proxy variables: HTTP_PROXY, HTTPS_PROXY, NO_PROXY, http_proxy, https_proxy, no_proxy
+
+> axios@1.3.0 test:eslint
+> node bin/ssl_hotfix.js eslint lib/**/*.js
+
+[axios-test-env] offline gateway active; cleared ambient proxy variables: (none)
+Running eslint lib/adapters/adapters.js lib/adapters/http.js lib/adapters/xhr.js lib/cancel/CancelToken.js lib/cancel/CanceledError.js lib/cancel/isCancel.js lib/core/Axios.js lib/core/AxiosError.js lib/core/AxiosHeaders.js lib/core/InterceptorManager.js lib/core/buildFullPath.js lib/core/dispatchRequest.js lib/core/mergeConfig.js lib/core/settle.js lib/core/transformData.js lib/defaults/index.js lib/defaults/transitional.js lib/env/data.js lib/helpers/AxiosTransformStream.js lib/helpers/AxiosURLSearchParams.js lib/helpers/HttpStatusCode.js lib/helpers/ZlibHeaderTransformStream.js lib/helpers/bind.js lib/helpers/buildURL.js lib/helpers/combineURLs.js lib/helpers/cookies.js lib/helpers/deprecatedMethod.js lib/helpers/formDataToJSON.js lib/helpers/formDataToStream.js lib/helpers/fromDataURI.js lib/helpers/isAbsoluteURL.js lib/helpers/isAxiosError.js lib/helpers/isURLSameOrigin.js lib/helpers/null.js lib/helpers/parseHeaders.js lib/helpers/parseProtocol.js lib/helpers/readBlob.js lib/helpers/speedometer.js lib/helpers/spread.js lib/helpers/throttle.js lib/helpers/toFormData.js lib/helpers/toURLEncodedForm.js lib/helpers/validator.js lib/platform/index.js on v20.19.0
+
+Setting --openssl-legacy-provider as ssl hotfix
+[axios-test-env] offline gateway active; cleared ambient proxy variables: (none)
+[axios-test-env] offline gateway active; cleared ambient proxy variables: HTTP_PROXY, HTTPS_PROXY, NO_PROXY, http_proxy, https_proxy, no_proxy
+
+> axios@1.3.0 test:mocha
+> node bin/ssl_hotfix.js mocha test/unit/**/*.js --timeout 30000 --exit
+
+[axios-test-env] offline gateway active; cleared ambient proxy variables: (none)
+Running mocha test/unit/adapters/http.js test/unit/core/AxiosHeaders.js test/unit/defaults/transformReponse.js test/unit/helpers/fromDataURI.js test/unit/helpers/parseProtocol.js test/unit/helpers/toURLEncodedForm.js test/unit/regression/SNYK-JS-AXIOS-1038255.js test/unit/regression/bugs.js test/unit/utils/utils.js --timeout 30000 --exit on v20.19.0
+
+Setting --openssl-legacy-provider as ssl hotfix
+[axios-test-env] offline gateway active; cleared ambient proxy variables: (none)
+
+
+  supports http with nodejs
+    ✔ should throw an error if the timeout property is not parsable as a number (314ms)
+    ✔ should parse the timeout property (302ms)
+    ✔ should respect the timeout property (303ms)
+    ✔ should respect the timeoutErrorMessage property (303ms)
+    ✔ should allow passing JSON
+    ✔ should allow passing JSON with BOM
+    ✔ should redirect
+    ✔ should not redirect
+    ✔ should support max redirects
+    ✔ should support beforeRedirect
+    ✔ should support beforeRedirect and proxy with redirect
+    ✔ should preserve the HTTP verb on redirect
+    ✔ should support UTF8
+    ✔ should support basic auth
+    ✔ should support basic auth with a header
+    ✔ should provides a default User-Agent header
+    ✔ should allow the User-Agent header to be overridden
+    ✔ should allow the Content-Length header to be overridden
+    1) should support max content length
+    ✔ should support max content length for redirected (104ms)
+    ✔ should support max body length (104ms)
+    ✔ should properly support default max body length (follow-redirects as well) (394ms)
+    ✔ should display error while parsing params
+    ✔ should support sockets
+    ✔ should support buffers
+    ✔ should support HTTP proxies
+    ✔ should support HTTPS proxies
+    ✔ should not pass through disabled proxy
+    ✔ should support proxy set via env var
+    ✔ should support HTTPS proxy set via env var
+    ✔ should re-evaluate proxy on redirect when proxy set via env var
+    ✔ should not use proxy for domains in no_proxy
+    ✔ should use proxy for domains not in no_proxy
+    ✔ should support HTTP proxy auth
+    ✔ should support proxy auth from env
+    ✔ should support proxy auth with header
+    ✔ should support cancel
+    ✔ should combine baseURL and url
+    ✔ should support HTTP protocol (1003ms)
+    ✔ should support HTTPS protocol (47ms)
+    ✔ should return malformed URL (301ms)
+    ✔ should return unsupported protocol (302ms)
+    ✔ should supply a user-agent if one is not specified
+    ✔ should omit a user-agent if one is explicitly disclaimed
+    ✔ should throw an error if http server that aborts a chunked request (203ms)
+    ✔ should able to cancel multiple requests with CancelToken
+    ✔ should respect formSerializer config
+    compression
+      ✔ should support transparent gunzip
+      ✔ should support gunzip error handling
+      ✔ should support disabling automatic decompression of response data
+      algorithms
+        gzip decompression
+          ✔ should support decompression
+          ✔ should not fail if response content-length header is missing (gzip)
+          ✔ should not fail with chunked responses (without Content-Length header)
+          ✔ should not fail with an empty response without content-length header (Z_BUF_ERROR)
+          ✔ should not fail with an empty response with content-length header (Z_BUF_ERROR)
+        compress decompression
+          ✔ should support decompression
+          ✔ should not fail if response content-length header is missing (compress)
+          ✔ should not fail with chunked responses (without Content-Length header)
+          ✔ should not fail with an empty response without content-length header (Z_BUF_ERROR)
+          ✔ should not fail with an empty response with content-length header (Z_BUF_ERROR)
+        deflate decompression
+          ✔ should support decompression
+          ✔ should not fail if response content-length header is missing (deflate)
+          ✔ should not fail with chunked responses (without Content-Length header)
+          ✔ should not fail with an empty response without content-length header (Z_BUF_ERROR)
+          ✔ should not fail with an empty response with content-length header (Z_BUF_ERROR)
+        deflate-raw decompression
+          ✔ should support decompression
+          ✔ should not fail if response content-length header is missing (deflate)
+          ✔ should not fail with chunked responses (without Content-Length header)
+          ✔ should not fail with an empty response without content-length header (Z_BUF_ERROR)
+          ✔ should not fail with an empty response with content-length header (Z_BUF_ERROR)
+        br decompression
+          ✔ should support decompression
+          ✔ should not fail if response content-length header is missing (br)
+          ✔ should not fail with chunked responses (without Content-Length header)
+          ✔ should not fail with an empty response without content-length header (Z_BUF_ERROR)
+          ✔ should not fail with an empty response with content-length header (Z_BUF_ERROR)
+    streams
+      ✔ should support streams
+      ✔ should pass errors for a failed stream
+pipeline error: CanceledError: Request stream has been aborted
+      ✔ should destroy the response stream with an error on request stream destroying (1008ms)
+Server warning: Premature close
+    different options for direct proxy configuration (without env variables)
+      ✔ hostname and trailing colon in protocol
+      ✔ hostname and no trailing colon in protocol
+      ✔ both hostname and host -> hostname takes precedence
+      ✔ only host and https protocol
+    FormData
+      form-data instance (https://www.npmjs.com/package/form-data)
+        ✔ should allow passing FormData
+      SpecCompliant FormData
+        ✔ should allow passing FormData
+      toFormData helper
+        ✔ should properly serialize flat objects for parsing with multer.js (express.js)
+        ✔ should properly serialize nested objects for parsing with multer.js (express.js)
+    Blob
+      ✔ should support Blob
+    URLEncoded Form
+      ✔ should post object data as url-encoded form if content-type is application/x-www-form-urlencoded
+      2) should support passing a function as paramsSerializer option
+    Data URL
+      ✔ should support requesting data URL as a Buffer
+      ✔ should support requesting data URL as a Blob (if supported by the environment)
+      ✔ should support requesting data URL as a String (text)
+      ✔ should support requesting data URL as a Stream
+    progress
+      upload
+        ✔ should support upload progress capturing (11012ms)
+      download
+        ✔ should support download progress capturing (11012ms)
+    Rate limit
+      ✔ should support upload rate limit (9520ms)
+      ✔ should support download rate limit (9518ms)
+    request aborting
+pipeline error: CanceledError: canceled
+      ✔ should be able to abort the response stream (610ms)
+Server warning: Premature close
+
+  AxiosHeaders
+    ✔ should support headers argument
+    ✔ should be caseless
+    set
+      ✔ should support adding a single header
+      ✔ should support adding multiple headers
+      ✔ should support adding multiple headers from raw headers string
+      ✔ should not rewrite header the header if the value is false
+      ✔ should not rewrite the header if its value is false, unless rewrite options is set to true
+    get
+      filter
+        ✔ should support RegExp
+        ✔ should support function
+    has
+      ✔ should return true if the header is defined, otherwise false
+      filter
+        ✔ should support RegExp
+        ✔ should support function
+        ✔ should support string pattern
+    delete
+      ✔ should delete the header
+      ✔ should return true if the header has been deleted, otherwise false
+      ✔ should support headers array
+      filter
+        ✔ should support RegExp
+        ✔ should support function
+        ✔ should support string pattern
+    clear
+      ✔ should clear all headers
+      ✔ should clear matching headers if a matcher was specified
+    toJSON
+      ✔ should return headers object with original headers case
+    accessors
+      ✔ should support get accessor
+      ✔ should support set accessor
+      ✔ should support has accessor
+    normalize()
+      ✔ should support auto-formatting
+      ✔ should support external defined values
+      ✔ should support array values
+    AxiosHeaders.concat
+      ✔ should concatenate plain headers into an AxiosHeader instance
+      ✔ should concatenate raw headers into an AxiosHeader instance
+      ✔ should concatenate Axios headers into a new AxiosHeader instance
+    toString
+      ✔ should serialize AxiosHeader instance to a raw headers string
+
+  transformResponse
+    200 request
+      ✔ parses json
+      ✔ ignores XML
+    204 request
+      ✔ does not parse the empty string
+      ✔ does not parse undefined
+
+  helpers::fromDataURI
+    ✔ should return buffer from data uri
+
+  helpers::parseProtocol
+    ✔ should parse protocol part if it exists
+
+  helpers::toURLEncodedForm
+    3) should have parity with qs v6.11.0 (brackets & indices)
+
+  Server-Side Request Forgery (SSRF)
+    ✔ obeys proxy settings when following redirects
+
+  issues
+    4999
+      ✔ should not fail with query parsing (45ms)
+    5028
+      ✔ should handle set-cookie headers as an array
+
+  utils
+    ✔ should validate Stream
+    ✔ should validate Buffer
+    utils::isFormData
+      ✔ should detect the FormData instance provided by the `form-data` package
+    toJSON
+      ✔ should convert to a plain object without circular references
+      ✔ should use objects with defined toJSON method without rebuilding
+
+
+  142 passing (47s)
+  3 failing
+
+  1) supports http with nodejs
+       should support max content length:
+
+      Uncaught AssertionError [ERR_ASSERTION]: 'Request failed with status code 400' == 'maxContentLength size of 2000 exceeded'
+      + expected - actual
+
+      -Request failed with status code 400
+      +maxContentLength size of 2000 exceeded
+      
+      at Timeout._onTimeout (file:///home/axios/test/unit/adapters/http.js:688:16)
+      at listOnTimeout (node:internal/timers:581:17)
+      at process.processTimers (node:internal/timers:519:7)
+
+  2) supports http with nodejs
+       URLEncoded Form
+         should support passing a function as paramsSerializer option:
+     AxiosError: options must be an object
+      at Object.assertOptions (file:///home/axios/lib/helpers/validator.js:67:11)
+      at Axios.request (file:///home/axios/lib/core/Axios.js:61:17)
+      at Axios.<computed> [as get] (file:///home/axios/lib/core/Axios.js:168:17)
+      at Function.wrap [as get] (file:///home/axios/lib/helpers/bind.js:5:15)
+      at Context.<anonymous> (file:///home/axios/test/unit/adapters/http.js:1785:34)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+  3) helpers::toURLEncodedForm
+       should have parity with qs v6.11.0 (brackets & indices):
+
+      AssertionError [ERR_ASSERTION]: Failed in index mode false (brackets)
++ actual - expected
+
++ 'arr1[0]=1&arr1[1][0]=2&arr1[1][1][x]=1&arr1[2]=3&x[arr2][0]=1&x[arr2][1]=2'
+- 'arr1[]=1&arr1[][]=2&arr1[][][x]=1&arr1[]=3&x[arr2][]=1&x[arr2][]=2'
+      + expected - actual
+
+      -arr1[0]=1&arr1[1][0]=2&arr1[1][1][x]=1&arr1[2]=3&x[arr2][0]=1&x[arr2][1]=2
+      +arr1[]=1&arr1[][]=2&arr1[][][x]=1&arr1[]=3&x[arr2][]=1&x[arr2][]=2
+      
+      at file:///home/axios/test/unit/helpers/toURLEncodedForm.js:16:14
+      at Array.forEach (<anonymous>)
+      at Context.<anonymous> (file:///home/axios/test/unit/helpers/toURLEncodedForm.js:15:8)
+      at process.processImmediate (node:internal/timers:483:21)
+
+
+
+
+[exit code: 3]

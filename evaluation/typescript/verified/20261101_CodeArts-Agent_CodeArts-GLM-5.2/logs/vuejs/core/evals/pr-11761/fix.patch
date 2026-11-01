@@ -1,0 +1,39 @@
+diff --git a/packages/reactivity/src/arrayInstrumentations.ts b/packages/reactivity/src/arrayInstrumentations.ts
+index 6cf7602..5a06ac6 100644
+--- a/packages/reactivity/src/arrayInstrumentations.ts
++++ b/packages/reactivity/src/arrayInstrumentations.ts
+@@ -244,7 +244,10 @@ function apply(
+   const methodFn = arr[method]
+   // @ts-expect-error
+   if (methodFn !== arrayProto[method]) {
+-    const result = methodFn.apply(arr, args)
++    // use the reactive proxy as `this` so that the user's overridden method
++    // (which typically calls `super.<method>`) iterates the reactive array,
++    // tracking per-index dependencies and exposing reactive items (#11657)
++    const result = methodFn.apply(self, args)
+     return needsWrap ? toReactive(result) : result
+   }
+ 
+@@ -272,6 +275,13 @@ function reduce(
+   args: unknown[],
+ ) {
+   const arr = shallowReadArray(self)
++  const methodFn = arr[method] as any
++  if (methodFn !== arrayProto[method]) {
++    // use the reactive proxy as `this` so that the user's overridden method
++    // (which typically calls `super.<method>`) iterates the reactive array,
++    // tracking per-index dependencies and exposing reactive items (#11657)
++    return methodFn.apply(self, args)
++  }
+   let wrappedFn = fn
+   if (arr !== self) {
+     if (!isShallow(self)) {
+@@ -284,7 +294,7 @@ function reduce(
+       }
+     }
+   }
+-  return (arr[method] as any)(wrappedFn, ...args)
++  return methodFn.call(arr, wrappedFn, ...args)
+ }
+ 
+ // instrument identity-sensitive methods to account for reactive proxies

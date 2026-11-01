@@ -1,0 +1,1241 @@
+diff --git a/packages/mui-joy/src/Step/Step.tsx b/packages/mui-joy/src/Step/Step.tsx
+new file mode 100644
+index 00000000..89cf3a19
+--- /dev/null
++++ b/packages/mui-joy/src/Step/Step.tsx
+@@ -0,0 +1,223 @@
++'use client';
++import * as React from 'react';
++import PropTypes from 'prop-types';
++import {
++  integerPropType,
++  unstable_capitalize as capitalize,
++} from '@mui/utils';
++import { unstable_composeClasses as composeClasses } from '@mui/base';
++import { OverridableComponent } from '@mui/types';
++import { useThemeProps } from '../styles';
++import styled from '../styles/styled';
++import { getStepUtilityClass } from './stepClasses';
++import { StepProps, StepOwnerState, StepTypeMap } from './StepProps';
++import StepContext from './StepContext';
++import StepperContext from '../Stepper/StepperContext';
++import useSlot from '../utils/useSlot';
++
++const useUtilityClasses = (ownerState: StepOwnerState) => {
++  const { size, orientation, active, completed, disabled } = ownerState;
++
++  const slots = {
++    root: [
++      'root',
++      orientation,
++      active && 'active',
++      completed && 'completed',
++      disabled && 'disabled',
++      size && `size${capitalize(size)}`,
++    ],
++  };
++
++  return composeClasses(slots, getStepUtilityClass, {});
++};
++
++const StepRoot = styled('li', {
++  name: 'JoyStep',
++  slot: 'Root',
++  overridesResolver: (props, styles) => styles.root,
++})<{ ownerState: StepOwnerState }>(({ ownerState }) => ({
++  display: 'flex',
++  ...(ownerState.orientation === 'horizontal' && {
++    alignItems: 'center',
++    gap: 'var(--Step-gap, 0.5rem)',
++  }),
++  ...(ownerState.orientation === 'vertical' && {
++    flexDirection: 'column',
++    alignItems: 'stretch',
++    gap: 'var(--Step-gap, 0.5rem)',
++  }),
++  ...(ownerState.active && { fontWeight: 'var(--Font-active, inherit)' }),
++}));
++/**
++ *
++ * Demos:
++ *
++ * - [Stepper](https://mui.com/joy-ui/react-stepper/)
++ *
++ * API:
++ *
++ * - [Step API](https://mui.com/joy-ui/api/step/)
++ */
++const Step = React.forwardRef(function Step(inProps, ref) {
++  const props = useThemeProps<typeof inProps & StepProps>({
++    props: inProps,
++    name: 'JoyStep',
++  });
++
++  const {
++    active: activeProp,
++    children,
++    completed: completedProp,
++    component,
++    disabled: disabledProp,
++    indicator,
++    index,
++    last,
++    orientation: orientationProp,
++    size: sizeProp,
++    slots = {},
++    slotProps = {},
++    ...other
++  } = props;
++
++  const stepperContext = React.useContext(StepperContext);
++
++  const orientation = orientationProp || stepperContext?.orientation || 'horizontal';
++  const size = sizeProp || stepperContext?.size || 'md';
++
++  let active = activeProp || false;
++  let completed = completedProp || false;
++  let disabled = disabledProp || false;
++
++  if (stepperContext) {
++    const { activeStep } = stepperContext;
++    if (activeStep === index) {
++      active = activeProp !== undefined ? activeProp : true;
++    } else if (activeStep > index!) {
++      completed = completedProp !== undefined ? completedProp : true;
++    } else if (activeStep < index!) {
++      disabled = disabledProp !== undefined ? disabledProp : true;
++    }
++  }
++
++  const ownerState = {
++    ...props,
++    active,
++    completed,
++    component,
++    disabled,
++    index,
++    last,
++    orientation,
++    size,
++  };
++
++  const classes = useUtilityClasses(ownerState);
++  const externalForwardedProps = { ...other, component, slots, slotProps };
++
++  const [SlotRoot, rootProps] = useSlot('root', {
++    ref,
++    className: classes.root,
++    elementType: StepRoot,
++    externalForwardedProps,
++    ownerState,
++  });
++
++  const contextValue = React.useMemo(
++    () => ({ index: index!, last: last!, active, completed, disabled, orientation, size }),
++    [index, last, active, completed, disabled, orientation, size],
++  );
++
++  return (
++    <StepContext.Provider value={contextValue}>
++      <SlotRoot {...rootProps}>
++        {indicator}
++        {children}
++      </SlotRoot>
++    </StepContext.Provider>
++  );
++}) as OverridableComponent<StepTypeMap>;
++
++Step.propTypes /* remove-proptypes */ = {
++  // ----------------------------- Warning --------------------------------
++  // | These PropTypes are generated from the TypeScript type definitions |
++  // |     To update them edit TypeScript types and run "yarn proptypes"  |
++  // ----------------------------------------------------------------------
++  /**
++   * If `true`, the step is active.
++   * @default false
++   */
++  active: PropTypes.bool,
++  /**
++   * The content of the component, typically `StepIndicator` and text.
++   */
++  children: PropTypes.node,
++  /**
++   * If `true`, the step is marked as completed.
++   * @default false
++   */
++  completed: PropTypes.bool,
++  /**
++   * The component used for the root node.
++   * Either a string to use a HTML element or a component.
++   */
++  component: PropTypes.elementType,
++  /**
++   * If `true`, the step is disabled.
++   * @default false
++   */
++  disabled: PropTypes.bool,
++  /**
++   * The element to display as the step indicator.
++   * If not provided, a `StepIndicator` should be used as a child.
++   */
++  indicator: PropTypes.node,
++  /**
++   * The position of the step.
++   * The prop defaults to the value inherited from the parent Stepper component.
++   */
++  index: integerPropType,
++  /**
++   * If `true`, the Step is displayed as rendered last.
++   * The prop defaults to the value inherited from the parent Stepper component.
++   */
++  last: PropTypes.bool,
++  /**
++   * The component orientation (layout flow direction).
++   * The prop defaults to the value inherited from the parent Stepper component.
++   */
++  orientation: PropTypes.oneOf(['horizontal', 'vertical']),
++  /**
++   * The size of the component.
++   * The prop defaults to the value inherited from the parent Stepper component.
++   */
++  size: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['sm', 'md', 'lg']),
++    PropTypes.string,
++  ]),
++  /**
++   * The props used for each slot inside.
++   * @default {}
++   */
++  slotProps: PropTypes.shape({
++    root: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++  }),
++  /**
++   * The components used for each slot inside.
++   * @default {}
++   */
++  slots: PropTypes.shape({
++    root: PropTypes.elementType,
++  }),
++  /**
++   * The system prop that allows defining system overrides as well as additional CSS styles.
++   */
++  sx: PropTypes.oneOfType([
++    PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.func, PropTypes.object, PropTypes.bool])),
++    PropTypes.func,
++    PropTypes.object,
++  ]),
++} as any;
++
++export default Step;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Step/StepContext.ts b/packages/mui-joy/src/Step/StepContext.ts
+new file mode 100644
+index 00000000..9046bd61
+--- /dev/null
++++ b/packages/mui-joy/src/Step/StepContext.ts
+@@ -0,0 +1,44 @@
++'use client';
++import * as React from 'react';
++
++export interface StepContextType {
++  /**
++   * The position of the step.
++   */
++  index: number;
++  /**
++   * If `true`, the Step is displayed as rendered last.
++   */
++  last: boolean;
++  /**
++   * If `true`, the step is active.
++   */
++  active: boolean;
++  /**
++   * If `true`, the step is marked as completed.
++   */
++  completed: boolean;
++  /**
++   * If `true`, the step is disabled.
++   */
++  disabled: boolean;
++  /**
++   * The component orientation (layout flow direction).
++   */
++  orientation: 'horizontal' | 'vertical';
++  /**
++   * The size of the component.
++   */
++  size: 'sm' | 'md' | 'lg';
++}
++
++/**
++ * @ignore - internal component.
++ */
++const StepContext = React.createContext<StepContextType | null>(null);
++
++if (process.env.NODE_ENV !== 'production') {
++  StepContext.displayName = 'StepContext';
++}
++
++export default StepContext;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Step/StepProps.ts b/packages/mui-joy/src/Step/StepProps.ts
+new file mode 100644
+index 00000000..18373aba
+--- /dev/null
++++ b/packages/mui-joy/src/Step/StepProps.ts
+@@ -0,0 +1,84 @@
++import * as React from 'react';
++import { OverridableStringUnion, OverrideProps } from '@mui/types';
++import { SxProps } from '../styles/types';
++import { SlotProps, CreateSlotsAndSlotProps } from '../utils/types';
++
++export type StepSlot = 'root';
++
++export interface StepSlots {
++  /**
++   * The component that renders the root.
++   * @default 'li'
++   */
++  root?: React.ElementType;
++}
++
++export type StepSlotsAndSlotProps = CreateSlotsAndSlotProps<
++  StepSlots,
++  {
++    root: SlotProps<'li', {}, StepOwnerState>;
++  }
++>;
++
++export interface StepPropsSizeOverrides {}
++
++export interface StepTypeMap<ExtraProps = {}, Tag extends React.ElementType = 'li'> {
++  props: ExtraProps & {
++    /**
++     * If `true`, the step is active.
++     * @default false
++     */
++    active?: boolean;
++    /**
++     * The content of the component, typically `StepIndicator` and text.
++     */
++    children?: React.ReactNode;
++    /**
++     * If `true`, the step is marked as completed.
++     * @default false
++     */
++    completed?: boolean;
++    /**
++     * If `true`, the step is disabled.
++     * @default false
++     */
++    disabled?: boolean;
++    /**
++     * The element to display as the step indicator.
++     * If not provided, a `StepIndicator` should be used as a child.
++     */
++    indicator?: React.ReactNode;
++    /**
++     * @ignore The position of the step.
++     * The prop defaults to the value inherited from the parent Stepper component.
++     */
++    index?: number;
++    /**
++     * @ignore If `true`, the Step is displayed as rendered last.
++     * The prop defaults to the value inherited from the parent Stepper component.
++     */
++    last?: boolean;
++    /**
++     * The component orientation (layout flow direction).
++     * The prop defaults to the value inherited from the parent Stepper component.
++     */
++    orientation?: 'horizontal' | 'vertical';
++    /**
++     * The size of the component.
++     * The prop defaults to the value inherited from the parent Stepper component.
++     */
++    size?: OverridableStringUnion<'sm' | 'md' | 'lg', StepPropsSizeOverrides>;
++    /**
++     * The system prop that allows defining system overrides as well as additional CSS styles.
++     */
++    sx?: SxProps;
++  } & StepSlotsAndSlotProps;
++  defaultComponent: Tag;
++}
++
++export type StepProps<
++  Tag extends React.ElementType = StepTypeMap['defaultComponent'],
++  ExtraProps = { component?: React.ElementType },
++> = OverrideProps<StepTypeMap<ExtraProps, Tag>, Tag>;
++
++export interface StepOwnerState extends StepProps {}
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Step/index.ts b/packages/mui-joy/src/Step/index.ts
+new file mode 100644
+index 00000000..5374904e
+--- /dev/null
++++ b/packages/mui-joy/src/Step/index.ts
+@@ -0,0 +1,5 @@
++'use client';
++export { default } from './Step';
++export * from './stepClasses';
++export { default as stepClasses } from './stepClasses';
++export * from './StepProps';
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Step/stepClasses.ts b/packages/mui-joy/src/Step/stepClasses.ts
+new file mode 100644
+index 00000000..3ae64bba
+--- /dev/null
++++ b/packages/mui-joy/src/Step/stepClasses.ts
+@@ -0,0 +1,42 @@
++import { generateUtilityClass, generateUtilityClasses } from '../className';
++
++export interface StepClasses {
++  /** Class name applied to the root element. */
++  root: string;
++  /** Class name applied to the root element if `orientation="horizontal"`. */
++  horizontal: string;
++  /** Class name applied to the root element if `orientation="vertical"`. */
++  vertical: string;
++  /** Class name applied to the root element if the step is active. */
++  active: string;
++  /** Class name applied to the root element if the step is completed. */
++  completed: string;
++  /** Class name applied to the root element if the step is disabled. */
++  disabled: string;
++  /** Class name applied to the root element if `size="sm"`. */
++  sizeSm: string;
++  /** Class name applied to the root element if `size="md"`. */
++  sizeMd: string;
++  /** Class name applied to the root element if `size="lg"`. */
++  sizeLg: string;
++}
++
++export type StepClassKey = keyof StepClasses;
++
++export function getStepUtilityClass(slot: string): string {
++  return generateUtilityClass('MuiStep', slot);
++}
++
++const stepClasses: StepClasses = generateUtilityClasses('MuiStep', [
++  'root',
++  'horizontal',
++  'vertical',
++  'active',
++  'completed',
++  'disabled',
++  'sizeSm',
++  'sizeMd',
++  'sizeLg',
++]);
++
++export default stepClasses;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/StepIndicator/StepIndicator.tsx b/packages/mui-joy/src/StepIndicator/StepIndicator.tsx
+new file mode 100644
+index 00000000..894bff06
+--- /dev/null
++++ b/packages/mui-joy/src/StepIndicator/StepIndicator.tsx
+@@ -0,0 +1,229 @@
++'use client';
++import * as React from 'react';
++import PropTypes from 'prop-types';
++import { unstable_composeClasses as composeClasses } from '@mui/base';
++import { OverridableComponent } from '@mui/types';
++import { unstable_capitalize as capitalize } from '@mui/utils';
++import { useThemeProps } from '../styles';
++import styled from '../styles/styled';
++import { getStepIndicatorUtilityClass } from './stepIndicatorClasses';
++import {
++  StepIndicatorProps,
++  StepIndicatorOwnerState,
++  StepIndicatorTypeMap,
++} from './StepIndicatorProps';
++import StepContext from '../Step/StepContext';
++import useSlot from '../utils/useSlot';
++import Check from '../internal/svg-icons/Check';
++
++const useUtilityClasses = (ownerState: StepIndicatorOwnerState) => {
++  const { size, variant, color, active, completed, disabled } = ownerState;
++
++  const slots = {
++    root: [
++      'root',
++      active && 'active',
++      completed && 'completed',
++      disabled && 'disabled',
++      color && `color${capitalize(color)}`,
++      variant && `variant${capitalize(variant)}`,
++      size && `size${capitalize(size)}`,
++    ],
++  };
++
++  return composeClasses(slots, getStepIndicatorUtilityClass, {});
++};
++
++const StepIndicatorRoot = styled('div', {
++  name: 'JoyStepIndicator',
++  slot: 'Root',
++  overridesResolver: (props, styles) => styles.root,
++})<{ ownerState: StepIndicatorOwnerState }>(({ theme, ownerState }) => ({
++  '--Icon-color':
++    ownerState.color !== 'neutral' || ownerState.variant === 'solid'
++      ? 'currentColor'
++      : theme.vars.palette.text.icon,
++  ...theme.typography[`title-${ownerState.size!}`],
++  ...(ownerState.size === 'sm' && {
++    width: 'var(--StepIndicator-size, 1.5rem)',
++    height: 'var(--StepIndicator-size, 1.5rem)',
++    fontSize: 'calc(var(--StepIndicator-size, 1.5rem) * 0.5)',
++  }),
++  ...(ownerState.size === 'md' && {
++    width: 'var(--StepIndicator-size, 2rem)',
++    height: 'var(--StepIndicator-size, 2rem)',
++    fontSize: 'calc(var(--StepIndicator-size, 2rem) * 0.5)',
++  }),
++  ...(ownerState.size === 'lg' && {
++    width: 'var(--StepIndicator-size, 2.5rem)',
++    height: 'var(--StepIndicator-size, 2.5rem)',
++    fontSize: 'calc(var(--StepIndicator-size, 2.5rem) * 0.5)',
++  }),
++  display: 'inline-flex',
++  alignItems: 'center',
++  justifyContent: 'center',
++  flexShrink: 0,
++  lineHeight: 1,
++  borderRadius: 'var(--StepIndicator-radius, 50%)',
++  boxShadow: 'var(--StepIndicator-ring)',
++  userSelect: 'none',
++  ...theme.variants[ownerState.variant!]?.[ownerState.color!],
++}));
++/**
++ *
++ * Demos:
++ *
++ * - [Stepper](https://mui.com/joy-ui/react-stepper/)
++ *
++ * API:
++ *
++ * - [StepIndicator API](https://mui.com/joy-ui/api/step-indicator/)
++ */
++const StepIndicator = React.forwardRef(function StepIndicator(inProps, ref) {
++  const props = useThemeProps<typeof inProps & StepIndicatorProps>({
++    props: inProps,
++    name: 'JoyStepIndicator',
++  });
++
++  const stepContext = React.useContext(StepContext);
++
++  const {
++    active: activeProp,
++    children: childrenProp,
++    completed: completedProp,
++    color: colorProp,
++    component,
++    disabled: disabledProp,
++    size: sizeProp,
++    slots = {},
++    slotProps = {},
++    variant: variantProp,
++    ...other
++  } = props;
++
++  const active = activeProp ?? stepContext?.active ?? false;
++  const completed = completedProp ?? stepContext?.completed ?? false;
++  const disabled = disabledProp ?? stepContext?.disabled ?? false;
++  const size = sizeProp || stepContext?.size || 'md';
++
++  let color = colorProp;
++  if (!color) {
++    if (completed) {
++      color = 'success';
++    } else if (active) {
++      color = 'primary';
++    } else {
++      color = 'neutral';
++    }
++  }
++  const variant = variantProp || (active || completed ? 'solid' : 'soft');
++
++  let children = childrenProp;
++  if (children == null && completed) {
++    children = <Check />;
++  }
++
++  const ownerState = {
++    ...props,
++    active,
++    completed,
++    color,
++    component,
++    disabled,
++    size,
++    variant,
++  };
++
++  const classes = useUtilityClasses(ownerState);
++  const externalForwardedProps = { ...other, component, slots, slotProps };
++
++  const [SlotRoot, rootProps] = useSlot('root', {
++    ref,
++    className: classes.root,
++    elementType: StepIndicatorRoot,
++    externalForwardedProps,
++    ownerState,
++  });
++
++  return <SlotRoot {...rootProps}>{children}</SlotRoot>;
++}) as OverridableComponent<StepIndicatorTypeMap>;
++
++StepIndicator.propTypes /* remove-proptypes */ = {
++  // ----------------------------- Warning --------------------------------
++  // | These PropTypes are generated from the TypeScript type definitions |
++  // |     To update them edit TypeScript types and run "yarn proptypes"  |
++  // ----------------------------------------------------------------------
++  /**
++   * If `true`, the step indicator is active.
++   * @default false
++   */
++  active: PropTypes.bool,
++  /**
++   * The content of the component, typically a number or an icon.
++   */
++  children: PropTypes.node,
++  /**
++   * If `true`, the step indicator is marked as completed.
++   * @default false
++   */
++  completed: PropTypes.bool,
++  /**
++   * The color of the component. It supports those theme colors that make sense for this component.
++   * @default 'neutral'
++   */
++  color: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['danger', 'neutral', 'primary', 'success', 'warning']),
++    PropTypes.string,
++  ]),
++  /**
++   * The component used for the root node.
++   * Either a string to use a HTML element or a component.
++   */
++  component: PropTypes.elementType,
++  /**
++   * If `true`, the step indicator is disabled.
++   * @default false
++   */
++  disabled: PropTypes.bool,
++  /**
++   * The size of the component.
++   * The prop defaults to the value inherited from the parent Stepper component.
++   * @default 'md'
++   */
++  size: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['sm', 'md', 'lg']),
++    PropTypes.string,
++  ]),
++  /**
++   * The props used for each slot inside.
++   * @default {}
++   */
++  slotProps: PropTypes.shape({
++    root: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++  }),
++  /**
++   * The components used for each slot inside.
++   * @default {}
++   */
++  slots: PropTypes.shape({
++    root: PropTypes.elementType,
++  }),
++  /**
++   * The system prop that allows defining system overrides as well as additional CSS styles.
++   */
++  sx: PropTypes.oneOfType([
++    PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.func, PropTypes.object, PropTypes.bool])),
++    PropTypes.func,
++    PropTypes.object,
++  ]),
++  /**
++   * The [global variant](https://mui.com/joy-ui/main-features/global-variants/) to use.
++   * @default 'soft'
++   */
++  variant: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['outlined', 'plain', 'soft', 'solid']),
++    PropTypes.string,
++  ]),
++} as any;
++
++export default StepIndicator;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/StepIndicator/StepIndicatorProps.ts b/packages/mui-joy/src/StepIndicator/StepIndicatorProps.ts
+new file mode 100644
+index 00000000..2068a028
+--- /dev/null
++++ b/packages/mui-joy/src/StepIndicator/StepIndicatorProps.ts
+@@ -0,0 +1,81 @@
++import * as React from 'react';
++import { OverridableStringUnion, OverrideProps } from '@mui/types';
++import { ColorPaletteProp, SxProps, VariantProp, ApplyColorInversion } from '../styles/types';
++import { SlotProps, CreateSlotsAndSlotProps } from '../utils/types';
++
++export type StepIndicatorSlot = 'root';
++
++export interface StepIndicatorSlots {
++  /**
++   * The component that renders the root.
++   * @default 'div'
++   */
++  root?: React.ElementType;
++}
++
++export type StepIndicatorSlotsAndSlotProps = CreateSlotsAndSlotProps<
++  StepIndicatorSlots,
++  {
++    root: SlotProps<'div', {}, StepIndicatorOwnerState>;
++  }
++>;
++
++export interface StepIndicatorPropsColorOverrides {}
++export interface StepIndicatorPropsVariantOverrides {}
++export interface StepIndicatorPropsSizeOverrides {}
++
++export interface StepIndicatorTypeMap<
++  ExtraProps = {},
++  Tag extends React.ElementType = 'div',
++> {
++  props: ExtraProps & {
++    /**
++     * If `true`, the step indicator is active.
++     * @default false
++     */
++    active?: boolean;
++    /**
++     * The content of the component, typically a number or an icon.
++     */
++    children?: React.ReactNode;
++    /**
++     * If `true`, the step indicator is marked as completed.
++     * @default false
++     */
++    completed?: boolean;
++    /**
++     * The color of the component. It supports those theme colors that make sense for this component.
++     * @default 'neutral'
++     */
++    color?: OverridableStringUnion<ColorPaletteProp, StepIndicatorPropsColorOverrides>;
++    /**
++     * If `true`, the step indicator is disabled.
++     * @default false
++     */
++    disabled?: boolean;
++    /**
++     * The size of the component.
++     * The prop defaults to the value inherited from the parent Stepper component.
++     * @default 'md'
++     */
++    size?: OverridableStringUnion<'sm' | 'md' | 'lg', StepIndicatorPropsSizeOverrides>;
++    /**
++     * The system prop that allows defining system overrides as well as additional CSS styles.
++     */
++    sx?: SxProps;
++    /**
++     * The [global variant](https://mui.com/joy-ui/main-features/global-variants/) to use.
++     * @default 'soft'
++     */
++    variant?: OverridableStringUnion<VariantProp, StepIndicatorPropsVariantOverrides>;
++  } & StepIndicatorSlotsAndSlotProps;
++  defaultComponent: Tag;
++}
++
++export type StepIndicatorProps<
++  Tag extends React.ElementType = StepIndicatorTypeMap['defaultComponent'],
++  ExtraProps = { component?: React.ElementType },
++> = OverrideProps<StepIndicatorTypeMap<ExtraProps, Tag>, Tag>;
++
++export interface StepIndicatorOwnerState
++  extends ApplyColorInversion<StepIndicatorProps> {}
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/StepIndicator/index.ts b/packages/mui-joy/src/StepIndicator/index.ts
+new file mode 100644
+index 00000000..bce5727b
+--- /dev/null
++++ b/packages/mui-joy/src/StepIndicator/index.ts
+@@ -0,0 +1,5 @@
++'use client';
++export { default } from './StepIndicator';
++export * from './stepIndicatorClasses';
++export { default as stepIndicatorClasses } from './stepIndicatorClasses';
++export * from './StepIndicatorProps';
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/StepIndicator/stepIndicatorClasses.ts b/packages/mui-joy/src/StepIndicator/stepIndicatorClasses.ts
+new file mode 100644
+index 00000000..ca2a34e4
+--- /dev/null
++++ b/packages/mui-joy/src/StepIndicator/stepIndicatorClasses.ts
+@@ -0,0 +1,66 @@
++import { generateUtilityClass, generateUtilityClasses } from '../className';
++
++export interface StepIndicatorClasses {
++  /** Class name applied to the root element. */
++  root: string;
++  /** Class name applied to the root element if the step is active. */
++  active: string;
++  /** Class name applied to the root element if the step is completed. */
++  completed: string;
++  /** Class name applied to the root element if the step is disabled. */
++  disabled: string;
++  /** Class name applied to the root element if `color="primary"`. */
++  colorPrimary: string;
++  /** Class name applied to the root element if `color="neutral"`. */
++  colorNeutral: string;
++  /** Class name applied to the root element if `color="danger"`. */
++  colorDanger: string;
++  /** Class name applied to the root element if `color="success"`. */
++  colorSuccess: string;
++  /** Class name applied to the root element if `color="warning"`. */
++  colorWarning: string;
++  /** Class name applied to the root element when color inversion is triggered. */
++  colorContext: string;
++  /** Class name applied to the root element if `variant="plain"`. */
++  variantPlain: string;
++  /** Class name applied to the root element if `variant="outlined"`. */
++  variantOutlined: string;
++  /** Class name applied to the root element if `variant="soft"`. */
++  variantSoft: string;
++  /** Class name applied to the root element if `variant="solid"`. */
++  variantSolid: string;
++  /** Class name applied to the root element if `size="sm"`. */
++  sizeSm: string;
++  /** Class name applied to the root element if `size="md"`. */
++  sizeMd: string;
++  /** Class name applied to the root element if `size="lg"`. */
++  sizeLg: string;
++}
++
++export type StepIndicatorClassKey = keyof StepIndicatorClasses;
++
++export function getStepIndicatorUtilityClass(slot: string): string {
++  return generateUtilityClass('MuiStepIndicator', slot);
++}
++
++const stepIndicatorClasses: StepIndicatorClasses = generateUtilityClasses('MuiStepIndicator', [
++  'root',
++  'active',
++  'completed',
++  'disabled',
++  'colorPrimary',
++  'colorNeutral',
++  'colorDanger',
++  'colorSuccess',
++  'colorWarning',
++  'colorContext',
++  'variantPlain',
++  'variantOutlined',
++  'variantSoft',
++  'variantSolid',
++  'sizeSm',
++  'sizeMd',
++  'sizeLg',
++]);
++
++export default stepIndicatorClasses;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Stepper/Stepper.tsx b/packages/mui-joy/src/Stepper/Stepper.tsx
+new file mode 100644
+index 00000000..4d7822ca
+--- /dev/null
++++ b/packages/mui-joy/src/Stepper/Stepper.tsx
+@@ -0,0 +1,178 @@
++'use client';
++import * as React from 'react';
++import PropTypes from 'prop-types';
++import { unstable_capitalize as capitalize } from '@mui/utils';
++import { unstable_composeClasses as composeClasses } from '@mui/base';
++import { OverridableComponent } from '@mui/types';
++import { useThemeProps } from '../styles';
++import styled from '../styles/styled';
++import { getStepperUtilityClass } from './stepperClasses';
++import { StepperProps, StepperOwnerState, StepperTypeMap } from './StepperProps';
++import StepperContext from './StepperContext';
++import useSlot from '../utils/useSlot';
++
++const useUtilityClasses = (ownerState: StepperOwnerState) => {
++  const { size, orientation } = ownerState;
++
++  const slots = {
++    root: ['root', orientation, size && `size${capitalize(size)}`],
++  };
++
++  return composeClasses(slots, getStepperUtilityClass, {});
++};
++
++const StepperRoot = styled('ol', {
++  name: 'JoyStepper',
++  slot: 'Root',
++  overridesResolver: (props, styles) => styles.root,
++})<{ ownerState: StepperOwnerState }>(({ ownerState, theme }) => ({
++  display: 'flex',
++  listStyle: 'none',
++  margin: 0,
++  padding: 0,
++  ...(ownerState.orientation === 'horizontal' && {
++    flexDirection: 'row',
++    alignItems: 'center',
++  }),
++  ...(ownerState.orientation === 'vertical' && {
++    flexDirection: 'column',
++    alignItems: 'stretch',
++  }),
++  ...(ownerState.size === 'sm' && {
++    gap: 'var(--Stepper-gap, 0.5rem)',
++  }),
++  ...(ownerState.size === 'md' && {
++    gap: 'var(--Stepper-gap, 0.75rem)',
++  }),
++  ...(ownerState.size === 'lg' && {
++    gap: 'var(--Stepper-gap, 1rem)',
++  }),
++  ...theme.typography[`body-${ownerState.size!}`],
++}));
++/**
++ *
++ * Demos:
++ *
++ * - [Stepper](https://mui.com/joy-ui/react-stepper/)
++ *
++ * API:
++ *
++ * - [Stepper API](https://mui.com/joy-ui/api/stepper/)
++ */
++const Stepper = React.forwardRef(function Stepper(inProps, ref) {
++  const props = useThemeProps<typeof inProps & StepperProps>({
++    props: inProps,
++    name: 'JoyStepper',
++  });
++
++  const {
++    activeStep = 0,
++    children,
++    component,
++    orientation = 'horizontal',
++    size = 'md',
++    slots = {},
++    slotProps = {},
++    ...other
++  } = props;
++
++  const ownerState = {
++    ...props,
++    activeStep,
++    component,
++    orientation,
++    size,
++  };
++
++  const classes = useUtilityClasses(ownerState);
++  const externalForwardedProps = { ...other, component, slots, slotProps };
++
++  const [SlotRoot, rootProps] = useSlot('root', {
++    ref,
++    className: classes.root,
++    elementType: StepperRoot,
++    externalForwardedProps,
++    ownerState,
++  });
++
++  const contextValue = React.useMemo(
++    () => ({ activeStep, orientation, size }),
++    [activeStep, orientation, size],
++  );
++
++  const childrenArray = React.Children.toArray(children).filter(Boolean);
++  const steps = childrenArray.map((step, index) => {
++    if (!React.isValidElement(step)) {
++      return step;
++    }
++    return React.cloneElement(step as React.ReactElement<any>, {
++      index,
++      last: index + 1 === childrenArray.length,
++    });
++  });
++
++  return (
++    <StepperContext.Provider value={contextValue}>
++      <SlotRoot {...rootProps}>{steps}</SlotRoot>
++    </StepperContext.Provider>
++  );
++}) as OverridableComponent<StepperTypeMap>;
++
++Stepper.propTypes /* remove-proptypes */ = {
++  // ----------------------------- Warning --------------------------------
++  // | These PropTypes are generated from the TypeScript type definitions |
++  // |     To update them edit TypeScript types and run "yarn proptypes"  |
++  // ----------------------------------------------------------------------
++  /**
++   * Set the active step (zero based index).
++   * Set to -1 to disable all the steps.
++   * @default 0
++   */
++  activeStep: PropTypes.number,
++  /**
++   * The content of the component, typically `Step` components.
++   */
++  children: PropTypes.node,
++  /**
++   * The component used for the root node.
++   * Either a string to use a HTML element or a component.
++   */
++  component: PropTypes.elementType,
++  /**
++   * The component orientation (layout flow direction).
++   * @default 'horizontal'
++   */
++  orientation: PropTypes.oneOf(['horizontal', 'vertical']),
++  /**
++   * The size of the component.
++   * @default 'md'
++   */
++  size: PropTypes /* @typescript-to-proptypes-ignore */.oneOfType([
++    PropTypes.oneOf(['sm', 'md', 'lg']),
++    PropTypes.string,
++  ]),
++  /**
++   * The props used for each slot inside.
++   * @default {}
++   */
++  slotProps: PropTypes.shape({
++    root: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
++  }),
++  /**
++   * The components used for each slot inside.
++   * @default {}
++   */
++  slots: PropTypes.shape({
++    root: PropTypes.elementType,
++  }),
++  /**
++   * The system prop that allows defining system overrides as well as additional CSS styles.
++   */
++  sx: PropTypes.oneOfType([
++    PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.func, PropTypes.object, PropTypes.bool])),
++    PropTypes.func,
++    PropTypes.object,
++  ]),
++} as any;
++
++export default Stepper;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Stepper/StepperContext.ts b/packages/mui-joy/src/Stepper/StepperContext.ts
+new file mode 100644
+index 00000000..e034e2d4
+--- /dev/null
++++ b/packages/mui-joy/src/Stepper/StepperContext.ts
+@@ -0,0 +1,28 @@
++'use client';
++import * as React from 'react';
++
++export interface StepperContextType {
++  /**
++   * The index of the active step.
++   */
++  activeStep: number;
++  /**
++   * The component orientation (layout flow direction).
++   */
++  orientation: 'horizontal' | 'vertical';
++  /**
++   * The size of the component.
++   */
++  size: 'sm' | 'md' | 'lg';
++}
++
++/**
++ * @ignore - internal component.
++ */
++const StepperContext = React.createContext<StepperContextType | null>(null);
++
++if (process.env.NODE_ENV !== 'production') {
++  StepperContext.displayName = 'StepperContext';
++}
++
++export default StepperContext;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Stepper/StepperProps.ts b/packages/mui-joy/src/Stepper/StepperProps.ts
+new file mode 100644
+index 00000000..81ce9d1d
+--- /dev/null
++++ b/packages/mui-joy/src/Stepper/StepperProps.ts
+@@ -0,0 +1,63 @@
++import * as React from 'react';
++import { OverridableStringUnion, OverrideProps } from '@mui/types';
++import { SxProps } from '../styles/types';
++import { SlotProps, CreateSlotsAndSlotProps } from '../utils/types';
++
++export type StepperSlot = 'root';
++
++export interface StepperSlots {
++  /**
++   * The component that renders the root.
++   * @default 'ol'
++   */
++  root?: React.ElementType;
++}
++
++export type StepperSlotsAndSlotProps = CreateSlotsAndSlotProps<
++  StepperSlots,
++  {
++    root: SlotProps<'ol', {}, StepperOwnerState>;
++  }
++>;
++
++export interface StepperPropsSizeOverrides {}
++
++export interface StepperTypeMap<
++  ExtraProps = {},
++  Tag extends React.ElementType = 'ol',
++> {
++  props: ExtraProps & {
++    /**
++     * Set the active step (zero based index).
++     * Set to -1 to disable all the steps.
++     * @default 0
++     */
++    activeStep?: number;
++    /**
++     * The content of the component, typically `Step` components.
++     */
++    children?: React.ReactNode;
++    /**
++     * The component orientation (layout flow direction).
++     * @default 'horizontal'
++     */
++    orientation?: 'horizontal' | 'vertical';
++    /**
++     * The size of the component.
++     * @default 'md'
++     */
++    size?: OverridableStringUnion<'sm' | 'md' | 'lg', StepperPropsSizeOverrides>;
++    /**
++     * The system prop that allows defining system overrides as well as additional CSS styles.
++     */
++    sx?: SxProps;
++  } & StepperSlotsAndSlotProps;
++  defaultComponent: Tag;
++}
++
++export type StepperProps<
++  Tag extends React.ElementType = StepperTypeMap['defaultComponent'],
++  ExtraProps = { component?: React.ElementType },
++> = OverrideProps<StepperTypeMap<ExtraProps, Tag>, Tag>;
++
++export interface StepperOwnerState extends StepperProps {}
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Stepper/index.ts b/packages/mui-joy/src/Stepper/index.ts
+new file mode 100644
+index 00000000..4928c562
+--- /dev/null
++++ b/packages/mui-joy/src/Stepper/index.ts
+@@ -0,0 +1,5 @@
++'use client';
++export { default } from './Stepper';
++export * from './stepperClasses';
++export { default as stepperClasses } from './stepperClasses';
++export * from './StepperProps';
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/Stepper/stepperClasses.ts b/packages/mui-joy/src/Stepper/stepperClasses.ts
+new file mode 100644
+index 00000000..84260f17
+--- /dev/null
++++ b/packages/mui-joy/src/Stepper/stepperClasses.ts
+@@ -0,0 +1,33 @@
++import { generateUtilityClass, generateUtilityClasses } from '../className';
++
++export interface StepperClasses {
++  /** Class name applied to the root element. */
++  root: string;
++  /** Class name applied to the root element if `orientation="horizontal"`. */
++  horizontal: string;
++  /** Class name applied to the root element if `orientation="vertical"`. */
++  vertical: string;
++  /** Class name applied to the root element if `size="sm"`. */
++  sizeSm: string;
++  /** Class name applied to the root element if `size="md"`. */
++  sizeMd: string;
++  /** Class name applied to the root element if `size="lg"`. */
++  sizeLg: string;
++}
++
++export type StepperClassKey = keyof StepperClasses;
++
++export function getStepperUtilityClass(slot: string): string {
++  return generateUtilityClass('MuiStepper', slot);
++}
++
++const stepperClasses: StepperClasses = generateUtilityClasses('MuiStepper', [
++  'root',
++  'horizontal',
++  'vertical',
++  'sizeSm',
++  'sizeMd',
++  'sizeLg',
++]);
++
++export default stepperClasses;
+\ No newline at end of file
+diff --git a/packages/mui-joy/src/index.ts b/packages/mui-joy/src/index.ts
+index e4119c9d..b8140772 100644
+--- a/packages/mui-joy/src/index.ts
++++ b/packages/mui-joy/src/index.ts
+@@ -202,6 +202,15 @@ export * from './Snackbar';
+ export { default as Stack } from './Stack';
+ export * from './Stack';
+ 
++export { default as Step } from './Step';
++export * from './Step';
++
++export { default as StepIndicator } from './StepIndicator';
++export * from './StepIndicator';
++
++export { default as Stepper } from './Stepper';
++export * from './Stepper';
++
+ export { default as SvgIcon } from './SvgIcon';
+ export * from './SvgIcon';
+ 
+diff --git a/packages/mui-joy/src/styles/components.d.ts b/packages/mui-joy/src/styles/components.d.ts
+index cdba65a3..fc5b3d4a 100644
+--- a/packages/mui-joy/src/styles/components.d.ts
++++ b/packages/mui-joy/src/styles/components.d.ts
+@@ -196,6 +196,13 @@ import { OptionProps, OptionOwnerState, OptionSlot } from '../Option/OptionProps
+ import { SliderProps, SliderOwnerState, SliderSlot } from '../Slider/SliderProps';
+ import { SnackbarProps, SnackbarOwnerState, SnackbarSlot } from '../Snackbar/SnackbarProps';
+ import { StackProps, StackSlot } from '../Stack/StackProps';
++import { StepProps, StepOwnerState, StepSlot } from '../Step/StepProps';
++import {
++  StepIndicatorProps,
++  StepIndicatorOwnerState,
++  StepIndicatorSlot,
++} from '../StepIndicator/StepIndicatorProps';
++import { StepperProps, StepperOwnerState, StepperSlot } from '../Stepper/StepperProps';
+ import { SvgIconProps, SvgIconOwnerState, SvgIconSlot } from '../SvgIcon/SvgIconProps';
+ import { SwitchProps, SwitchOwnerState, SwitchSlot } from '../Switch/SwitchProps';
+ import { TabProps, TabOwnerState, TabSlot } from '../Tab/TabProps';
+@@ -451,6 +458,18 @@ export interface Components<Theme = unknown> {
+     defaultProps?: Partial<StackProps>;
+     styleOverrides?: StyleOverrides<StackSlot, StackProps, Theme>;
+   };
++  JoyStep?: {
++    defaultProps?: Partial<StepProps>;
++    styleOverrides?: StyleOverrides<StepSlot, StepOwnerState, Theme>;
++  };
++  JoyStepIndicator?: {
++    defaultProps?: Partial<StepIndicatorProps>;
++    styleOverrides?: StyleOverrides<StepIndicatorSlot, StepIndicatorOwnerState, Theme>;
++  };
++  JoyStepper?: {
++    defaultProps?: Partial<StepperProps>;
++    styleOverrides?: StyleOverrides<StepperSlot, StepperOwnerState, Theme>;
++  };
+   JoySwitch?: {
+     defaultProps?: Partial<SwitchProps>;
+     styleOverrides?: StyleOverrides<SwitchSlot, SwitchOwnerState, Theme>;

@@ -1,0 +1,78 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/index.js b/packages/svelte/src/compiler/phases/2-analyze/index.js
+index f5a31d0..bd0cdc0 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/index.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/index.js
+@@ -473,7 +473,16 @@ export function analyze_component(root, source, options) {
+ 		for (const binding of instance.scope.declarations.values()) {
+ 			if (binding.kind !== 'normal') continue;
+ 
+-			for (const { node, path } of binding.references) {
++			// A store subscription `$foo` reads `foo` to get the store, so a reference
++			// to `$foo` in the template or a `$:` block counts as a reference to `foo`.
++			// Without this, reassigning `foo` would not re-run the store subscription.
++			const store_sub_binding = instance.scope.get(`$${binding.node.name}`);
++			const references =
++				store_sub_binding?.kind === 'store_sub'
++					? binding.references.concat(store_sub_binding.references)
++					: binding.references;
++
++			for (const { node, path } of references) {
+ 				if (node === binding.node) continue;
+ 
+ 				if (binding.updated) {
+diff --git a/packages/svelte/tests/runtime-legacy/samples/store-reassign-from-prop/_config.js b/packages/svelte/tests/runtime-legacy/samples/store-reassign-from-prop/_config.js
+new file mode 100644
+index 0000000..ade67e1
+--- /dev/null
++++ b/packages/svelte/tests/runtime-legacy/samples/store-reassign-from-prop/_config.js
+@@ -0,0 +1,32 @@
++import { flushSync } from 'svelte';
++import { ok, test } from '../../test';
++import { writable } from 'svelte/store';
++
++export default test({
++	get props() {
++		return { a: writable(42) };
++	},
++
++	html: `
++		<h1></h1>
++		<button>set</button>
++	`,
++
++	test({ assert, target, window }) {
++		const button = target.querySelector('button');
++		ok(button);
++
++		const click = new window.MouseEvent('click', { bubbles: true });
++
++		button.dispatchEvent(click);
++		flushSync();
++
++		assert.htmlEqual(
++			target.innerHTML,
++			`
++			<h1>42</h1>
++			<button>set</button>
++		`
++		);
++	}
++});
+diff --git a/packages/svelte/tests/runtime-legacy/samples/store-reassign-from-prop/main.svelte b/packages/svelte/tests/runtime-legacy/samples/store-reassign-from-prop/main.svelte
+new file mode 100644
+index 0000000..9440cb7
+--- /dev/null
++++ b/packages/svelte/tests/runtime-legacy/samples/store-reassign-from-prop/main.svelte
+@@ -0,0 +1,11 @@
++<script>
++	export let a;
++	let b;
++
++	function set() {
++		b = a;
++	}
++</script>
++
++<h1>{$b}</h1>
++<button on:click={set}>set</button>
+\ No newline at end of file

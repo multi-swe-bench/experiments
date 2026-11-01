@@ -1,0 +1,63 @@
+diff --git a/packages/mui-system/src/breakpoints.js b/packages/mui-system/src/breakpoints.js
+index 44b48db7..ea54a6c2 100644
+--- a/packages/mui-system/src/breakpoints.js
++++ b/packages/mui-system/src/breakpoints.js
+@@ -106,6 +106,37 @@ export function removeUnusedBreakpoints(breakpointKeys, style) {
+   }, style);
+ }
+ 
++const getMinWidth = (key) => {
++  const match = key.match(/min-width:\s*([\d.]+)\s*(px|em|rem)?/);
++  if (!match) {
++    return null;
++  }
++  const value = parseFloat(match[1]);
++  const unit = match[2];
++  return unit === 'em' || unit === 'rem' ? value * 16 : value;
++};
++
++export function sortBreakpoints(style) {
++  const keys = Object.keys(style);
++
++  const mediaQueryKeys = keys.filter((key) => getMinWidth(key) !== null);
++  if (mediaQueryKeys.length < 2) {
++    return style;
++  }
++
++  mediaQueryKeys.sort((a, b) => getMinWidth(a) - getMinWidth(b));
++
++  let mediaIndex = 0;
++  const orderedKeys = keys.map((key) =>
++    getMinWidth(key) !== null ? mediaQueryKeys[mediaIndex++] : key,
++  );
++
++  return orderedKeys.reduce((acc, key) => {
++    acc[key] = style[key];
++    return acc;
++  }, {});
++}
++
+ export function mergeBreakpointsInOrder(breakpointsInput, ...styles) {
+   const emptyBreakpoints = createEmptyBreakpointObject(breakpointsInput);
+   const mergedOutput = [emptyBreakpoints, ...styles].reduce(
+diff --git a/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js b/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js
+index ef66e300..7c6d57fc 100644
+--- a/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js
++++ b/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js
+@@ -5,6 +5,7 @@ import {
+   handleBreakpoints,
+   createEmptyBreakpointObject,
+   removeUnusedBreakpoints,
++  sortBreakpoints,
+ } from '../breakpoints';
+ import defaultSxConfig from './defaultSxConfig';
+ 
+@@ -126,7 +127,7 @@ export function unstable_createStyleFunctionSx() {
+         }
+       });
+ 
+-      return removeUnusedBreakpoints(breakpointsKeys, css);
++      return sortBreakpoints(removeUnusedBreakpoints(breakpointsKeys, css));
+     }
+ 
+     return Array.isArray(sx) ? sx.map(traverse) : traverse(sx);

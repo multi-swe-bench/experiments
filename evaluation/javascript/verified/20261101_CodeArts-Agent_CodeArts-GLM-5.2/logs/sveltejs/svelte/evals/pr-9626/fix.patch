@@ -1,0 +1,89 @@
+diff --git a/packages/svelte/src/internal/client/render.js b/packages/svelte/src/internal/client/render.js
+index a20d612..d6c2de6 100644
+--- a/packages/svelte/src/internal/client/render.js
++++ b/packages/svelte/src/internal/client/render.js
+@@ -2680,6 +2680,34 @@ export function style(dom, key, value, important) {
+  */
+ const always_set_through_set_attribute = ['width', 'height'];
+ 
++/** @type {string[]} */
++const DOMBooleanAttributes = [
++	'allowfullscreen',
++	'async',
++	'autofocus',
++	'autoplay',
++	'checked',
++	'controls',
++	'default',
++	'disabled',
++	'formnovalidate',
++	'hidden',
++	'indeterminate',
++	'ismap',
++	'loop',
++	'multiple',
++	'muted',
++	'nomodule',
++	'novalidate',
++	'open',
++	'playsinline',
++	'readonly',
++	'required',
++	'reversed',
++	'seamless',
++	'selected'
++];
++
+ /** @type {Map<string, string[]>} */
+ const setters_cache = new Map();
+ 
+@@ -2780,7 +2808,15 @@ export function spread_attributes(dom, prev, attrs, css_hash) {
+ 				value += css_hash;
+ 			}
+ 
+-			attr(dom, key, value);
++			if (DOMBooleanAttributes.includes(key)) {
++				if (value) {
++					dom.setAttribute(key, '');
++				} else {
++					dom.removeAttribute(key);
++				}
++			} else {
++				attr(dom, key, value);
++			}
+ 		}
+ 	}
+ 	return next;
+diff --git a/packages/svelte/tests/runtime-runes/samples/spread-boolean-attributes/_config.js b/packages/svelte/tests/runtime-runes/samples/spread-boolean-attributes/_config.js
+new file mode 100644
+index 0000000..24e90fd
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/spread-boolean-attributes/_config.js
+@@ -0,0 +1,16 @@
++import { ok, test } from '../../test';
++
++export default test({
++	html: '<input>\n<input>\n<input readonly>\n<input readonly>',
++	test({ assert, target }) {
++		const inputs = target.querySelectorAll('input');
++		ok(inputs[0]);
++		ok(inputs[1]);
++		assert.ok(inputs[0].readOnly === false);
++		assert.ok(!inputs[0].hasAttribute('readonly'));
++		assert.ok(inputs[1].disabled === false);
++		assert.ok(!inputs[1].hasAttribute('disabled'));
++		assert.ok(inputs[2].readOnly === true);
++		assert.ok(inputs[3].readOnly === true);
++	}
++});
+diff --git a/packages/svelte/tests/runtime-runes/samples/spread-boolean-attributes/main.svelte b/packages/svelte/tests/runtime-runes/samples/spread-boolean-attributes/main.svelte
+new file mode 100644
+index 0000000..43aeb40
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/spread-boolean-attributes/main.svelte
+@@ -0,0 +1,4 @@
++<input {...{ readonly: false }}>
++<input {...{ disabled: false }}>
++<input {...{ readonly: true }}>
++<input {...{ readonly: 'false' }}>
+\ No newline at end of file

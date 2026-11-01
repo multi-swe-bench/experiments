@@ -1,0 +1,68 @@
+diff --git a/packages/mui-material/src/Menu/Menu.js b/packages/mui-material/src/Menu/Menu.js
+index 3bda0c8d..5e62add5 100644
+--- a/packages/mui-material/src/Menu/Menu.js
++++ b/packages/mui-material/src/Menu/Menu.js
+@@ -84,8 +84,17 @@ const Menu = React.forwardRef(function Menu(inProps, ref) {
+   const theme = useTheme();
+   const isRtl = theme.direction === 'rtl';
+ 
++  const anchorOrigin = {
++    vertical: 'bottom',
++    horizontal: isRtl ? 'right' : 'left',
++  };
++
++  const transformOrigin = isRtl ? RTL_ORIGIN : LTR_ORIGIN;
++
+   const ownerState = {
+     ...props,
++    anchorOrigin,
++    transformOrigin,
+     autoFocus,
+     disableAutoFocusItem,
+     MenuListProps,
+@@ -102,6 +111,16 @@ const Menu = React.forwardRef(function Menu(inProps, ref) {
+ 
+   const menuListActionsRef = React.useRef(null);
+ 
++  const ownerStateRef = React.useRef(ownerState);
++  ownerStateRef.current = ownerState;
++  const MenuPaperComponent = React.useMemo(
++    () =>
++      React.forwardRef(function MenuPaperWrapper(paperProps, paperRef) {
++        return <MenuPaper ownerState={ownerStateRef.current} ref={paperRef} {...paperProps} />;
++      }),
++    [],
++  );
++
+   const handleEntering = (element, isAppearing) => {
+     if (menuListActionsRef.current) {
+       menuListActionsRef.current.adjustStyleForScrollbar(element, theme);
+@@ -160,13 +179,10 @@ const Menu = React.forwardRef(function Menu(inProps, ref) {
+     <MenuRoot
+       classes={PopoverClasses}
+       onClose={onClose}
+-      anchorOrigin={{
+-        vertical: 'bottom',
+-        horizontal: isRtl ? 'right' : 'left',
+-      }}
+-      transformOrigin={isRtl ? RTL_ORIGIN : LTR_ORIGIN}
++      anchorOrigin={anchorOrigin}
++      transformOrigin={transformOrigin}
+       PaperProps={{
+-        component: MenuPaper,
++        component: MenuPaperComponent,
+         ...PaperProps,
+         classes: {
+           ...PaperProps.classes,
+diff --git a/packages/mui-material/src/Popover/Popover.js b/packages/mui-material/src/Popover/Popover.js
+index f35d551f..abd74e92 100644
+--- a/packages/mui-material/src/Popover/Popover.js
++++ b/packages/mui-material/src/Popover/Popover.js
+@@ -373,6 +373,7 @@ const Popover = React.forwardRef(function Popover(inProps, ref) {
+           elevation={elevation}
+           {...PaperProps}
+           ref={handlePaperRef}
++          ownerState={ownerState}
+           className={clsx(classes.paper, PaperProps.className)}
+         >
+           {children}

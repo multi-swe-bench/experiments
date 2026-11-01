@@ -1,0 +1,15 @@
+diff --git a/packages/svelte/src/internal/client/dom/elements/attributes.js b/packages/svelte/src/internal/client/dom/elements/attributes.js
+index d0e2145..3b4b7fe 100644
+--- a/packages/svelte/src/internal/client/dom/elements/attributes.js
++++ b/packages/svelte/src/internal/client/dom/elements/attributes.js
+@@ -319,6 +319,10 @@ export function set_dynamic_element_attributes(node, prev, next, css_hash) {
+ 			}
+ 		}
+ 
++		if (css_hash) {
++			next.class = next.class ? next.class + ' ' + css_hash : css_hash;
++		}
++
+ 		for (key in next) {
+ 			set_custom_element_data(node, key, next[key]);
+ 		}

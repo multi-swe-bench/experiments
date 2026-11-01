@@ -1,0 +1,25 @@
+diff --git a/packages/mui-material/src/useMediaQuery/useMediaQuery.ts b/packages/mui-material/src/useMediaQuery/useMediaQuery.ts
+index 328489e6..b7104dcb 100644
+--- a/packages/mui-material/src/useMediaQuery/useMediaQuery.ts
++++ b/packages/mui-material/src/useMediaQuery/useMediaQuery.ts
+@@ -94,15 +94,19 @@ function useMediaQueryNew(
+   defaultMatches: boolean,
+   matchMedia: typeof window.matchMedia | null,
+   ssrMatchMedia: ((query: string) => { matches: boolean }) | null,
++  noSsr: boolean | undefined,
+ ): boolean {
+   const getDefaultSnapshot = React.useCallback(() => defaultMatches, [defaultMatches]);
+   const getServerSnapshot = React.useMemo(() => {
++    if (noSsr && matchMedia !== null) {
++      return () => matchMedia(query).matches;
++    }
+     if (ssrMatchMedia !== null) {
+       const { matches } = ssrMatchMedia(query);
+       return () => matches;
+     }
+     return getDefaultSnapshot;
+-  }, [getDefaultSnapshot, query, ssrMatchMedia]);
++  }, [getDefaultSnapshot, matchMedia, noSsr, query, ssrMatchMedia]);
+   const [getSnapshot, subscribe] = React.useMemo(() => {
+     if (matchMedia === null) {
+       return [getDefaultSnapshot, () => () => {}];

@@ -1,0 +1,45 @@
+diff --git a/src/common/utils.js b/src/common/utils.js
+index baa93c6..d40170d 100644
+--- a/src/common/utils.js
++++ b/src/common/utils.js
+@@ -263,6 +263,8 @@ const SECONDARY_ERROR_MESSAGES = {
+   MAX_RETRY:
+     "Please add an env variable called PAT_1 with your github token in vercel",
+   USER_NOT_FOUND: "Make sure the provided username is not an organization",
++  INVALID_USERNAME_OR_REPONAME:
++    "Make sure you have provided both username and repo query parameters",
+ };
+ 
+ class CustomError extends Error {
+@@ -278,6 +280,7 @@ class CustomError extends Error {
+ 
+   static MAX_RETRY = "MAX_RETRY";
+   static USER_NOT_FOUND = "USER_NOT_FOUND";
++  static INVALID_USERNAME_OR_REPONAME = "INVALID_USERNAME_OR_REPONAME";
+ }
+ 
+ /**
+diff --git a/src/fetchers/repo-fetcher.js b/src/fetchers/repo-fetcher.js
+index 4490adb..c061612 100644
+--- a/src/fetchers/repo-fetcher.js
++++ b/src/fetchers/repo-fetcher.js
+@@ -1,6 +1,6 @@
+ // @ts-check
+ const retryer = require("../common/retryer");
+-const { request } = require("../common/utils");
++const { request, CustomError } = require("../common/utils");
+ 
+ /**
+  * @param {import('Axios').AxiosRequestHeaders} variables
+@@ -55,7 +55,10 @@ const fetcher = (variables, token) => {
+  */
+ async function fetchRepo(username, reponame) {
+   if (!username || !reponame) {
+-    throw new Error("Invalid username or reponame");
++    throw new CustomError(
++      "Invalid username or reponame",
++      CustomError.INVALID_USERNAME_OR_REPONAME,
++    );
+   }
+ 
+   let res = await retryer(fetcher, { login: username, repo: reponame });

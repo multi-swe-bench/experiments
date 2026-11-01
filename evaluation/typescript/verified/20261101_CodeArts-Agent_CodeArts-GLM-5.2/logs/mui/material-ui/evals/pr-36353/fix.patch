@@ -1,0 +1,59 @@
+diff --git a/packages/mui-material/src/Dialog/Dialog.js b/packages/mui-material/src/Dialog/Dialog.js
+index eb31fd06..9cc543cc 100644
+--- a/packages/mui-material/src/Dialog/Dialog.js
++++ b/packages/mui-material/src/Dialog/Dialog.js
+@@ -227,9 +227,10 @@ const Dialog = React.forwardRef(function Dialog(inProps, ref) {
+   };
+ 
+   const ariaLabelledby = useId(ariaLabelledbyProp);
++  const [titleId, setTitleId] = React.useState(ariaLabelledby);
+   const dialogContextValue = React.useMemo(() => {
+-    return { titleId: ariaLabelledby };
+-  }, [ariaLabelledby]);
++    return { titleId, setTitleId };
++  }, [titleId]);
+ 
+   return (
+     <DialogRoot
+@@ -270,7 +271,7 @@ const Dialog = React.forwardRef(function Dialog(inProps, ref) {
+             elevation={24}
+             role="dialog"
+             aria-describedby={ariaDescribedby}
+-            aria-labelledby={ariaLabelledby}
++            aria-labelledby={titleId}
+             {...PaperProps}
+             className={clsx(classes.paper, PaperProps.className)}
+             ownerState={ownerState}
+diff --git a/packages/mui-material/src/Dialog/DialogContext.ts b/packages/mui-material/src/Dialog/DialogContext.ts
+index d73b6aa7..2bd01a0f 100644
+--- a/packages/mui-material/src/Dialog/DialogContext.ts
++++ b/packages/mui-material/src/Dialog/DialogContext.ts
+@@ -2,6 +2,7 @@ import * as React from 'react';
+ 
+ interface DialogContextValue {
+   titleId?: string;
++  setTitleId?: (titleId: string) => void;
+ }
+ 
+ const DialogContext = React.createContext<DialogContextValue>({});
+diff --git a/packages/mui-material/src/DialogTitle/DialogTitle.js b/packages/mui-material/src/DialogTitle/DialogTitle.js
+index 099b5957..534adbc0 100644
+--- a/packages/mui-material/src/DialogTitle/DialogTitle.js
++++ b/packages/mui-material/src/DialogTitle/DialogTitle.js
+@@ -37,7 +37,15 @@ const DialogTitle = React.forwardRef(function DialogTitle(inProps, ref) {
+   const ownerState = props;
+   const classes = useUtilityClasses(ownerState);
+ 
+-  const { titleId: id = idProp } = React.useContext(DialogContext);
++  const { titleId, setTitleId } = React.useContext(DialogContext);
++
++  const id = idProp ?? titleId;
++
++  React.useEffect(() => {
++    if (setTitleId && idProp) {
++      setTitleId(idProp);
++    }
++  }, [setTitleId, idProp]);
+ 
+   return (
+     <DialogTitleRoot

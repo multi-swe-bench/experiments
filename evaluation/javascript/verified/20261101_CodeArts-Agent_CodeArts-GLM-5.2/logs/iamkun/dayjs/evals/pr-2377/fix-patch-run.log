@@ -1,0 +1,1324 @@
+$ bash /home/test-run.sh
+
+
+> dayjs@0.0.0-development test
+> TZ=Pacific/Auckland npm run test-tz && TZ=Europe/London npm run test-tz && TZ=America/Whitehorse npm run test-tz && npm run test-tz && jest --verbose --maxWorkers=4
+
+
+> dayjs@0.0.0-development test-tz
+> date && jest test/timezone.test --coverage=false
+
+Sat Oct 24 02:03:50 NZDT 2026
+PASS test/timezone.test.js
+  ✓ Add Time days (DST) (7ms)
+  ✓ Utc Offset
+  ✓ Diff (DST) (3ms)
+  ✓ UTC add day in DST (1ms)
+  ✓ UTC and utcOffset (2ms)
+  ✓ UTC diff in DST
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        1.181s
+Ran all test suites matching /test\/timezone.test/i.
+
+> dayjs@0.0.0-development test-tz
+> date && jest test/timezone.test --coverage=false
+
+Fri Oct 23 14:03:53 BST 2026
+PASS test/timezone.test.js
+  ✓ Add Time days (DST) (6ms)
+  ✓ Utc Offset (1ms)
+  ✓ Diff (DST) (3ms)
+  ✓ UTC add day in DST (1ms)
+  ✓ UTC and utcOffset (2ms)
+  ✓ UTC diff in DST
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        0.427s, estimated 1s
+Ran all test suites matching /test\/timezone.test/i.
+
+> dayjs@0.0.0-development test-tz
+> date && jest test/timezone.test --coverage=false
+
+Fri Oct 23 06:03:54 MST 2026
+PASS test/timezone.test.js
+  ✓ Add Time days (DST) (6ms)
+  ✓ Utc Offset
+  ✓ Diff (DST) (4ms)
+  ✓ UTC add day in DST (1ms)
+  ✓ UTC and utcOffset (2ms)
+  ✓ UTC diff in DST
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        0.422s, estimated 1s
+Ran all test suites matching /test\/timezone.test/i.
+
+> dayjs@0.0.0-development test-tz
+> date && jest test/timezone.test --coverage=false
+
+Fri Oct 23 13:03:54 UTC 2026
+PASS test/timezone.test.js
+  ✓ Add Time days (DST) (6ms)
+  ✓ Utc Offset
+  ✓ Diff (DST) (3ms)
+  ✓ UTC add day in DST (1ms)
+  ✓ UTC and utcOffset (2ms)
+  ✓ UTC diff in DST
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        0.413s, estimated 1s
+Ran all test suites matching /test\/timezone.test/i.
+PASS test/plugin/isSameOrBefore.test.js
+  ✓ is same or before without units (5ms)
+  ✓ is same or before without date (1ms)
+  ✓ is same or before year (1ms)
+  ✓ is same or before month (1ms)
+  ✓ is same or before day (1ms)
+  ✓ is same or before hour (16ms)
+  ✓ is same or before minute (2ms)
+  ✓ is same or before second (1ms)
+  ✓ is same or before millisecond (2ms)
+  ✓ is same with invalid moments (1ms)
+
+PASS test/plugin/isBetween.test.js
+  ✓ bounds can be swapped (3ms)
+  ✓ bounds can be swapped with inclusivity (15ms)
+  ✓ is between without units (3ms)
+  ✓ is between year (1ms)
+  ✓ is between month (1ms)
+  ✓ is between day
+  ✓ is between hour (1ms)
+  ✓ is between minute (1ms)
+  ✓ is between second (1ms)
+  ✓ is between millisecond (1ms)
+  ✓ is between without units inclusivity (1ms)
+  ✓ is between milliseconds inclusivity (2ms)
+
+PASS test/comparison.test.js
+  ✓ is same without units (1ms)
+  ✓ is same year (1ms)
+  ✓ is same month (1ms)
+  ✓ is same day
+  ✓ is same hour (1ms)
+  ✓ is same minute (1ms)
+  ✓ is same second (1ms)
+  ✓ is same millisecond
+  ✓ is same with invalid moments (1ms)
+  ✓ is after year
+  ✓ is after month (1ms)
+  ✓ is after day (1ms)
+  ✓ is after hour
+  ✓ is after minute (1ms)
+  ✓ is after second (1ms)
+  ✓ is after millisecond (1ms)
+  ✓ is after without units (1ms)
+  ✓ is after invalid
+  ✓ is after without units (2ms)
+  ✓ is before year
+  ✓ is before month (1ms)
+  ✓ is before day (1ms)
+  ✓ is before hour
+  ✓ is before minute (1ms)
+  ✓ is before second (1ms)
+  ✓ is before millisecond (1ms)
+  ✓ is before invalid
+
+PASS test/plugin/customParseFormat.test.js
+  ✓ does not break the built-in parsing (3ms)
+  ✓ parse padded string (2ms)
+  ✓ parse string for MMM month format (3ms)
+  ✓ parse string January (getMonth() = 0)
+  ✓ parse unpadded string (1ms)
+  ✓ parse time zone abbreviation
+  ✓ parse time zone abbreviation2 (1ms)
+  ✓ recognizes midnight in small letters
+  ✓ recognizes noon in small letters (1ms)
+  ✓ leaves non-token parts of the format intact
+  ✓ timezone with no hour
+  ✓ parse hh:mm (1ms)
+  ✓ parse HH:mm:ss
+  ✓ parse HH:mm:ss but only one digit
+  ✓ parse hh:mm:ss but only one digit
+  ✓ fails with an invalid format
+  ✓ parse month from string (1ms)
+  ✓ parse month from short string
+  ✓ parse month from string with locale in config (1ms)
+  ✓ parse month from short string with locale in config
+  ✓ parse month from short string with locale in argument
+  ✓ parse month from string with locale in argument (1ms)
+  ✓ return Invalid Date when parse corrupt string
+  ✓ return Invalid Date when parse corrupt short string
+  ✓ YYYY-MM set 1st day of the month (1ms)
+  ✓ Invalid Dates
+  ✓ Valid Date
+  ✓ correctly parse month from string after changing locale globally
+  ✓ correctly parse ordinal (2ms)
+  ✓ parse a string for MMM month format with underscore delimiter
+  ✓ custom two-digit year parse function (2ms)
+  ✓ parse X x (1ms)
+  parse localizedFormats
+    ✓ Locale: zh-cn (4ms)
+    ✓ Locale: ru (5ms)
+    ✓ Locale: uk (3ms)
+    ✓ Locale: en (3ms)
+  Timezone Offset
+    ✓ timezone with 2-digit offset (1ms)
+    ✓ zulu
+    ✓ no timezone format token should parse in local time
+  parse YYYY / YYYY-MM only
+    ✓ YYYY
+    ✓ YYYY-MM (1ms)
+  month function locale
+    ✓ MMMM (1ms)
+    ✓ MMM
+  Strict mode
+    ✓ without locale (1ms)
+    ✓ with locale
+  Array format support
+    ✓ second ok
+    ✓ all invalid
+    ✓ with locale
+  meridiem locale
+    ✓ AM (1ms)
+    ✓ PM
+  parse with special separator characters
+    ✓ Output is NaN for a specific date format (1ms)
+    ✓ parse comma separated date
+    ✓ parse comma separated date in strict mode (1ms)
+    ✓ parse date with multi character separator
+    ✓ parse date with multi character separator in strict mode
+
+PASS test/plugin/timezone.test.js
+  ✓ DST valueOf (2ms)
+  Guess
+    ✓ return string (1ms)
+  Parse
+    ✓ parse target time string (4ms)
+    ✓ parse timestamp, js Date, Day.js object (2ms)
+    ✓ parse and convert between timezones (1ms)
+    ✓ preserve milliseconds
+  Convert
+    ✓ convert to target time (2ms)
+    ✓ convert to target time
+    ✓ convert from time with timezone to target time (2ms)
+    ✓ DST (3ms)
+    ✓ format Z (1ms)
+  DST, a time that never existed Spring Forward
+    ✓ 2012-03-11 01:59:59 (1ms)
+    ✓ 2012-03-11 02:00:00
+    ✓ 2012-03-11 02:59:59 (1ms)
+    ✓ 2012-03-11 03:00:00 (1ms)
+  DST, a time that never existed Fall Back
+    ✓ 2012-11-04 00:59:59
+    ✓ 2012-11-04 00:59:59 (1ms)
+    ✓ 2012-11-04 02:00:00
+  set Default
+    ✓ default timezone
+    ✓ empty timezone means local timezone (2ms)
+    ✓ change default timezone
+    ✓ override default timezone in proto.tz (1ms)
+    ✓ override default timezone in d.tz
+  keepLocalTime
+    ✓ keepLocalTime (1ms)
+  Get offsetName
+    ✓ short
+    ✓ long
+  CustomPraseFormat
+    ✓ normal
+    ✓ custom (1ms)
+  startOf and endOf
+    ✓ corrects for timezone offset in startOf (1ms)
+    ✓ corrects for timezone offset in endOf
+
+PASS test/plugin/objectSupport.test.js
+  ✓ Constructor from Object (3ms)
+  ✓ Constructor from Object UTC (5ms)
+  ✓ Constructor from null should return Invalid Date
+  ✓ Set from Object (6ms)
+  ✓ add short reverse args (2ms)
+  ✓ add long reverse args (1ms)
+  ✓ add long singular reverse args
+  ✓ add string long (1ms)
+  ✓ add string long singular (1ms)
+  ✓ add string short
+  ✓ add strings string short (1ms)
+  ✓ add no string with milliseconds default
+  ✓ subtract strings string short (1ms)
+  ✓ add decimal values of days and months (1ms)
+  ✓ returns valid date on undefined
+  ✓ returns invalid date on null
+  parse empty object
+    ✓ local (2ms)
+    ✓ utc
+
+PASS test/plugin/utc.test.js
+  ✓ Clone retains the UTC mode
+  ✓ UTC mode format tokens (1ms)
+  ✓ StartOf EndOf Year ... in UTC mode (3ms)
+  ✓ isUTC
+  ✓ utc keepLocalTime
+  ✓ utc diff undefined edge case (1ms)
+  UTC Get
+    ✓ UTC Year (1ms)
+    ✓ UTC Month
+    ✓ UTC Day of Week (1ms)
+    ✓ UTC Date
+    ✓ UTC Hour
+    ✓ UTC Minute
+    ✓ UTC Second
+    ✓ UTC Millisecond (1ms)
+  Parse UTC 
+    ✓ Parse Now (1ms)
+    ✓ Parse date string without timezone (4ms)
+    ✓ creating with utc with timezone (1ms)
+    ✓ Parse date string without timezone (2ms)
+    ✓ Parse date string set utc in config (1ms)
+    ✓ parses unlimited millisecond in utc (1ms)
+  local
+    ✓ Returns a new instance
+    ✓ UTC to local
+  UTC Set
+    ✓ Set UTC Day
+    ✓ Set UTC Day of Week
+    ✓ Set UTC Month (1ms)
+    ✓ Set UTC Year
+    ✓ Set UTC Hour
+    ✓ Set UTC Minute
+    ✓ Set UTC Second
+    ✓ Set UTC Millisecond (1ms)
+  UTC and local
+    ✓ utc
+    ✓ local
+    ✓ utcOffset
+  UTC with customParseFormat
+    ✓ Custom Parse Format (2ms)
+  UTC Offset
+    ✓ get utcOffset
+    ✓ get utc offset with a number value (1ms)
+    ✓ get utc offset with a negative valid string value, format: HH:mm
+    ✓ get utc offset with a positive valid string value, format: HH:mm (1ms)
+    ✓ get utc offset with a negative valid string value, format: HHmm
+    ✓ get utc offset with a positive valid string value, format: HHmm
+    ✓ get utc offset with an invalid string value, value: random (1ms)
+    ✓ get utc offset with an invalid string value, value: 0
+  Diff
+    ✓ utc.diff(utc) (1ms)
+    ✓ default diff
+    ✓ local.diff(utc) (1ms)
+    ✓ utc.diff(local)
+
+PASS test/plugin/isSameOrAfter.test.js
+  ✓ is same or after year (33ms)
+  ✓ is same or after without units (1ms)
+  ✓ is same or after without date (1ms)
+  ✓ is same or after month (1ms)
+  ✓ is same or after day (1ms)
+  ✓ is same or after hour (1ms)
+  ✓ is same or after minute (1ms)
+  ✓ is same or after second (1ms)
+  ✓ is same or after millisecond (1ms)
+  ✓ is same or after with invalid moments (2ms)
+
+PASS test/plugin/preParsePostFormat.test.js
+  preparse and postformat
+    transform
+      ✓ preparse string + format (1ms)
+      ✓ preparse ISO8601 string
+      ✓ postformat (1ms)
+    transform from
+      ✓ postformat should work on dayjs.fn.from (1ms)
+      ✓ postformat should work on dayjs.fn.fromNow
+      ✓ postformat should work on dayjs.duration.fn.humanize
+  calendar day
+    ✓ today at the same time (1ms)
+    ✓ Now plus 25 min
+    ✓ Now plus 1 hour
+    ✓ tomorrow at the same time (1ms)
+    ✓ Now minus 1 hour
+    ✓ yesterday at the same time
+
+PASS test/plugin/localeData.test.js
+  ✓ Global localeData (2ms)
+  ✓ Listing the months and weekdays (3ms)
+  ✓ Month function (2ms)
+  ✓ Locale order (1ms)
+  ✓ meridiem
+  ✓ ordinal
+  Instance localeData
+    ✓ Locale: zh-cn (4ms)
+    ✓ Locale: en (1ms)
+    ✓ Locale: fr (2ms)
+
+PASS test/plugin/advancedFormat.test.js
+  ✓ Format of invalid date (1ms)
+  ✓ Format empty string
+  ✓ Format Quarter Q (1ms)
+  ✓ Format Timestamp X x
+  ✓ Format Day of Month Do 1 - 31 (3ms)
+  ✓ Format Hour k kk 24-hour 1 - 24 (1ms)
+  ✓ Format Week of Year wo (2ms)
+  ✓ Format Week of Year wo (1ms)
+  ✓ Format Week Year gggg (1ms)
+  ✓ Format Iso Week Year GGGG
+  ✓ Format Iso Week of Year (1ms)
+  ✓ Format offsetName z zzz (2ms)
+  ✓ Skips format strings inside brackets (1ms)
+
+PASS test/plugin/badMutable.test.js
+  ✓ daysInMonth
+  ✓ Locale (1ms)
+  ✓ Diff (1ms)
+  ✓ isAfter isBefore isSame
+  ✓ DayOfYear get day won't change instance (1ms)
+  ✓ WeekOfYear get week won't change instance
+  Set
+    ✓ Setters (2ms)
+    ✓ Set (1ms)
+  StartOf
+    ✓ StartOf (1ms)
+  Add
+    ✓ Add (1ms)
+
+PASS test/locale/de.test.js
+  ✓ German locale relative time in past and future with suffix (45ms)
+  ✓ German locale relative time in past and future without suffix (16ms)
+  ✓ German locales use region specific names (1ms)
+
+PASS test/parse.test.js
+  ✓ Unix Timestamp Number (milliseconds) 1523520536000 (1ms)
+  ✓ Unix Timestamp Number (seconds) 1318781876
+  ✓ String and Number 20180101
+  ✓ Number 0
+  ✓ Clone not affect each other (1ms)
+  ✓ Clone with same value
+  Parse
+    ✓ Now (1ms)
+    ✓ moment-js like formatted dates (12ms)
+    ✓ String ISO 8601 date, time and zone
+    ✓ String RFC 2822, time and zone (1ms)
+    ✓ String ECMAScript, time and zone
+    ✓ rejects invalid values
+    ✓ parses Arrays with date part (1ms)
+    ✓ parses unlimited millisecond
+    ✓ String Other, Undefined and Null and isValid
+  REGEX_PARSE
+    ✓ 2020/9/30
+    ✓ 2019-03-25T06:41:00.999999999
+    ✓ 20210102T012345 (1ms)
+    ✓ 2021-01-02T01:23
+    ✓ 2021-01-02T01:23:45
+    ✓ 2020-12-31T18:00:00.000-0500 (no regex match)
+    ✓ 2021-1-4 0:42:53:000
+    ✓ 2020-12-31T18:00:00-05:00 (no regex match)
+    ✓ 2021-01-02T01:23:45-0500 (no regex match)
+    ✓ 2021-01-02T01:23:45Z (no regex match)
+    ✓ 2021.01.03
+
+PASS test/plugin/isoWeek.test.js
+  ✓ get isoWeek (2ms)
+  ✓ set isoWeek (1ms)
+  ✓ get isoWeekYear
+  ✓ startOf/endOf isoWeek
+  ✓ isoWeekday (2ms)
+  ✓ isoWeek of year (11ms)
+  ✓ utc mode
+
+PASS test/locale/is.test.js
+  moment compatibility
+    ✓ without suffix (3ms)
+    ✓ past (2ms)
+    ✓ future (2ms)
+  Icelandic output matches moment output
+    ✓ without suffix (4ms)
+    ✓ past (2ms)
+    ✓ future (2ms)
+
+PASS test/timezone.test.js
+  ✓ Add Time days (DST) (2ms)
+  ✓ Utc Offset (1ms)
+  ✓ Diff (DST) (2ms)
+  ✓ UTC add day in DST (1ms)
+  ✓ UTC and utcOffset (1ms)
+  ✓ UTC diff in DST
+
+PASS test/plugin/relativeTime.test.js
+  ✓ Time from X (11ms)
+  ✓ Time from now
+  ✓ Time to now (1ms)
+  ✓ Time to X (1ms)
+  ✓ Locale Function
+  ✓ Time from now with UTC (1ms)
+  ✓ Custom thresholds and rounding support
+  ✓ Locale without relativeTime config fallback (1ms)
+  ✓ Past and Future keys should support function for additional processing
+
+PASS test/locale/keys.test.js
+  ✓ Locale keys for af (4ms)
+  ✓ Locale keys for am (2ms)
+  ✓ Locale keys for ar-dz (1ms)
+  ✓ Locale keys for ar-iq (1ms)
+  ✓ Locale keys for ar-kw (5ms)
+  ✓ Locale keys for ar-ly (1ms)
+  ✓ Locale keys for ar-ma (1ms)
+  ✓ Locale keys for ar-sa (2ms)
+  ✓ Locale keys for ar-tn (1ms)
+  ✓ Locale keys for ar (1ms)
+  ✓ Locale keys for az (1ms)
+  ✓ Locale keys for be (2ms)
+  ✓ Locale keys for bg (28ms)
+  ✓ Locale keys for bi (1ms)
+  ✓ Locale keys for bm (1ms)
+  ✓ Locale keys for bn-bd (2ms)
+  ✓ Locale keys for bn (1ms)
+  ✓ Locale keys for bo (1ms)
+  ✓ Locale keys for br (2ms)
+  ✓ Locale keys for bs (1ms)
+  ✓ Locale keys for ca (1ms)
+  ✓ Locale keys for cs (2ms)
+  ✓ Locale keys for cv (1ms)
+  ✓ Locale keys for cy (1ms)
+  ✓ Locale keys for da (1ms)
+  ✓ Locale keys for de-at (1ms)
+  ✓ Locale keys for de-ch (2ms)
+  ✓ Locale keys for de (1ms)
+  ✓ Locale keys for dv (2ms)
+  ✓ Locale keys for el (1ms)
+  ✓ Locale keys for en-au (1ms)
+  ✓ Locale keys for en-ca (1ms)
+  ✓ Locale keys for en-gb (1ms)
+  ✓ Locale keys for en-ie (1ms)
+  ✓ Locale keys for en-il (2ms)
+  ✓ Locale keys for en-in (1ms)
+  ✓ Locale keys for en-nz (1ms)
+  ✓ Locale keys for en-sg (1ms)
+  ✓ Locale keys for en-tt (1ms)
+  ✓ Locale keys for en
+  ✓ Locale keys for eo (2ms)
+  ✓ Locale keys for es-do (1ms)
+  ✓ Locale keys for es-mx (2ms)
+  ✓ Locale keys for es-pr (1ms)
+  ✓ Locale keys for es-us (1ms)
+  ✓ Locale keys for es (1ms)
+  ✓ Locale keys for et (1ms)
+  ✓ Locale keys for eu (1ms)
+  ✓ Locale keys for fa (1ms)
+  ✓ Locale keys for fi (1ms)
+  ✓ Locale keys for fo (1ms)
+  ✓ Locale keys for fr-ca (1ms)
+  ✓ Locale keys for fr-ch (2ms)
+  ✓ Locale keys for fr (1ms)
+  ✓ Locale keys for fy (1ms)
+  ✓ Locale keys for ga (2ms)
+  ✓ Locale keys for gd (1ms)
+  ✓ Locale keys for gl (1ms)
+  ✓ Locale keys for gom-latn (1ms)
+  ✓ Locale keys for gu (1ms)
+  ✓ Locale keys for he (1ms)
+  ✓ Locale keys for hi (1ms)
+  ✓ Locale keys for hr (1ms)
+  ✓ Locale keys for ht (1ms)
+  ✓ Locale keys for hu (1ms)
+  ✓ Locale keys for hy-am (1ms)
+  ✓ Locale keys for id (1ms)
+  ✓ Locale keys for is (1ms)
+  ✓ Locale keys for it-ch (1ms)
+  ✓ Locale keys for it (1ms)
+  ✓ Locale keys for ja (2ms)
+  ✓ Locale keys for jv (1ms)
+  ✓ Locale keys for ka (1ms)
+  ✓ Locale keys for kk
+  ✓ Locale keys for km (1ms)
+  ✓ Locale keys for kn (1ms)
+  ✓ Locale keys for ko (2ms)
+  ✓ Locale keys for ku (1ms)
+  ✓ Locale keys for ky (2ms)
+  ✓ Locale keys for lb (1ms)
+  ✓ Locale keys for lo (1ms)
+  ✓ Locale keys for lt (22ms)
+  ✓ Locale keys for lv (1ms)
+  ✓ Locale keys for me (1ms)
+  ✓ Locale keys for mi (1ms)
+  ✓ Locale keys for mk (1ms)
+  ✓ Locale keys for ml (1ms)
+  ✓ Locale keys for mn (1ms)
+  ✓ Locale keys for mr (1ms)
+  ✓ Locale keys for ms-my (1ms)
+  ✓ Locale keys for ms (1ms)
+  ✓ Locale keys for mt (1ms)
+  ✓ Locale keys for my (2ms)
+  ✓ Locale keys for nb (1ms)
+  ✓ Locale keys for ne (1ms)
+  ✓ Locale keys for nl-be (1ms)
+  ✓ Locale keys for nl (1ms)
+  ✓ Locale keys for nn (1ms)
+  ✓ Locale keys for oc-lnc (1ms)
+  ✓ Locale keys for pa-in (1ms)
+  ✓ Locale keys for pl (1ms)
+  ✓ Locale keys for pt-br (1ms)
+  ✓ Locale keys for pt (1ms)
+  ✓ Locale keys for rn (1ms)
+  ✓ Locale keys for ro (1ms)
+  ✓ Locale keys for ru (3ms)
+  ✓ Locale keys for rw (1ms)
+  ✓ Locale keys for sd (1ms)
+  ✓ Locale keys for se (1ms)
+  ✓ Locale keys for si (1ms)
+  ✓ Locale keys for sk (1ms)
+  ✓ Locale keys for sl (1ms)
+  ✓ Locale keys for sq (1ms)
+  ✓ Locale keys for sr-cyrl (1ms)
+  ✓ Locale keys for sr (1ms)
+  ✓ Locale keys for ss (1ms)
+  ✓ Locale keys for sv-fi (1ms)
+  ✓ Locale keys for sv (1ms)
+  ✓ Locale keys for sw (1ms)
+  ✓ Locale keys for ta (1ms)
+  ✓ Locale keys for te (1ms)
+  ✓ Locale keys for tet (1ms)
+  ✓ Locale keys for tg (1ms)
+  ✓ Locale keys for th (1ms)
+  ✓ Locale keys for tk (1ms)
+  ✓ Locale keys for tl-ph (1ms)
+  ✓ Locale keys for tlh (1ms)
+  ✓ Locale keys for tr (1ms)
+  ✓ Locale keys for tzl (1ms)
+  ✓ Locale keys for tzm-latn (1ms)
+  ✓ Locale keys for tzm (1ms)
+  ✓ Locale keys for ug-cn (1ms)
+  ✓ Locale keys for uk (1ms)
+  ✓ Locale keys for ur (1ms)
+  ✓ Locale keys for uz-latn (1ms)
+  ✓ Locale keys for uz (1ms)
+  ✓ Locale keys for vi (1ms)
+  ✓ Locale keys for x-pseudo (1ms)
+  ✓ Locale keys for yo (1ms)
+  ✓ Locale keys for zh-cn (2ms)
+  ✓ Locale keys for zh-hk (1ms)
+  ✓ Locale keys for zh-tw (1ms)
+  ✓ Locale keys for zh (2ms)
+
+PASS test/manipulate.test.js
+  ✓ Add Time days (2ms)
+  ✓ Add Time with decimal (1ms)
+  ✓ Subtract Time days
+  StartOf EndOf
+    ✓ StartOf EndOf Year ... with s and upper case (2ms)
+    ✓ StartOf EndOf Other -> no change (1ms)
+    ✓ StartOf week with locale (5ms)
+
+PASS test/plugin/calendar.test.js
+  ✓ No argument && null && undefined (2ms)
+  ✓ ReferenceTime (2ms)
+  ✓ Custom format (1ms)
+  ✓ Custom callback
+  ✓ Calls callback (1ms)
+  ✓ callback is a function with the scope of the current moment
+  ✓ callback is a function and first argument a moment that depicts now (1ms)
+  ✓ set global calendar in locale file
+
+PASS test/locale/bn-bd.test.js
+  ✓ Format Month with locale function (6ms)
+  ✓ Month short
+  ✓ Preparse with locale function (1ms)
+  ✓ RelativeTime: Time from X (8ms)
+
+PASS test/plugin/utc-utcOffset.test.js
+  ✓ Set utcOffset -> Get utcOffset (2ms)
+  ✓ valueOf, toDate, toString, toISOString should be the same as original (1ms)
+  ✓ clone
+  ✓ immutable
+  ✓ utcOffset(0) enable utc mode (1ms)
+  ✓ utcOffset keepLocalTime (1ms)
+  ✓ UTC mode (1ms)
+  ✓ change hours when changing the utc offset in UTC mode
+  ✓ correctly set and add hours in offset mode (1ms)
+  ✓ keep hours when adding month in offset mode
+  ✓ utc costrustor (1ms)
+  ✓ utc startOf
+
+PASS test/locale/pl.test.js
+  ✓ Format month with locale function (4ms)
+  ✓ RelativeTime: Time from X (9ms)
+
+PASS test/locale/zh-hk.test.js
+  ✓ ordinal (1ms)
+  ✓ Meridiem (2ms)
+
+PASS test/plugin/pluralGetSet.test.js
+  ✓ Years (46ms)
+  ✓ Months (1ms)
+  ✓ Days of Week (3ms)
+  ✓ Dates (1ms)
+  ✓ Hours
+  ✓ Minutes (1ms)
+  ✓ Seconds
+  ✓ Milliseconds
+  ✓ Set Dates
+  ✓ Set Days of Week (1ms)
+  ✓ Set Months
+  ✓ Set Years
+  ✓ Set Hours (1ms)
+  ✓ Set Minutes
+  ✓ Set Seconds
+  ✓ Set Milliseconds
+  ✓ Set Month and Year in last day of month (1ms)
+
+PASS test/locale/sr-cyrl.test.js
+  ✓ Serbian cyrillic locale relative time in past and future (9ms)
+
+PASS test/locale/sk.test.js
+  ✓ RelativeTime: Time from X (17ms)
+
+PASS test/locale/bn.test.js
+  ✓ Format Month with locale function (4ms)
+  ✓ Month short
+  ✓ Preparse with locale function (1ms)
+  ✓ RelativeTime: Time from X (6ms)
+
+PASS test/locale/sr.test.js
+  ✓ Serbian locale relative time in past and future (12ms)
+
+PASS test/locale.test.js
+  ✓ Uses spanish locale through constructor (1ms)
+  ✓ set locale for one instance only
+  ✓ set global locale
+  ✓ get instance locale name (2ms)
+  ✓ immutable instance locale
+  ✓ User custom locale
+  ✓ Not supported locale string fallback to previous one (instance)
+  ✓ Not supported locale string fallback to previous one (global)
+  Instance locale inheritance
+    ✓ Clone
+    ✓ StartOf EndOf (1ms)
+    ✓ Set
+    ✓ Add
+    ✓ dayjs.locale() returns locale name (1ms)
+
+PASS test/locale/it-ch.test.js
+  Italian formats in Switzerland
+    ✓ Format month with locale function (6ms)
+    ✓ RelativeTime: Time from X (50ms)
+
+PASS test/plugin/minMax.test.js
+  ✓ Return current time if no argument (1ms)
+  ✓ Return current time if passing empty array
+  ✓ Compare between arguments (1ms)
+  ✓ Compare in array (1ms)
+  ✓ If Invalid Date return Invalid Date
+  ✓ Ignore if exists an "null" argument (1ms)
+  ✓ Return the only date if just provided one argument
+
+PASS test/plugin/bigIntSupport.test.js
+  ✓ Parse BigInt ts and tsms
+
+PASS test/locale/hu.test.js
+  ✓ RelativeTime: Time from X (16ms)
+
+PASS test/locale/ru.test.js
+  ✓ Format Month with locale function (4ms)
+  ✓ RelativeTime: Time from X (4ms)
+  ✓ Meridiem (1ms)
+
+PASS test/plugin/weekOfYear.test.js
+  ✓ Week of year (3ms)
+  ✓ Week of year with locale (1ms)
+  ✓ Format w ww wo
+  Week of year with locale edges
+    ✓ Edges 2018-12-30
+    ✓ Edges 2018-12-31 (1ms)
+    ✓ Edges 2019-12-29
+    ✓ Edges 2019-12-30
+    ✓ Edges 2016-01-01 (1ms)
+    ✓ Edges 2016-01-04
+
+PASS test/plugin/toArray.test.js
+  ✓ As Array -> toArray (1ms)
+
+  console.warn node_modules/moment/moment.js:287
+    Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.
+    Arguments: 
+    [0] _isAMomentObject: true, _isUTC: false, _useUTC: false, _l: undefined, _i: otherString, _f: undefined, _strict: undefined, _locale: [object Object]
+    Error: 
+        at Function.createFromInputFallback (/home/dayjs/node_modules/moment/moment.js:324:25)
+        at configFromString (/home/dayjs/node_modules/moment/moment.js:2550:19)
+        at configFromInput (/home/dayjs/node_modules/moment/moment.js:2993:13)
+        at prepareConfig (/home/dayjs/node_modules/moment/moment.js:2976:13)
+        at createFromConfig (/home/dayjs/node_modules/moment/moment.js:2943:44)
+        at createLocalOrUTC (/home/dayjs/node_modules/moment/moment.js:3037:16)
+        at createLocal (/home/dayjs/node_modules/moment/moment.js:3041:16)
+        at hooks (/home/dayjs/node_modules/moment/moment.js:16:29)
+        at Object.<anonymous> (/home/dayjs/test/plugin/updateLocale.test.js:80:48)
+        at Object.asyncFn (/home/dayjs/node_modules/jest-jasmine2/build/jasmine_async.js:82:37)
+        at /home/dayjs/node_modules/jest-jasmine2/build/queue_runner.js:52:12
+        at new Promise (<anonymous>)
+        at mapper (/home/dayjs/node_modules/jest-jasmine2/build/queue_runner.js:39:19)
+        at /home/dayjs/node_modules/jest-jasmine2/build/queue_runner.js:73:82
+        at processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+PASS test/locale/ku.test.js
+  ✓ Format meridiem correctly (3ms)
+  ✓ Preparse with locale function (2ms)
+
+PASS test/plugin/updateLocale.test.js
+  Update locale
+    ✓ Invalid argument (1ms)
+    ✓ Return value
+    ✓ Update build-in en locale (1ms)
+    ✓ Update imported zh-cn locale
+    ✓ Update invalid date string (5ms)
+
+PASS test/locale/ar.test.js
+  ✓ Format Month with locale function (5ms)
+  ✓ Preparse with locale function (2ms)
+  ✓ RelativeTime: Time from X gets formatted
+
+PASS test/locale/br.test.js
+  ✓ Format Month with locale function (3ms)
+  ✓ RelativeTime: Time from X (7ms)
+
+PASS test/plugin/buddhistEra.test.js
+  ✓ Format empty string (1ms)
+  ✓ Format Buddhist Era 2 digit
+  ✓ Format Buddhist Era 4 digit
+  ✓ Format Buddhist Era 4 digit with other format
+  ✓ Skips format strings inside brackets (1ms)
+
+PASS test/plugin/devHelper.test.js
+  ✓ Warning: passing Year as a Number will be parsed as a Unix timestamp (1ms)
+  ✓ Warning Passing Unix timestamp as a String not Number
+  ✓ Warning Enable customParseFormat plugin while passing the second format parameter
+  ✓ Warning: Setting locale before loading locale
+
+PASS test/issues/issue2027.swapped-order.test.js
+  issue 2027 - order objectSupport > Duration
+    ✓ add Duration object returns correct date (1ms)
+    ✓ subtract Duration object returns correct date (3ms)
+    ✓ add number with unit returns correct date
+    ✓ subtract number with unit returns correct date
+    ✓ parse string returns correct date
+    ✓ parse object returns correct date (1ms)
+    ✓ set hour with number returns correct date
+    ✓ set hour with object returns correct date
+
+PASS test/locale/he.test.js
+  ✓ RelativeTime: Time from X (15ms)
+
+PASS test/plugin/weekday.test.js
+  ✓ Sunday is the first day of the week (1ms)
+  ✓ Monday is the first day of the week (2ms)
+  ✓ Saturday is the first day of the week
+
+PASS test/plugin/isoWeeksInYear.test.js
+  ✓ isoWeeksInYear (2ms)
+
+PASS test/locale/fi.test.js
+  ✓ Finnish locale relative time in past and future (8ms)
+
+PASS test/plugin/localizedFormat.test.js
+  ✓ Declares English localized formats (1ms)
+  ✓ Should not interpolate characters inside square brackets (2ms)
+  ✓ Recognizes localized format options (1ms)
+  ✓ Uses correct English formats (44ms)
+  ✓ Uses English formats in other locales as default
+  ✓ Leaves the default format intact (4ms)
+  ✓ Uses the locale of the dayjs instance (1ms)
+  ✓ Uses the localized lowercase formats if defined
+  ✓ Uses fallback to xx if xx-yy not available
+  ✓ Uses xx-yy if xx-YY is provided
+  ✓ Uses the localized uppercase formats as a base for lowercase formats, if not defined (1ms)
+
+PASS test/locale/ja.test.js
+  ✓ Finnish locale relative time in past and future (8ms)
+
+PASS test/locale/lt.test.js
+  ✓ Format month with locale function (3ms)
+
+PASS test/locale/bg.test.js
+  ✓ Format Month with locale function (4ms)
+  ✓ RelativeTime: Time from X (6ms)
+  ✓ Ordinal (4ms)
+
+PASS test/display.test.js
+  ✓ Format no formatStr (1ms)
+  ✓ Format invalid date
+  ✓ Format Year YY YYYY (1ms)
+  ✓ Format Month M MM MMM MMMM
+  ✓ Format Day of Month D DD 1 - 31
+  ✓ Format Day of Week d Sun - Sat (1ms)
+  ✓ Format Hour H HH 24-hour
+  ✓ Format Hour h hh 12-hour (2ms)
+  ✓ Format meridiens a A am / pm (3ms)
+  ✓ Format Minute m mm
+  ✓ Format Second s ss SSS (1ms)
+  ✓ Format Time Zone ZZ
+  ✓ Format ddd dd MMM with short locale (1ms)
+  ✓ Format token value is 0
+  ✓ Format Complex with other string - : /  (1ms)
+  ✓ Format Escaping characters
+  ✓ Unix Timestamp (milliseconds)
+  ✓ Unix Timestamp (seconds)
+  ✓ Days in Month (1ms)
+  ✓ Utc Offset
+  ✓ As Javascript Date -> toDate
+  ✓ As JSON -> toJSON (9ms)
+  ✓ As ISO 8601 String -> toISOString e.g. 2013-02-04T22:44:30.652Z
+  ✓ Year 1 formatted with YYYY should pad with zeroes
+  Difference
+    ✓ empty -> default milliseconds (1ms)
+    ✓ diff -> none dayjs object
+    ✓ diff -> in seconds, minutes, hours, days, weeks, months, quarters, years  (3ms)
+    ✓ Special diff in month according to moment.js (2ms)
+    ✓ MonthDiff (1ms)
+    ✓ undefined edge case
+
+PASS test/locale/sv-fi.test.js
+  ✓ Finland Swedish locale (2ms)
+
+PASS test/plugin/isToday.test.js
+  ✓ is today (1ms)
+
+PASS test/get-set.test.js
+  ✓ Year (1ms)
+  ✓ Month (1ms)
+  ✓ Day of Week
+  ✓ Date (1ms)
+  ✓ Hour
+  ✓ Minute (2ms)
+  ✓ Second
+  ✓ Millisecond
+  ✓ Set Day
+  ✓ Set Day of Week (1ms)
+  ✓ Set Month
+  ✓ Set Year
+  ✓ Set Hour
+  ✓ Set Minute
+  ✓ Set Second
+  ✓ Set Millisecond
+  ✓ Set Month and Year in last day of month (1ms)
+  ✓ Set Unknown String
+  ✓ Immutable Set
+
+PASS test/plugin/isTomorrow.test.js
+  ✓ is tomorrow (1ms)
+
+PASS test/locale/hr.test.js
+  ✓ Format month with locale function (4ms)
+
+PASS test/plugin/weekYear.test.js
+  ✓ Week Year (3ms)
+  ✓ yearStart: 4 (2ms)
+
+PASS test/locale/cs.test.js
+  ✓ RelativeTime: Time from X (13ms)
+
+PASS test/issues/issue2027.correct-order.test.js
+  issue 2027 - order objectSupport > Duration
+    ✓ add Duration object returns correct date (1ms)
+    ✓ subtract Duration object returns correct date (1ms)
+    ✓ add number with unit returns correct date
+    ✓ subtract number with unit returns correct date
+    ✓ parse string returns correct date
+    ✓ parse object returns correct date
+    ✓ set hour with number returns correct date (1ms)
+    ✓ set hour with object returns correct date
+
+PASS test/locale/uk.test.js
+  ✓ Format Month with locale function (4ms)
+  ✓ RelativeTime: Time from X (4ms)
+  ✓ hour (2ms)
+
+PASS test/locale/sv.test.js
+  ✓ Swedish locale Do 1a not format to 1am (1ms)
+
+PASS test/plugin/isYesterday.test.js
+  ✓ is yesterday (2ms)
+
+PASS test/plugin/toObject.test.js
+  ✓ As Object -> toObject (1ms)
+
+PASS test/plugin/isMoment.test.js
+  ✓ IsLeapYear
+
+PASS test/locale/et.test.js
+  ✓ RelativeTime: Time from X (7ms)
+
+PASS test/plugin/dayOfYear.test.js
+  ✓ DayOfYear get (2ms)
+  ✓ DayOfYear set (1ms)
+
+PASS test/locale/zh.test.js
+  ✓ ordinal (1ms)
+  ✓ Meridiem (2ms)
+
+PASS test/plugin/quarterOfYear.test.js
+  ✓ get QuarterOfYear (2ms)
+  ✓ set QuarterOfYear (1ms)
+  ✓ add subtract quarter (1ms)
+  ✓ startOf endOf quarter
+
+PASS test/query.test.js
+  Is Before Is After Is Same
+    ✓ Compare to dayjs object (2ms)
+    ✓ No value
+    ✓ With string
+
+PASS test/plugin/arraySupport.test.js
+  parse empty array
+    ✓ local (1ms)
+    ✓ utc
+  parse array local
+    ✓ 2010,1,14,15,25,50,125 (1ms)
+    ✓ 2010
+    ✓ 2010,6
+    ✓ 2010,6,10
+  parse array utc
+    ✓ 2010,1,14,15,25,50,125
+    ✓ 2010 (1ms)
+    ✓ 2010,6
+    ✓ 2010,6,10
+
+PASS test/locale/ar-ma.test.js
+  ✓ Meridiem (1ms)
+
+PASS test/utils.test.js
+  ✓ PrettyUnit
+  ✓ PadZoneStr (1ms)
+  ✓ PadStart
+
+PASS test/locale/zh-tw.test.js
+  ✓ ordinal (1ms)
+  ✓ Meridiem (2ms)
+
+PASS test/locale/en.test.js
+  English date formats
+    ✓ should correctly format date with locale - en (1ms)
+    ✓ should correctly format date with locale - en-gb
+    ✓ should correctly format date with locale - en-in
+    ✓ should correctly format date with locale - en-tt
+
+PASS test/locale/ar-kw.test.js
+  ✓ Meridiem (1ms)
+
+PASS test/locale/ar-tn.test.js
+  ✓ Meridiem (1ms)
+
+PASS test/locale/ar-iq.test.js
+  ✓ Meridiem (1ms)
+
+PASS test/plugin.test.js
+  ✓ Plugin extend method and option
+  ✓ Plugin extend dayjs
+  ✓ Plugin use core utils (1ms)
+
+PASS test/locale/ar-ly.test.js
+  ✓ Meridiem (1ms)
+
+PASS test/locale/ar-sa.test.js
+  ✓ Meridiem
+
+PASS test/locale/ar-dz.test.js
+  ✓ Meridiem (1ms)
+
+PASS test/locale/zh-cn.test.js
+  ✓ Meridiem (1ms)
+
+PASS test/plugin/declarations.test.js
+  ✓ Plugin declarations (1ms)
+
+PASS test/constructor.test.js
+  ✓ supports instanceof dayjs (1ms)
+  ✓ does not break isDayjs
+
+PASS test/plugin/isLeapYear.test.js
+  ✓ IsLeapYear
+
+PASS test/plugin/duration.test.js
+  ✓ Is duration (1ms)
+  ✓ toJSON
+  ✓ Add duration (1ms)
+  ✓ Subtract duration
+  Creating
+    ✓ no argument (1ms)
+    ✓ milliseconds (3ms)
+    ✓ two argument will bubble up to the next
+    ✓ two argument will bubble up to the next (negative number)
+    ✓ object with float
+    ✓ object with weeks and float (1ms)
+    ✓ object with millisecond
+    ✓ object with negative millisecond
+    ✓ convert to milliseconds
+    ✓ handles rounding to millisecond precision
+    ✓ should handle round with millisecond precision when negative
+    ✓ should handle floating point rounding errors
+  Parse ISO string
+    ✓ Full ISO string (1ms)
+    ✓ Part ISO string
+    ✓ Formatting missing components
+    ✓ ISO string with week
+    ✓ Invalid ISO string
+  Humanize
+    ✓ Humaniz (1ms)
+    ✓ Locale
+    ✓ Global Locale
+  Clone
+    ✓ Locale clone (1ms)
+  Days
+    ✓ positive number (1ms)
+    ✓ negative number
+  Format
+    ✓ no formatStr
+    ✓ with formatStr for all tokens
+
+-------------------------------|----------|----------|----------|----------|-------------------|
+File                           |  % Stmts | % Branch |  % Funcs |  % Lines | Uncovered Line #s |
+-------------------------------|----------|----------|----------|----------|-------------------|
+All files                      |     99.7 |    99.28 |      100 |    99.79 |                   |
+ src                           |      100 |     99.5 |      100 |      100 |                   |
+  constant.js                  |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |    99.44 |      100 |      100 |               445 |
+  utils.js                     |      100 |      100 |      100 |      100 |                   |
+ src/locale                    |      100 |      100 |      100 |      100 |                   |
+  af.js                        |      100 |      100 |      100 |      100 |                   |
+  am.js                        |      100 |      100 |      100 |      100 |                   |
+  ar-dz.js                     |      100 |      100 |      100 |      100 |                   |
+  ar-iq.js                     |      100 |      100 |      100 |      100 |                   |
+  ar-kw.js                     |      100 |      100 |      100 |      100 |                   |
+  ar-ly.js                     |      100 |      100 |      100 |      100 |                   |
+  ar-ma.js                     |      100 |      100 |      100 |      100 |                   |
+  ar-sa.js                     |      100 |      100 |      100 |      100 |                   |
+  ar-tn.js                     |      100 |      100 |      100 |      100 |                   |
+  ar.js                        |      100 |      100 |      100 |      100 |                   |
+  az.js                        |      100 |      100 |      100 |      100 |                   |
+  be.js                        |      100 |      100 |      100 |      100 |                   |
+  bg.js                        |      100 |      100 |      100 |      100 |                   |
+  bi.js                        |      100 |      100 |      100 |      100 |                   |
+  bm.js                        |      100 |      100 |      100 |      100 |                   |
+  bn-bd.js                     |      100 |      100 |      100 |      100 |                   |
+  bn.js                        |      100 |      100 |      100 |      100 |                   |
+  bo.js                        |      100 |      100 |      100 |      100 |                   |
+  br.js                        |      100 |      100 |      100 |      100 |                   |
+  bs.js                        |      100 |      100 |      100 |      100 |                   |
+  ca.js                        |      100 |      100 |      100 |      100 |                   |
+  cs.js                        |      100 |      100 |      100 |      100 |                   |
+  cv.js                        |      100 |      100 |      100 |      100 |                   |
+  cy.js                        |      100 |      100 |      100 |      100 |                   |
+  da.js                        |      100 |      100 |      100 |      100 |                   |
+  de-at.js                     |      100 |      100 |      100 |      100 |                   |
+  de-ch.js                     |      100 |      100 |      100 |      100 |                   |
+  de.js                        |      100 |      100 |      100 |      100 |                   |
+  dv.js                        |      100 |      100 |      100 |      100 |                   |
+  el.js                        |      100 |      100 |      100 |      100 |                   |
+  en-au.js                     |      100 |      100 |      100 |      100 |                   |
+  en-ca.js                     |      100 |      100 |      100 |      100 |                   |
+  en-gb.js                     |      100 |      100 |      100 |      100 |                   |
+  en-ie.js                     |      100 |      100 |      100 |      100 |                   |
+  en-il.js                     |      100 |      100 |      100 |      100 |                   |
+  en-in.js                     |      100 |      100 |      100 |      100 |                   |
+  en-nz.js                     |      100 |      100 |      100 |      100 |                   |
+  en-sg.js                     |      100 |      100 |      100 |      100 |                   |
+  en-tt.js                     |      100 |      100 |      100 |      100 |                   |
+  en.js                        |      100 |      100 |      100 |      100 |                   |
+  eo.js                        |      100 |      100 |      100 |      100 |                   |
+  es-do.js                     |      100 |      100 |      100 |      100 |                   |
+  es-mx.js                     |      100 |      100 |      100 |      100 |                   |
+  es-pr.js                     |      100 |      100 |      100 |      100 |                   |
+  es-us.js                     |      100 |      100 |      100 |      100 |                   |
+  es.js                        |      100 |      100 |      100 |      100 |                   |
+  et.js                        |      100 |      100 |      100 |      100 |                   |
+  eu.js                        |      100 |      100 |      100 |      100 |                   |
+  fa.js                        |      100 |      100 |      100 |      100 |                   |
+  fi.js                        |      100 |      100 |      100 |      100 |                   |
+  fo.js                        |      100 |      100 |      100 |      100 |                   |
+  fr-ca.js                     |      100 |      100 |      100 |      100 |                   |
+  fr-ch.js                     |      100 |      100 |      100 |      100 |                   |
+  fr.js                        |      100 |      100 |      100 |      100 |                   |
+  fy.js                        |      100 |      100 |      100 |      100 |                   |
+  ga.js                        |      100 |      100 |      100 |      100 |                   |
+  gd.js                        |      100 |      100 |      100 |      100 |                   |
+  gl.js                        |      100 |      100 |      100 |      100 |                   |
+  gom-latn.js                  |      100 |      100 |      100 |      100 |                   |
+  gu.js                        |      100 |      100 |      100 |      100 |                   |
+  he.js                        |      100 |      100 |      100 |      100 |                   |
+  hi.js                        |      100 |      100 |      100 |      100 |                   |
+  hr.js                        |      100 |      100 |      100 |      100 |                   |
+  ht.js                        |      100 |      100 |      100 |      100 |                   |
+  hu.js                        |      100 |      100 |      100 |      100 |                   |
+  hy-am.js                     |      100 |      100 |      100 |      100 |                   |
+  id.js                        |      100 |      100 |      100 |      100 |                   |
+  is.js                        |      100 |      100 |      100 |      100 |                   |
+  it-ch.js                     |      100 |      100 |      100 |      100 |                   |
+  it.js                        |      100 |      100 |      100 |      100 |                   |
+  ja.js                        |      100 |      100 |      100 |      100 |                   |
+  jv.js                        |      100 |      100 |      100 |      100 |                   |
+  ka.js                        |      100 |      100 |      100 |      100 |                   |
+  kk.js                        |      100 |      100 |      100 |      100 |                   |
+  km.js                        |      100 |      100 |      100 |      100 |                   |
+  kn.js                        |      100 |      100 |      100 |      100 |                   |
+  ko.js                        |      100 |      100 |      100 |      100 |                   |
+  ku.js                        |      100 |      100 |      100 |      100 |                   |
+  ky.js                        |      100 |      100 |      100 |      100 |                   |
+  lb.js                        |      100 |      100 |      100 |      100 |                   |
+  lo.js                        |      100 |      100 |      100 |      100 |                   |
+  lt.js                        |      100 |      100 |      100 |      100 |                   |
+  lv.js                        |      100 |      100 |      100 |      100 |                   |
+  me.js                        |      100 |      100 |      100 |      100 |                   |
+  mi.js                        |      100 |      100 |      100 |      100 |                   |
+  mk.js                        |      100 |      100 |      100 |      100 |                   |
+  ml.js                        |      100 |      100 |      100 |      100 |                   |
+  mn.js                        |      100 |      100 |      100 |      100 |                   |
+  mr.js                        |      100 |      100 |      100 |      100 |                   |
+  ms-my.js                     |      100 |      100 |      100 |      100 |                   |
+  ms.js                        |      100 |      100 |      100 |      100 |                   |
+  mt.js                        |      100 |      100 |      100 |      100 |                   |
+  my.js                        |      100 |      100 |      100 |      100 |                   |
+  nb.js                        |      100 |      100 |      100 |      100 |                   |
+  ne.js                        |      100 |      100 |      100 |      100 |                   |
+  nl-be.js                     |      100 |      100 |      100 |      100 |                   |
+  nl.js                        |      100 |      100 |      100 |      100 |                   |
+  nn.js                        |      100 |      100 |      100 |      100 |                   |
+  oc-lnc.js                    |      100 |      100 |      100 |      100 |                   |
+  pa-in.js                     |      100 |      100 |      100 |      100 |                   |
+  pl.js                        |      100 |      100 |      100 |      100 |                   |
+  pt-br.js                     |      100 |      100 |      100 |      100 |                   |
+  pt.js                        |      100 |      100 |      100 |      100 |                   |
+  rn.js                        |      100 |      100 |      100 |      100 |                   |
+  ro.js                        |      100 |      100 |      100 |      100 |                   |
+  ru.js                        |      100 |      100 |      100 |      100 |                   |
+  rw.js                        |      100 |      100 |      100 |      100 |                   |
+  sd.js                        |      100 |      100 |      100 |      100 |                   |
+  se.js                        |      100 |      100 |      100 |      100 |                   |
+  si.js                        |      100 |      100 |      100 |      100 |                   |
+  sk.js                        |      100 |      100 |      100 |      100 |                   |
+  sl.js                        |      100 |      100 |      100 |      100 |                   |
+  sq.js                        |      100 |      100 |      100 |      100 |                   |
+  sr-cyrl.js                   |      100 |      100 |      100 |      100 |                   |
+  sr.js                        |      100 |      100 |      100 |      100 |                   |
+  ss.js                        |      100 |      100 |      100 |      100 |                   |
+  sv-fi.js                     |      100 |      100 |      100 |      100 |                   |
+  sv.js                        |      100 |      100 |      100 |      100 |                   |
+  sw.js                        |      100 |      100 |      100 |      100 |                   |
+  ta.js                        |      100 |      100 |      100 |      100 |                   |
+  te.js                        |      100 |      100 |      100 |      100 |                   |
+  tet.js                       |      100 |      100 |      100 |      100 |                   |
+  tg.js                        |      100 |      100 |      100 |      100 |                   |
+  th.js                        |      100 |      100 |      100 |      100 |                   |
+  tk.js                        |      100 |      100 |      100 |      100 |                   |
+  tl-ph.js                     |      100 |      100 |      100 |      100 |                   |
+  tlh.js                       |      100 |      100 |      100 |      100 |                   |
+  tr.js                        |      100 |      100 |      100 |      100 |                   |
+  tzl.js                       |      100 |      100 |      100 |      100 |                   |
+  tzm-latn.js                  |      100 |      100 |      100 |      100 |                   |
+  tzm.js                       |      100 |      100 |      100 |      100 |                   |
+  ug-cn.js                     |      100 |      100 |      100 |      100 |                   |
+  uk.js                        |      100 |      100 |      100 |      100 |                   |
+  ur.js                        |      100 |      100 |      100 |      100 |                   |
+  uz-latn.js                   |      100 |      100 |      100 |      100 |                   |
+  uz.js                        |      100 |      100 |      100 |      100 |                   |
+  vi.js                        |      100 |      100 |      100 |      100 |                   |
+  x-pseudo.js                  |      100 |      100 |      100 |      100 |                   |
+  yo.js                        |      100 |      100 |      100 |      100 |                   |
+  zh-cn.js                     |      100 |      100 |      100 |      100 |                   |
+  zh-hk.js                     |      100 |      100 |      100 |      100 |                   |
+  zh-tw.js                     |      100 |      100 |      100 |      100 |                   |
+  zh.js                        |      100 |      100 |      100 |      100 |                   |
+ src/plugin/advancedFormat     |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/arraySupport       |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/badMutable         |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/bigIntSupport      |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/buddhistEra        |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/calendar           |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/customParseFormat  |    98.74 |    98.25 |      100 |      100 |                   |
+  index.js                     |    98.74 |    98.25 |      100 |      100 |             22,91 |
+ src/plugin/dayOfYear          |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/devHelper          |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/duration           |    97.42 |    97.47 |      100 |    97.32 |                   |
+  index.js                     |    97.42 |    97.47 |      100 |    97.32 |       64,65,67,68 |
+ src/plugin/isBetween          |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isLeapYear         |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isMoment           |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isSameOrAfter      |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isSameOrBefore     |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isToday            |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isTomorrow         |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isYesterday        |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isoWeek            |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/isoWeeksInYear     |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/localeData         |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/localizedFormat    |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+  utils.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/minMax             |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/objectSupport      |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/pluralGetSet       |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/preParsePostFormat |      100 |    93.75 |      100 |      100 |                   |
+  index.js                     |      100 |    93.75 |      100 |      100 |                22 |
+ src/plugin/quarterOfYear      |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/relativeTime       |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/timezone           |      100 |    96.67 |      100 |      100 |                   |
+  index.js                     |      100 |    96.67 |      100 |      100 |                15 |
+ src/plugin/toArray            |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/toObject           |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/updateLocale       |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/utc                |      100 |    96.08 |      100 |      100 |                   |
+  index.js                     |      100 |    96.08 |      100 |      100 |              6,13 |
+ src/plugin/weekOfYear         |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/weekYear           |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+ src/plugin/weekday            |      100 |      100 |      100 |      100 |                   |
+  index.js                     |      100 |      100 |      100 |      100 |                   |
+-------------------------------|----------|----------|----------|----------|-------------------|
+Handlebars: Access has been denied to resolve the property "statements" because it is not an "own property" of its parent.
+You can add a runtime option to disable the check or this warning:
+See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details
+Handlebars: Access has been denied to resolve the property "branches" because it is not an "own property" of its parent.
+You can add a runtime option to disable the check or this warning:
+See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details
+Handlebars: Access has been denied to resolve the property "functions" because it is not an "own property" of its parent.
+You can add a runtime option to disable the check or this warning:
+See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details
+Handlebars: Access has been denied to resolve the property "lines" because it is not an "own property" of its parent.
+You can add a runtime option to disable the check or this warning:
+See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details
+Test Suites: 89 passed, 89 total
+Tests:       744 passed, 744 total
+Snapshots:   0 total
+Time:        2.313s, estimated 4s
+Ran all test suites.
+
+[exit code: 0]

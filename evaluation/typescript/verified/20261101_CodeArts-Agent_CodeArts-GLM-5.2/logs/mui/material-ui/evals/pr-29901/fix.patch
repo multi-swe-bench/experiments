@@ -1,0 +1,166 @@
+diff --git a/docs/src/pages/guides/classname-generator/classname-generator.md b/docs/src/pages/guides/classname-generator/classname-generator.md
+index ae9b2f09..6e298ffb 100644
+--- a/docs/src/pages/guides/classname-generator/classname-generator.md
++++ b/docs/src/pages/guides/classname-generator/classname-generator.md
+@@ -80,6 +80,38 @@ Now, the `Mui` class is gone.
+ 
+ > **Note**: [state classes](/customization/how-to-customize/#state-classes) are **NOT** component names and therefore cannot be changed/removed.
+ 
++## Multiple scopes
++
++The global `ClassNameGenerator` applies the same configuration to every component.
++If you need a different prefix for a specific component (for example when building
++a component library consumed by several micro-frontends), you can pass a custom
++generator to `generateUtilityClass` / `generateUtilityClasses`. The global
++configuration is not affected, which lets you have several independent scopes in
++the same application.
++
++```js
++import { generateUtilityClass, generateUtilityClasses } from '@mui/base';
++
++const sidebarGenerator = (componentName) => `sidebar-${componentName}`;
++
++// Only this component uses the `sidebar-` prefix.
++generateUtilityClass('MuiSideBar', 'root', sidebarGenerator); // 'sidebar-MuiSideBar-root'
++generateUtilityClasses('MuiSideBar', ['root', 'item'], sidebarGenerator);
++// { root: 'sidebar-MuiSideBar-root', item: 'sidebar-MuiSideBar-item' }
++```
++
++You can also create an independent, configurable generator instance with
++`unstable_createClassNameGenerator`:
++
++```js
++import { unstable_createClassNameGenerator } from '@mui/material/utils';
++
++const sidebarGenerator = unstable_createClassNameGenerator();
++sidebarGenerator.configure((componentName) => `sidebar-${componentName}`);
++
++sidebarGenerator.generate('MuiSideBar'); // 'sidebar-MuiSideBar'
++```
++
+ ## Caveat
+ 
+ - `ClassNameGenerator.configure` must be called before any MUI components import.
+@@ -105,7 +137,7 @@ Now, the `Mui` class is gone.
+   ```
+ 
+ - This API should only be used at build-time.
+-- The configuration is applied to all of the components across the application. You cannot target a specific part of the application.
++- The global configuration is applied to all of the components across the application. To target a specific component, pass a custom generator to `generateUtilityClass` / `generateUtilityClasses` (see [Multiple scopes](#multiple-scopes)).
+ 
+ ## Framework example
+ 
+diff --git a/packages/mui-base/src/generateUtilityClass/ClassNameGenerator.ts b/packages/mui-base/src/generateUtilityClass/ClassNameGenerator.ts
+index 4a4523b7..91be63f2 100644
+--- a/packages/mui-base/src/generateUtilityClass/ClassNameGenerator.ts
++++ b/packages/mui-base/src/generateUtilityClass/ClassNameGenerator.ts
+@@ -3,7 +3,7 @@ const defaultGenerator = (componentName: string) => componentName;
+ const createClassNameGenerator = () => {
+   let generate = defaultGenerator;
+   return {
+-    configure(generator: typeof generate) {
++    configure(generator: typeof defaultGenerator) {
+       generate = generator;
+     },
+     generate(componentName: string) {
+@@ -17,4 +17,6 @@ const createClassNameGenerator = () => {
+ 
+ const ClassNameGenerator = createClassNameGenerator();
+ 
++export { createClassNameGenerator };
++
+ export default ClassNameGenerator;
+diff --git a/packages/mui-base/src/generateUtilityClass/generateUtilityClass.ts b/packages/mui-base/src/generateUtilityClass/generateUtilityClass.ts
+index 3b3e10fe..a413d80d 100644
+--- a/packages/mui-base/src/generateUtilityClass/generateUtilityClass.ts
++++ b/packages/mui-base/src/generateUtilityClass/generateUtilityClass.ts
+@@ -13,7 +13,11 @@ const globalStateClassesMapping: Record<string, string> = {
+   selected: 'Mui-selected',
+ };
+ 
+-export default function generateUtilityClass(componentName: string, slot: string): string {
++export default function generateUtilityClass(
++  componentName: string,
++  slot: string,
++  generator: (componentName: string) => string = ClassNameGenerator.generate,
++): string {
+   const globalStateClass = globalStateClassesMapping[slot];
+-  return globalStateClass || `${ClassNameGenerator.generate(componentName)}-${slot}`;
++  return globalStateClass || `${generator(componentName)}-${slot}`;
+ }
+diff --git a/packages/mui-base/src/generateUtilityClasses/generateUtilityClasses.ts b/packages/mui-base/src/generateUtilityClasses/generateUtilityClasses.ts
+index 61973f3a..c75a175a 100644
+--- a/packages/mui-base/src/generateUtilityClasses/generateUtilityClasses.ts
++++ b/packages/mui-base/src/generateUtilityClasses/generateUtilityClasses.ts
+@@ -3,11 +3,12 @@ import generateUtilityClass from '../generateUtilityClass';
+ export default function generateUtilityClasses<T extends string>(
+   componentName: string,
+   slots: T[],
++  generator?: (componentName: string) => string,
+ ): Record<T, string> {
+   const result: Record<string, string> = {};
+ 
+   slots.forEach((slot) => {
+-    result[slot] = generateUtilityClass(componentName, slot);
++    result[slot] = generateUtilityClass(componentName, slot, generator);
+   });
+ 
+   return result;
+diff --git a/packages/mui-base/src/index.d.ts b/packages/mui-base/src/index.d.ts
+index dcdbbf8a..4c4f0f55 100644
+--- a/packages/mui-base/src/index.d.ts
++++ b/packages/mui-base/src/index.d.ts
+@@ -15,6 +15,10 @@ export * from './composeClasses';
+ export { default as generateUtilityClass } from './generateUtilityClass';
+ export * from './generateUtilityClass';
+ export { default as unstable_ClassNameGenerator } from './generateUtilityClass/ClassNameGenerator';
++export {
++  createClassNameGenerator,
++  createClassNameGenerator as unstable_createClassNameGenerator,
++} from './generateUtilityClass/ClassNameGenerator';
+ 
+ export { default as generateUtilityClasses } from './generateUtilityClasses';
+ export * from './generateUtilityClasses';
+diff --git a/packages/mui-base/src/index.js b/packages/mui-base/src/index.js
+index 73b41036..1fe2bf90 100644
+--- a/packages/mui-base/src/index.js
++++ b/packages/mui-base/src/index.js
+@@ -13,6 +13,10 @@ export { default as unstable_composeClasses } from './composeClasses';
+ 
+ export { default as generateUtilityClass } from './generateUtilityClass';
+ export { default as unstable_ClassNameGenerator } from './generateUtilityClass/ClassNameGenerator';
++export {
++  createClassNameGenerator,
++  createClassNameGenerator as unstable_createClassNameGenerator,
++} from './generateUtilityClass/ClassNameGenerator';
+ 
+ export { default as generateUtilityClasses } from './generateUtilityClasses';
+ 
+diff --git a/packages/mui-material/src/utils/index.d.ts b/packages/mui-material/src/utils/index.d.ts
+index 05a0805f..512347e6 100644
+--- a/packages/mui-material/src/utils/index.d.ts
++++ b/packages/mui-material/src/utils/index.d.ts
+@@ -15,4 +15,8 @@ export { default as useControlled } from './useControlled';
+ export { default as useEventCallback } from './useEventCallback';
+ export { default as useForkRef } from './useForkRef';
+ export { default as useIsFocusVisible } from './useIsFocusVisible';
+-export { unstable_ClassNameGenerator } from '@mui/base';
++export {
++  unstable_ClassNameGenerator,
++  createClassNameGenerator,
++  createClassNameGenerator as unstable_createClassNameGenerator,
++} from '@mui/base';
+diff --git a/packages/mui-material/src/utils/index.js b/packages/mui-material/src/utils/index.js
+index 05a0805f..512347e6 100644
+--- a/packages/mui-material/src/utils/index.js
++++ b/packages/mui-material/src/utils/index.js
+@@ -15,4 +15,8 @@ export { default as useControlled } from './useControlled';
+ export { default as useEventCallback } from './useEventCallback';
+ export { default as useForkRef } from './useForkRef';
+ export { default as useIsFocusVisible } from './useIsFocusVisible';
+-export { unstable_ClassNameGenerator } from '@mui/base';
++export {
++  unstable_ClassNameGenerator,
++  createClassNameGenerator,
++  createClassNameGenerator as unstable_createClassNameGenerator,
++} from '@mui/base';

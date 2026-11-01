@@ -1,0 +1,144 @@
+diff --git a/docs/en/Plugin.md b/docs/en/Plugin.md
+index d319615..a1f8c4b 100644
+--- a/docs/en/Plugin.md
++++ b/docs/en/Plugin.md
+@@ -269,6 +269,43 @@ dayjs.extend(isSameOrBefore)
+ dayjs('2010-10-20').isSameOrBefore('2010-10-19', 'year')
+ ```
+ 
++### IsToday
++
++- IsToday adds `.isToday()` API to returns a `boolean` indicating if a date is today.
++
++```javascript
++import isToday from 'dayjs/plugin/isToday'
++
++dayjs.extend(isToday)
++
++dayjs().isToday() // true
++dayjs('2018-01-01').isToday() // false
++```
++
++### IsTomorrow
++
++- IsTomorrow adds `.isTomorrow()` API to returns a `boolean` indicating if a date is tomorrow.
++
++```javascript
++import isTomorrow from 'dayjs/plugin/isTomorrow'
++
++dayjs.extend(isTomorrow)
++
++dayjs().add(1, 'day').isTomorrow() // true
++```
++
++### IsYesterday
++
++- IsYesterday adds `.isYesterday()` API to returns a `boolean` indicating if a date is yesterday.
++
++```javascript
++import isYesterday from 'dayjs/plugin/isYesterday'
++
++dayjs.extend(isYesterday)
++
++dayjs().subtract(1, 'day').isYesterday() // true
++```
++
+ ### IsBetween
+ 
+ - IsBetween adds `.isBetween()` API to returns a `boolean` indicating if a date is between two other dates.
+diff --git a/src/plugin/isToday/index.js b/src/plugin/isToday/index.js
+new file mode 100644
+index 0000000..5b1ce15
+--- /dev/null
++++ b/src/plugin/isToday/index.js
+@@ -0,0 +1,8 @@
++export default (o, c, d) => {
++  const proto = c.prototype
++  proto.isToday = function () {
++    const comparisonTemplate = 'YYYY-MM-DD'
++    const now = d()
++    return this.format(comparisonTemplate) === now.format(comparisonTemplate)
++  }
++}
+\ No newline at end of file
+diff --git a/src/plugin/isTomorrow/index.js b/src/plugin/isTomorrow/index.js
+new file mode 100644
+index 0000000..9416907
+--- /dev/null
++++ b/src/plugin/isTomorrow/index.js
+@@ -0,0 +1,8 @@
++export default (o, c, d) => {
++  const proto = c.prototype
++  proto.isTomorrow = function () {
++    const comparisonTemplate = 'YYYY-MM-DD'
++    const tomorrow = d().add(1, 'day')
++    return this.format(comparisonTemplate) === tomorrow.format(comparisonTemplate)
++  }
++}
+\ No newline at end of file
+diff --git a/src/plugin/isYesterday/index.js b/src/plugin/isYesterday/index.js
+new file mode 100644
+index 0000000..0378cce
+--- /dev/null
++++ b/src/plugin/isYesterday/index.js
+@@ -0,0 +1,8 @@
++export default (o, c, d) => {
++  const proto = c.prototype
++  proto.isYesterday = function () {
++    const comparisonTemplate = 'YYYY-MM-DD'
++    const yesterday = d().subtract(1, 'day')
++    return this.format(comparisonTemplate) === yesterday.format(comparisonTemplate)
++  }
++}
+\ No newline at end of file
+diff --git a/types/plugin/isToday.d.ts b/types/plugin/isToday.d.ts
+new file mode 100644
+index 0000000..af2c159
+--- /dev/null
++++ b/types/plugin/isToday.d.ts
+@@ -0,0 +1,10 @@
++import { PluginFunc } from 'dayjs'
++
++declare const plugin: PluginFunc
++export = plugin
++
++declare module 'dayjs' {
++  interface Dayjs {
++    isToday(): boolean
++  }
++}
+\ No newline at end of file
+diff --git a/types/plugin/isTomorrow.d.ts b/types/plugin/isTomorrow.d.ts
+new file mode 100644
+index 0000000..9f224fd
+--- /dev/null
++++ b/types/plugin/isTomorrow.d.ts
+@@ -0,0 +1,10 @@
++import { PluginFunc } from 'dayjs'
++
++declare const plugin: PluginFunc
++export = plugin
++
++declare module 'dayjs' {
++  interface Dayjs {
++    isTomorrow(): boolean
++  }
++}
+\ No newline at end of file
+diff --git a/types/plugin/isYesterday.d.ts b/types/plugin/isYesterday.d.ts
+new file mode 100644
+index 0000000..f6fda37
+--- /dev/null
++++ b/types/plugin/isYesterday.d.ts
+@@ -0,0 +1,10 @@
++import { PluginFunc } from 'dayjs'
++
++declare const plugin: PluginFunc
++export = plugin
++
++declare module 'dayjs' {
++  interface Dayjs {
++    isYesterday(): boolean
++  }
++}
+\ No newline at end of file

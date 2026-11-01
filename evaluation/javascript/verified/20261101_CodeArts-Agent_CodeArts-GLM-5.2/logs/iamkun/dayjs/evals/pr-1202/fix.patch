@@ -1,0 +1,59 @@
+diff --git a/src/plugin/duration/index.js b/src/plugin/duration/index.js
+index 50f6604..10c3760 100644
+--- a/src/plugin/duration/index.js
++++ b/src/plugin/duration/index.js
+@@ -5,6 +5,8 @@ const MILLISECONDS_A_MONTH = MILLISECONDS_A_DAY * 30
+ 
+ const durationRegex = /^(-|\+)?P(?:([-+]?[0-9,.]*)Y)?(?:([-+]?[0-9,.]*)M)?(?:([-+]?[0-9,.]*)W)?(?:([-+]?[0-9,.]*)D)?(?:T(?:([-+]?[0-9,.]*)H)?(?:([-+]?[0-9,.]*)M)?(?:([-+]?[0-9,.]*)S)?)?$/
+ 
++const formatRegex = /\[([^\]]+)]|D{1,2}|H{1,2}|m{1,2}|s{1,2}|S{1,3}/g
++
+ const unitToMS = {
+   years: MILLISECONDS_A_YEAR,
+   months: MILLISECONDS_A_MONTH,
+@@ -152,6 +154,32 @@ class Duration {
+     return $d().add(this.$ms, 'ms').locale(this.$l).fromNow(!withSuffix)
+   }
+ 
++  format(formatStr) {
++    const days = Math.floor(this.$ms / MILLISECONDS_A_DAY)
++    const hours = Math.floor((this.$ms % MILLISECONDS_A_DAY) / MILLISECONDS_A_HOUR)
++    const minutes = Math.floor((this.$ms % MILLISECONDS_A_HOUR) / MILLISECONDS_A_MINUTE)
++    const seconds = Math.floor((this.$ms % MILLISECONDS_A_MINUTE) / MILLISECONDS_A_SECOND)
++    const milliseconds = this.$ms % MILLISECONDS_A_SECOND
++    const tokens = {
++      D: days,
++      DD: $u.s(days, 2, '0'),
++      H: hours,
++      HH: $u.s(hours, 2, '0'),
++      m: minutes,
++      mm: $u.s(minutes, 2, '0'),
++      s: seconds,
++      ss: $u.s(seconds, 2, '0'),
++      S: $u.s(Math.floor(milliseconds / 100), 1, '0'),
++      SS: $u.s(Math.floor(milliseconds / 10), 2, '0'),
++      SSS: $u.s(milliseconds, 3, '0')
++    }
++    return (formatStr || '').replace(formatRegex, (match, $1) => {
++      if ($1) return $1
++      const token = tokens[match]
++      return token === undefined ? match : token
++    })
++  }
++
+   milliseconds() { return this.get('milliseconds') }
+   asMilliseconds() { return this.as('milliseconds') }
+   seconds() { return this.get('seconds') }
+diff --git a/types/plugin/duration.d.ts b/types/plugin/duration.d.ts
+index c09dc9f..3718e2a 100644
+--- a/types/plugin/duration.d.ts
++++ b/types/plugin/duration.d.ts
+@@ -52,6 +52,8 @@ declare namespace plugin {
+     toISOString(): string
+ 
+     locale(locale: string): Duration
++
++    format(formatStr?: string): string
+   }
+ }
+ 

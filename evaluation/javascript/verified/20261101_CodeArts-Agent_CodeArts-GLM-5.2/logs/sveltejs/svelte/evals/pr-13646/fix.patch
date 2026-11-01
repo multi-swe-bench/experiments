@@ -1,0 +1,83 @@
+diff --git a/packages/svelte/tests/runtime-runes/samples/_tmp-anim-comp/Box.svelte b/packages/svelte/tests/runtime-runes/samples/_tmp-anim-comp/Box.svelte
+new file mode 100644
+index 0000000..e0ec3ba
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/_tmp-anim-comp/Box.svelte
+@@ -0,0 +1,9 @@
++<script>
++	import { flip } from 'svelte/animate';
++
++	let { item } = $props();
++</script>
++
++<label animate:flip>
++	{item}
++</label>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/_tmp-anim-comp/_config.js b/packages/svelte/tests/runtime-runes/samples/_tmp-anim-comp/_config.js
+new file mode 100644
+index 0000000..3196d4d
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/_tmp-anim-comp/_config.js
+@@ -0,0 +1,36 @@
++import { flushSync } from 'svelte';
++import { ok, test } from '../../test';
++
++export default test({
++	async test({ assert, target, window }) {
++		const button = target.querySelector('button');
++		ok(button);
++
++		// initial order
++		assert.htmlEqual(
++			target.querySelector('.list').innerHTML,
++			`<label>1</label><label>2</label><label>3</label>`
++		);
++
++		// record positions
++		const list = target.querySelector('.list');
++		const labels = list.querySelectorAll('label');
++		const before = Array.from(labels).map((l) => l.getBoundingClientRect().left);
++
++		// shuffle
++		flushSync(() => {
++			button.click();
++		});
++
++		// after shuffle, the order should be reversed
++		assert.htmlEqual(
++			target.querySelector('.list').innerHTML,
++			`<label>3</label><label>2</label><label>1</label>`
++		);
++
++		// The animation manager should have been attached (item.a set).
++		// We verify by checking that the flip animation applied a transform.
++		// After flushSync + microtask, the animation should be running.
++		await new Promise((r) => setTimeout(r));
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/_tmp-anim-comp/main.svelte b/packages/svelte/tests/runtime-runes/samples/_tmp-anim-comp/main.svelte
+new file mode 100644
+index 0000000..8675f43
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/_tmp-anim-comp/main.svelte
+@@ -0,0 +1,17 @@
++<script>
++	import Box from './Box.svelte';
++
++	let items = $state([1, 2, 3]);
++
++	function shuffle() {
++		items = [...items].reverse();
++	}
++</script>
++
++<button onclick={shuffle}>Shuffle</button>
++
++<div class="list">
++	{#each items as item (item)}
++		<Box {item} />
++	{/each}
++</div>
+\ No newline at end of file

@@ -1,0 +1,68 @@
+diff --git a/packages/svelte/tests/runtime-runes/samples/each-keyed-sort-mutate/Item.svelte b/packages/svelte/tests/runtime-runes/samples/each-keyed-sort-mutate/Item.svelte
+new file mode 100644
+index 0000000..189101a
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/each-keyed-sort-mutate/Item.svelte
+@@ -0,0 +1,6 @@
++<script>
++	let { item } = $props();
++	let count = $state(0);
++</script>
++
++<div>{item.name}:{count}<button onclick={() => count++}>+</button></div>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/each-keyed-sort-mutate/_config.js b/packages/svelte/tests/runtime-runes/samples/each-keyed-sort-mutate/_config.js
+new file mode 100644
+index 0000000..ea4a7b5
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/each-keyed-sort-mutate/_config.js
+@@ -0,0 +1,26 @@
++import { test } from '../../test';
++import { flushSync } from 'svelte';
++
++export default test({
++	html: `
++		<div>one:0<button>+</button></div>
++		<div>two:0<button>+</button></div>
++		<div>three:0<button>+</button></div>
++	`,
++
++	test({ assert, component, target }) {
++		const divs = target.querySelectorAll('div');
++		divs[1].querySelector('button').click();
++		divs[1].querySelector('button').click();
++
++		flushSync();
++
++		component.sort();
++		flushSync();
++
++		const divs2 = target.querySelectorAll('div');
++		assert.equal(divs2[0].textContent, 'three:0+');
++		assert.equal(divs2[1].textContent, 'two:2+');
++		assert.equal(divs2[2].textContent, 'one:0+');
++	}
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/runtime-runes/samples/each-keyed-sort-mutate/main.svelte b/packages/svelte/tests/runtime-runes/samples/each-keyed-sort-mutate/main.svelte
+new file mode 100644
+index 0000000..13e0765
+--- /dev/null
++++ b/packages/svelte/tests/runtime-runes/samples/each-keyed-sort-mutate/main.svelte
+@@ -0,0 +1,15 @@
++<script>
++	import Item from './Item.svelte';
++	let array = $state([
++		{ id: 1, name: 'one' },
++		{ id: 2, name: 'two' },
++		{ id: 3, name: 'three' }
++	]);
++	export function sort() {
++		array.sort((a, b) => b.id - a.id);
++	}
++</script>
++
++{#each array as item (item.id)}
++	<Item {item} />
++{/each}
+\ No newline at end of file

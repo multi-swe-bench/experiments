@@ -1,0 +1,114 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/visitors/RegularElement.js b/packages/svelte/src/compiler/phases/2-analyze/visitors/RegularElement.js
+index 60bd1dd..dcfd122 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/visitors/RegularElement.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/visitors/RegularElement.js
+@@ -79,7 +79,9 @@ export function RegularElement(node, context) {
+ 		node.attributes.some(
+ 			(attribute) =>
+ 				attribute.type === 'Attribute' &&
+-				(attribute.name === 'autofocus' || attribute.name === 'muted')
++				(attribute.name === 'autofocus' ||
++					attribute.name === 'muted' ||
++					(node.name === 'img' && attribute.name === 'loading'))
+ 		)
+ 	) {
+ 		mark_subtree_dynamic(context.path);
+diff --git a/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/_expected/client/index.svelte.js b/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/_expected/client/index.svelte.js
+new file mode 100644
+index 0000000..ecd96b4
+--- /dev/null
++++ b/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/_expected/client/index.svelte.js
+@@ -0,0 +1,14 @@
++import "svelte/internal/disclose-version";
++import "svelte/internal/flags/legacy";
++import * as $ from "svelte/internal/client";
++
++var root = $.template(`<div><img src="..." loading="lazy"></div>`);
++
++export default function Lazy_img_nested_static($$anchor) {
++	var div = root();
++	var img = $.child(div);
++
++	$.reset(div);
++	$.handle_lazy_img(img);
++	$.append($$anchor, div);
++}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/_expected/client/index.svelte.warnings.json b/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/_expected/client/index.svelte.warnings.json
+new file mode 100644
+index 0000000..08545e6
+--- /dev/null
++++ b/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/_expected/client/index.svelte.warnings.json
+@@ -0,0 +1,22 @@
++[
++	{
++		"code": "a11y_missing_attribute",
++		"message": "`<img>` element should have an alt attribute",
++		"filename": "packages/svelte/tests/snapshot/samples/lazy-img-nested-static/index.svelte",
++		"start": {
++			"line": 1,
++			"column": 5,
++			"character": 5
++		},
++		"end": {
++			"line": 1,
++			"column": 37,
++			"character": 37
++		},
++		"position": [
++			5,
++			37
++		],
++		"frame": "1: <div><img src=\"...\" loading=\"lazy\" /></div>\n                                        ^"
++	}
++]
+\ No newline at end of file
+diff --git a/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/_expected/server/index.svelte.js b/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/_expected/server/index.svelte.js
+new file mode 100644
+index 0000000..b2f309a
+--- /dev/null
++++ b/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/_expected/server/index.svelte.js
+@@ -0,0 +1,5 @@
++import * as $ from "svelte/internal/server";
++
++export default function Lazy_img_nested_static($$payload) {
++	$$payload.out += `<div><img src="..." loading="lazy"></div>`;
++}
+\ No newline at end of file
+diff --git a/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/_expected/server/index.svelte.warnings.json b/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/_expected/server/index.svelte.warnings.json
+new file mode 100644
+index 0000000..08545e6
+--- /dev/null
++++ b/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/_expected/server/index.svelte.warnings.json
+@@ -0,0 +1,22 @@
++[
++	{
++		"code": "a11y_missing_attribute",
++		"message": "`<img>` element should have an alt attribute",
++		"filename": "packages/svelte/tests/snapshot/samples/lazy-img-nested-static/index.svelte",
++		"start": {
++			"line": 1,
++			"column": 5,
++			"character": 5
++		},
++		"end": {
++			"line": 1,
++			"column": 37,
++			"character": 37
++		},
++		"position": [
++			5,
++			37
++		],
++		"frame": "1: <div><img src=\"...\" loading=\"lazy\" /></div>\n                                        ^"
++	}
++]
+\ No newline at end of file
+diff --git a/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/index.svelte b/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/index.svelte
+new file mode 100644
+index 0000000..ba95bc7
+--- /dev/null
++++ b/packages/svelte/tests/snapshot/samples/lazy-img-nested-static/index.svelte
+@@ -0,0 +1 @@
++<div><img src="..." loading="lazy" /></div>
+\ No newline at end of file

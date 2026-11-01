@@ -1,0 +1,24 @@
+diff --git a/src/plugin/customParseFormat/index.js b/src/plugin/customParseFormat/index.js
+index ab09179..c6d88fa 100644
+--- a/src/plugin/customParseFormat/index.js
++++ b/src/plugin/customParseFormat/index.js
+@@ -151,14 +151,17 @@ const parseFormattedInput = (input, format, utc) => {
+     const {
+       year, month, day, hours, minutes, seconds, milliseconds, zone
+     } = parser(input)
++    const now = new Date()
+     if (zone) {
++      const d = day || ((!year && !month) ? now.getDate() : 1)
++      const y = year || now.getFullYear()
++      const M = month > 0 ? month - 1 : now.getMonth()
+       return new Date(Date.UTC(
+-        year, month - 1, day,
++        y, M, d,
+         hours || 0,
+         minutes || 0, seconds || 0, milliseconds || 0
+       ) + (zone.offset * 60 * 1000))
+     }
+-    const now = new Date()
+     const d = day || ((!year && !month) ? now.getDate() : 1)
+     const y = year || now.getFullYear()
+     const M = month > 0 ? month - 1 : now.getMonth()

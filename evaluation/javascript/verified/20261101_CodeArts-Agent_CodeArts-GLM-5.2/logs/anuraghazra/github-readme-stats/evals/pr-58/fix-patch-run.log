@@ -1,0 +1,203 @@
+$ bash /home/test-run.sh
+
+
+> github-readme-stats@1.0.0 test
+> jest --verbose --maxWorkers=4
+
+PASS tests/renderStatsCard.test.js
+  Test renderStatsCard
+    ✓ should render correctly (20 ms)
+    ✓ should hide individual stats (5 ms)
+    ✓ should hide_border (5 ms)
+    ✓ should hide_rank (4 ms)
+    ✓ should render default colors properly (22 ms)
+    ✓ should render custom colors properly (5 ms)
+
+  console.log
+    
+            
+        .header {
+          font: 600 18px 'Segoe UI', Ubuntu, Sans-Serif; fill: #2f80ed; 
+          animation: fadeIn 0.8s ease-in-out forwards;
+        }
+        .stat { 
+          font: 600 14px 'Segoe UI', Ubuntu, Sans-Serif; fill: #333;
+        }
+        .stagger { 
+          opacity: 0;
+          animation: fadeIn 0.3s ease-in-out forwards;
+        }
+        .rank-text { 
+          font: 800 24px 'Segoe UI', Ubuntu, Sans-Serif; fill: #333; 
+          animation: scaleIn 0.3s ease-in-out forwards;
+        }
+        
+        .bold { font-weight: 700 }
+        .star-icon { 
+          font: 600 18px 'Segoe UI', Ubuntu, Sans-Serif;
+        }
+        .icon {
+          fill: #4c71f2;
+          display: none;
+        }
+        
+        .rank-circle-rim {
+          stroke: #2f80ed;
+          fill: none;
+          stroke-width: 6;
+          opacity: 0.2;
+        }
+        .rank-circle {
+          stroke: #2f80ed;
+          stroke-dasharray: 250;
+          fill: none;
+          stroke-width: 6;
+          stroke-linecap: round;
+          opacity: 0.8;
+          transform-origin: -10px 8px;
+          transform: rotate(-90deg);
+          animation: rankAnimation 1s forwards ease-in-out;
+        }
+
+      at Object.<anonymous> (tests/renderStatsCard.test.js:69:13)
+
+PASS tests/renderRepoCard.test.js
+  Test renderRepoCard
+    ✓ should render correctly (5 ms)
+    ✓ should trim description (4 ms)
+    ✓ should shift the text position depending on language length (4 ms)
+    ✓ should render default colors properly (6 ms)
+    ✓ should render custom colors properly (3 ms)
+
+PASS tests/api.test.js
+  Test /api/
+    ✓ should test the request (3 ms)
+    ✓ should render error card on error (4 ms)
+    ✓ should get the query options
+
+PASS tests/pin.test.js
+  Test /api/pin
+    ✓ should test the request (1 ms)
+    ✓ should get the query options (1 ms)
+    ✓ should render error card if user repo not found (3 ms)
+    ✓ should render error card if org repo not found (2 ms)
+
+  console.log
+    [
+      {
+        type: 'NOT_FOUND',
+        path: [ 'user' ],
+        locations: [],
+        message: 'Could not fetch user'
+      }
+    ]
+
+      at fetchStats (src/fetchStats.js:57:13)
+
+  console.log
+    Error: User Repository Not found
+        at fetchRepo (/home/github-readme-stats/src/fetchRepo.js:50:13)
+        at retryer (/home/github-readme-stats/src/retryer.js:5:12)
+        at Object.<anonymous>.module.exports (/home/github-readme-stats/api/pin.js:21:16)
+        at Object.<anonymous> (/home/github-readme-stats/tests/pin.test.js:95:5)
+
+      at Object.<anonymous>.module.exports (api/pin.js:23:13)
+
+  console.log
+    Error: Organization Repository Not found
+        at fetchRepo (/home/github-readme-stats/src/fetchRepo.js:57:13)
+        at retryer (/home/github-readme-stats/src/retryer.js:5:12)
+        at Object.<anonymous>.module.exports (/home/github-readme-stats/api/pin.js:21:16)
+        at Object.<anonymous> (/home/github-readme-stats/tests/pin.test.js:116:5)
+
+      at Object.<anonymous>.module.exports (api/pin.js:23:13)
+
+PASS tests/fetchRepo.test.js
+  Test fetchRepo
+    ✓ should fetch correct user repo (1 ms)
+    ✓ should fetch correct org repo (1 ms)
+    ✓ should throw error if user is found but repo is null (1 ms)
+    ✓ should throw error if org is found but repo is null
+    ✓ should throw error if both user & org data not found (1 ms)
+
+FAIL tests/fetchStats.test.js
+  Test fetchStats
+    ✓ should fetch correct stats (1 ms)
+    ✕ should throw error (12 ms)
+
+  ● Test fetchStats › should throw error
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Could not resolve to a User with the login of 'noname'."
+    Received message:   "Could not fetch user"
+
+          56 |   if (res.data.errors) {
+          57 |     console.log(res.data.errors);
+        > 58 |     throw Error("Could not fetch user");
+             |           ^
+          59 |   }
+          60 |
+          61 |   const user = res.data.data.user;
+
+      at fetchStats (src/fetchStats.js:58:11)
+      at Object.<anonymous> (tests/fetchStats.test.js:76:5)
+      at Object.<anonymous> (tests/fetchStats.test.js:76:53)
+
+PASS tests/calculateRank.test.js
+  Test calculateRank
+    ✓ should calculate rank correctly (1 ms)
+
+  console.log
+    [
+      {
+        type: 'NOT_FOUND',
+        path: [ 'user' ],
+        locations: [],
+        message: "Could not resolve to a User with the login of 'noname'."
+      }
+    ]
+
+      at fetchStats (src/fetchStats.js:57:13)
+
+PASS tests/utils.test.js
+  Test utils.js
+    ✓ should test kFormatter (1 ms)
+    ✓ should test encodeHTML
+    ✓ should test renderError (2 ms)
+
+FAIL tests/retryer.test.js
+  Test Retryer
+    ✓ retryer should return value and have zero retries on first try (2 ms)
+    ✕ retryer should return value and have 2 retries
+    ✓ retryer should throw error if maximum retries reached
+
+  ● Test Retryer › retryer should return value and have 2 retries
+
+    expect(jest.fn()).toBeCalledTimes(expected)
+
+    Expected number of calls: 2
+    Received number of calls: 1
+
+      34 |     let res = await retryer(fetcherFailOnSecondTry, {});
+      35 |
+    > 36 |     expect(fetcherFailOnSecondTry).toBeCalledTimes(2);
+         |                                    ^
+      37 |     expect(res).toStrictEqual({ data: "ok" });
+      38 |   });
+      39 |
+
+      at Object.<anonymous> (tests/retryer.test.js:36:36)
+
+Test Suites: 2 failed, 7 passed, 9 total
+Tests:       2 failed, 30 passed, 32 total
+Snapshots:   0 total
+Time:        1.752 s
+Ran all test suites.
+  console.log
+    undefined undefined
+
+      at tests/retryer.test.js:5:11
+
+
+[exit code: 1]

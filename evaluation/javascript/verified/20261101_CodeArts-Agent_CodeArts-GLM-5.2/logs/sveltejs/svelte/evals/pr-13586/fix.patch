@@ -1,0 +1,49 @@
+diff --git a/packages/svelte/src/internal/client/dom/blocks/await.js b/packages/svelte/src/internal/client/dom/blocks/await.js
+index 3a28234..d7ec621 100644
+--- a/packages/svelte/src/internal/client/dom/blocks/await.js
++++ b/packages/svelte/src/internal/client/dom/blocks/await.js
+@@ -1,8 +1,9 @@
+-/** @import { Effect, Source, TemplateNode } from '#client' */
++/** @import { Derived, Effect, Source, TemplateNode } from '#client' */
+ import { is_promise, noop } from '../../../shared/utils.js';
+ import {
+ 	component_context,
+ 	flush_sync,
++	get,
+ 	is_runes,
+ 	set_component_context,
+ 	set_active_effect,
+@@ -10,6 +11,7 @@ import {
+ 	set_dev_current_component_function
+ } from '../../runtime.js';
+ import { block, branch, pause_effect, resume_effect } from '../../reactivity/effects.js';
++import { derived } from '../../reactivity/deriveds.js';
+ import { DEV } from 'esm-env';
+ import { queue_micro_task } from '../task.js';
+ import { hydrate_next, hydrate_node, hydrating } from '../hydration.js';
+@@ -56,6 +58,9 @@ export function await_block(node, get_input, pending_fn, then_fn, catch_fn) {
+ 	var error_source = (runes ? source : mutable_source)(undefined);
+ 	var resolved = false;
+ 
++	/** @type {null | Derived<V | Promise<V>>} */
++	var input_derived = null;
++
+ 	/**
+ 	 * @param {PENDING | THEN | CATCH} state
+ 	 * @param {boolean} restore
+@@ -110,7 +115,14 @@ export function await_block(node, get_input, pending_fn, then_fn, catch_fn) {
+ 	}
+ 
+ 	var effect = block(() => {
+-		if (input === (input = get_input())) return;
++		if (input_derived === null) {
++			input_derived = /** @type {Derived<V | Promise<V>>} */ (derived(get_input));
++		}
++
++		var latest_input = get(input_derived);
++
++		if (input === latest_input) return;
++		input = latest_input;
+ 
+ 		if (is_promise(input)) {
+ 			var promise = input;

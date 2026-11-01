@@ -1,0 +1,148 @@
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+index 0351159..dad1a57 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/template.js
+@@ -751,6 +751,9 @@ function serialize_inline_component(node, component_name, context) {
+ 	/** @type {import('estree').ExpressionStatement[]} */
+ 	const default_lets = [];
+ 
++	/** @type {import('estree').ExpressionStatement[]} */
++	const lets = [];
++
+ 	/** @type {Record<string, import('#compiler').TemplateNode[]>} */
+ 	const children = {};
+ 
+@@ -763,6 +766,14 @@ function serialize_inline_component(node, component_name, context) {
+ 	/** @type {import('estree').Identifier | import('estree').MemberExpression | null} */
+ 	let bind_this = null;
+ 
++	// When the component is itself slotted into another component, the let bindings
++	// come from the enclosing slot (`$$slotProps`) and need to be available to the
++	// component's own attributes — so they go into the surrounding init, not the
++	// default slot body.
++	const is_slotted = node.attributes.some(
++		(attribute) => attribute.type === 'Attribute' && attribute.name === 'slot'
++	);
++
+ 	/**
+ 	 * @param {import('estree').Property} prop
+ 	 */
+@@ -778,9 +789,14 @@ function serialize_inline_component(node, component_name, context) {
+ 
+ 	for (const attribute of node.attributes) {
+ 		if (attribute.type === 'LetDirective') {
+-			default_lets.push(
+-				/** @type {import('estree').ExpressionStatement} */ (context.visit(attribute))
++			const let_statement = /** @type {import('estree').ExpressionStatement} */ (
++				context.visit(attribute)
+ 			);
++			if (is_slotted) {
++				lets.push(let_statement);
++			} else {
++				default_lets.push(let_statement);
++			}
+ 		} else if (attribute.type === 'OnDirective') {
+ 			events[attribute.name] ||= [];
+ 			let handler = serialize_event_handler(attribute, context);
+@@ -863,6 +879,9 @@ function serialize_inline_component(node, component_name, context) {
+ 		}
+ 	}
+ 
++	// Let bindings first, they can be used on attributes (when slotted)
++	context.state.init.push(...lets);
++
+ 	if (Object.keys(events).length > 0) {
+ 		const events_expression = b.object(
+ 			Object.keys(events).map((name) =>
+diff --git a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+index 330340b..7a9bd7f 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
++++ b/packages/svelte/src/compiler/phases/3-transform/server/transform-server.js
+@@ -810,9 +810,20 @@ function serialize_inline_component(node, component_name, context) {
+ 	/** @type {import('estree').ExpressionStatement[]} */
+ 	const default_lets = [];
+ 
++	/** @type {import('estree').ExpressionStatement[]} */
++	const lets = [];
++
+ 	/** @type {Record<string, import('#compiler').TemplateNode[]>} */
+ 	const children = {};
+ 
++	// When the component is itself slotted into another component, the let bindings
++	// come from the enclosing slot (`$$slotProps`) and need to be available to the
++	// component's own attributes — so they go into the surrounding template, not the
++	// default slot body.
++	const is_slotted = node.attributes.some(
++		(attribute) => attribute.type === 'Attribute' && attribute.name === 'slot'
++	);
++
+ 	/**
+ 	 * @param {import('estree').Property} prop
+ 	 */
+@@ -828,9 +839,14 @@ function serialize_inline_component(node, component_name, context) {
+ 
+ 	for (const attribute of node.attributes) {
+ 		if (attribute.type === 'LetDirective') {
+-			default_lets.push(
+-				/** @type {import('estree').ExpressionStatement} */ (context.visit(attribute))
++			const let_statement = /** @type {import('estree').ExpressionStatement} */ (
++				context.visit(attribute)
+ 			);
++			if (is_slotted) {
++				lets.push(let_statement);
++			} else {
++				default_lets.push(let_statement);
++			}
+ 		} else if (attribute.type === 'SpreadAttribute') {
+ 			props_and_spreads.push(/** @type {import('estree').Expression} */ (context.visit(attribute)));
+ 		} else if (attribute.type === 'Attribute') {
+@@ -862,6 +878,11 @@ function serialize_inline_component(node, component_name, context) {
+ 		}
+ 	}
+ 
++	// Let bindings first, they can be used on attributes (when slotted)
++	for (const let_statement of lets) {
++		context.state.template.push(t_statement(let_statement));
++	}
++
+ 	/** @type {import('estree').Statement[]} */
+ 	const snippet_declarations = [];
+ 
+diff --git a/packages/svelte/src/compiler/phases/scope.js b/packages/svelte/src/compiler/phases/scope.js
+index bf2adf7..7a341b1 100644
+--- a/packages/svelte/src/compiler/phases/scope.js
++++ b/packages/svelte/src/compiler/phases/scope.js
+@@ -364,13 +364,30 @@ export function create_scopes(ast, root, allow_reactive_declarations, parent) {
+ 		Component(node, { state, visit, path }) {
+ 			state.scope.reference(b.id(node.name), path);
+ 
++			const scope = analyze_let_directives(node, state.scope);
++
+ 			// let:x from the default slot is a weird one:
+ 			// Its scope only applies to children that are not slots themselves.
+-			for (const attribute of node.attributes) {
+-				visit(attribute);
++			// When the component is itself slotted into another component, the let
++			// bindings come from the enclosing slot (`$$slotProps`) and are available
++			// to the component's own attributes (e.g. `<X slot="y" let:foo={bar} {bar} />`),
++			// so the let scope is also used as the scope of the component itself.
++			const is_slotted = node.attributes.some(
++				(attribute) => attribute.type === 'Attribute' && attribute.name === 'slot'
++			);
++
++			if (is_slotted) {
++				scopes.set(node, scope);
+ 			}
+ 
+-			const scope = analyze_let_directives(node, state.scope);
++			for (const attribute of node.attributes) {
++				if (is_slotted) {
++					scopes.set(attribute, scope);
++					visit(attribute, { scope });
++				} else {
++					visit(attribute);
++				}
++			}
+ 
+ 			for (const child of node.fragment.nodes) {
+ 				if (

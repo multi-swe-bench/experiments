@@ -1,0 +1,83 @@
+diff --git a/packages/mui-joy/src/Select/Select.tsx b/packages/mui-joy/src/Select/Select.tsx
+index e38553b1..1a21a2d1 100644
+--- a/packages/mui-joy/src/Select/Select.tsx
++++ b/packages/mui-joy/src/Select/Select.tsx
+@@ -357,6 +357,7 @@ const Select = React.forwardRef(function Select<TValue extends {}>(
+     'aria-labelledby': ariaLabelledby,
+     id,
+     name,
++    required: requiredProp,
+     slots = {},
+     slotProps = {},
+     ...other
+@@ -390,6 +391,7 @@ const Select = React.forwardRef(function Select<TValue extends {}>(
+     inProps.color,
+     formControl?.error ? 'danger' : formControl?.color ?? colorProp,
+   );
++  const required = requiredProp ?? formControl?.required;
+ 
+   const renderValue = renderValueProp ?? defaultRenderSingleValue;
+   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
+@@ -461,6 +463,7 @@ const Select = React.forwardRef(function Select<TValue extends {}>(
+     focusVisible: buttonFocusVisible,
+     open: listboxOpen,
+     renderValue,
++    required,
+     value,
+     size,
+     variant,
+@@ -488,8 +491,10 @@ const Select = React.forwardRef(function Select<TValue extends {}>(
+       'aria-describedby': ariaDescribedby ?? formControl?.['aria-describedby'],
+       'aria-label': ariaLabel,
+       'aria-labelledby': ariaLabelledby ?? formControl?.labelId,
++      'aria-required': required || undefined,
+       id: id ?? formControl?.htmlFor,
+       name,
++      required,
+     },
+     className: classes.button,
+     elementType: SelectButton,
+@@ -602,7 +607,14 @@ const Select = React.forwardRef(function Select<TValue extends {}>(
+       </SlotRoot>
+       {result}
+ 
+-      {name && <input type="hidden" name={name} value={getSerializedValue(selectedOption)} />}
++      {name && (
++        <input
++          type="hidden"
++          name={name}
++          value={getSerializedValue(selectedOption)}
++          required={required}
++        />
++      )}
+     </React.Fragment>
+   );
+ }) as SelectComponent;
+@@ -726,6 +738,11 @@ Select.propTypes /* remove-proptypes */ = {
+    * Text to show when there is no selected value.
+    */
+   placeholder: PropTypes.node,
++  /**
++   * If `true`, the component is required.
++   * The prop defaults to the value (`false`) inherited from the parent FormControl component.
++   */
++  required: PropTypes.bool,
+   /**
+    * Function that customizes the rendering of the selected value.
+    */
+diff --git a/packages/mui-joy/src/Select/SelectProps.ts b/packages/mui-joy/src/Select/SelectProps.ts
+index e29fc623..4bfd46fe 100644
+--- a/packages/mui-joy/src/Select/SelectProps.ts
++++ b/packages/mui-joy/src/Select/SelectProps.ts
+@@ -140,6 +140,11 @@ export interface SelectStaticProps {
+    * Text to show when there is no selected value.
+    */
+   placeholder?: React.ReactNode;
++  /**
++   * If `true`, the component is required.
++   * The prop defaults to the value (`false`) inherited from the parent FormControl component.
++   */
++  required?: boolean;
+   /**
+    * The size of the component.
+    */

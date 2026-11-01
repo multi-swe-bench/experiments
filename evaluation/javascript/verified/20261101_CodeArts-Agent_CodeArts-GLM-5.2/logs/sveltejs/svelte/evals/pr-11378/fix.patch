@@ -1,0 +1,13 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index ab793bf..a4e018d 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -413,7 +413,7 @@ const validation = {
+ 					}
+ 				}
+ 
+-				if (parent.name === 'select') {
++				if (parent.name === 'select' && node.name === 'value') {
+ 					const multiple = parent.attributes.find(
+ 						(a) =>
+ 							a.type === 'Attribute' &&

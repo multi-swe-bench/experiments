@@ -1,0 +1,139 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/validation.js b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+index 8ae8c26..e0fb52b 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/validation.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/validation.js
+@@ -348,6 +348,19 @@ const validation = {
+ 
+ 		const binding = context.state.scope.get(left.name);
+ 
++		// `bind:foo={obj.prop}` mutates `obj`. In runes mode, ensure the prop is
++		// treated as mutated so its value gets proxied and the mutation is reactive,
++		// even when the parent component is not in runes mode.
++		if (
++			context.state.analysis.runes &&
++			assignee.type === 'MemberExpression' &&
++			node.name !== 'this' &&
++			binding &&
++			(binding.kind === 'prop' || binding.kind === 'bindable_prop')
++		) {
++			binding.mutated = true;
++		}
++
+ 		if (
+ 			assignee.type === 'Identifier' &&
+ 			node.name !== 'this' // bind:this also works for regular variables
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/utils.js b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+index 884a7ad..da5b2b9 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/utils.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/utils.js
+@@ -10,7 +10,8 @@ import {
+ 	PROPS_IS_LAZY_INITIAL,
+ 	PROPS_IS_IMMUTABLE,
+ 	PROPS_IS_RUNES,
+-	PROPS_IS_UPDATED
++	PROPS_IS_UPDATED,
++	PROPS_IS_MUTATED
+ } from '../../../../constants.js';
+ 
+ /**
+@@ -89,7 +90,7 @@ export function serialize_get_binding(node, state) {
+ 	}
+ 
+ 	if (binding.kind === 'prop' || binding.kind === 'bindable_prop') {
+-		if (!state.analysis.runes || binding.reassigned || binding.initial) {
++		if (!state.analysis.runes || binding.reassigned || binding.initial || binding.mutated) {
+ 			return b.call(node);
+ 		}
+ 
+@@ -540,6 +541,7 @@ function get_hoistable_params(node, context) {
+ 				(binding.kind === 'prop' || binding.kind === 'bindable_prop') &&
+ 				!binding.reassigned &&
+ 				binding.initial === null &&
++				!binding.mutated &&
+ 				!context.state.analysis.accessors
+ 			) {
+ 				push_unique(b.id('$$props'));
+@@ -607,6 +609,10 @@ export function get_prop_source(binding, state, name, initial) {
+ 		flags |= PROPS_IS_UPDATED;
+ 	}
+ 
++	if (state.analysis.runes && binding.mutated) {
++		flags |= PROPS_IS_MUTATED;
++	}
++
+ 	/** @type {import('estree').Expression | undefined} */
+ 	let arg;
+ 
+diff --git a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
+index b35e01b..31e5147 100644
+--- a/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
++++ b/packages/svelte/src/compiler/phases/3-transform/client/visitors/javascript-runes.js
+@@ -264,7 +264,7 @@ export const javascript_visitors_runes = {
+ 							initial = b.call('$.proxy', initial);
+ 						}
+ 
+-						if (binding.reassigned || state.analysis.accessors || initial) {
++						if (binding.reassigned || state.analysis.accessors || initial || binding.mutated) {
+ 							declarations.push(b.declarator(id, get_prop_source(binding, state, name, initial)));
+ 						}
+ 					} else {
+diff --git a/packages/svelte/src/constants.js b/packages/svelte/src/constants.js
+index a8963d6..637ad22 100644
+--- a/packages/svelte/src/constants.js
++++ b/packages/svelte/src/constants.js
+@@ -11,6 +11,7 @@ export const PROPS_IS_IMMUTABLE = 1;
+ export const PROPS_IS_RUNES = 1 << 1;
+ export const PROPS_IS_UPDATED = 1 << 2;
+ export const PROPS_IS_LAZY_INITIAL = 1 << 3;
++export const PROPS_IS_MUTATED = 1 << 4;
+ 
+ export const TRANSITION_IN = 1;
+ export const TRANSITION_OUT = 1 << 1;
+diff --git a/packages/svelte/src/internal/client/reactivity/props.js b/packages/svelte/src/internal/client/reactivity/props.js
+index 5d4634f..ec7237c 100644
+--- a/packages/svelte/src/internal/client/reactivity/props.js
++++ b/packages/svelte/src/internal/client/reactivity/props.js
+@@ -3,13 +3,15 @@ import {
+ 	PROPS_IS_IMMUTABLE,
+ 	PROPS_IS_LAZY_INITIAL,
+ 	PROPS_IS_RUNES,
+-	PROPS_IS_UPDATED
++	PROPS_IS_UPDATED,
++	PROPS_IS_MUTATED
+ } from '../../../constants.js';
+ import { get_descriptor, is_function } from '../utils.js';
+ import { mutable_source, set, source } from './sources.js';
+ import { derived, derived_safe_equal } from './deriveds.js';
+ import { get, is_signals_recorded, untrack, update } from '../runtime.js';
+ import { safe_equals } from './equality.js';
++import { proxy } from '../proxy.js';
+ import * as e from '../errors.js';
+ import { LEGACY_DERIVED_PROP } from '../constants.js';
+ 
+@@ -211,6 +213,7 @@ export function prop(props, key, flags, fallback) {
+ 	var immutable = (flags & PROPS_IS_IMMUTABLE) !== 0;
+ 	var runes = (flags & PROPS_IS_RUNES) !== 0;
+ 	var lazy = (flags & PROPS_IS_LAZY_INITIAL) !== 0;
++	var mutated = (flags & PROPS_IS_MUTATED) !== 0;
+ 
+ 	var prop_value = /** @type {V} */ (props[key]);
+ 	var setter = get_descriptor(props, key)?.set;
+@@ -261,6 +264,18 @@ export function prop(props, key, flags, fallback) {
+ 
+ 	// easy mode — prop is never written to
+ 	if ((flags & PROPS_IS_UPDATED) === 0) {
++		if (mutated) {
++			// The prop is mutated in place (e.g. `bind:value={obj.prop}`). Proxy
++			// the value so that the mutations are reactive even when the parent is
++			// not in runes mode and therefore doesn't hand us a proxied object.
++			return () => {
++				var value = /** @type {V} */ (props[key]);
++				if (value === undefined) return get_fallback();
++				fallback_dirty = true;
++				return proxy(value);
++			};
++		}
++
+ 		return getter;
+ 	}
+ 

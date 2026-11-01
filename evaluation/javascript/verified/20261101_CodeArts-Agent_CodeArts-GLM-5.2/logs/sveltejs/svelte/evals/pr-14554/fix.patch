@@ -1,0 +1,178 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/read/context.js b/packages/svelte/src/compiler/phases/1-parse/read/context.js
+index e206701..47be0e7 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/read/context.js
++++ b/packages/svelte/src/compiler/phases/1-parse/read/context.js
+@@ -1,7 +1,7 @@
+ /** @import { Location } from 'locate-character' */
+ /** @import { Pattern } from 'estree' */
+ /** @import { Parser } from '../index.js' */
+-import { is_bracket_open, is_bracket_close, get_bracket_close } from '../utils/bracket.js';
++import { is_bracket_open, get_bracket_close, find_matching_bracket } from '../utils/bracket.js';
+ import { parse_expression_at } from '../acorn.js';
+ import { regex_not_newline_characters } from '../../patterns.js';
+ import * as e from '../../../errors.js';
+@@ -37,30 +37,14 @@ export default function read_pattern(parser) {
+ 		e.expected_pattern(i);
+ 	}
+ 
+-	/** @type {string[]} */
+-	const bracket_stack = [];
++	const close = find_matching_bracket(parser.template, i + 1, parser.template[i]);
+ 
+-	while (i < parser.template.length) {
+-		const char = parser.template[i];
+-
+-		if (is_bracket_open(char)) {
+-			bracket_stack.push(char);
+-		} else if (is_bracket_close(char)) {
+-			const popped = /** @type {string} */ (bracket_stack.pop());
+-			const expected = /** @type {string} */ (get_bracket_close(popped));
+-
+-			if (char !== expected) {
+-				e.expected_token(i, expected);
+-			}
+-
+-			if (bracket_stack.length === 0) {
+-				i += 1;
+-				break;
+-			}
+-		}
+-		i += 1;
++	if (close === undefined) {
++		e.expected_token(i, get_bracket_close(parser.template[i]));
+ 	}
+ 
++	i = close + 1;
++
+ 	parser.index = i;
+ 
+ 	const pattern_string = parser.template.slice(start, i);
+diff --git a/packages/svelte/src/compiler/phases/1-parse/state/tag.js b/packages/svelte/src/compiler/phases/1-parse/state/tag.js
+index 95d7d00..253e589 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/state/tag.js
++++ b/packages/svelte/src/compiler/phases/1-parse/state/tag.js
+@@ -8,6 +8,7 @@ import { parse_expression_at } from '../acorn.js';
+ import read_pattern from '../read/context.js';
+ import read_expression, { get_loose_identifier } from '../read/expression.js';
+ import { create_fragment } from '../utils/create.js';
++import { find_matching_bracket } from '../utils/bracket.js';
+ 
+ const regex_whitespace_with_closing_curly_brace = /^\s*}/;
+ 
+@@ -354,15 +355,12 @@ function open(parser) {
+ 		const matched = parser.eat('(', true, false);
+ 
+ 		if (matched) {
+-			let parentheses = 1;
+-
+-			while (parser.index < parser.template.length && (!parser.match(')') || parentheses !== 1)) {
+-				if (parser.match('(')) parentheses++;
+-				if (parser.match(')')) parentheses--;
+-				parser.index += 1;
++			const close = find_matching_bracket(parser.template, parser.index, '(');
++			if (close === undefined) {
++				parser.index = parser.template.length;
++				parser.eat(')', true);
+ 			}
+-
+-			parser.eat(')', true);
++			parser.index = close + 1;
+ 		}
+ 
+ 		const prelude = parser.template.slice(0, params_start).replace(/\S/g, ' ');
+diff --git a/packages/svelte/src/compiler/phases/1-parse/utils/bracket.js b/packages/svelte/src/compiler/phases/1-parse/utils/bracket.js
+index b7c8cb4..cdf67dd 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/utils/bracket.js
++++ b/packages/svelte/src/compiler/phases/1-parse/utils/bracket.js
+@@ -134,7 +134,10 @@ export function find_matching_bracket(template, index, open) {
+ 				continue;
+ 			case '/': {
+ 				const next_char = template[i + 1];
+-				if (!next_char) continue;
++				if (!next_char) {
++					i++;
++					continue;
++				}
+ 				if (next_char === '/') {
+ 					i = infinity_if_negative(template.indexOf('\n', i + 1)) + '\n'.length;
+ 					continue;
+@@ -143,7 +146,11 @@ export function find_matching_bracket(template, index, open) {
+ 					i = infinity_if_negative(template.indexOf('*/', i + 1)) + '*/'.length;
+ 					continue;
+ 				}
+-				i = find_regex_end(template, i + 1) + '/'.length;
++				if (is_regex_start(template, i)) {
++					i = find_regex_end(template, i + 1) + '/'.length;
++					continue;
++				}
++				i++;
+ 				continue;
+ 			}
+ 			default: {
+@@ -162,3 +169,66 @@ export function find_matching_bracket(template, index, open) {
+ 	}
+ 	return undefined;
+ }
++
++const regex_preceding_keywords = new Set([
++	'return',
++	'typeof',
++	'instanceof',
++	'in',
++	'of',
++	'do',
++	'else',
++	'delete',
++	'void',
++	'new',
++	'throw',
++	'case',
++	'yield',
++	'await'
++]);
++
++const regex_identifier_char = /[a-zA-Z0-9_$]/;
++
++/**
++ * Determines whether the `/` at {@link index} starts a regular expression rather than
++ * a division operator, by inspecting the preceding significant character/token.
++ * @param {string} template The string to search.
++ * @param {number} index The index of the `/` character.
++ * @returns {boolean} `true` if the `/` starts a regular expression.
++ */
++function is_regex_start(template, index) {
++	let i = index - 1;
++	while (i >= 0) {
++		const char = template[i];
++		if (char === ' ' || char === '\t' || char === '\n' || char === '\r') {
++			i--;
++			continue;
++		}
++		if (char === '/' && template[i - 1] === '*') {
++			i -= 2;
++			while (i >= 0 && !(template[i] === '*' && template[i + 1] === '/')) i--;
++			i--;
++			continue;
++		}
++		if (char === '/' && template[i - 1] === '/') {
++			i -= 2;
++			while (i >= 0 && template[i] !== '\n') i--;
++			continue;
++		}
++		break;
++	}
++
++	if (i < 0) return true;
++
++	const char = template[i];
++	if (char === ')' || char === ']' || char === '}' || char === "'" || char === '"' || char === '`') {
++		return false;
++	}
++	if (regex_identifier_char.test(char)) {
++		let j = i;
++		while (j >= 0 && regex_identifier_char.test(template[j])) j--;
++		const word = template.slice(j + 1, i + 1);
++		return regex_preceding_keywords.has(word);
++	}
++	return true;
++}

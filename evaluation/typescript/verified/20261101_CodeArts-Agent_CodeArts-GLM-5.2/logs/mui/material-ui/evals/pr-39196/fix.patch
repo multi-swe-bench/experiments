@@ -1,0 +1,20 @@
+diff --git a/packages/mui-system/src/spacing.js b/packages/mui-system/src/spacing.js
+index f22063fd..a85fa5ed 100644
+--- a/packages/mui-system/src/spacing.js
++++ b/packages/mui-system/src/spacing.js
+@@ -162,7 +162,14 @@ export function createUnarySpacing(theme) {
+ }
+ 
+ export function getValue(transformer, propValue) {
+-  if (typeof propValue === 'string' || propValue == null) {
++  if (typeof propValue === 'string') {
++    if (!parseFloat(propValue)) {
++      return transformer(propValue);
++    }
++    return propValue;
++  }
++
++  if (propValue == null) {
+     return propValue;
+   }
+ 

@@ -1,0 +1,39 @@
+diff --git a/src/fetchRepo.js b/src/fetchRepo.js
+index 8f7c83d..0c730ea 100644
+--- a/src/fetchRepo.js
++++ b/src/fetchRepo.js
+@@ -9,6 +9,7 @@ const fetcher = (variables, token) => {
+         name
+         nameWithOwner
+         isPrivate
++        isArchived
+         stargazers {
+           totalCount
+         }
+diff --git a/src/renderRepoCard.js b/src/renderRepoCard.js
+index 383d357..98f3642 100644
+--- a/src/renderRepoCard.js
++++ b/src/renderRepoCard.js
+@@ -9,6 +9,7 @@ const renderRepoCard = (repo, options = {}) => {
+     primaryLanguage,
+     stargazers,
+     forkCount,
++    isArchived,
+   } = repo;
+   const { title_color, icon_color, text_color, bg_color, show_owner } = options;
+ 
+@@ -45,6 +46,14 @@ const renderRepoCard = (repo, options = {}) => {
+       </svg>
+ 
+       <text x="50" y="38" class="header">${header}</text>
++      ${
++        isArchived
++          ? `<g data-testid="archived-badge" transform="translate(155, 24)">
++          <rect width="72" height="20" x="0" y="0" rx="3" fill="#6a737d"></rect>
++          <text class="gray" x="36" y="14" text-anchor="middle" fill="#fff">Archived</text>
++        </g>`
++          : ""
++      }
+       <text class="description" x="25" y="70">${encodeHTML(desc)}</text>
+       
+       <g transform="translate(30, 100)">

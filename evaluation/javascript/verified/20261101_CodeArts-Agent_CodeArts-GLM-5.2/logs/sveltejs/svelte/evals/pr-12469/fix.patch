@@ -1,0 +1,349 @@
+diff --git a/packages/svelte/src/compiler/phases/1-parse/read/expression.js b/packages/svelte/src/compiler/phases/1-parse/read/expression.js
+index aa86b85..bb9efb6 100644
+--- a/packages/svelte/src/compiler/phases/1-parse/read/expression.js
++++ b/packages/svelte/src/compiler/phases/1-parse/read/expression.js
+@@ -18,7 +18,10 @@ export default function read_expression(parser) {
+ 
+ 		let index = /** @type {number} */ (node.end);
+ 		if (node.trailingComments !== undefined && node.trailingComments.length > 0) {
+-			index = node.trailingComments.at(-1).end;
++			const comment_end = node.trailingComments.at(-1).end;
++			if (comment_end > index) {
++				index = comment_end;
++			}
+ 		}
+ 
+ 		while (num_parens > 0) {
+diff --git a/packages/svelte/tests/parser-modern/samples/comment-in-event-handler/input.svelte b/packages/svelte/tests/parser-modern/samples/comment-in-event-handler/input.svelte
+new file mode 100644
+index 0000000..5e0e9b9
+--- /dev/null
++++ b/packages/svelte/tests/parser-modern/samples/comment-in-event-handler/input.svelte
+@@ -0,0 +1,10 @@
++<script>
++	let count = $state(0);
++</script>
++
++<button
++	onclick={() => {
++		count += 1;
++		/* trailing comment */
++	}}
++>clicks: {count}</button>
+\ No newline at end of file
+diff --git a/packages/svelte/tests/parser-modern/samples/comment-in-event-handler/output.json b/packages/svelte/tests/parser-modern/samples/comment-in-event-handler/output.json
+new file mode 100644
+index 0000000..fefb220
+--- /dev/null
++++ b/packages/svelte/tests/parser-modern/samples/comment-in-event-handler/output.json
+@@ -0,0 +1,310 @@
++{
++	"css": null,
++	"js": [],
++	"start": 44,
++	"end": 138,
++	"type": "Root",
++	"fragment": {
++		"type": "Fragment",
++		"nodes": [
++			{
++				"type": "Text",
++				"start": 42,
++				"end": 44,
++				"raw": "\n\n",
++				"data": "\n\n"
++			},
++			{
++				"type": "RegularElement",
++				"start": 44,
++				"end": 138,
++				"name": "button",
++				"attributes": [
++					{
++						"type": "Attribute",
++						"start": 53,
++						"end": 112,
++						"name": "onclick",
++						"value": [
++							{
++								"type": "ExpressionTag",
++								"start": 61,
++								"end": 112,
++								"expression": {
++									"type": "ArrowFunctionExpression",
++									"start": 62,
++									"end": 111,
++									"loc": {
++										"start": {
++											"line": 6,
++											"column": 10
++										},
++										"end": {
++											"line": 9,
++											"column": 2
++										}
++									},
++									"id": null,
++									"expression": false,
++									"generator": false,
++									"async": false,
++									"params": [],
++									"body": {
++										"type": "BlockStatement",
++										"start": 68,
++										"end": 111,
++										"loc": {
++											"start": {
++												"line": 6,
++												"column": 16
++											},
++											"end": {
++												"line": 9,
++												"column": 2
++											}
++										},
++										"body": [
++											{
++												"type": "ExpressionStatement",
++												"start": 72,
++												"end": 83,
++												"loc": {
++													"start": {
++														"line": 7,
++														"column": 2
++													},
++													"end": {
++														"line": 7,
++														"column": 13
++													}
++												},
++												"expression": {
++													"type": "AssignmentExpression",
++													"start": 72,
++													"end": 82,
++													"loc": {
++														"start": {
++															"line": 7,
++															"column": 2
++														},
++														"end": {
++															"line": 7,
++															"column": 12
++														}
++													},
++													"operator": "+=",
++													"left": {
++														"type": "Identifier",
++														"start": 72,
++														"end": 77,
++														"loc": {
++															"start": {
++																"line": 7,
++																"column": 2
++															},
++															"end": {
++																"line": 7,
++																"column": 7
++															}
++														},
++														"name": "count"
++													},
++													"right": {
++														"type": "Literal",
++														"start": 81,
++														"end": 82,
++														"loc": {
++															"start": {
++																"line": 7,
++																"column": 11
++															},
++															"end": {
++																"line": 7,
++																"column": 12
++															}
++														},
++														"value": 1,
++														"raw": "1"
++													}
++												}
++											}
++										]
++									},
++									"trailingComments": [
++										{
++											"type": "Block",
++											"value": " trailing comment ",
++											"start": 86,
++											"end": 108
++										}
++									]
++								}
++							}
++						]
++					}
++				],
++				"fragment": {
++					"type": "Fragment",
++					"nodes": [
++						{
++							"type": "Text",
++							"start": 114,
++							"end": 122,
++							"raw": "clicks: ",
++							"data": "clicks: "
++						},
++						{
++							"type": "ExpressionTag",
++							"start": 122,
++							"end": 129,
++							"expression": {
++								"type": "Identifier",
++								"start": 123,
++								"end": 128,
++								"loc": {
++									"start": {
++										"line": 10,
++										"column": 10
++									},
++									"end": {
++										"line": 10,
++										"column": 15
++									}
++								},
++								"name": "count"
++							}
++						}
++					],
++					"transparent": true
++				}
++			}
++		],
++		"transparent": false
++	},
++	"options": null,
++	"instance": {
++		"type": "Script",
++		"start": 0,
++		"end": 42,
++		"context": "default",
++		"content": {
++			"type": "Program",
++			"start": 8,
++			"end": 33,
++			"loc": {
++				"start": {
++					"line": 1,
++					"column": 0
++				},
++				"end": {
++					"line": 3,
++					"column": 0
++				}
++			},
++			"body": [
++				{
++					"type": "VariableDeclaration",
++					"start": 10,
++					"end": 32,
++					"loc": {
++						"start": {
++							"line": 2,
++							"column": 1
++						},
++						"end": {
++							"line": 2,
++							"column": 23
++						}
++					},
++					"declarations": [
++						{
++							"type": "VariableDeclarator",
++							"start": 14,
++							"end": 31,
++							"loc": {
++								"start": {
++									"line": 2,
++									"column": 5
++								},
++								"end": {
++									"line": 2,
++									"column": 22
++								}
++							},
++							"id": {
++								"type": "Identifier",
++								"start": 14,
++								"end": 19,
++								"loc": {
++									"start": {
++										"line": 2,
++										"column": 5
++									},
++									"end": {
++										"line": 2,
++										"column": 10
++									}
++								},
++								"name": "count"
++							},
++							"init": {
++								"type": "CallExpression",
++								"start": 22,
++								"end": 31,
++								"loc": {
++									"start": {
++										"line": 2,
++										"column": 13
++									},
++									"end": {
++										"line": 2,
++										"column": 22
++									}
++								},
++								"callee": {
++									"type": "Identifier",
++									"start": 22,
++									"end": 28,
++									"loc": {
++										"start": {
++											"line": 2,
++											"column": 13
++										},
++										"end": {
++											"line": 2,
++											"column": 19
++										}
++									},
++									"name": "$state"
++								},
++								"arguments": [
++									{
++										"type": "Literal",
++										"start": 29,
++										"end": 30,
++										"loc": {
++											"start": {
++												"line": 2,
++												"column": 20
++											},
++											"end": {
++												"line": 2,
++												"column": 21
++											}
++										},
++										"value": 0,
++										"raw": "0"
++									}
++								],
++								"optional": false
++							}
++						}
++					],
++					"kind": "let"
++				}
++			],
++			"sourceType": "module"
++		},
++		"attributes": []
++	}
++}

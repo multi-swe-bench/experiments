@@ -1,0 +1,517 @@
+diff --git a/packages/material-ui/src/ListItem/ListItem.d.ts b/packages/material-ui/src/ListItem/ListItem.d.ts
+index b28937c7..cb8396f9 100644
+--- a/packages/material-ui/src/ListItem/ListItem.d.ts
++++ b/packages/material-ui/src/ListItem/ListItem.d.ts
+@@ -57,6 +57,10 @@ interface ListItemBaseProps {
+    * @default false
+    */
+   divider?: boolean;
++  /**
++   * The element to display at the edge of the ListItem.
++   */
++  secondaryAction?: React.ReactNode;
+   /**
+    * Use to apply selected styling.
+    * @default false
+diff --git a/packages/material-ui/src/ListItem/ListItem.js b/packages/material-ui/src/ListItem/ListItem.js
+index 1938576b..029a9ca6 100644
+--- a/packages/material-ui/src/ListItem/ListItem.js
++++ b/packages/material-ui/src/ListItem/ListItem.js
+@@ -168,6 +168,7 @@ const ListItem = React.forwardRef(function ListItem(inProps, ref) {
+     disableGutters = false,
+     divider = false,
+     focusVisibleClassName,
++    secondaryAction,
+     selected = false,
+     ...other
+   } = props;
+@@ -194,7 +195,8 @@ const ListItem = React.forwardRef(function ListItem(inProps, ref) {
+ 
+   const children = React.Children.toArray(childrenProp);
+   const hasSecondaryAction =
+-    children.length && isMuiElement(children[children.length - 1], ['ListItemSecondaryAction']);
++    Boolean(secondaryAction) ||
++    (children.length && isMuiElement(children[children.length - 1], ['ListItemSecondaryAction']));
+ 
+   const styleProps = {
+     ...props,
+@@ -266,7 +268,7 @@ const ListItem = React.forwardRef(function ListItem(inProps, ref) {
+           >
+             {children}
+           </Root>
+-          {children.pop()}
++          {secondaryAction != null ? secondaryAction : children.pop()}
+         </ListItemContainer>
+       </ListContext.Provider>
+     );
+@@ -401,6 +403,10 @@ ListItem.propTypes /* remove-proptypes */ = {
+    * @ignore
+    */
+   focusVisibleClassName: PropTypes.string,
++  /**
++   * The element to display at the edge of the ListItem.
++   */
++  secondaryAction: PropTypes.node,
+   /**
+    * Use to apply selected styling.
+    * @default false
+diff --git a/packages/material-ui/src/ListItemButton/ListItemButton.d.ts b/packages/material-ui/src/ListItemButton/ListItemButton.d.ts
+new file mode 100644
+index 00000000..6e410c53
+--- /dev/null
++++ b/packages/material-ui/src/ListItemButton/ListItemButton.d.ts
+@@ -0,0 +1,85 @@
++import * as React from 'react';
++import { SxProps } from '@material-ui/system';
++import { Theme } from '@material-ui/core/styles';
++import { ExtendButtonBase, ExtendButtonBaseTypeMap } from '../ButtonBase';
++import { OverrideProps } from '../OverridableComponent';
++import { ListItemButtonClasses } from './listItemButtonClasses';
++
++export type ListItemButtonTypeMap<
++  P = {},
++  D extends React.ElementType = 'div',
++> = ExtendButtonBaseTypeMap<{
++  props: P & {
++    /**
++     * Defines the `align-items` style property.
++     * @default 'center'
++     */
++    alignItems?: 'flex-start' | 'center';
++    /**
++     * If `true`, the list item is focused during the first mount.
++     * Focus will also be triggered if the value changes from false to true.
++     * @default false
++     */
++    autoFocus?: boolean;
++    /**
++     * The content of the component.
++     */
++    children?: React.ReactNode;
++    /**
++     * Override or extend the styles applied to the component.
++     */
++    classes?: Partial<ListItemButtonClasses>;
++    /**
++     * If `true`, compact vertical padding designed for keyboard and mouse input is used.
++     * The prop defaults to the value inherited from the parent List component.
++     * @default false
++     */
++    dense?: boolean;
++    /**
++     * If `true`, the component is disabled.
++     * @default false
++     */
++    disabled?: boolean;
++    /**
++     * If `true`, the left and right padding is removed.
++     * @default false
++     */
++    disableGutters?: boolean;
++    /**
++     * If `true`, a 1px light border is added to the bottom of the list item.
++     * @default false
++     */
++    divider?: boolean;
++    /**
++     * Use to apply selected styling.
++     * @default false
++     */
++    selected?: boolean;
++    /**
++     * The system prop that allows defining system overrides as well as additional CSS styles.
++     */
++    sx?: SxProps<Theme>;
++  };
++  defaultComponent: D;
++}>;
++
++/**
++ *
++ * Demos:
++ *
++ * - [Lists](https://material-ui.com/components/lists/)
++ * - [Transfer List](https://material-ui.com/components/transfer-list/)
++ *
++ * API:
++ *
++ * - [ListItemButton API](https://material-ui.com/api/list-item-button/)
++ * - inherits [ButtonBase API](https://material-ui.com/api/button-base/)
++ */
++declare const ListItemButton: ExtendButtonBase<ListItemButtonTypeMap>;
++
++export type ListItemButtonProps<
++  D extends React.ElementType = ListItemButtonTypeMap['defaultComponent'],
++  P = {},
++> = OverrideProps<ListItemButtonTypeMap<P, D>, D>;
++
++export default ListItemButton;
+diff --git a/packages/material-ui/src/ListItemButton/ListItemButton.js b/packages/material-ui/src/ListItemButton/ListItemButton.js
+new file mode 100644
+index 00000000..4ec3d9e9
+--- /dev/null
++++ b/packages/material-ui/src/ListItemButton/ListItemButton.js
+@@ -0,0 +1,265 @@
++import * as React from 'react';
++import PropTypes from 'prop-types';
++import clsx from 'clsx';
++import { unstable_composeClasses as composeClasses } from '@material-ui/unstyled';
++import { alpha } from '../styles/colorManipulator';
++import ButtonBase from '../ButtonBase';
++import experimentalStyled, { rootShouldForwardProp } from '../styles/experimentalStyled';
++import useThemeProps from '../styles/useThemeProps';
++import useEnhancedEffect from '../utils/useEnhancedEffect';
++import useForkRef from '../utils/useForkRef';
++import ListContext from '../List/ListContext';
++import listItemButtonClasses, { getListItemButtonUtilityClass } from './listItemButtonClasses';
++
++export const overridesResolver = (props, styles) => {
++  const { styleProps } = props;
++
++  return {
++    ...styles.root,
++    ...(styleProps.dense && styles.dense),
++    ...(styleProps.alignItems === 'flex-start' && styles.alignItemsFlexStart),
++    ...(styleProps.divider && styles.divider),
++    ...(!styleProps.disableGutters && styles.gutters),
++    ...(styleProps.selected && styles.selected),
++  };
++};
++
++const useUtilityClasses = (styleProps) => {
++  const { alignItems, classes, dense, disabled, disableGutters, divider, selected } = styleProps;
++
++  const slots = {
++    root: [
++      'root',
++      dense && 'dense',
++      !disableGutters && 'gutters',
++      divider && 'divider',
++      disabled && 'disabled',
++      alignItems === 'flex-start' && 'alignItemsFlexStart',
++      selected && 'selected',
++    ],
++  };
++
++  return composeClasses(slots, getListItemButtonUtilityClass, classes);
++};
++
++export const ListItemButtonRoot = experimentalStyled(ButtonBase, {
++  shouldForwardProp: (prop) => rootShouldForwardProp(prop) || prop === 'classes',
++  name: 'MuiListItemButton',
++  slot: 'Root',
++  overridesResolver,
++})(({ theme, styleProps }) => ({
++  display: 'flex',
++  flexGrow: 1,
++  flexWrap: 'wrap',
++  justifyContent: 'flex-start',
++  textAlign: 'left',
++  position: 'relative',
++  textDecoration: 'none',
++  width: '100%',
++  boxSizing: 'border-box',
++  minHeight: '48px',
++  paddingTop: 8,
++  paddingBottom: 8,
++  '&:hover': {
++    textDecoration: 'none',
++    backgroundColor: theme.palette.action.hover,
++    // Reset on touch devices, it doesn't add specificity
++    '@media (hover: none)': {
++      backgroundColor: 'transparent',
++    },
++  },
++  [`&.${listItemButtonClasses.focusVisible}`]: {
++    backgroundColor: theme.palette.action.focus,
++  },
++  [`&.${listItemButtonClasses.selected}`]: {
++    backgroundColor: alpha(theme.palette.primary.main, theme.palette.action.selectedOpacity),
++    [`&.${listItemButtonClasses.focusVisible}`]: {
++      backgroundColor: alpha(
++        theme.palette.primary.main,
++        theme.palette.action.selectedOpacity + theme.palette.action.focusOpacity,
++      ),
++    },
++  },
++  [`&.${listItemButtonClasses.selected}:hover`]: {
++    backgroundColor: alpha(
++      theme.palette.primary.main,
++      theme.palette.action.selectedOpacity + theme.palette.action.hoverOpacity,
++    ),
++    // Reset on touch devices, it doesn't add specificity
++    '@media (hover: none)': {
++      backgroundColor: alpha(theme.palette.primary.main, theme.palette.action.selectedOpacity),
++    },
++  },
++  [`&.${listItemButtonClasses.disabled}`]: {
++    opacity: theme.palette.action.disabledOpacity,
++  },
++  /* Styles applied to the component element if dense. */
++  ...(styleProps.dense && {
++    paddingTop: 4,
++    paddingBottom: 4,
++  }),
++  /* Styles applied to the component element if `alignItems="flex-start"`. */
++  ...(styleProps.alignItems === 'flex-start' && {
++    alignItems: 'flex-start',
++  }),
++  /* Styles applied to the component element if `divider={true}`. */
++  ...(styleProps.divider && {
++    borderBottom: `1px solid ${theme.palette.divider}`,
++    backgroundClip: 'padding-box',
++  }),
++  /* Styles applied to the component element unless `disableGutters={true}`. */
++  ...(!styleProps.disableGutters && {
++    paddingLeft: 16,
++    paddingRight: 16,
++  }),
++}));
++
++/**
++ * `ListItemButton` is a button element styled to look like a list item.
++ * Use it inside a `ListItem` to create an interactive list item.
++ *
++ * Demos:
++ *
++ * - [Lists](https://material-ui.com/components/lists/)
++ * - [Transfer List](https://material-ui.com/components/transfer-list/)
++ *
++ * API:
++ *
++ * - [ListItemButton API](https://material-ui.com/api/list-item-button/)
++ * - inherits [ButtonBase API](https://material-ui.com/api/button-base/)
++ */
++const ListItemButton = React.forwardRef(function ListItemButton(inProps, ref) {
++  const props = useThemeProps({ props: inProps, name: 'MuiListItemButton' });
++  const {
++    alignItems = 'center',
++    autoFocus = false,
++    component = 'div',
++    children,
++    className,
++    dense = false,
++    disableGutters = false,
++    divider = false,
++    focusVisibleClassName,
++    selected = false,
++    ...other
++  } = props;
++
++  const context = React.useContext(ListContext);
++  const childContext = {
++    dense: dense || context.dense || false,
++    alignItems,
++    disableGutters,
++  };
++
++  const listItemRef = React.useRef(null);
++  useEnhancedEffect(() => {
++    if (autoFocus) {
++      if (listItemRef.current) {
++        listItemRef.current.focus();
++      } else if (process.env.NODE_ENV !== 'production') {
++        console.error(
++          'Material-UI: Unable to set focus to a ListItemButton whose component has not been rendered.',
++        );
++      }
++    }
++  }, [autoFocus]);
++
++  const styleProps = {
++    ...props,
++    alignItems,
++    dense: childContext.dense,
++    disableGutters,
++    divider,
++    selected,
++  };
++
++  const classes = useUtilityClasses(styleProps);
++
++  const handleRef = useForkRef(listItemRef, ref);
++
++  return (
++    <ListContext.Provider value={childContext}>
++      <ListItemButtonRoot
++        component={component}
++        ref={handleRef}
++        className={clsx(classes.root, className)}
++        focusVisibleClassName={clsx(listItemButtonClasses.focusVisible, focusVisibleClassName)}
++        styleProps={styleProps}
++        {...other}
++      >
++        {children}
++      </ListItemButtonRoot>
++    </ListContext.Provider>
++  );
++});
++
++ListItemButton.propTypes /* remove-proptypes */ = {
++  // ----------------------------- Warning --------------------------------
++  // | These PropTypes are generated from the TypeScript type definitions |
++  // |     To update them edit the d.ts file and run "yarn proptypes"     |
++  // ----------------------------------------------------------------------
++  /**
++   * Defines the `align-items` style property.
++   * @default 'center'
++   */
++  alignItems: PropTypes.oneOf(['center', 'flex-start']),
++  /**
++   * If `true`, the list item is focused during the first mount.
++   * Focus will also be triggered if the value changes from false to true.
++   * @default false
++   */
++  autoFocus: PropTypes.bool,
++  /**
++   * The content of the component.
++   */
++  children: PropTypes.node,
++  /**
++   * Override or extend the styles applied to the component.
++   */
++  classes: PropTypes.object,
++  /**
++   * @ignore
++   */
++  className: PropTypes.string,
++  /**
++   * The component used for the root node.
++   * Either a string to use a HTML element or a component.
++   */
++  component: PropTypes.elementType,
++  /**
++   * If `true`, compact vertical padding designed for keyboard and mouse input is used.
++   * The prop defaults to the value inherited from the parent List component.
++   * @default false
++   */
++  dense: PropTypes.bool,
++  /**
++   * If `true`, the component is disabled.
++   * @default false
++   */
++  disabled: PropTypes.bool,
++  /**
++   * If `true`, the left and right padding is removed.
++   * @default false
++   */
++  disableGutters: PropTypes.bool,
++  /**
++   * If `true`, a 1px light border is added to the bottom of the list item.
++   * @default false
++   */
++  divider: PropTypes.bool,
++  /**
++   * @ignore
++   */
++  focusVisibleClassName: PropTypes.string,
++  /**
++   * Use to apply selected styling.
++   * @default false
++   */
++  selected: PropTypes.bool,
++  /**
++   * The system prop that allows defining system overrides as well as additional CSS styles.
++   */
++  sx: PropTypes.object,
++};
++
++export default ListItemButton;
+\ No newline at end of file
+diff --git a/packages/material-ui/src/ListItemButton/index.d.ts b/packages/material-ui/src/ListItemButton/index.d.ts
+new file mode 100644
+index 00000000..57fdf7f3
+--- /dev/null
++++ b/packages/material-ui/src/ListItemButton/index.d.ts
+@@ -0,0 +1,5 @@
++export { default } from './ListItemButton';
++export * from './ListItemButton';
++
++export { default as listItemButtonClasses } from './listItemButtonClasses';
++export * from './listItemButtonClasses';
+diff --git a/packages/material-ui/src/ListItemButton/index.js b/packages/material-ui/src/ListItemButton/index.js
+new file mode 100644
+index 00000000..320b1c6f
+--- /dev/null
++++ b/packages/material-ui/src/ListItemButton/index.js
+@@ -0,0 +1,5 @@
++export { default } from './ListItemButton';
++export * from './ListItemButton';
++
++export { default as listItemButtonClasses } from './listItemButtonClasses';
++export * from './listItemButtonClasses';
+\ No newline at end of file
+diff --git a/packages/material-ui/src/ListItemButton/listItemButtonClasses.ts b/packages/material-ui/src/ListItemButton/listItemButtonClasses.ts
+new file mode 100644
+index 00000000..1e34f05f
+--- /dev/null
++++ b/packages/material-ui/src/ListItemButton/listItemButtonClasses.ts
+@@ -0,0 +1,39 @@
++import { generateUtilityClass, generateUtilityClasses } from '@material-ui/unstyled';
++
++export interface ListItemButtonClasses {
++  /** Styles applied to the root element. */
++  root: string;
++  /** Pseudo-class applied to the `component`'s `focusVisibleClassName` prop. */
++  focusVisible: string;
++  /** Styles applied to the component element if dense. */
++  dense: string;
++  /** Styles applied to the component element if `alignItems="flex-start"`. */
++  alignItemsFlexStart: string;
++  /** Pseudo-class applied to the `component`'s `disabled` prop. */
++  disabled: string;
++  /** Styles applied to the component element if `divider={true}`. */
++  divider: string;
++  /** Styles applied to the component element unless `disableGutters={true}`. */
++  gutters: string;
++  /** Pseudo-class applied to the root element if `selected={true}`. */
++  selected: string;
++}
++
++export type ListItemButtonClassKey = keyof ListItemButtonClasses;
++
++export function getListItemButtonUtilityClass(slot: string): string {
++  return generateUtilityClass('MuiListItemButton', slot);
++}
++
++const listItemButtonClasses: ListItemButtonClasses = generateUtilityClasses('MuiListItemButton', [
++  'root',
++  'focusVisible',
++  'dense',
++  'alignItemsFlexStart',
++  'disabled',
++  'divider',
++  'gutters',
++  'selected',
++]);
++
++export default listItemButtonClasses;
+\ No newline at end of file
+diff --git a/packages/material-ui/src/index.d.ts b/packages/material-ui/src/index.d.ts
+index aed8e0e9..dc91dcef 100644
+--- a/packages/material-ui/src/index.d.ts
++++ b/packages/material-ui/src/index.d.ts
+@@ -264,6 +264,9 @@ export * from './ListItem';
+ export { default as ListItemAvatar } from './ListItemAvatar';
+ export * from './ListItemAvatar';
+ 
++export { default as ListItemButton } from './ListItemButton';
++export * from './ListItemButton';
++
+ export { default as ListItemIcon } from './ListItemIcon';
+ export * from './ListItemIcon';
+ 
+diff --git a/packages/material-ui/src/index.js b/packages/material-ui/src/index.js
+index d9e6a293..720a0ffa 100644
+--- a/packages/material-ui/src/index.js
++++ b/packages/material-ui/src/index.js
+@@ -200,6 +200,9 @@ export * from './ListItem';
+ export { default as ListItemAvatar } from './ListItemAvatar';
+ export * from './ListItemAvatar';
+ 
++export { default as ListItemButton } from './ListItemButton';
++export * from './ListItemButton';
++
+ export { default as ListItemIcon } from './ListItemIcon';
+ export * from './ListItemIcon';
+ 

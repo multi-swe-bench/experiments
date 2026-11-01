@@ -1,0 +1,135 @@
+diff --git a/packages/mui-system/src/createBox.js b/packages/mui-system/src/createBox.js
+index 9fe1e33a..8ab2a63b 100644
+--- a/packages/mui-system/src/createBox.js
++++ b/packages/mui-system/src/createBox.js
+@@ -41,7 +41,7 @@ export default function createBox(options = {}) {
+     /**
+      * @ignore
+      */
+-    sx: PropTypes.object,
++    sx: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
+   };
+ 
+   return Box;
+diff --git a/packages/mui-system/src/styleFunctionSx/extendSxProp.js b/packages/mui-system/src/styleFunctionSx/extendSxProp.js
+index 930319b0..52b5f81a 100644
+--- a/packages/mui-system/src/styleFunctionSx/extendSxProp.js
++++ b/packages/mui-system/src/styleFunctionSx/extendSxProp.js
+@@ -21,6 +21,13 @@ export default function extendSxProp(props) {
+   const { sx: inSx, ...other } = props;
+   const { systemProps, otherProps } = splitProps(other);
+ 
++  if (Array.isArray(inSx)) {
++    return {
++      ...otherProps,
++      sx: [systemProps, ...inSx],
++    };
++  }
++
+   return {
+     ...otherProps,
+     sx: { ...systemProps, ...inSx },
+diff --git a/packages/mui-system/src/styleFunctionSx/styleFunctionSx.d.ts b/packages/mui-system/src/styleFunctionSx/styleFunctionSx.d.ts
+index 8b71a2dd..87977324 100644
+--- a/packages/mui-system/src/styleFunctionSx/styleFunctionSx.d.ts
++++ b/packages/mui-system/src/styleFunctionSx/styleFunctionSx.d.ts
+@@ -52,9 +52,10 @@ export type SystemStyleObject<Theme extends object = {}> =
+   | null;
+ 
+ /**
+- * The `SxProps` can be either object or function
++ * The `SxProps` can be either object, function or array
+  */
+ export type SxProps<Theme extends object = {}> =
++  | Array<false | SystemStyleObject<Theme> | ((theme: Theme) => SystemStyleObject<Theme>)>
+   | SystemStyleObject<Theme>
+   | ((theme: Theme) => SystemStyleObject<Theme>);
+ 
+diff --git a/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js b/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js
+index 25263707..be2adad5 100644
+--- a/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js
++++ b/packages/mui-system/src/styleFunctionSx/styleFunctionSx.js
+@@ -22,41 +22,55 @@ function styleFunctionSx(props) {
+     return null;
+   }
+ 
+-  let stylesObject = styles;
+-  if (typeof styles === 'function') {
+-    stylesObject = styles(theme);
+-  } else if (typeof styles !== 'object') {
+-    // value
+-    return styles;
+-  }
++  function traverse(stylesToTraverse) {
++    let stylesObject = stylesToTraverse;
++    if (typeof stylesToTraverse === 'function') {
++      stylesObject = stylesToTraverse(theme);
++    } else if (typeof stylesToTraverse !== 'object') {
++      // value
++      return stylesToTraverse;
++    }
+ 
+-  const emptyBreakpoints = createEmptyBreakpointObject(theme.breakpoints);
+-  const breakpointsKeys = Object.keys(emptyBreakpoints);
++    const emptyBreakpoints = createEmptyBreakpointObject(theme.breakpoints);
++    const breakpointsKeys = Object.keys(emptyBreakpoints);
+ 
+-  let css = emptyBreakpoints;
++    let css = emptyBreakpoints;
+ 
+-  Object.keys(stylesObject).forEach((styleKey) => {
+-    const value = callIfFn(stylesObject[styleKey], theme);
+-    if (typeof value === 'object') {
+-      if (propToStyleFunction[styleKey]) {
+-        css = merge(css, getThemeValue(styleKey, value, theme));
+-      } else {
+-        const breakpointsValues = handleBreakpoints({ theme }, value, (x) => ({
+-          [styleKey]: x,
+-        }));
+-
+-        if (objectsHaveSameKeys(breakpointsValues, value)) {
+-          css[styleKey] = styleFunctionSx({ sx: value, theme });
++    Object.keys(stylesObject).forEach((styleKey) => {
++      const value = callIfFn(stylesObject[styleKey], theme);
++      if (typeof value === 'object') {
++        if (propToStyleFunction[styleKey]) {
++          css = merge(css, getThemeValue(styleKey, value, theme));
+         } else {
+-          css = merge(css, breakpointsValues);
++          const breakpointsValues = handleBreakpoints({ theme }, value, (x) => ({
++            [styleKey]: x,
++          }));
++
++          if (objectsHaveSameKeys(breakpointsValues, value)) {
++            css[styleKey] = styleFunctionSx({ sx: value, theme });
++          } else {
++            css = merge(css, breakpointsValues);
++          }
+         }
++      } else {
++        css = merge(css, getThemeValue(styleKey, value, theme));
+       }
+-    } else {
+-      css = merge(css, getThemeValue(styleKey, value, theme));
+-    }
+-  });
++    });
++
++    return removeUnusedBreakpoints(breakpointsKeys, css);
++  }
++
++  if (Array.isArray(styles)) {
++    let css = {};
++    styles.forEach((fragment) => {
++      if (fragment) {
++        css = merge(css, traverse(fragment));
++      }
++    });
++    return css;
++  }
+ 
+-  return removeUnusedBreakpoints(breakpointsKeys, css);
++  return traverse(styles);
+ }
+ 
+ styleFunctionSx.filterProps = ['sx'];

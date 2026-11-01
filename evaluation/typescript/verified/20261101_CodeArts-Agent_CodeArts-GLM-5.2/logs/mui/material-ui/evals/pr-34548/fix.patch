@@ -1,0 +1,17 @@
+diff --git a/packages/mui-system/src/style.js b/packages/mui-system/src/style.js
+index 3facf83f..cc170eff 100644
+--- a/packages/mui-system/src/style.js
++++ b/packages/mui-system/src/style.js
+@@ -56,6 +56,12 @@ function style(options) {
+     const styleFromPropValue = (propValueFinal) => {
+       let value = getValue(themeMapping, transform, propValueFinal);
+ 
++      if (cssProperty !== false && typeof value === 'object' && value !== null) {
++        // The resolved theme value is an object (e.g. a color palette like `grey`),
++        // which is not a valid CSS value, so fall back to the value provided by the user.
++        value = propValueFinal;
++      }
++
+       if (propValueFinal === value && typeof propValueFinal === 'string') {
+         // Haven't found value
+         value = getValue(

@@ -1,0 +1,80 @@
+diff --git a/packages/svelte/src/compiler/phases/2-analyze/css/utils.js b/packages/svelte/src/compiler/phases/2-analyze/css/utils.js
+index 99603fa..2d8a191 100644
+--- a/packages/svelte/src/compiler/phases/2-analyze/css/utils.js
++++ b/packages/svelte/src/compiler/phases/2-analyze/css/utils.js
+@@ -12,6 +12,12 @@ function gather_possible_values(node, set) {
+ 	} else if (node.type === 'ConditionalExpression') {
+ 		gather_possible_values(node.consequent, set);
+ 		gather_possible_values(node.alternate, set);
++	} else if (
++		node.type === 'TSNonNullExpression' ||
++		node.type === 'TSAsExpression' ||
++		node.type === 'TSSatisfiesExpression'
++	) {
++		gather_possible_values(node.expression, set);
+ 	} else {
+ 		set.add(UNKNOWN);
+ 	}
+diff --git a/packages/svelte/tests/css/samples/unused-selector-ts-as-expression/_config.js b/packages/svelte/tests/css/samples/unused-selector-ts-as-expression/_config.js
+new file mode 100644
+index 0000000..1c7243a
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/unused-selector-ts-as-expression/_config.js
+@@ -0,0 +1,18 @@
++import { test } from '../../test';
++
++export default test({
++	warnings: [
++		{
++			code: 'css_unused_selector',
++			message: `Unused CSS selector ".floating-menu[data-active='true'] > .command-menu-tooltip"`,
++			start: { line: 10, column: 1, character: 149 },
++			end: { line: 10, column: 59, character: 207 }
++		},
++		{
++			code: 'css_unused_selector',
++			message: `Unused CSS selector ".floating-menu[data-active='true']"`,
++			start: { line: 14, column: 1, character: 240 },
++			end: { line: 14, column: 35, character: 274 }
++		}
++	]
++});
+\ No newline at end of file
+diff --git a/packages/svelte/tests/css/samples/unused-selector-ts-as-expression/expected.css b/packages/svelte/tests/css/samples/unused-selector-ts-as-expression/expected.css
+new file mode 100644
+index 0000000..9256cea
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/unused-selector-ts-as-expression/expected.css
+@@ -0,0 +1,8 @@
++
++	/* (unused) .floating-menu[data-active='true'] > .command-menu-tooltip {
++		background-color: red;
++	}*/
++
++	/* (unused) .floating-menu[data-active='true'] {
++		background-color: red;
++	}*/
+diff --git a/packages/svelte/tests/css/samples/unused-selector-ts-as-expression/input.svelte b/packages/svelte/tests/css/samples/unused-selector-ts-as-expression/input.svelte
+new file mode 100644
+index 0000000..2e7be63
+--- /dev/null
++++ b/packages/svelte/tests/css/samples/unused-selector-ts-as-expression/input.svelte
+@@ -0,0 +1,17 @@
++<script lang="ts">
++	//
++</script>
++
++<div class="floating-menu" data-active={false as true}>
++	<div class="command-menu-tooltip"></div>
++</div>
++
++<style>
++	.floating-menu[data-active='true'] > .command-menu-tooltip {
++		background-color: red;
++	}
++
++	.floating-menu[data-active='true'] {
++		background-color: red;
++	}
++</style>
+\ No newline at end of file

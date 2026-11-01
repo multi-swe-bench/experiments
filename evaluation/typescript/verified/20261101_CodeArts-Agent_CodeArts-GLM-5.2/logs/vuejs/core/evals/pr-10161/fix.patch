@@ -1,0 +1,18 @@
+diff --git a/packages/runtime-dom/src/modules/style.ts b/packages/runtime-dom/src/modules/style.ts
+index 6341c8a..e2e2aa3 100644
+--- a/packages/runtime-dom/src/modules/style.ts
++++ b/packages/runtime-dom/src/modules/style.ts
+@@ -38,6 +38,13 @@ export function patchStyle(el: Element, prev: Style, next: Style) {
+   // so we always keep the current `display` value regardless of the `style`
+   // value, thus handing over control to `v-show`.
+   if (vShowOldKey in el) {
++    // #10292: if the new style binding explicitly sets a `display` value,
++    // update the original display recorded by `v-show` so that it can be
++    // restored correctly when `v-show` toggles (e.g. bootstrap-vue modals
++    // that bind `display: block` together with `v-show`).
++    if (next && !isCssString && next.display != null) {
++      ;(el as any)[vShowOldKey] = next.display
++    }
+     style.display = currentDisplay
+   }
+ }
